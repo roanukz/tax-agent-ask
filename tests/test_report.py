@@ -514,7 +514,7 @@ def test_the_report_counts_labels_but_no_disagreements_before_the_reveal(tmp_pat
     assert result["compared"] is True and result["labeled"] == 2 and result["disagreements"] > 0
 
 
-def test_the_report_counts_settlements_and_keeps_unchecked_rule_answers_a_gap(tmp_path):
+def test_the_report_counts_settlements_and_says_what_the_labels_dont_check(tmp_path):
     data = tmp_path / "data"
     shutil.copytree(report.REPO / "data" / "truth", data / "truth")
     labels_csv = data / "labels" / "blind_labels.csv"
@@ -544,14 +544,16 @@ def test_the_report_counts_settlements_and_keeps_unchecked_rule_answers_a_gap(tm
     assert statuses(ctx)["6"] == MET
     ctx.blind["settled"] = {"same_document": 1, "changes_only": 1}
     crit = {c.number: c for c in criteria(ctx)}["6"]
-    assert crit.status == NOT_MEASURED and "1 rule answer, or parts of a W-2 count, for facts that did not change is not checked" in crit.detail
-    assert any("so 1 rule answer, or parts of a W-2 count, for unchanged facts is unchecked by them" in s for s in report.next_steps(ctx))
+    # Roanuk chose rule verification for what the labels leave out, so those rows settle the criterion too.
+    assert crit.status == MET and crit.detail.endswith(
+        "so 1 rule answer, or parts of a W-2 count, for facts that did not change is checked by rule verification alone.")
+    assert not any("unchanged" in s for s in report.next_steps(ctx))
     ctx.blind.update(settled={"same_document": 2}, unsettled=1, stale=1)
     crit = {c.number: c for c in criteria(ctx)}["6"]
     assert "1 label disagreement to settle" in crit.detail and "1 logged settlement no longer" in crit.detail
     steps = report.next_steps(ctx)
     assert any("Settle the open blind label disagreements" in s for s in steps)
-    assert not any("unchanged facts" in s for s in steps)
+    assert not any("unchanged" in s for s in steps)
 
 
 def test_a_broken_settlements_file_keeps_the_comparison_and_names_the_file(tmp_path):

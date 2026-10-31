@@ -827,16 +827,19 @@ def criterion_rules(ctx: Context) -> Criterion:
     if blind.get("unsettled", blind["disagreements"]):
         gaps.append(f"{plural(blind.get('unsettled', blind['disagreements']), 'label disagreement')} to settle "
                     "against the cited source and log in data/labels/blind_labels_settlements.csv")
-    unchecked = blind.get("settled", {}).get("changes_only", 0)
-    if unchecked:
-        gaps.append(f"{plural(unchecked, 'rule answer')}, or parts of a W-2 count, for facts that did not change "
-                    f"{'is' if unchecked == 1 else 'are'} not checked by the labels, which list only what changed")
     if blind.get("stale"):
         gaps.append(stale_text(blind["stale"]))
+    # Roanuk chose rule verification, not more labels, for the answers the labels leave out (DECISIONS.md,
+    # 2026-10-31), so changes_only rows are settled; the detail still says what the labels don't check.
+    unchecked = blind.get("settled", {}).get("changes_only", 0)
+    covered = (f" The labels list only what changed, so {plural(unchecked, 'rule answer')}, or parts of a W-2 count, "
+               f"for facts that did not change {'is' if unchecked == 1 else 'are'} checked by rule verification alone."
+               if unchecked else "")
     if gaps:
         return Criterion("6", text, bar, NOT_MEASURED,
-                         f"Every rule has a source URL, but {join_words(gaps)}.")
-    return Criterion("6", text, bar, MET, "Every rule is sourced and verified or excluded, and the labels agree.")
+                         f"Every rule has a source URL, but {join_words(gaps)}.{covered}")
+    return Criterion("6", text, bar, MET,
+                     f"Every rule is sourced and verified or excluded, and every label disagreement is settled.{covered}")
 
 
 def criterion_tests(ctx: Context) -> Criterion:
@@ -1286,12 +1289,6 @@ def next_steps(ctx: Context) -> list[str]:
         elif ctx.blind.get("unsettled") or ctx.blind.get("stale"):
             steps.append("Settle the open blind label disagreements, and review any logged settlement that no longer "
                          "matches one, in data/labels/blind_labels_settlements.csv (Block 2).")
-        unchecked = ctx.blind.get("settled", {}).get("changes_only", 0)
-        if unchecked:
-            steps.append(f"The blind labels list only what changed, so {plural(unchecked, 'rule answer')}, or parts "
-                         f"of a W-2 count, for unchanged facts {'is' if unchecked == 1 else 'are'} unchecked by them: "
-                         "label full lists for "
-                         "a few households, or rely on rule verification alone for those rules (Block 2).")
     if ctx.fidelity is None or ctx.fidelity.get("dry_run") or ctx.fidelity.get("error"):
         steps.append("Run the live simulator fidelity check and read 30 answers for leaks (Block 4).")
     if not any(is_agent(r.get("config")) for r in ctx.split_rows("dev")):
