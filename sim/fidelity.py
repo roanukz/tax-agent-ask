@@ -47,9 +47,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Iterable, Mapping, Sequence
 
-import anthropic
 
-from agent.env import HarnessSettings, load_settings
+from agent.env import HarnessSettings, load_settings, messages_client
 from ledger.spend import (
     DEFAULT_LEDGER,
     DEFAULT_PRICES,
@@ -703,7 +702,7 @@ async def run_households(
 
 
 def live_client(api_key: str) -> Any:
-    return anthropic.AsyncAnthropic(api_key=api_key, max_retries=4)
+    return messages_client(api_key)
 
 
 def _total(simulators: Sequence[ClientSimulator]) -> tuple[Usage, int]:

@@ -78,12 +78,11 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Iterable, Mapping, Sequence
 
-import anthropic
 import yaml
 
 from agent import harness
 from agent.configs import CONFIGS, JUDGE_MODEL, JUDGE_RESERVE_USD, SIMULATOR_MODEL, Config, get_config
-from agent.env import DEFAULT_DOTENV, HarnessSettings, load_settings
+from agent.env import DEFAULT_DOTENV, HarnessSettings, load_settings, messages_client
 from agent.harness import (
     INIT_CHECK, TEST_SPLIT, Budget, Reservation, run_id_for, summary_path, trace_path, write_json,
 )
@@ -199,7 +198,7 @@ def sweep_plan(args: argparse.Namespace, repo: Path | None = None) -> tuple[list
 
 
 def live_client(api_key: str) -> Any:
-    return anthropic.AsyncAnthropic(api_key=api_key, max_retries=4)
+    return messages_client(api_key)
 
 
 @dataclass

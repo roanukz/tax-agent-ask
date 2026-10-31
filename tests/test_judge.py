@@ -568,6 +568,21 @@ async def test_grade_stops_at_the_spend_cap(tmp_path):
     assert len(client.calls) == 1
 
 
+@pytest.mark.anyio
+async def test_grade_stops_when_the_month_cap_refuses_a_retry_partway_through_a_run(tmp_path):
+    labels, path, runs, _ = grading_world(tmp_path, n=3)
+    reserve = judge.judge_reserve(run_summary(run_id=labels[0].run_id), model=JUDGE_MODEL, rules=RULES, prices=PRICES)
+    tight = Ledger(tmp_path / "tight.jsonl", cap_usd=reserve + 0.0001, run_cap_usd=0.5)
+    # The bad first reply bills far past its share of the reservation, so the retry needs a top-up the cap refuses.
+    client = ScriptedClient(["no", verdict()], usage=FakeUsage(200_000, 4000))
+    said = []
+    result = await judge.grade_labels(path, runs, model=JUDGE_MODEL, client=client, ledger=tight, say=said.append)
+    assert result.graded == [] and result.failed == {} and result.halted
+    assert len(client.calls) == 1 and said[-1].startswith("stopped: ")
+    assert not (runs / f"{labels[0].run_id}.judge-error.json").exists()
+    assert tight.month_to_date() == pytest.approx(result.spent_usd) and result.spent_usd > 0
+
+
 def test_grade_cli_refuses_without_a_key_and_runs_with_one(tmp_path, capsys):
     labels, path, runs, _ = grading_world(tmp_path, n=2)
     args = ["grade", "--labels", str(path), "--runs", str(runs), "--ledger", str(tmp_path / "spend.jsonl")]

@@ -692,11 +692,10 @@ async def test_a_baseline_call_the_month_cap_cannot_cover_is_never_sent(tmp_path
     code = await sweep(tmp_path, fakes, "--split", "dev", "--configs", "B3-opus", "--households", "H002",
                        messages=messages)
     assert made[0].calls == [] and runs(tmp_path, "summary") == {}
-    # Until ReservedClient raises SpendCapExceeded for a month-cap refusal (the spend contract), the guard raises
-    # BudgetExceeded and only this job fails; with it, the sweep stops. Each outcome is pinned whole.
+    # ReservedClient raises SpendCapExceeded for a month-cap refusal, so the sweep stops rather than failing the job.
     stopped = [m for m in messages if m.startswith("stopped: ")]
-    failed = [m for m in messages if m.startswith("failed: dev-H002-B3-opus-t1: BudgetExceeded: ")]
-    assert (code, len(stopped), len(failed)) in {(runner.EXIT_FAILED, 0, 1), (runner.EXIT_CAP, 1, 0)}
+    failed = [m for m in messages if m.startswith("failed: ")]
+    assert (code, len(stopped), len(failed)) == (runner.EXIT_CAP, 1, 0)
     assert month.month_to_date() <= 150.0
     assert [e["actual_usd"] for e in month.entries() if e["run_id"].startswith("dev-H002")] == [None, 0.0]
 

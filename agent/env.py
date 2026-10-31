@@ -11,6 +11,7 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Mapping
 
 import anthropic
 
@@ -51,6 +52,33 @@ REQUEST_ROUTING = (
     "ANTHROPIC_UNIX_SOCKET",
 )
 BLANKED = COMPETING_CREDENTIALS + PROVIDER_SWITCHES + REQUEST_ROUTING
+# A sweep started inside a Claude Code session inherits that session's
+# CLAUDE_* and ANTHROPIC_* variables (effort, simple mode, model choices), and
+# a developer's shell may set the unprefixed CLI_BEHAVIOR ones, which change
+# thinking, prompt caching, or MCP timeouts in the bundled CLI 2.1.314. Each
+# one the parent sets is blanked per run, so every config runs the CLI's
+# defaults wherever the sweep starts.
+INHERITED_PREFIXES = ("CLAUDE_", "ANTHROPIC_")
+CLI_BEHAVIOR = (
+    "MAX_THINKING_TOKENS",
+    "DISABLE_PROMPT_CACHING",
+    "DISABLE_PROMPT_CACHING_HAIKU",
+    "DISABLE_PROMPT_CACHING_SONNET",
+    "DISABLE_PROMPT_CACHING_OPUS",
+    "DISABLE_INTERLEAVED_THINKING",
+    "MAX_MCP_OUTPUT_TOKENS",
+    "MCP_TIMEOUT",
+    "MCP_TOOL_TIMEOUT",
+)
+# Set on the child by the Agent SDK itself; an override here would replace
+# them. (The SDK also drops CLAUDECODE.)
+SDK_OWNED = ("CLAUDE_CODE_ENTRYPOINT", "CLAUDE_AGENT_SDK_VERSION", "CLAUDE_CODE_SDK_READS_SESSION_STATE")
+
+
+def inherited_blanks(environ: Mapping[str, str]) -> dict[str, str]:
+    """An empty override for each inherited variable that could change how the child CLI behaves."""
+    names = {name for name in environ if name.startswith(INHERITED_PREFIXES) or name in CLI_BEHAVIOR}
+    return {name: "" for name in sorted(names - set(SDK_OWNED))}
 
 
 class MissingKey(RuntimeError):
@@ -103,7 +131,8 @@ def child_env(settings: HarnessSettings, config_dir: Path) -> dict[str, str]:
     plugins, or MCP config. Overrides applied after this (the dry runs'
     closed port) still win.
     """
-    env = {name: "" for name in BLANKED}
+    env = inherited_blanks(os.environ)
+    env.update({name: "" for name in BLANKED})
     env["ANTHROPIC_API_KEY"] = settings.api_key
     env["ANTHROPIC_BASE_URL"] = API_BASE_URL
     env["CLAUDE_CONFIG_DIR"] = str(config_dir)

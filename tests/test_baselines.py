@@ -418,7 +418,7 @@ async def test_b3_one_call_no_tools_and_raw_items_kept():
 @pytest.mark.anyio
 async def test_b3_items_score_through_aliases_with_trap_requests():
     truth = fake_truth(w2_employer_count=2, clean_energy_installed=True, clean_energy_install_year=2026)
-    client = ScriptedClient([docs_reply(("W-2", 2), ("Form 5695 and solar invoice", 1), ("Photo ID", 1))])
+    client = ScriptedClient([docs_reply(("W-2", 2), ("Form 5695", 1), ("solar invoice", 1), ("Photo ID", 1))])
     summary = await run_model_list(truth, model="claude-opus-5-5", client=client, statuses=DEV,
                                    run_id="dev-H901-B3-opus-t1", split="dev", trial=1)
     scored = score_list(summary["model_list_items"], truth, rules=RULES, specs=SPECS, ignore=IGNORE, statuses=DEV)

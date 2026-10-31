@@ -12,7 +12,9 @@ from agent.env import (
     REQUEST_ROUTING,
     HarnessSettings,
     MissingKey,
+    SDK_OWNED,
     child_env,
+    inherited_blanks,
     load_settings,
     messages_client,
     read_dotenv,
@@ -88,6 +90,24 @@ def test_child_env_pins_the_api_host_and_blanks_every_provider_switch(tmp_path, 
     assert closed.env["ANTHROPIC_BASE_URL"] == "http://127.0.0.1:9", "a dry run's closed port still wins"
 
 
+def test_child_env_blanks_what_a_parent_claude_code_session_or_shell_would_pass_down(tmp_path, monkeypatch):
+    for name in ("CLAUDE_EFFORT", "CLAUDE_CODE_SIMPLE", "CLAUDE_CODE_ENABLE_SDK_FILE_CHECKPOINTING", "ANTHROPIC_MODEL",
+                 "MAX_THINKING_TOKENS", "DISABLE_PROMPT_CACHING", "MCP_TIMEOUT"):
+        monkeypatch.setenv(name, "1")
+    for name in SDK_OWNED:
+        monkeypatch.setenv(name, "parent")
+    monkeypatch.setenv("CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC", "0")
+    s = HarnessSettings(api_key=FAKE_KEY, spend_cap_usd=150, run_cap_usd=0.5)
+    env = child_env(s, tmp_path / "cfg")
+    for name in ("CLAUDE_EFFORT", "CLAUDE_CODE_SIMPLE", "CLAUDE_CODE_ENABLE_SDK_FILE_CHECKPOINTING", "ANTHROPIC_MODEL",
+                 "MAX_THINKING_TOKENS", "DISABLE_PROMPT_CACHING", "MCP_TIMEOUT"):
+        assert env[name] == "", f"{name} reaches the child from the parent"
+    assert not set(SDK_OWNED) & set(env), "the SDK sets these on the child itself"
+    assert env["CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"] == "1" and env["ANTHROPIC_API_KEY"] == FAKE_KEY
+    assert "PATH" not in env and "HOME" not in env
+    assert set(inherited_blanks({"PATH": "/bin", "CLAUDECODE": "1", "TERM": "x"})) == set()
+
+
 def built_request(client: anthropic.AsyncAnthropic):
     """The request the client would send for a Messages call, built without sending it."""
     return client._build_request(FinalRequestOptions.construct(method="post", url="/v1/messages", json_data={}))
@@ -109,6 +129,19 @@ def test_messages_client_is_pinned_to_the_api_host_whatever_the_parent_shell_say
 
     guarded = built_request(client.with_middleware(passthrough))
     assert str(guarded.url) == "https://api.anthropic.com/v1/messages" and "x-route-to" not in guarded.headers
+
+
+@pytest.mark.parametrize("factory", ["eval.run:live_client", "eval.judge:default_client", "sim.fidelity:live_client"])
+def test_every_in_process_client_factory_is_pinned_to_the_api_host(monkeypatch, factory):
+    import importlib
+
+    monkeypatch.setenv("ANTHROPIC_BASE_URL", "https://redirect.invalid")
+    monkeypatch.setenv("ANTHROPIC_CUSTOM_HEADERS", "X-Route-To: elsewhere")
+    module, name = factory.split(":")
+    client = getattr(importlib.import_module(module), name)(FAKE_KEY)
+    request = built_request(client)
+    assert str(request.url) == "https://api.anthropic.com/v1/messages" and "x-route-to" not in request.headers
+    assert client.max_retries == 4
 
 
 def test_isolated_options_remove_everything_but_allowed(tmp_path):

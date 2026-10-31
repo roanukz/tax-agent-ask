@@ -641,6 +641,11 @@ async def grade_labels(
             _write(runs_dir / f"{run_id}.judge-error.json", {
                 "run_id": run_id, "model": model, "prompt_version": PROMPT_VERSION, "reasons": e.reasons,
                 "raw_texts": e.raw_texts, "usage": e.usage, "cost_usd": e.cost_usd})
+        except SpendCapExceeded as e:
+            # The guard refused a call (or one of the client's own retries) the month cap can't cover.
+            out.halted = str(e)
+            say(f"stopped: {e}")
+            break
         except Exception as e:
             out.failed[run_id] = f"{type(e).__name__}: {e}"
         else:
@@ -721,9 +726,9 @@ def default_settings() -> Any:
 
 
 def default_client(api_key: str) -> Any:
-    import anthropic
+    from agent.env import messages_client
 
-    return anthropic.AsyncAnthropic(api_key=api_key, max_retries=4)
+    return messages_client(api_key)
 
 
 def grade_command(args: argparse.Namespace, settings_loader: Callable[[], Any],
