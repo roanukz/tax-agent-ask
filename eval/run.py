@@ -1,11 +1,16 @@
 """Runs configs over a split, judges and scores every run, and writes the report.
 
     uv run python -m eval.run --split dev --configs A-haiku,A-sonnet,B1,B2 --trials 1 --limit 10
-    uv run python -m eval.run --split test --configs A-haiku,...,B3-opus --trials 3 --prereg eval/prereg.yaml
+    uv run python -m eval.run --split test --prereg eval/prereg.yaml
 
-Options: --households H002,H009 or --limit N picks households from the
-split (default: all of them); --concurrency N is the most runs at once
-(default 2); --report is where eval.report writes (default docs/results.md).
+Options: --configs names the configs, and every split but test needs it;
+--trials is the number of trials (default 1). The test split runs what
+the locked eval/prereg.yaml lists: --configs and --trials default to its
+configs and trials, and a sweep naming another set of configs or another
+trial count is refused. --households H002,H009 or --limit N picks
+households from the split (default: all of them); --concurrency N is the
+most runs at once (default 2); --report is where eval.report writes
+(default docs/results.md).
 
 Phases:
 1. Refusals, before anything is reserved. The test split needs this
@@ -26,9 +31,21 @@ Phases:
    refused, since it is not that config's run. A sweep starts at 2
    concurrent runs, and the limit rises by one, up to --concurrency, only
    after a clean sweep: no failed run, no harness error, and no 429 retry.
-   An unclean sweep drops it back to 2. Hitting the month's spend cap stops
-   every new run, and so does a run whose init check failed, since the
-   wiring is broken for every run after it.
+   An unclean sweep drops it back to 2. A ledger.spend.SpendCapExceeded
+   from any job (an agent run, B1, B3, or a judge call) stops every new
+   run, and eval.run writes no summary or verdict for the job it stopped,
+   so the next invocation runs it again. That relies on the spend
+   contract: the month cap refusing a job's first reservation raises it,
+   and when the month cap refuses a call partway through a job,
+   ReservedClient and agent.harness.run_one have to raise it too, run_one
+   writing the trace but no summary. A month-cap refusal reported any
+   other way, as BudgetExceeded or as a run_cap stop with a summary, is a
+   failed job or a finished run here, not a stop. A run whose init check
+   failed stops every new run too, since the wiring is broken for every
+   run after it. It measured no agent behavior, so it is neither judged
+   nor scored, and it is never resumed: the next invocation moves its
+   summary aside to {run_id}.init_failed.json (and its trace to
+   {run_id}.init_failed.trace.json) and runs it again.
 3. Judging: each agent run once, through eval.judge, cached in
    eval/runs/{run_id}.judge.json. A cached verdict is always used, even
    after the spend cap stopped the sweep; only new judge calls stop.
@@ -53,12 +70,13 @@ import argparse
 import asyncio
 import importlib
 import json
+import os
 import statistics
 import subprocess
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Callable, Mapping, Sequence
+from typing import Any, Callable, Iterable, Mapping, Sequence
 
 import anthropic
 import yaml
@@ -66,7 +84,9 @@ import yaml
 from agent import harness
 from agent.configs import CONFIGS, JUDGE_MODEL, JUDGE_RESERVE_USD, SIMULATOR_MODEL, Config, get_config
 from agent.env import DEFAULT_DOTENV, HarnessSettings, load_settings
-from agent.harness import INIT_CHECK, TEST_SPLIT, Budget, Reservation, run_id_for, summary_path, write_json
+from agent.harness import (
+    INIT_CHECK, TEST_SPLIT, Budget, Reservation, run_id_for, summary_path, trace_path, write_json,
+)
 from eval.score import dropped, score_list, score_run
 from ledger.spend import DEFAULT_LEDGER, Ledger, SpendCapExceeded, load_prices
 from rules import engine
@@ -134,6 +154,48 @@ def check_prereg(path: Path | None = None, *, configs: Sequence[str] = (), repo:
     if not commit:
         raise PreregError(f"git log shows no commit of {path.name}; commit it before the test sweep")
     return commit
+
+
+def prereg_plan(path: Path | None = None, *, repo: Path | None = None) -> tuple[list[str], int, str]:
+    """(configs, trials, commit): what the locked eval/prereg.yaml says the one test sweep runs, and its commit."""
+    commit = check_prereg(path, repo=repo)
+    data = yaml.safe_load((Path(REPO if repo is None else repo).resolve() / PREREG_RELATIVE).read_text()) or {}
+    listed, trials = data.get("configs"), data.get("trials")
+    if not isinstance(listed, list) or not listed:
+        raise PreregError(f"{PREREG_RELATIVE} lists no configs for the test sweep")
+    if isinstance(trials, bool) or not isinstance(trials, int) or trials < 1:
+        raise PreregError(f"{PREREG_RELATIVE} needs trials, a whole number of at least 1, not {trials!r}")
+    return config_names(str(c) for c in listed), trials, commit
+
+
+def config_names(names: Iterable[str]) -> list[str]:
+    """Each named config once, in order; an unknown name raises KeyError."""
+    return list(dict.fromkeys(get_config(n.strip()).name for n in names if n.strip()))
+
+
+def sweep_plan(args: argparse.Namespace, repo: Path | None = None) -> tuple[list[str], int, str | None]:
+    """(configs, trials, prereg commit) for this invocation.
+
+    The test split runs what the locked prereg lists: --configs and --trials
+    default to its configs and trials, and any other set of configs or
+    trial count is refused, so the one test sweep can't run a subset or
+    extra trials. Other splits need --configs, and --trials defaults to 1.
+    """
+    named = config_names(args.configs.split(",")) if args.configs else None
+    if args.split != TEST_SPLIT:
+        if named is None:
+            raise Refused(f"--configs is required on the {args.split} split")
+        return named, 1 if args.trials is None else args.trials, None
+    listed, planned, commit = prereg_plan(args.prereg, repo=repo)
+    configs = listed if named is None else named
+    trials = planned if args.trials is None else args.trials
+    if set(configs) != set(listed):
+        raise Refused(f"the test sweep runs every config in {PREREG_RELATIVE} ({', '.join(listed)}), "
+                      f"not {', '.join(configs) or 'none'}; leave out --configs to run them")
+    if trials != planned:
+        raise Refused(f"{PREREG_RELATIVE} sets {planned} trials for the test sweep, not {trials}; "
+                      "leave out --trials to run them")
+    return configs, trials, commit
 
 
 def live_client(api_key: str) -> Any:
@@ -272,10 +334,37 @@ class Sweep:
         finally:
             reservation.settle(budget.total())
 
-    async def run_job(self, job: Job) -> dict[str, Any]:
+    def stored(self, job: Job) -> dict[str, Any] | None:
+        """The finished run's summary, or None when the job has to run.
+
+        A run the init check stopped is never resumed: it measured no agent
+        behavior, so its summary moves aside and the job runs again.
+        """
         path = summary_path(self.runs_dir, job.run_id)
-        if path.exists():
-            return self.checked(json.loads(path.read_text()), job)
+        if not path.exists():
+            return None
+        summary = json.loads(path.read_text())
+        if init_failed(summary):
+            aside = self.set_aside(job.run_id)
+            self.say(f"set aside: {job.run_id} stopped at the init check, so it runs again; its summary is {aside.name}")
+            return None
+        return summary
+
+    def set_aside(self, run_id: str) -> Path:
+        """Moves the summary to {run_id}.init_failed.json (then .init_failed.2.json, and so on), its trace beside it."""
+        stem, n = f"{run_id}.init_failed", 1
+        while (self.runs_dir / f"{stem}.json").exists():
+            n += 1
+            stem = f"{run_id}.init_failed.{n}"
+        aside = self.runs_dir / f"{stem}.json"
+        os.replace(summary_path(self.runs_dir, run_id), aside)
+        trace = trace_path(self.runs_dir, run_id)
+        if trace.exists():
+            os.replace(trace, self.runs_dir / f"{stem}.trace.json")
+        return aside
+
+    async def run_job(self, job: Job) -> dict[str, Any]:
+        """Runs a job that has no stored summary (Sweep.stored), and returns the summary it wrote."""
         cfg = job.cfg
         if cfg.kind == "agent":
             return self.checked(await self.deps.run_agent(
@@ -322,9 +411,10 @@ class Sweep:
         async with gate:
             if self.halted or self.broken:
                 return job, None, False
-            resumed = summary_path(self.runs_dir, job.run_id).exists()
             try:
-                summary = await self.run_job(job)
+                stored = self.stored(job)
+                resumed = stored is not None
+                summary = self.checked(stored, job) if resumed else await self.run_job(job)
             except SpendCapExceeded as e:
                 self.halted = str(e)
                 self.say(f"stopped: {e}")
@@ -334,7 +424,7 @@ class Sweep:
                 self.say(f"failed: {job.run_id}: {type(e).__name__}: {e}")
                 return job, None, True
             self.say(f"{'resumed' if resumed else 'ran'}: {job.run_id}")
-            broken = None if resumed else init_failed(summary)
+            broken = init_failed(summary)
             if broken and not self.broken:
                 self.broken = f"{job.run_id}: {broken}"
                 self.failures.append(f"{job.run_id}: the init check failed: {broken}")
@@ -357,8 +447,10 @@ class Sweep:
                 if summary is None:
                     clean = clean and not ran
                     continue
-                self.summaries[job.run_id] = summary
                 clean = clean and (not ran or is_clean(summary))
+                if init_failed(summary):
+                    continue  # not a trial: neither judged nor scored, and the next sweep runs it again
+                self.summaries[job.run_id] = summary
             limit = next_limit(limit, self.ceiling, clean and not self.halted)
 
     # Phase 3: judging.
@@ -471,8 +563,9 @@ def drop_unverified(data_dir: Path, households: Sequence[str]) -> tuple[list[str
 def parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--split", required=True, choices=SPLITS)
-    parser.add_argument("--configs", required=True, help="comma-separated, such as A-haiku,A-sonnet,B1,B2,B3-haiku")
-    parser.add_argument("--trials", type=int, default=1)
+    parser.add_argument("--configs", help="comma-separated, such as A-haiku,A-sonnet,B1,B2,B3-haiku; "
+                        "on the test split, the prereg's configs by default")
+    parser.add_argument("--trials", type=int, help="default 1; on the test split, the prereg's trials")
     pick = parser.add_mutually_exclusive_group()
     pick.add_argument("--households", help="comma-separated household IDs from the split")
     pick.add_argument("--limit", type=int, help="the first N households of the split")
@@ -497,13 +590,12 @@ async def main_async(
     deps = deps or Deps()
     args = parse_args(argv)
     try:
-        configs = [get_config(c.strip()).name for c in args.configs.split(",") if c.strip()]
-        if not configs or args.trials < 1:
+        configs, trials, commit = sweep_plan(args, repo)
+        if not configs or trials < 1:
             raise Refused("give at least one config and at least one trial")
         if args.concurrency < 1:
             raise Refused(f"--concurrency must be at least 1, not {args.concurrency}")
         households = pick_households(data_dir, args.split, args.households, args.limit)
-        commit = check_prereg(args.prereg, configs=configs, repo=repo) if args.split == TEST_SPLIT else None
         settings = deps.settings_loader()
         live = needs_key(configs)
         if live and not settings.api_key:
@@ -517,7 +609,7 @@ async def main_async(
             write_json(args.runs_dir / "test-dropped.json", {"dropped": out, "prereg_commit": commit})
         ledger = Ledger(ledger_path, cap_usd=settings.spend_cap_usd, run_cap_usd=settings.run_cap_usd)
         sweep = Sweep(
-            split=args.split, configs=configs, households=households, trials=args.trials, ceiling=args.concurrency,
+            split=args.split, configs=configs, households=households, trials=trials, ceiling=args.concurrency,
             settings=settings, ledger=ledger, deps=deps, runs_dir=args.runs_dir, data_dir=data_dir,
             prereg_commit=commit, repo=repo, say=say,
         )

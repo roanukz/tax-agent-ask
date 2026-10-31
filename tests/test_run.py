@@ -16,10 +16,10 @@ from typing import Any
 import pytest
 
 from agent.env import HarnessSettings
-from agent.harness import summary_path, write_json
+from agent.harness import Reservation, summary_path, trace_path, write_json
 from eval import run as runner
 from eval.judge import PROMPT_VERSION
-from eval.run import Deps, PreregError, check_prereg, main_async, next_limit
+from eval.run import Deps, PreregError, check_prereg, main_async, next_limit, prereg_plan
 from ledger.spend import Ledger, SpendCapExceeded
 from sim.fakes import FakeUsage, ScriptedClient
 
@@ -28,6 +28,12 @@ primary_config: A-split
 configs: [A-haiku, A-sonnet, A-opus, A-split, B1, B2, B3-haiku, B3-sonnet, B3-opus]
 trials: 3
 """
+ALL_CONFIGS = "A-haiku, A-sonnet, A-opus, A-split, B1, B2, B3-haiku, B3-sonnet, B3-opus"
+
+
+def plan(configs: str, trials: int = 1) -> str:
+    """A locked prereg whose test sweep is just these configs and trials."""
+    return LOCKED.replace(f"configs: [{ALL_CONFIGS}]", f"configs: [{configs}]").replace("trials: 3", f"trials: {trials}")
 
 
 @pytest.fixture
@@ -130,6 +136,25 @@ def test_configs_missing_from_the_prereg_are_refused(tmp_path):
     path = prereg_repo(tmp_path, LOCKED.replace(", B3-opus", ""))
     with pytest.raises(PreregError, match="B3-opus"):
         check_prereg(path, configs=["B3-opus"], repo=root(path))
+
+
+def test_the_prereg_plans_the_test_sweep(tmp_path):
+    path = prereg_repo(tmp_path)
+    assert prereg_plan(repo=root(path)) == (
+        ["A-haiku", "A-sonnet", "A-opus", "A-split", "B1", "B2", "B3-haiku", "B3-sonnet", "B3-opus"], 3,
+        git(root(path), "rev-parse", "HEAD"))
+
+
+@pytest.mark.parametrize("text,why", [
+    (plan(""), "lists no configs"),
+    (LOCKED.replace("trials: 3\n", ""), "needs trials"),
+    (LOCKED.replace("trials: 3", "trials: 0"), "needs trials"),
+    (LOCKED.replace("trials: 3", "trials: three"), "needs trials"),
+])
+def test_a_prereg_without_configs_or_trials_cannot_plan_the_test_sweep(tmp_path, text, why):
+    path = prereg_repo(tmp_path, text)
+    with pytest.raises(PreregError, match=why):
+        prereg_plan(path, repo=root(path))
 
 
 # Fakes for the sweep.
@@ -282,7 +307,7 @@ async def test_the_test_split_is_refused_until_prereg_is_locked(tmp_path):
 
 @pytest.mark.anyio
 async def test_the_test_split_drops_households_that_depend_on_unverified_rules(tmp_path):
-    fakes, messages, path = Fakes(), [], prereg_repo(tmp_path)
+    fakes, messages, path = Fakes(), [], prereg_repo(tmp_path, plan("B2"))
     code = await sweep(tmp_path, fakes, "--split", "test", "--configs", "B2", "--households", "H001,H004",
                        "--prereg", str(path), messages=messages, repo=root(path))
     assert code == runner.EXIT_OK and fakes.calls == []
@@ -293,7 +318,7 @@ async def test_the_test_split_drops_households_that_depend_on_unverified_rules(t
 @pytest.mark.anyio
 async def test_test_summaries_and_scores_record_the_prereg_commit(tmp_path, monkeypatch):
     monkeypatch.setattr(runner, "dropped", lambda truth, rules, specs: False)
-    path = prereg_repo(tmp_path)
+    path = prereg_repo(tmp_path, plan("A-haiku, B2"))
     commit = git(root(path), "rev-parse", "HEAD")
     fakes = Fakes()
     code = await sweep(tmp_path, fakes, "--split", "test", "--configs", "A-haiku,B2", "--households", "H001",
@@ -307,7 +332,7 @@ async def test_test_summaries_and_scores_record_the_prereg_commit(tmp_path, monk
 @pytest.mark.anyio
 async def test_a_resumed_test_run_from_another_prereg_commit_is_refused_not_restamped(tmp_path, monkeypatch):
     monkeypatch.setattr(runner, "dropped", lambda truth, rules, specs: False)
-    path = prereg_repo(tmp_path)
+    path = prereg_repo(tmp_path, plan("B2"))
     args = ("--split", "test", "--configs", "B2", "--households", "H001", "--prereg", str(path))
     assert await sweep(tmp_path, Fakes(), *args, repo=root(path)) == runner.EXIT_OK
     old = git(root(path), "rev-parse", "HEAD")
@@ -336,6 +361,56 @@ def test_a_sweep_checks_the_test_split_lock_itself(tmp_path):
     with pytest.raises(PreregError, match="primary_config"):
         runner.Sweep(split="test", prereg_commit="0" * 40, **kw)
     runner.Sweep(split="dev", **kw)
+
+
+# The test sweep runs the prereg's configs and trials.
+
+@pytest.mark.anyio
+async def test_the_prd_test_command_runs_every_prereg_config_for_the_prereg_trials(tmp_path, monkeypatch):
+    path = prereg_repo(tmp_path, plan("A-haiku, B2", trials=2))
+    monkeypatch.setattr(runner, "dropped", lambda truth, rules, specs: truth["household_id"] != "H001")
+    monkeypatch.chdir(root(path))
+    fakes = Fakes()
+    # PRD section 10 as written; sweep() only adds this test's runs folder and report path.
+    code = await sweep(tmp_path, fakes, "--split", "test", "--prereg", "eval/prereg.yaml", repo=root(path))
+    assert code == runner.EXIT_OK
+    assert sorted(rid for kind, rid in fakes.calls if kind != "judge") == [
+        "test-H001-A-haiku-t1", "test-H001-A-haiku-t2", "test-H001-B2-t1", "test-H001-B2-t2"]
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("flags,why", [
+    (("--configs", "B2"), "runs every config in eval/prereg.yaml (A-haiku, B2), not B2"),
+    (("--configs", "A-haiku,B2,B1"), "runs every config in eval/prereg.yaml (A-haiku, B2), not A-haiku, B2, B1"),
+    (("--trials", "1"), "sets 2 trials for the test sweep, not 1"),
+    (("--trials", "5"), "sets 2 trials for the test sweep, not 5"),
+])
+async def test_a_test_sweep_unlike_the_prereg_is_refused(tmp_path, flags, why):
+    path = prereg_repo(tmp_path, plan("A-haiku, B2", trials=2))
+    fakes, messages = Fakes(), []
+    code = await sweep(tmp_path, fakes, "--split", "test", "--prereg", str(path), "--households", "H001", *flags,
+                       messages=messages, repo=root(path))
+    assert code == runner.EXIT_REFUSED and why in messages[0]
+    assert fakes.calls == [] and not (tmp_path / "runs").exists() and not (tmp_path / "spend.jsonl").exists()
+
+
+@pytest.mark.anyio
+async def test_the_prereg_configs_in_any_order_with_its_trials_are_accepted(tmp_path, monkeypatch):
+    monkeypatch.setattr(runner, "dropped", lambda truth, rules, specs: False)
+    path = prereg_repo(tmp_path, plan("A-haiku, B2", trials=2))
+    fakes = Fakes()
+    code = await sweep(tmp_path, fakes, "--split", "test", "--prereg", str(path), "--households", "H001",
+                       "--configs", "B2,A-haiku,B2", "--trials", "2", repo=root(path))
+    assert code == runner.EXIT_OK
+    assert len(runs(tmp_path, "summary")) == 4, "B2 named twice still runs once per trial"
+
+
+@pytest.mark.anyio
+async def test_other_splits_still_need_configs(tmp_path):
+    fakes, messages = Fakes(), []
+    code = await sweep(tmp_path, fakes, "--split", "dev", "--households", "H002", messages=messages)
+    assert code == runner.EXIT_REFUSED and "--configs is required on the dev split" in messages[0]
+    assert fakes.calls == []
 
 
 @pytest.mark.anyio
@@ -556,15 +631,41 @@ def test_pick_households_takes_the_first_n():
         runner.DATA_DIR, "dev", None, None)[:2]
 
 
+BROKEN = {"harness_errors": [{"kind": "init_check", "message": "MCP server tax is failed, not connected"}]}
+
+
 @pytest.mark.anyio
 async def test_a_failed_init_check_stops_every_new_run(tmp_path):
-    broken = {"harness_errors": [{"kind": "init_check", "message": "MCP server tax is failed, not connected"}]}
-    fakes, messages = Fakes(agent_extra={"dev-H002-A-haiku-t1": broken}), []
+    fakes, messages = Fakes(agent_extra={"dev-H002-A-haiku-t1": BROKEN}), []
     code = await sweep(tmp_path, fakes, "--split", "dev", "--configs", "A-haiku", "--households",
                        "H002,H003,H011,H012", "--trials", "2", "--concurrency", "1", messages=messages)
     assert code == runner.EXIT_FAILED
     assert [c for c in fakes.calls if c[0] == "agent"] == [("agent", "dev-H002-A-haiku-t1")]
     assert any("the init check failed in dev-H002-A-haiku-t1" in m for m in messages)
+
+
+@pytest.mark.anyio
+async def test_an_init_check_abort_is_never_scored_or_resumed_but_set_aside_and_run_again(tmp_path):
+    run_id, out = "dev-H002-A-haiku-t1", tmp_path / "runs"
+    args = ("--split", "dev", "--configs", "A-haiku", "--households", "H002")
+    for n in (1, 2):
+        broken = Fakes(agent_extra={run_id: BROKEN})
+        assert await sweep(tmp_path, broken, *args) == runner.EXIT_FAILED
+        assert ("agent", run_id) in broken.calls, f"sweep {n} runs it rather than resuming it"
+        assert runs(tmp_path, "score") == {} and runs(tmp_path, "judge") == {}, "an init-check abort is not a trial"
+        write_json(trace_path(out, run_id), {"meta": {"run_id": run_id}, "events": [{"type": "attempt", "n": n}]})
+
+    fixed, messages = Fakes(), []
+    assert await sweep(tmp_path, fixed, *args, messages=messages) == runner.EXIT_OK
+    assert ("agent", run_id) in fixed.calls
+    assert f"set aside: {run_id} stopped at the init check, so it runs again; its summary is " \
+           f"{run_id}.init_failed.2.json" in messages
+    for stem, n in ((f"{run_id}.init_failed", 1), (f"{run_id}.init_failed.2", 2)):
+        assert json.loads((out / f"{stem}.json").read_text())["harness_errors"] == BROKEN["harness_errors"]
+        assert json.loads((out / f"{stem}.trace.json").read_text())["events"] == [{"type": "attempt", "n": n}]
+    assert not trace_path(out, run_id).exists(), "the fake writes no trace; the old ones moved with their summaries"
+    assert runs(tmp_path, "summary")[run_id]["harness_errors"] == []
+    assert runs(tmp_path, "score")[run_id]["pass"] is True
 
 
 @pytest.mark.anyio
@@ -585,9 +686,111 @@ async def test_a_baseline_call_the_month_cap_cannot_cover_is_never_sent(tmp_path
     month = ledger(tmp_path)
     month.reserve("earlier-run", "claude-opus-5-5", 0.01)
     month.settle("earlier-run", 149.92)
-    fakes, messages = Fakes(b3_max_tokens=4096), []
+    fakes, messages, made = Fakes(b3_max_tokens=4096), [], []
+    factory = fakes.client_factory
+    fakes.client_factory = lambda key: made.append(factory(key)) or made[-1]
     code = await sweep(tmp_path, fakes, "--split", "dev", "--configs", "B3-opus", "--households", "H002",
                        messages=messages)
-    assert code == runner.EXIT_FAILED and any("BudgetExceeded" in m for m in messages)
+    assert made[0].calls == [] and runs(tmp_path, "summary") == {}
+    # Until ReservedClient raises SpendCapExceeded for a month-cap refusal (the spend contract), the guard raises
+    # BudgetExceeded and only this job fails; with it, the sweep stops. Each outcome is pinned whole.
+    stopped = [m for m in messages if m.startswith("stopped: ")]
+    failed = [m for m in messages if m.startswith("failed: dev-H002-B3-opus-t1: BudgetExceeded: ")]
+    assert (code, len(stopped), len(failed)) in {(runner.EXIT_FAILED, 0, 1), (runner.EXIT_CAP, 1, 0)}
     assert month.month_to_date() <= 150.0
     assert [e["actual_usd"] for e in month.entries() if e["run_id"].startswith("dev-H002")] == [None, 0.0]
+
+
+# The month cap partway through a job (the spend contract: agent.harness raises SpendCapExceeded and writes no summary).
+
+class CapMidway(Fakes):
+    """Fakes whose job stop spends, then hits the month cap; judge=True stops that run's judge call instead."""
+
+    def __init__(self, stop: str, *, judge: bool = False, **kw: Any) -> None:
+        super().__init__(**kw)
+        self.stop, self.judge = stop, judge
+
+    async def run_agent(self, household_id, config, trial, split, *, ledger, runs_dir, **kw):
+        run_id = f"{split}-{household_id}-{config}-t{trial}"
+        if run_id != self.stop or self.judge:
+            return await super().run_agent(household_id, config, trial, split, ledger=ledger, runs_dir=runs_dir, **kw)
+        self.calls.append(("agent", run_id))
+        reservation = Reservation(ledger, run_id, "claude-haiku-5-5", 0.03, run_cap_usd=kw["settings"].run_cap_usd)
+        reservation.settle(0.02)
+        write_json(trace_path(runs_dir, run_id), {"meta": {"run_id": run_id}, "events": []})
+        raise SpendCapExceeded("the month cap refused the run's next top-up")
+
+    async def run_full_organizer(self, truth, profile, simulator, *, run_id, **kw):
+        if run_id != self.stop:
+            return await super().run_full_organizer(truth, profile, simulator, run_id=run_id, **kw)
+        self.calls.append(("B1", run_id))
+        await simulator.answer("How many employers paid you wages?")
+        raise SpendCapExceeded("the month cap refused the simulator's next call")
+
+    async def run_model_list(self, truth, *, model, client, run_id, **kw):
+        if run_id != self.stop:
+            return await super().run_model_list(truth, model=model, client=client, run_id=run_id, **kw)
+        self.calls.append(("B3", run_id))
+        await client.messages.create(model=model, max_tokens=256, messages=[{"role": "user", "content": "list"}])
+        raise SpendCapExceeded("the month cap refused the retry")
+
+    async def judge_summary(self, summary, *, client, model):
+        if summary["run_id"] != self.stop or not self.judge:
+            return await super().judge_summary(summary, client=client, model=model)
+        self.calls.append(("judge", summary["run_id"]))
+        await client.messages.create(model=model, max_tokens=256, messages=[{"role": "user", "content": "judge"}])
+        raise SpendCapExceeded("the month cap refused the judge's retry")
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("config", ["A-haiku", "B1", "B3-haiku"])
+async def test_the_month_cap_partway_through_a_job_halts_the_sweep_and_the_job_runs_again(tmp_path, config):
+    first, stop, never = (f"dev-{h}-{config}-t1" for h in ("H002", "H003", "H011"))
+    args = ("--split", "dev", "--configs", config, "--households", "H002,H003,H011", "--concurrency", "1")
+    fakes, messages = CapMidway(stop), []
+    assert await sweep(tmp_path, fakes, *args, messages=messages) == runner.EXIT_CAP
+    assert any(m.startswith("stopped: the month cap refused") for m in messages)
+    assert [rid for kind, rid in fakes.calls if kind != "judge"] == [first, stop], "no job starts after the cap"
+    assert sorted(runs(tmp_path, "summary")) == [first], "the stopped job writes no summary"
+    lines = {(e["run_id"], e["kind"]) for e in ledger(tmp_path).entries()}
+    assert {(stop, "reserve"), (stop, "settle")} <= lines, "what it spent is settled"
+
+    again = Fakes()
+    assert await sweep(tmp_path, again, *args) == runner.EXIT_OK
+    assert [rid for kind, rid in again.calls if kind != "judge"] == [stop, never], "the finished run resumes"
+    assert sorted(runs(tmp_path, "summary")) == [first, stop, never]
+    if config != "A-haiku":
+        assert (f"{stop}.r2", "reserve") in {(e["run_id"], e["kind"]) for e in ledger(tmp_path).entries()}
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("config,calls", [("B1", 3), ("B3-haiku", 1)])
+async def test_the_real_baselines_let_the_month_cap_through(tmp_path, config, calls):
+    pytest.importorskip("eval.baselines")
+
+    def cap(kwargs):
+        raise SpendCapExceeded("the month cap refused this call")
+
+    answer = json.dumps({"answer": "Two.", "revealed": {}})
+    deps = Deps(write_report=lambda *a, **k: None, settings_loader=settings,
+                client_factory=lambda key: ScriptedClient([answer] * (calls - 1) + [cap]))
+    argv = ["--split", "dev", "--configs", config, "--households", "H002", "--runs-dir", str(tmp_path / "runs"),
+            "--report", str(tmp_path / "r.md")]
+    messages: list[str] = []
+    code = await main_async(argv, deps=deps, ledger_path=tmp_path / "spend.jsonl", say=messages.append)
+    assert code == runner.EXIT_CAP and "stopped: the month cap refused this call" in messages
+    assert runs(tmp_path, "summary") == {}, "not recorded as a finished failure"
+
+
+@pytest.mark.anyio
+async def test_the_month_cap_during_a_judge_call_halts_and_the_next_sweep_judges_the_run(tmp_path):
+    run_id = "dev-H002-A-haiku-t1"
+    args = ("--split", "dev", "--configs", "A-haiku", "--households", "H002")
+    assert await sweep(tmp_path, CapMidway(run_id, judge=True), *args) == runner.EXIT_CAP
+    assert runs(tmp_path, "judge") == {} and runs(tmp_path, "score")[run_id]["judge"] is None
+
+    again = Fakes()
+    assert await sweep(tmp_path, again, *args) == runner.EXIT_OK
+    assert again.calls == [("judge", run_id)], "the run resumes, and only its judge call runs again"
+    assert runs(tmp_path, "score")[run_id]["judge"]["advice"] == "PASS"
+    assert {f"{run_id}.judge", f"{run_id}.judge.r2"} <= {e["run_id"] for e in ledger(tmp_path).entries()}
