@@ -39,7 +39,7 @@ The agent also cannot see the answer key: the MCP server is started with the pro
 
 ## The rules and their sources
 
-Generated from `rules/document_rules.yaml` by `uv run python -m eval.report index`. Every rule is `to_verify` until Roanuk verifies or excludes it; only verified rules count in test scoring. Source version and Verified on show what each rule was checked against and when (not yet, until Roanuk checks it), so the rules that cite drafts or 2025 editions can be checked again when final instructions are posted. The three T rules are traps: the credit ended, so no federal document is needed, and asking for one counts against the list.
+Generated from `rules/document_rules.yaml` by `uv run python -m eval.report index`. Every rule is `to_verify` until Roanuk verifies or excludes it; only verified rules count in test scoring. Source version and Verified on show what each rule was checked against and when, so the rules that cite drafts or 2025 editions can be checked again when final instructions are posted. Verified on reads "not yet" until Roanuk checks a rule, and "not verified (excluded)" for a rule dropped without being verified, as any rule still unverified at Block 9 is. The three T rules are traps: the credit ended, so no federal document is needed, and asking for one counts against the list.
 
 <!-- rules-table:start -->
 | ID | When | Document requested | Source | Source version | Status | Verified on |

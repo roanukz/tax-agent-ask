@@ -1260,6 +1260,14 @@ def value_text(value: Any) -> str:
     return str(value)
 
 
+def verified_text(rule: Rule) -> str:
+    # An excluded rule has no check still to come, so it never reads "not yet" (PRD 3: a rule still
+    # unverified at Block 9 is excluded).
+    if rule.verified_on:
+        return rule.verified_on
+    return "not verified (excluded)" if rule.status == "excluded" else "not yet"
+
+
 def rules_table(rules: Sequence[Rule]) -> str:
     rows = []
     for r in rules:
@@ -1267,7 +1275,7 @@ def rules_table(rules: Sequence[Rule]) -> str:
         if r.count_from:
             document += f" (count from `{r.count_from}`)"
         rows.append([r.id, condition_text(r.when), document, f"[{r.source_title}]({r.source_url})",
-                     r.source_version, r.status, r.verified_on or "not yet"])
+                     r.source_version, r.status, verified_text(r)])
     return md_table(["ID", "When", "Document requested", "Source", "Source version", "Status", "Verified on"], rows)
 
 

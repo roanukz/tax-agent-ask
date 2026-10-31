@@ -633,10 +633,15 @@ def test_rules_table_has_every_rule_with_its_source_and_status():
 
 def test_rules_table_shows_each_rules_verification_date():
     checked = dataclasses.replace(RULES[0], status="verified", verified_by="roanuk", verified_on="2026-11-02")
-    table = rules_table([checked, RULES[1]])
-    first, second = table.splitlines()[2:]
+    pending = dataclasses.replace(RULES[1], status="to_verify", verified_by=None, verified_on=None)
+    dropped = dataclasses.replace(RULES[17], status="excluded", verified_by=None, verified_on=None)
+    table = rules_table([checked, pending, dropped])
+    first, second, third = table.splitlines()[2:]
     assert first.endswith("| verified | 2026-11-02 |")
-    assert second.endswith(f"| {RULES[1].status} | not yet |")
+    assert second.endswith("| to_verify | not yet |")
+    # An excluded rule is never checked later, so it must not read as a check still to come.
+    assert third.endswith("| excluded | not verified (excluded) |")
+    assert "not yet" not in third
 
 
 def test_update_index_replaces_only_the_marked_table(tmp_path):
