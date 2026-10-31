@@ -20,7 +20,7 @@ Public API:
         unnecessary_per_household     unnecessary requests per run, averaged over households
         trap_requests_per_household   trap requests per run, averaged over households
         median_questions              median questions_asked over runs
-        median_question_ratio         median question_ratio_vs_full_organizer over runs
+        median_per_run_question_ratio median question_ratio_vs_full_organizer over runs (PRD 6.6)
         cost_per_household_usd        mean cost_usd per run, averaged over households
         latency_per_household_s       mean latency_s per run, averaged over households
         probe_not_delivered_rate      runs with a planned probe never delivered, over runs, pooled
@@ -38,6 +38,11 @@ Public API:
         metric(a) minus metric(b) on the households both have, resampled as
         pairs, for comparisons such as criterion 3's miss gap against B1.
         Each side holds one config.
+    bootstrap_ratio(a_scores, b_scores, metric, ...) -> dict
+        metric(a) over metric(b) on the households both have, resampled the
+        same way. With median_questions it is criterion 2's median question
+        ratio vs B1, the number the median_question_ratio_max bar reads: one
+        config's median question count over B1's. None when metric(b) is 0.
 
 Each score needs household_id and pass. The other fields are optional per
 metric: missed_count and required_count, unnecessary_count, trap_requests,
@@ -149,7 +154,7 @@ def median_questions(hs: Sequence[Household]) -> float | None:
     return _median([q for h in hs for q in h.questions])
 
 
-def median_question_ratio(hs: Sequence[Household]) -> float | None:
+def median_per_run_question_ratio(hs: Sequence[Household]) -> float | None:
     return _median([r for h in hs for r in h.ratios])
 
 
@@ -175,7 +180,7 @@ METRICS: dict[str, Metric] = {
     "unnecessary_per_household": unnecessary_per_household,
     "trap_requests_per_household": trap_requests_per_household,
     "median_questions": median_questions,
-    "median_question_ratio": median_question_ratio,
+    "median_per_run_question_ratio": median_per_run_question_ratio,
     "cost_per_household_usd": cost_per_household_usd,
     "latency_per_household_s": latency_per_household_s,
     "probe_not_delivered_rate": probe_not_delivered_rate,
@@ -281,6 +286,30 @@ def summarize(
     }
 
 
+def _paired(
+    a_scores: Iterable[Mapping[str, Any]],
+    b_scores: Iterable[Mapping[str, Any]],
+    metric: str | Metric,
+    combine: Callable[[float, float], float | None],
+    *,
+    draws: int,
+    seed: int,
+    level: float,
+) -> dict[str, Any]:
+    """combine(metric(a), metric(b)) over the households in both, each draw resampling the same households."""
+    fn = METRICS[metric] if isinstance(metric, str) else metric
+    a = {h.household_id: h for h in households(a_scores)}
+    b = {h.household_id: h for h in households(b_scores)}
+    common = sorted(a.keys() & b.keys())
+
+    def value(ids: Sequence[str]) -> float | None:
+        va, vb = fn([a[i] for i in ids]), fn([b[i] for i in ids])
+        return None if va is None or vb is None else combine(va, vb)
+
+    low, high = interval((value([common[i] for i in idx]) for idx in resamples(len(common), draws=draws, seed=seed)), level)
+    return {"estimate": value(common) if common else None, "low": low, "high": high, "n_households": len(common)}
+
+
 def bootstrap_difference(
     a_scores: Iterable[Mapping[str, Any]],
     b_scores: Iterable[Mapping[str, Any]],
@@ -291,14 +320,18 @@ def bootstrap_difference(
     level: float = LEVEL,
 ) -> dict[str, Any]:
     """metric(a) minus metric(b) over the households in both, each draw resampling the same households."""
-    fn = METRICS[metric] if isinstance(metric, str) else metric
-    a = {h.household_id: h for h in households(a_scores)}
-    b = {h.household_id: h for h in households(b_scores)}
-    common = sorted(a.keys() & b.keys())
+    return _paired(a_scores, b_scores, metric, lambda va, vb: va - vb, draws=draws, seed=seed, level=level)
 
-    def diff(ids: Sequence[str]) -> float | None:
-        va, vb = fn([a[i] for i in ids]), fn([b[i] for i in ids])
-        return None if va is None or vb is None else va - vb
 
-    low, high = interval((diff([common[i] for i in idx]) for idx in resamples(len(common), draws=draws, seed=seed)), level)
-    return {"estimate": diff(common) if common else None, "low": low, "high": high, "n_households": len(common)}
+def bootstrap_ratio(
+    a_scores: Iterable[Mapping[str, Any]],
+    b_scores: Iterable[Mapping[str, Any]],
+    metric: str | Metric,
+    *,
+    draws: int = DRAWS,
+    seed: int = SEED,
+    level: float = LEVEL,
+) -> dict[str, Any]:
+    """metric(a) over metric(b) on the households in both, paired like bootstrap_difference; None when b's is 0."""
+    return _paired(a_scores, b_scores, metric, lambda va, vb: va / vb if vb else None,
+                   draws=draws, seed=seed, level=level)
