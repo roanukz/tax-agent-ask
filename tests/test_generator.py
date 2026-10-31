@@ -15,6 +15,7 @@ import yaml
 from generator import generate as gen
 from generator import ground_truth as gt
 from generator import labels
+from eval.aliases import AliasIndex
 from generator.files import DATA_DIR, dump_json, load_truths, read_json
 from rules.engine import (
     DOCUMENT_RULES_PATH,
@@ -27,6 +28,7 @@ from rules.engine import (
     required_documents,
     triggered_traps,
 )
+from sim import simulator
 
 REPO = Path(__file__).resolve().parent.parent
 SPECS = load_facts()
@@ -467,7 +469,7 @@ def test_label_sheet_shows_no_form_numbers_rule_ids_or_document_names():
     assert not FORM_NUMBER.search(SHEET), FORM_NUMBER.search(SHEET)
     assert not RULE_ID.search(SHEET)
     for line in SHEET.splitlines():
-        toks = labels.tokens(line)
+        toks = labels.item_forms(line)
         for rule in RULES:
             for name in labels.match_names(rule):
                 assert not labels.contains(toks, labels.tokens(name)), (rule.id, name, line)
@@ -476,7 +478,7 @@ def test_label_sheet_shows_no_form_numbers_rule_ids_or_document_names():
 def test_every_fact_has_a_plain_description():
     for key, spec in SPECS.items():
         if spec.type == "bool" and not spec.is_follow_up:
-            assert key in labels.CHANGE_NOUNS, key
+            assert key in simulator.CHANGE_NOUNS, key
     everything = {k: (True if s.type == "bool" else None) for k, s in SPECS.items()}
     everything.update(filing_status="single", dependents_count=2, w2_employer_count=2, k1_count=1,
                       clean_energy_install_year=2026, efficiency_improvements_year=2026, ev_acquired_date="2026-03-01")
@@ -484,8 +486,24 @@ def test_every_fact_has_a_plain_description():
     assert len(lines) == len(labels.YES_LINES) + 8
 
 
-def test_labels_csv_is_the_header_only():
-    assert (DATA_DIR / "labels" / "blind_labels.csv").read_text(encoding="utf-8") == "household_id,documents,labeled_by,notes\n"
+def check_labels_csv(path):
+    """The labels CSV keeps its header and parses, whatever labels it holds."""
+    assert path.read_text(encoding="utf-8").splitlines()[0] == "household_id,documents,labeled_by,notes"
+    labels.read_labels(path)
+
+
+def test_labels_csv_has_the_header_and_parses():
+    check_labels_csv(DATA_DIR / "labels" / "blind_labels.csv")
+
+
+def test_labels_csv_check_still_passes_once_labels_are_entered(tmp_path):
+    filled = tmp_path / "blind_labels.csv"
+    header = (DATA_DIR / "labels" / "blind_labels.csv").read_text(encoding="utf-8").splitlines()[0]
+    filled.write_text(f'{header}\nH002,"W-2",roanuk,""\nH018,"W-2 x3; 1099-INT",roanuk,"checked twice"\n')
+    check_labels_csv(filled)
+    filled.write_text('id,docs\nH002,"W-2"\n')
+    with pytest.raises(AssertionError):
+        check_labels_csv(filled)
 
 
 def test_sheet_command_never_overwrites_labels(tmp_path):
@@ -518,6 +536,37 @@ def test_parse_is_case_insensitive_and_matches_whole_tokens():
     assert parsed("  ;  ; ") == []
 
 
+@pytest.mark.parametrize("cell, rule_id, count", [
+    ("W-2 x2", "R001", 2), ("W-2 x 2", "R001", 2), ("W-2 (x2)", "R001", 2), ("W-2 (2)", "R001", 2),
+    ("W-2( x 2 )", "R001", 2), ("2 W-2s", "R001", 2), ("two W-2s", "R001", 2), ("Two W-2", "R001", 2),
+    ("W-2s", "R001", 1), ("W2", "R001", 1), ("3 W2s", "R001", 3),
+    # A form number or a year in parentheses has more than two digits, so it stays part of the name.
+    ("K-1 (1065)", "R020", 1), ("K-1 (1041)", "R020", 1), ("W-2 (2026)", "R001", 1), ("K-1 x1065", "R020", 1),
+])
+def test_parse_reads_every_way_of_writing_a_count(cell, rule_id, count):
+    assert parsed(cell) == [((rule_id,), count, False)]
+
+
+def test_parse_reads_plurals_and_hyphen_free_spellings_as_the_scorer_does():
+    index = AliasIndex(RULES, IGNORE)
+    for cell, rule_id in [("1099INT", "R004"), ("K-1s x2", "R020"), ("1099S", "R030"), ("1095A", "R012"),
+                          ("brokerage statements", "R006"), ("Lenders interest statement", "R028"),
+                          ("2 photo IDs", None)]:
+        (item,) = labels.parse_documents(cell, RULES, IGNORE)
+        (match,) = index.map_request(cell)
+        assert item.candidates == ((rule_id,) if rule_id else ()) and not item.unread_counts, cell
+        assert (match.rule_ids[:1] if rule_id else match.kind) == ((rule_id,) if rule_id else "ignore"), cell
+    # Only one or two digits lead a count, so a form number stays a form number.
+    assert parsed("1098 from the lender") == [(("R014",), 1, False)]
+    assert parsed("1099s") == [((), 1, False)]
+
+
+def test_no_rule_name_holds_a_count_like_word():
+    for rule in RULES:
+        for name in labels.match_names(rule):
+            assert not [w for w in labels.words(name) if labels.COUNT_WORD.fullmatch(w)], (rule.id, name)
+
+
 def test_parse_prefers_the_longest_alias_and_flags_ignored_items():
     assert parsed("state refund 1099-G") == [(("R011",), 1, False)]
     assert parsed("1099-G") == [(("R010", "R011"), 1, False)]
@@ -530,6 +579,69 @@ def notes_and_disagreements(cell, facts):
     rows = labels.compare_household("HX", cell, {"split": "dev", "true_facts": facts}, RULES, SPECS, IGNORE)
     notes = [(d.kind, d.rule_id, d.label_count) for d in rows if not labels.is_disagreement(d)]
     return notes, [(d.kind, d.rule_id, d.engine_count, d.label_count) for d in rows if labels.is_disagreement(d)]
+
+
+def test_a_count_in_parentheses_or_words_is_compared_not_dropped():
+    one_job = {"w2_employer_count": 1}
+    for cell in ("W-2 (x2)", "W-2 (2)", "two W-2s", "2 W-2s"):
+        assert notes_and_disagreements(cell, one_job) == ([], [("count_differs", "R001", 1, 2)]), cell
+    three_jobs = {"w2_employer_count": 3}
+    for cell in ("W-2 (x3)", "3 W-2s", "three W-2s"):
+        assert notes_and_disagreements(cell, three_jobs) == ([], []), cell
+
+
+def test_a_count_it_cannot_read_is_a_disagreement_not_a_silent_one():
+    two_jobs = {"w2_employer_count": 2}
+    notes, rows = notes_and_disagreements("W-2 for two jobs", two_jobs)
+    assert notes == [] and rows == [("ambiguous_count", "R001", 2, 1), ("count_differs", "R001", 2, 1)]
+    notes, rows = notes_and_disagreements("W-2 for two jobs", {"w2_employer_count": 1})
+    assert notes == [] and rows == [("ambiguous_count", "R001", 1, 1)]
+    notes, rows = notes_and_disagreements("W-2 x2 x3", two_jobs)
+    assert rows == [("ambiguous_count", "R001", 2, 3), ("count_differs", "R001", 2, 3)]
+    (row,) = labels.compare_household("HX", "W-2 for two jobs", {"split": "dev", "true_facts": {
+        "w2_employer_count": 1}}, RULES, SPECS, IGNORE)
+    assert (row.kind, row.rule_id, row.item) == ("ambiguous_count", "R001", "W-2 for two jobs (count not read: two)")
+    assert labels.is_disagreement(row)
+
+
+@pytest.mark.parametrize("cell, unread", [
+    ("W-2s from both jobs", ("both", "W-2s")),
+    ("a couple of W-2s", ("couple", "W-2s")),
+    ("W-2s for 1st and 2nd jobs", ("1st", "2nd", "W-2s")),
+    ("W-2 (2nd job)", ("2nd",)),
+    ("W-2 from the second job", ("second",)),
+    ("multiple W-2", ("multiple",)),
+    ("W-2s", ("W-2s",)),
+    ("W-2 forms", ("forms",)),
+    ("W-2 from my employers", ("employers",)),
+    ("K-1s", ("K-1s",)),
+])
+def test_count_hints_and_plurals_on_a_counted_rule_are_never_read_silently(cell, unread):
+    (item,) = labels.parse_documents(cell, RULES, IGNORE)
+    assert (item.count, item.unread_counts) == (1, unread)
+    facts = {"k1_count": 1} if "K-1" in cell else {"w2_employer_count": 1}
+    rule_id = "R020" if "K-1" in cell else "R001"
+    assert notes_and_disagreements(cell, facts) == ([], [("ambiguous_count", rule_id, 1, 1)]), cell
+
+
+def test_a_plural_with_a_count_or_a_name_with_a_form_number_is_read_as_written():
+    for cell, facts in [("2 W-2s", {"w2_employer_count": 2}), ("W-2s x2", {"w2_employer_count": 2}),
+                        ("K-1s (2)", {"k1_count": 2}), ("W-2 (2026)", {"w2_employer_count": 1}),
+                        ("K-1 (1065)", {"k1_count": 1}), ("Schedule K-1 (Form 1065)", {"k1_count": 1})]:
+        assert notes_and_disagreements(cell, facts) == ([], []), cell
+    # "third" names a rule ("third party network"), so it is no count hint.
+    (item,) = labels.parse_documents("payment card and third party network transactions", RULES, IGNORE)
+    assert item.candidates == parsed("1099-K")[0][0] and item.unread_counts == ()
+
+
+def test_an_unread_count_on_a_rule_that_is_not_counted_is_no_disagreement():
+    for cell, facts in [("1099-INT from 2 banks", {"interest_income": True}),
+                        ("1099-INT (2 banks)", {"interest_income": True}),
+                        ("brokerage statements from 3 accounts", {"sold_investments": True}),
+                        ("1099-INT x2", {"interest_income": True})]:
+        (item,) = labels.parse_documents(cell, RULES, IGNORE)
+        assert not BY_ID[item.candidates[0]].count_from, cell
+        assert notes_and_disagreements(cell, facts) == ([], []), cell
 
 
 def test_ambiguous_items_resolve_to_what_the_engine_requires_and_say_so():

@@ -2,11 +2,23 @@
 
 The simulator takes data, not paths. The caller loads one household's truth
 file and passes the dict; the simulator keeps a private copy of that
-household's true facts and persona traits and nothing else (no probes, no
-changed facts, no split). It never opens a file or builds a path while
-answering, so it can't read another household, a profile, or anything else on
-disk. The only file it can touch is the public fact key list in
-rules/facts.yaml, and only at construction when the caller passes no specs.
+household's true facts, persona traits, and what changed since last year in
+plain words, and nothing else (no probes, no persona label, no split). It
+never opens a file or builds a path while answering, so it can't read another
+household, a profile, or anything else on disk. The only file it can touch is
+the public fact key list in rules/facts.yaml, and only at construction when
+the caller passes no specs.
+
+The prompt is PRD section 6.4 word for word, followed by two short parts the
+PRD doesn't have. One gives the recall gap as a plain sentence beside its
+slug, so the model can't misread it. The other lists what changed since last
+year, in the same plain lines the blind label sheet shows (no form numbers),
+because a real client knows that and the agent asks about it. The list leaves
+out every change the recall gap hides, since the client has forgotten it and
+"what changed?" must not hand it back. When the hidden fact is new this year,
+the gap sentence says so instead, for after a question brings it back.
+Knowing a change doesn't mean volunteering it: the 6.4 rules and the recall
+gap still apply.
 
 Each question is a user turn and each reply an assistant turn, so later
 answers stay consistent with earlier ones. The model replies in JSON with its
@@ -22,7 +34,7 @@ import copy
 import json
 import re
 from dataclasses import dataclass, field
-from typing import Any, Mapping
+from typing import Any, Mapping, Sequence
 
 from ledger.spend import normalize_usage
 from rules.engine import FactSpec, coerce, load_facts
@@ -52,6 +64,110 @@ PLACEHOLDER = re.compile(r"\{(true_facts_json|persona_json)\}")
 # Persona fields the model plays. Anything else in the persona (such as the
 # generator's label) is internal and stays out of the prompt.
 PERSONA_TRAITS = ("communication_style", "jargon_tolerance", "volunteers_info", "recall_gap")
+
+# Each recall gap the generator deals, as the facts it hides, what the client
+# forgets, and the topic that brings it back. The first hidden fact is the
+# generator's own (generate.RECALL_GAPS); a side gig also hides its app
+# payments. Both job gaps forget exactly one job, whatever the count, so their
+# sentences name the numbers. A slug not listed here (a hand-made test persona)
+# hides nothing and shows as the slug alone, as in the PRD.
+RECALL_GAP_WORDS = {
+    "forgets_new_part_time_job_unless_asked_about_other_work": (
+        ("w2_employer_count",),
+        "You forget the new part-time job you started this year, so you say {fewer} paid you wages, not {jobs}",
+        "other work",
+    ),
+    "forgets_second_job_unless_asked_about_other_work": (
+        ("w2_employer_count",),
+        "You forget exactly one of your jobs, so you say {fewer} paid you wages, not {jobs}",
+        "other work",
+    ),
+    "forgets_side_gig_unless_asked_about_freelance_work": (
+        ("self_employment", "business_app_payments"),
+        "You forget your freelance or gig work and leave it out",
+        "freelance, contract, or gig work",
+    ),
+    "forgets_small_bank_interest_unless_asked_about_banks": (
+        ("interest_income",),
+        "You forget the small amount of interest your bank paid you and leave it out",
+        "banks or bank accounts",
+    ),
+    "forgets_crypto_unless_asked_about_digital_assets": (
+        ("digital_asset_transactions",),
+        "You forget that you sold or traded cryptocurrency and leave it out",
+        "cryptocurrency or other digital assets",
+    ),
+    "forgets_retirement_withdrawal_unless_asked_about_retirement_accounts": (
+        ("retirement_distribution",),
+        "You forget that you took money out of a retirement account and leave it out",
+        "retirement accounts",
+    ),
+    "forgets_marketplace_plan_unless_asked_about_health_insurance": (
+        ("marketplace_coverage",),
+        "You forget that your health plan was bought through HealthCare.gov or a state exchange and leave it out",
+        "health insurance",
+    ),
+    "forgets_hsa_unless_asked_about_health_accounts": (
+        ("hsa_withdrawal",),
+        "You forget that you spent or withdrew money from a health savings account and leave it out",
+        "health savings accounts or other health accounts",
+    ),
+}
+RECALL_GAP_LABEL = "Your recall_gap in plain words: "
+CHANGES_INTRO = (
+    "Compared with last year (your facts above are for this year; mention a change only if a question asks "
+    "about it, unless volunteers_info is true, and your recall_gap still applies):"
+)
+
+# Plain words for what changed since last year, with no form numbers. The blind
+# label sheet (generator/labels.py) shows the same lines; they live here so the
+# simulator needs no import that can read files.
+FILING_PLAIN = {
+    "single": "single",
+    "married_joint": "married, filing jointly",
+    "married_separate": "married, filing separately",
+    "head_of_household": "head of household",
+    "qualifying_surviving_spouse": "qualifying surviving spouse",
+}
+CHANGE_NOUNS = {
+    "new_dependent": "a dependent who joined the household",
+    "self_employment": "freelance, gig, or small business work",
+    "business_app_payments": "customer payments through an app or online marketplace",
+    "interest_income": "interest earnings",
+    "dividend_income": "dividend earnings",
+    "sold_investments": "sales of stocks, bonds, or funds",
+    "digital_asset_transactions": "cryptocurrency sales or trades",
+    "retirement_distribution": "a retirement account withdrawal",
+    "social_security": "Social Security benefits",
+    "unemployment": "unemployment benefits",
+    "itemized_last_year": "itemizing deductions",
+    "state_refund_received": "a state income tax refund",
+    "marketplace_coverage": "a health plan bought through HealthCare.gov or a state exchange",
+    "hsa_withdrawal": "spending from a health savings account",
+    "hsa_direct_contribution": "direct deposits into a health savings account",
+    "has_mortgage": "a mortgage",
+    "bought_home": "a home purchase",
+    "sold_home": "a home sale",
+    "student_loan_interest": "student loan interest",
+    "tuition_paid": "college tuition payments",
+    "dependent_care_paid": "paid child or dependent care",
+    "rental_property": "a rental property",
+    "estimated_payments_made": "tax payments sent to the IRS during the year",
+    "gambling_winnings": "gambling winnings",
+    "ip_pin_enrolled": "an IRS identity protection number",
+    "charitable_giving": "gifts to charity",
+    "tips_income": "tips at work",
+    "overtime_pay": "overtime pay",
+    "new_vehicle_loan": "interest on a new car loan",
+    "clean_energy_installed": "a clean energy installation",
+    "efficiency_improvements": "energy-saving home upgrades",
+    "ev_purchased": "an electric vehicle purchase",
+}
+COUNT_CHANGES = {
+    "dependents_count": "Dependents",
+    "w2_employer_count": "Employers paying wages",
+    "k1_count": "Shares of partnerships, small companies, estates, or trusts",
+}
 
 CORRECTION = (
     "Your last reply could not be used: {reason}. Reply again with only the JSON object, "
@@ -160,12 +276,104 @@ def prompt_persona(persona: Mapping[str, Any]) -> dict[str, Any]:
     return {trait: persona[trait] for trait in PERSONA_TRAITS if trait in persona}
 
 
+def _employers(n: int) -> str:
+    if n < 1:
+        return "no employer"
+    return f"{n} employer" if n == 1 else f"{n} employers"
+
+
+def hidden_facts(gap: Any) -> tuple[str, ...]:
+    """The facts a recall gap hides, or none for no gap or a slug with no sentence."""
+    if not isinstance(gap, str) or gap not in RECALL_GAP_WORDS:
+        return ()
+    return RECALL_GAP_WORDS[gap][0]
+
+
+def remembered_changes(truth: Mapping[str, Any]) -> list[str]:
+    """The changed facts the client recalls: all of them but the ones its recall gap hides."""
+    hidden = hidden_facts((truth.get("persona") or {}).get("recall_gap"))
+    return [k for k in truth.get("changed_facts") or [] if k not in hidden]
+
+
+def recall_gap_sentence(gap: Any, facts: Mapping[str, Any], prior: Mapping[str, Any] | None = None) -> str | None:
+    """A recall gap as a plain sentence, or None for no gap or a slug with no sentence.
+
+    When last year's facts show the hidden fact is new this year, the sentence
+    says so, because the change list leaves it out.
+    """
+    if not isinstance(gap, str) or gap not in RECALL_GAP_WORDS:
+        return None
+    hides, forgets, topic = RECALL_GAP_WORDS[gap]
+    jobs = int(facts.get("w2_employer_count") or 0)
+    forgets = forgets.format(fewer=_employers(jobs - 1), jobs=jobs)
+    new = prior is not None and not prior.get(hides[0]) and bool(facts.get(hides[0]))
+    return (
+        f"{forgets}, unless a question asks about {topic}. "
+        f"Once one does, you remember it{', including that it is new this year,' if new else ''} "
+        "and answer truthfully from then on."
+    )
+
+
+def describe_changes(prior: Mapping[str, Any], current: Mapping[str, Any], changed: Sequence[str],
+                     specs: Mapping[str, FactSpec]) -> list[str]:
+    """One plain line per changed fact, skipping follow-ups; a change to app payments rides on a business change."""
+    lines = []
+    for key in changed:
+        if specs[key].is_follow_up:
+            continue
+        if key in COUNT_CHANGES:
+            lines.append(f"{COUNT_CHANGES[key]}: {prior[key]} last year, {current[key]} this year.")
+        elif key == "business_app_payments" and "self_employment" in changed:
+            continue
+        elif key == "filing_status":
+            lines.append(f"Filing status: {FILING_PLAIN[prior[key]]} last year, {FILING_PLAIN[current[key]]} this year.")
+        else:
+            noun = CHANGE_NOUNS[key]
+            if key == "self_employment" and prior["business_app_payments"] != current["business_app_payments"]:
+                noun += ", with some customers paying through an app or online marketplace"
+            lines.append(f"New this year: {noun}." if current[key] else f"Last year only: {noun}.")
+    return lines or ["Nothing changed since last year."]
+
+
+def change_lines(truth: Mapping[str, Any], specs: Mapping[str, FactSpec]) -> list[str] | None:
+    """What the client recalls changed since last year, or None for a truth without last year's facts.
+
+    A truth without them is a hand-made test one. The changes the recall gap
+    hides are left out, so a client who forgot its only change sees "Nothing
+    changed since last year."
+    """
+    prior, changed = truth.get("prior_year_facts"), truth.get("changed_facts")
+    if prior is None or changed is None:
+        return None
+    if not isinstance(prior, Mapping) or not isinstance(changed, list):
+        raise ValueError("truth prior_year_facts must be an object and changed_facts a list")
+    unknown = sorted(repr(k) for k in changed if not isinstance(k, str) or k not in specs)
+    if unknown:
+        raise ValueError(f"truth has unknown changed fact keys: {unknown}")
+    # Every change needs both values, hidden ones too, so a broken truth fails whatever its recall gap.
+    lacking = sorted(k for k in changed if k not in prior or k not in truth["true_facts"])
+    if lacking:
+        raise ValueError(f"truth lacks a value behind a changed fact: {lacking}")
+    try:
+        return describe_changes(prior, truth["true_facts"], remembered_changes(truth), specs)
+    except KeyError as e:
+        raise ValueError(f"truth lacks a value behind a changed fact: {e}") from None
+
+
 def build_system_prompt(truth: Mapping[str, Any], specs: Mapping[str, FactSpec]) -> str:
-    values = {
-        "true_facts_json": json.dumps(prompt_facts(truth["true_facts"], specs)),
-        "persona_json": json.dumps(prompt_persona(truth.get("persona") or {})),
-    }
-    return PLACEHOLDER.sub(lambda m: values[m.group(1)], SYSTEM_PROMPT_TEMPLATE)
+    """PRD 6.4 filled in, then the recall gap in plain words and what changed since last year."""
+    facts = prompt_facts(truth["true_facts"], specs)
+    persona = prompt_persona(truth.get("persona") or {})
+    values = {"true_facts_json": json.dumps(facts), "persona_json": json.dumps(persona)}
+    prompt = PLACEHOLDER.sub(lambda m: values[m.group(1)], SYSTEM_PROMPT_TEMPLATE)
+    prior = truth.get("prior_year_facts")
+    gap = recall_gap_sentence(persona.get("recall_gap"), facts, prior if isinstance(prior, Mapping) else None)
+    if gap:
+        prompt += f"\n{RECALL_GAP_LABEL}{gap}"
+    changes = change_lines(truth, specs)
+    if changes is not None:
+        prompt += "\n\n" + CHANGES_INTRO + "".join(f"\n- {line}" for line in changes)
+    return prompt
 
 
 def reply_text(response: Any) -> str:
@@ -256,6 +464,9 @@ class ClientSimulator:
         if not isinstance(persona, Mapping):
             raise ValueError("truth persona must be an object")
         kept = {"true_facts": copy.deepcopy(dict(truth["true_facts"])), "persona": copy.deepcopy(dict(persona))}
+        for name in ("prior_year_facts", "changed_facts"):
+            if truth.get(name) is not None:
+                kept[name] = copy.deepcopy(truth[name])
         self.household_id = str(truth.get("household_id", ""))
         self._system = build_system_prompt(kept, self._specs)
         self._client = client

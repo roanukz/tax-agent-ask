@@ -9,20 +9,34 @@ output, a document list, or a form number, so the labels check the rules
 rather than copy them. Within each stratum, households are picked greedily to
 cover as many kinds of fact and change as possible, using facts only, so a
 rule edit never changes which households get labeled. The sheet command
-never overwrites a CSV that already holds labels.
+never overwrites a CSV that already holds labels. The lines on what changed
+since last year come from sim/simulator.py, which gives the simulated client
+the same lines.
 
 compare reads data/labels/blind_labels.csv, where each documents cell is a
 list separated by semicolons, such as "W-2 x2; 1099-INT; 1095-A". Each item
-maps to the rules whose names appear in it as whole tokens, ignoring case and
-keeping hyphens, so "1098-E" never matches the alias "1098". A rule's names
-are its aliases, its document text, and the short label the profiles show, so
-"Rental income and expense records" maps to its rule. The longest match wins.
-A trailing "x2" means two. When names tie (1099-G, closing statement), the
-count goes one at a time to the tied rules the engine still needs, then to
-the first one it requires, and an ambiguous_item row shows where each went.
-Those rows are notes, not disagreements. Items on the ignore list don't
-count. Counts are compared only for counted rules (W-2s and K-1s), as in
-scoring. Exit status is 1 when there is any disagreement.
+maps to the rules whose names appear in it as whole words, compared as the
+scorer compares them (eval.aliases key and forms): case, a plural s, and
+hyphens inside a word don't matter, so "W-2s" and "W2" read as "W-2", but
+"1098-E" never matches the alias "1098". A rule's names are its aliases, its
+document text, and the short label the profiles show, so "Rental income and
+expense records" maps to its rule. The longest match wins. A count of one or
+two digits can follow an item ("W-2 x2", "W-2 (x2)", "W-2 (2)") or come first
+("2 W-2s", "two W-2s"); an item with neither counts once, and a longer number
+such as "K-1 (1065)" stays part of the name. When names tie (1099-G, closing
+statement), the count goes one at a time to the tied rules the engine still
+needs, then to the first one it requires, and an ambiguous_item row shows
+where each went. Those rows are notes, not disagreements. Items on the ignore
+list don't count. Counts are compared only for counted rules (W-2s and K-1s),
+as in scoring. Exit status is 1 when there is any disagreement.
+
+On a counted rule, an item whose words hint at a count compare can't read is
+still read with the count it found (one if none) and gets an ambiguous_count
+row, a disagreement, so the label gets rewritten with a count. The hints are
+a number or count word left in the name ("W-2 for two jobs", "W-2s from both
+jobs", "W-2 (2nd job)") and, when no count was read, a plural of the rule's
+name ("W-2s", "K-1 forms"). Other wording can still hide a count ("W-2 from my
+jobs"), which is why the sheet asks for x2 or x3 after an item.
 """
 
 from __future__ import annotations
@@ -35,8 +49,9 @@ import sys
 from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Mapping, Sequence
+from typing import Any, Collection, Mapping, Sequence
 
+from eval.aliases import forms, key, positions, tokenize
 from generator.files import DATA_DIR, LABELS, load_truths, write_text
 from generator.generate import SHORT_LABELS
 from rules.engine import (
@@ -50,6 +65,7 @@ from rules.engine import (
     required_documents,
     triggered_traps,
 )
+from sim.simulator import FILING_PLAIN, describe_changes
 
 SHEET_FILE = "blind_label_sheet.md"
 CSV_FILE = "blind_labels.csv"
@@ -61,19 +77,26 @@ LABEL_SEED = 20261031
 SHAPE_KEYS = ("filing_status", "dependents_count", "w2_employer_count")
 FOLLOW_UP_KEYS = ("clean_energy_install_year", "efficiency_improvements_year", "ev_acquired_date")
 
-TOKEN = re.compile(r"[a-z0-9]+(?:['-][a-z0-9]+)*")
-COUNT_SUFFIX = re.compile(r"\s+x\s*(\d+)\s*$", re.IGNORECASE)
+NUMBER_WORDS = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8, "nine": 9,
+                "ten": 10}
+# A count after an item ("W-2 (x2)", "W-2 (2)", "W-2 x2"), tried in this order, else one before it ("2 W-2s",
+# "two W-2s"). A count has one or two digits, so a form number or a year, as in "1098 from the lender" or
+# "K-1 (1065)", is never a count.
+COUNT_AFTER = (
+    re.compile(r"\s*\(\s*x?\s*(\d{1,2})\s*\)\s*$", re.IGNORECASE),
+    re.compile(r"\s+x\s*(\d{1,2})\s*$", re.IGNORECASE),
+)
+COUNT_BEFORE = re.compile(rf"^(\d{{1,2}}|{'|'.join(NUMBER_WORDS)})\s+(?=\S)", re.IGNORECASE)
+# Words that say "more than one" without a number. "third" is left out because "third party" names a rule.
+COUNT_HINTS = ("both", "couple", "pair", "several", "multiple", "few", "first", "second", "fourth", "fifth", "sixth",
+               "seventh", "eighth", "ninth", "tenth")
+# A word left in an item's name that reads like a count. No rule name holds one, so it is never part of a match.
+COUNT_WORD = re.compile(
+    rf"x?\d{{1,2}}|\d{{1,2}}x|\d{{1,2}}(?:st|nd|rd|th)|{'|'.join((*NUMBER_WORDS, *COUNT_HINTS))}", re.IGNORECASE)
 # Rows that tell Roanuk how an item was read, without disagreeing with the rules.
 NOTE_KINDS = ("ambiguous_item",)
 TRAP_DOCUMENT = "nothing federal (credit ended)"
 
-FILING_PLAIN = {
-    "single": "single",
-    "married_joint": "married, filing jointly",
-    "married_separate": "married, filing separately",
-    "head_of_household": "head of household",
-    "qualifying_surviving_spouse": "qualifying surviving spouse",
-}
 # One plain sentence per yes fact. No form numbers and no document names.
 YES_LINES = {
     "self_employment": "Did freelance or gig work, or ran a small business of their own.",
@@ -103,45 +126,6 @@ YES_LINES = {
     "tips_income": "Earned tips at work.",
     "overtime_pay": "Was paid overtime at work.",
     "new_vehicle_loan": "Pays interest on a loan for a new car bought for personal use.",
-}
-CHANGE_NOUNS = {
-    "new_dependent": "a dependent who joined the household",
-    "self_employment": "freelance, gig, or small business work",
-    "business_app_payments": "customer payments through an app or online marketplace",
-    "interest_income": "interest earnings",
-    "dividend_income": "dividend earnings",
-    "sold_investments": "sales of stocks, bonds, or funds",
-    "digital_asset_transactions": "cryptocurrency sales or trades",
-    "retirement_distribution": "a retirement account withdrawal",
-    "social_security": "Social Security benefits",
-    "unemployment": "unemployment benefits",
-    "itemized_last_year": "itemizing deductions",
-    "state_refund_received": "a state income tax refund",
-    "marketplace_coverage": "a health plan bought through HealthCare.gov or a state exchange",
-    "hsa_withdrawal": "spending from a health savings account",
-    "hsa_direct_contribution": "direct deposits into a health savings account",
-    "has_mortgage": "a mortgage",
-    "bought_home": "a home purchase",
-    "sold_home": "a home sale",
-    "student_loan_interest": "student loan interest",
-    "tuition_paid": "college tuition payments",
-    "dependent_care_paid": "paid child or dependent care",
-    "rental_property": "a rental property",
-    "estimated_payments_made": "tax payments sent to the IRS during the year",
-    "gambling_winnings": "gambling winnings",
-    "ip_pin_enrolled": "an IRS identity protection number",
-    "charitable_giving": "gifts to charity",
-    "tips_income": "tips at work",
-    "overtime_pay": "overtime pay",
-    "new_vehicle_loan": "interest on a new car loan",
-    "clean_energy_installed": "a clean energy installation",
-    "efficiency_improvements": "energy-saving home upgrades",
-    "ev_purchased": "an electric vehicle purchase",
-}
-COUNT_CHANGES = {
-    "dependents_count": "Dependents",
-    "w2_employer_count": "Employers paying wages",
-    "k1_count": "Shares of partnerships, small companies, estates, or trusts",
 }
 
 
@@ -184,26 +168,6 @@ def describe_this_year(f: Mapping[str, Any], specs: Mapping[str, FactSpec]) -> l
         else "Took the standard deduction on last year's return."
     )
     return lines
-
-
-def describe_changes(prior: Mapping[str, Any], current: Mapping[str, Any], changed: Sequence[str],
-                     specs: Mapping[str, FactSpec]) -> list[str]:
-    lines = []
-    for key in changed:
-        if specs[key].is_follow_up:
-            continue
-        if key in COUNT_CHANGES:
-            lines.append(f"{COUNT_CHANGES[key]}: {prior[key]} last year, {current[key]} this year.")
-        elif key == "business_app_payments" and "self_employment" in changed:
-            continue
-        elif key == "filing_status":
-            lines.append(f"Filing status: {FILING_PLAIN[prior[key]]} last year, {FILING_PLAIN[current[key]]} this year.")
-        else:
-            noun = CHANGE_NOUNS[key]
-            if key == "self_employment" and prior["business_app_payments"] != current["business_app_payments"]:
-                noun += ", with some customers paying through an app or online marketplace"
-            lines.append(f"New this year: {noun}." if current[key] else f"Last year only: {noun}.")
-    return lines or ["Nothing changed since last year."]
 
 
 def household_section(truth: Mapping[str, Any], specs: Mapping[str, FactSpec]) -> str:
@@ -304,13 +268,24 @@ def write_sheet(data_dir: Path = DATA_DIR) -> tuple[Path, Path, bool]:
 # Compare.
 
 
+def words(text: str) -> list[str]:
+    """The words of text as eval.aliases splits them, without the punctuation between them."""
+    return [w for w in tokenize(text) if w is not None]
+
+
 def tokens(text: str) -> tuple[str, ...]:
-    return tuple(TOKEN.findall(text.lower()))
+    """A rule name's words as eval.aliases keys: casefolded, a plural s dropped, then hyphens dropped."""
+    return tuple(key(w) for w in words(text))
 
 
-def contains(haystack: Sequence[str], needle: Sequence[str]) -> bool:
-    n = len(needle)
-    return n > 0 and any(tuple(haystack[i:i + n]) == tuple(needle) for i in range(len(haystack) - n + 1))
+def item_forms(text: str) -> tuple[frozenset[str], ...]:
+    """A label item's words as the keys each can match (eval.aliases forms), so "1099S" can read as 1099-S."""
+    return tuple(forms(w) for w in words(text))
+
+
+def contains(haystack: Sequence[Collection[str]], needle: Sequence[str]) -> bool:
+    """Whether needle's keys occur, in order and side by side, among the haystack's forms."""
+    return bool(needle) and bool(positions(needle, haystack))
 
 
 def match_names(rule: Rule) -> tuple[str, ...]:
@@ -321,7 +296,7 @@ def match_names(rule: Rule) -> tuple[str, ...]:
 
 def best_matches(name: str, rules: list[Rule]) -> tuple[str, ...]:
     """Rule IDs whose longest matching name is the longest of any rule, in rule order."""
-    toks = tokens(name)
+    toks = item_forms(name)
     scores = {}
     for rule in rules:
         score = max((len(tokens(a)) for a in match_names(rule) if contains(toks, tokens(a))), default=0)
@@ -340,6 +315,9 @@ class LabelItem:
     count: int
     candidates: tuple[str, ...]
     ignored: bool
+    # Words that hint at a count compare couldn't read: count-like words left in the name, such as "two" in
+    # "W-2 for two jobs", and with no count read, a plural of a counted rule's name, such as "W-2s".
+    unread_counts: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -353,18 +331,43 @@ class Disagreement:
     item: str
 
 
+def read_count(text: str) -> tuple[str, int | None]:
+    """An item's name and count: a count after the name, else one before it, else None for no count written."""
+    for pattern in COUNT_AFTER:
+        m = pattern.search(text)
+        if m:
+            return text[:m.start()].strip(), int(m.group(1))
+    m = COUNT_BEFORE.match(text)
+    if m:
+        n = m.group(1).casefold()
+        return text[m.end():].strip(), NUMBER_WORDS[n] if n in NUMBER_WORDS else int(n)
+    return text, None
+
+
+def is_plural(word: str) -> bool:
+    """Whether eval.aliases key reads the word as a plural, dropping its s."""
+    return key(word) != word.casefold().replace("-", "")
+
+
+def counted_plurals(name: str, candidates: Collection[str], rules: list[Rule]) -> tuple[str, ...]:
+    """Plural words in an item that spell a counted candidate rule's name, such as "W-2s" for the W-2 rule."""
+    keys = {k for r in rules if r.id in candidates and r.count_from for n in match_names(r) for k in tokens(n)}
+    return tuple(w for w in words(name) if is_plural(w) and key(w) in keys)
+
+
 def parse_documents(cell: str, rules: list[Rule], ignore_aliases: Sequence[str] = ()) -> list[LabelItem]:
     items = []
     for raw in cell.split(";"):
         text = raw.strip()
         if not text:
             continue
-        m = COUNT_SUFFIX.search(text)
-        count = int(m.group(1)) if m else 1
-        name = text[:m.start()].strip() if m else text
+        name, count = read_count(text)
         candidates = best_matches(name, rules)
-        ignored = not candidates and any(contains(tokens(name), tokens(a)) for a in ignore_aliases)
-        items.append(LabelItem(text, name, count, candidates, ignored))
+        ignored = not candidates and any(contains(item_forms(name), tokens(a)) for a in ignore_aliases)
+        unread = tuple(w for w in words(name) if COUNT_WORD.fullmatch(w))
+        if count is None:
+            unread += counted_plurals(name, candidates, rules)
+        items.append(LabelItem(text, name, 1 if count is None else count, candidates, ignored, unread))
     return items
 
 
@@ -407,6 +410,10 @@ def compare_household(household_id: str, cell: str, truth: Mapping[str, Any], ru
             if len(item.candidates) > 1:
                 note = f"{item.text} (matches {', '.join(item.candidates)})"
                 out.append(Disagreement(household_id, "ambiguous_item", rid, rule.document or TRAP_DOCUMENT,
+                                        required[rid], n, note))
+            if item.unread_counts and rule.count_from:
+                note = f"{item.text} (count not read: {', '.join(item.unread_counts)})"
+                out.append(Disagreement(household_id, "ambiguous_count", rid, rule.document or TRAP_DOCUMENT,
                                         required[rid], n, note))
             if rule.trap:
                 out.append(Disagreement(household_id, "trap_in_label", rid, TRAP_DOCUMENT, 0, n, item.text))
