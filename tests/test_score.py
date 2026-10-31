@@ -225,10 +225,10 @@ def test_failing_run_full_shape():
         "missed": [{"rule_id": "R001", "count": 1}, {"rule_id": "R011", "count": 1}, {"rule_id": "R012", "count": 1}],
         "unnecessary": [
             {"kind": "rule", "rule_id": "R005", "count": 1},
-            {"kind": "trap", "request": "form 5695, solar panels", "rule_ids": ["T001"]},
+            {"kind": "trap", "request": "form 5695", "rule_ids": ["T001", "T002"]},
             {"kind": "unmatched", "request": "receipts for the boat"},
         ],
-        "trap_requests": [{"request": "form 5695, solar panels", "rule_ids": ["T001"]}],
+        "trap_requests": [{"request": "form 5695", "rule_ids": ["T001", "T002"]}],
         "wrong_facts": wrong,
         "stale_carryovers": [wrong[1]],
         "first_miss": {"rule_id": "R001", "fact": "w2_employer_count", "cause": "wrong_value", "nearest_question": 1},
@@ -748,7 +748,7 @@ def test_a_b3_list_in_natural_wording_passes():
     result = lst(items, t)
     assert result["missed"] == []
     assert result["unnecessary_count"] == 0
-    assert result["ignored_requests"] == ["prior year tax return"]
+    assert result["ignored_requests"] == ["social security number", "date of birth", "prior year tax return"]
     assert result["pass"] is True
 
 
@@ -757,6 +757,96 @@ def test_a_b3_list_in_natural_wording_passes():
                                        ("Receipts for energy-efficient windows", "T002")])
 def test_trap_phrasings_are_trap_requests(text, trap):
     assert [t["rule_ids"] for t in lst([text])["trap_requests"]] == [[trap]]
+
+
+# a fact named in a request for another document credits no rule
+
+
+def one_job(facts):
+    """A household with one employer and the given facts, and nothing else."""
+    return {"true_facts": {"w2_employer_count": 1, **facts}}
+
+
+STATE_REFUND = {"itemized_last_year": True, "state_refund_received": True}
+
+
+@pytest.mark.parametrize("text,ignored", [
+    ("Voided check for direct deposit of your federal and state refunds", "voided check"),
+    ("Direct deposit information for your state refund", "direct deposit information"),
+])
+def test_refund_deposit_details_never_credit_the_state_refund_1099_g(text, ignored):
+    needed = lst(["Form W-2", text], one_job(STATE_REFUND))
+    assert needed["missed"] == [{"rule_id": "R011", "count": 1}]
+    assert needed["pass"] is False
+    plain = lst(["Form W-2", text], one_job({}))
+    assert plain["unnecessary"] == []
+    assert plain["ignored_requests"] == [ignored]
+
+
+def test_an_estimated_tax_penalty_notice_is_no_payment_record():
+    result = lst(["Form W-2", "Estimated tax penalty notice (if any)"], one_job({"estimated_payments_made": True}))
+    assert result["missed"] == [{"rule_id": "R022", "count": 1}]
+    assert result["unmatched_requests"] == ["estimated tax penalty notice if any"]
+    assert result["pass"] is False
+
+
+@pytest.mark.parametrize("text", ["Spouse's date of birth", "Your Social Security card",
+                                  "Social Security cards for you and your spouse"])
+def test_the_taxpayers_own_identity_documents_never_credit_the_new_dependent(text):
+    result = lst(["Form W-2", text], one_job({"new_dependent": True, "dependents_count": 1}))
+    assert result["missed"] == [{"rule_id": "R019", "count": 1}]
+    assert result["unnecessary_count"] == 0
+    assert result["pass"] is False
+
+
+def test_identity_documents_with_the_new_dependent_credit_r019():
+    result = lst(["Form W-2", "SSN and date of birth for your newborn"], one_job({"new_dependent": True}))
+    assert result["missed"] == []
+    assert result["ignored_requests"] == ["ssn", "date of birth"]
+    assert result["pass"] is True
+
+
+def test_an_ssa_1099_that_shows_a_social_security_number_is_only_the_ssa_1099():
+    result = lst(["Form W-2", "SSA-1099 (shows your Social Security number)"], one_job({"social_security": True}))
+    assert result["unnecessary"] == []
+    assert result["requested"] == [{"rule_id": "R001", "count": 1}, {"rule_id": "R009", "count": 1}]
+
+
+def test_a_1099_k_for_self_employment_income_is_not_the_business_records():
+    result = lst(["Form W-2", "Form 1099-K for your self-employment income"],
+                 one_job({"self_employment": True, "business_app_payments": True}))
+    assert result["missed"] == [{"rule_id": "R002", "count": 1}]
+    assert result["pass"] is False
+
+
+def test_a_w2_showing_tip_income_is_not_the_tip_records():
+    result = lst(["Form W-2 showing your reported tip income"], one_job({"tips_income": True}))
+    assert result["missed"] == [{"rule_id": "R026", "count": 1}]
+    assert result["requested"] == [{"rule_id": "R001", "count": 1}]
+
+
+def test_pay_stubs_showing_overtime_are_overtime_records():
+    result = lst(["Form W-2", "Pay stubs showing overtime compensation"], one_job({"overtime_pay": True}))
+    assert result["missed"] == []
+    assert result["pass"] is True
+
+
+# abbreviations and spaced form letters
+
+
+def test_an_abbreviation_never_turns_a_1098_into_a_1098_e():
+    result = lst(["Form W-2", "Form 1098 (e.g. from your mortgage lender)"], one_job({"has_mortgage": True}))
+    assert result["requested"] == [{"rule_id": "R001", "count": 1}, {"rule_id": "R014", "count": 1}]
+    assert result["unnecessary"] == []
+    assert result["context_segments"] == ["from your mortgage lender"]
+    assert result["pass"] is True
+
+
+def test_a_spaced_1040_es_is_the_estimated_payment_record():
+    result = lst(["Form W-2", "Form 1040 ES vouchers"], one_job({"estimated_payments_made": True}))
+    assert result["missed"] == []
+    assert result["unmatched_requests"] == []
+    assert result["pass"] is True
 
 
 # separators: semicolon and line-break parts count, comma segments are context
@@ -774,6 +864,23 @@ def test_a_line_break_part_without_a_hit_is_unnecessary():
     result = lst(["1099-INT\ndivorce decree"])
     assert result["unmatched_requests"] == ["divorce decree"]
     assert result["unnecessary_count"] == 1
+
+
+@pytest.mark.parametrize("text,note", [("Form W-2; if applicable", "if applicable"), ("Form W-2; etc.", "etc"),
+                                       ("Form W-2\nPlease upload a clear copy", "please upload a clear copy")])
+def test_a_note_of_filler_words_after_a_semicolon_is_context(text, note):
+    result = lst([text, "Form 1099-INT; one per bank"], one_job({"interest_income": True}))
+    assert result["unmatched_requests"] == []
+    assert result["unnecessary_count"] == 0
+    assert result["context_segments"] == [note, "one per bank"]
+    assert result["pass"] is True
+
+
+def test_a_note_after_a_semicolon_with_a_document_word_still_counts():
+    result = lst(["Form 1098; etc.", "Form 1040-ES vouchers; payment confirmations"],
+                 one_job({"has_mortgage": True, "estimated_payments_made": True}))
+    assert result["unmatched_requests"] == ["payment confirmations"]
+    assert result["context_segments"] == ["etc"]
 
 
 def test_comma_segments_are_context_and_recorded():
@@ -796,6 +903,31 @@ def test_score_run_carries_context_segments():
     s = passing()
     s["custom_requests"] = [{"document": "Form 1095-A, from the exchange", "reason": "x"}]
     assert run(s)["context_segments"] == ["from the exchange"]
+
+
+# one item's parts are separate documents
+
+
+def test_two_1099_gs_in_two_parts_of_one_item_credit_both():
+    item = {"document": "Form 1099-G (unemployment); Form 1099-G (state refund)", "count": 2}
+    result = lst([item], {"true_facts": {"unemployment": True, **STATE_REFUND}})
+    assert result["requested"] == [{"rule_id": "R010", "count": 1}, {"rule_id": "R011", "count": 1}]
+    assert result["missed"] == []
+    assert result["pass"] is True
+
+
+def test_two_closing_statements_in_two_parts_of_one_item_credit_both():
+    item = "Closing statement for the home you sold; closing statement for the home you bought"
+    result = lst([item], {"true_facts": {"bought_home": True, "sold_home": True}})
+    assert result["requested"] == [{"rule_id": "R015", "count": 1}, {"rule_id": "R030", "count": 1}]
+    assert result["pass"] is True
+
+
+def test_two_w2s_in_two_parts_of_one_item_count_two():
+    result = lst(["Form W-2 from Acme; Form W-2 from Beta"], w2s(2))
+    assert result["requested"] == [{"rule_id": "R001", "count": 2}]
+    assert result["pass"] is True
+    assert lst(["Form W-2 from Acme and Form W-2 from Beta"], w2s(2))["missed"] == [{"rule_id": "R001", "count": 1}]
 
 
 # a request naming one rule specifically credits that rule

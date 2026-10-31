@@ -73,7 +73,7 @@ For each rule, reply in chat with one of: **verify**, **exclude** (with a reason
   - Watch for double counting gross receipts across Form 1099-NEC, Form 1099-K, and the client's own records.
   - Gig work done as an employee is W-2 income (R001); confirm worker classification before requesting business records.
 - **Suggested document wording (not applied):** Business income and expense records (income records, receipts, mileage logs, and bank or payment app statements), including any Forms 1099-NEC received
-- **Aliases:** 1099-NEC, Form 1099-NEC, business income records, business expense records, self-employment records, Schedule C records, nonemployee compensation, business income and expenses, self-employment income
+- **Aliases:** 1099-NEC, Form 1099-NEC, business income records, business expense records, self-employment records, Schedule C records, nonemployee compensation, business income and expense records, records of business income, self-employment income records
 - **Your call:** 
 
 ## R003
@@ -163,7 +163,7 @@ For each rule, reply in chat with one of: **verify**, **exclude** (with a reason
   - The rule correctly keys on activity, not on receiving a form. IRS FAQ 108 (frequently-asked-questions-on-digital-asset-transactions) says income, gain, or loss must be reported regardless of the amount or whether a payee statement is received.
   - Basis will often be missing on 2026 forms (assets acquired before 2026, or moved in from another wallet or exchange), so the transaction-records part of the request matters most. Preparers should ask for acquisition date and cost for every lot sold.
 - **Suggested document wording (not applied):** Form 1099-DA (if received), plus the client's own records for every digital asset sold, exchanged, spent, or used to pay fees: date and time acquired, cost basis, date disposed, and proceeds or fair market value in U.S. dollars
-- **Aliases:** 1099-DA, Form 1099-DA, digital asset transaction records, crypto transaction records, cryptocurrency records, digital asset proceeds, crypto transaction, crypto exchange, cryptocurrency transaction, cryptocurrency exchange, digital asset transaction
+- **Aliases:** 1099-DA, Form 1099-DA, digital asset transaction records, crypto transaction records, cryptocurrency records, digital asset proceeds, crypto transaction history, cryptocurrency transaction history, digital asset transaction history, crypto exchange, cryptocurrency exchange
 - **Your call:** 
 
 ## R008
@@ -235,7 +235,7 @@ For each rule, reply in chat with one of: **verify**, **exclude** (with a reason
   - Keying on the activity is correct. The 2025 Form 1040 instructions say to report any taxable refund even without a Form 1099-G, and they note the form may be available only electronically. States may also skip mailing it when they believe the client did not itemize.
   - Even when both facts are true, the refund may be partly or fully nontaxable. Examples: the client elected to deduct sales tax instead of income tax, the SALT limit capped the deduction, or the itemized total exceeded the standard deduction by less than the refund. The preparer needs the prior-year Schedule A or return as well as the refund [...]
 - **Suggested document wording (not applied):** Form 1099-G from the state or local tax agency: Box 2 state or local income tax refunds, credits, or offsets (including amounts applied to estimated tax, offset, or donated) and Box 3 tax year of the refund; plus the prior-year return or Schedule A for that tax year if not on file
-- **Aliases:** 1099-G, Form 1099-G, state refund 1099-G, state tax refund statement, 1099-G for state refund, state refund, state tax refund
+- **Aliases:** 1099-G, Form 1099-G, state refund 1099-G, state tax refund statement, 1099-G for state refund, state tax refund 1099-G, 1099-G for state tax refund, state refund statement
 - **Your call:** 
 
 ## R012
@@ -379,7 +379,7 @@ For each rule, reply in chat with one of: **verify**, **exclude** (with a reason
   - An SSN is required for every dependent listed, not only new ones; the rule assumes prior-year dependents are already on file, which a reviewer should confirm.
   - For pending adoptions the FAQ points to an ATIN (Form W-7A), which expires 2 years after issue and supports only the credit for other dependents, not the CTC/ACTC; the intake should record which identifier the client has.
 - **Suggested document wording (not applied):** A copy of the new dependent's Social Security card (name and number as printed) and their date of birth; if the SSN has not been issued, the date it was applied for, or an ATIN (Form W-7A) for a pending adoption, or an ITIN for a dependent who cannot get an SSN; for a child born and died in 2026 without an SSN, a birth certificate, death certificate, or hospital record showing live birth
-- **Aliases:** dependent Social Security number, dependent SSN, dependent date of birth, Social Security card for dependent, new dependent information, Social Security number, Social Security card, SSN, date of birth
+- **Aliases:** dependent Social Security number, dependent SSN, dependent date of birth, Social Security card for dependent, new dependent information, dependent Social Security card, new dependent, new baby, newborn, new child
 - **Your call:** 
 
 ## R020
@@ -415,7 +415,7 @@ For each rule, reply in chat with one of: **verify**, **exclude** (with a reason
   - The trigger should be renting out any real property during 2026, not receiving a 1099. That includes short-term or vacation rentals through platforms, renting a room or part of the home, and renting to relatives. Topic 414 says the cash or fair market value of property or services received for use of the property is rental income. With the [...]
   - Edge cases that change the schedule or remove the reporting: Publication 527 says rent from a dwelling used as a home and rented less than 15 days is not included in income. Substantial services for the tenant's convenience go on Schedule C (Topic 414). Personal property rentals do not go on Schedule E. Farm rental income may go on Form 4835. The [...]
 - **Suggested document wording (not applied):** For each rental real estate property: rents and other amounts received (including the fair market value of any property or services received as rent), expenses paid, the number of days rented at a fair rental price and the number of days of personal use, purchase, improvement, and prior depreciation records, a dated mileage log if car expenses are claimed, and any Forms 1099-MISC or 1099-K received
-- **Aliases:** rental income records, rental expense records, rental property records, Schedule E records, rental records, records of rental income, rental property income, rental property expenses
+- **Aliases:** rental income records, rental expense records, rental property records, Schedule E records, rental records, records of rental income, rental property income and expenses
 - **Your call:** 
 
 ## R022
@@ -433,7 +433,7 @@ For each rule, reply in chat with one of: **verify**, **exclude** (with a reason
   - The trigger should be any 2026 estimated payment, by any method: Direct Pay, EFTPS, Online Account, card, check with voucher, or a 2025 overpayment applied to 2026. The IRS sends no year-end form listing these payments, so the client's records or Online Account are the only sources. Watch for timing errors: the payment made in January 2026 for the [...]
   - Line 26 only needs the total. Payment dates matter for the underpayment penalty on Form 2210: Publication 505 says you may be charged a penalty if you don't pay enough by each due date. Keep the dates in the request even though the return line shows only the total.
 - **Suggested document wording (not applied):** Date and amount of each federal estimated tax payment for tax year 2026 (including the payment made in January 2027, any 2025 overpayment applied to 2026, and any estimated tax credited by a trust), and the name and SSN each payment was made under, for example from the Record of Estimated Tax Payments, Direct Pay or EFTPS confirmations, or IRS Online Account payment history
-- **Aliases:** estimated tax payments, estimated payment records, 1040-ES, Form 1040-ES, estimated payment dates and amounts, Record of Estimated Tax Payments, estimated payments, estimated tax payment records, estimated tax, estimated taxes
+- **Aliases:** estimated tax payments, estimated payment records, 1040-ES, Form 1040-ES, estimated payment dates and amounts, Record of Estimated Tax Payments, estimated payments, estimated tax payment records, estimated tax records, records of estimated taxes, estimated taxes paid
 - **Your call:** 
 
 ## R023
@@ -505,7 +505,7 @@ For each rule, reply in chat with one of: **verify**, **exclude** (with a reason
   - Secondary sources mentioned a box 12 code TS for tips in a specified service trade or business in a W-2 draft. The final 2026 W-2/W-3 instructions I read listed codes TA, TP, and TT and did not show TS; verify.
   - Form 4137 is for employees' tips not reported to the employer (and allocated tips); it does not cover self-employed tip income. Confirm how allocated tips in W-2 box 8 are treated for the deduction in the final 2026 instructions.
 - **Suggested document wording (not applied):** Tip records and how they were reported: Form W-2 (box 12 code TP for cash tips reported to the employer, box 14b Treasury Tipped Occupation Code, box 7 social security tips, box 8 allocated tips); any Form 1099-NEC, 1099-MISC, or 1099-K showing qualified tips for self-employed work; the client's daily tip record (such as Form 4070-A) and copies of monthly tip reports given to the employer (such as Form 4070), used to figure any tips not reported [...]
-- **Aliases:** tip records, tip income records, Form 4070, tips reported to employer, tips received, tip income
+- **Aliases:** tip records, tip income records, Form 4070, tips reported to employer, records of tips, pay stubs showing tips
 - **Your call:** 
 
 ## R027
@@ -523,7 +523,7 @@ For each rule, reply in chat with one of: **verify**, **exclude** (with a reason
   - Source is a PDF fact sheet, not a stable HTML page; the only HTML FAQ page (FS-2026-01) is marked superseded. The FAQs are not published in the Internal Revenue Bulletin and may be updated.
   - 2026 Schedule 1-A and its instructions are draft or not yet released.
 - **Suggested document wording (not applied):** Overtime records and how the employer reported them: Form W-2 with box 12 code TT (qualified overtime compensation, the FLSA-required premium above the regular rate); Form 1099-NEC box 1d or Form 1099-MISC box 14 in the rare case the client was an FLSA employee treated as a contractor; corrected Form W-2c if the code TT amount is missing or understated (a substitute Form 4852 does not count); pay stubs or payroll records to check the amount
-- **Aliases:** overtime records, overtime pay records, overtime pay statement, overtime pay documentation, overtime compensation
+- **Aliases:** overtime records, overtime pay records, overtime pay statement, overtime pay documentation, overtime compensation records, pay stubs showing overtime
 - **Your call:** 
 
 ## R028
@@ -593,7 +593,7 @@ For each rule, reply in chat with one of: **verify**, **exclude** (with a reason
   - Trigger wording should key on the date installation was completed (or, for new construction, the date the client began using the home), not on the payment or contract date. A system paid for in 2025 but finished in 2026 gets nothing; a system finished in 2025 belongs on the 2025 return (or an amended 2025 return), not the 2026 return.
   - The IRS Residential Clean Energy Credit page (last reviewed 04-Jul-2026) uses different wording ('placed in service after December 31, 2025') and still carries stale text about claiming the credit 'until the credit begins to phase out in 2033'. Rely on FS-2025-05 FAQ 7 and the 2026 draft Form 5695 instructions.
   - 'Nothing federal' is about the credit only. The residential clean energy page notes that some state energy incentives labeled as rebates could be included in gross income, so a reviewer should confirm whether a separate rule asks about state or utility incentive payments received in 2026.
-- **Aliases:** Form 5695, 5695, solar receipt, solar invoice, clean energy invoice, residential clean energy credit, solar panel, solar installation, solar energy system
+- **Aliases:** Form 5695, 5695, solar receipt, solar invoice, clean energy invoice, residential clean energy credit, solar panel installation, solar panel invoice, solar panel receipt, solar installation, solar energy system
 - **Your call:** 
 
 ## T002

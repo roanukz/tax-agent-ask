@@ -1,10 +1,11 @@
-"""Alias matching: normalization, tokens, pieces, document grouping, candidates, precedence, parts, and merging."""
+"""Alias matching: normalization, tokens, pieces, whole words, documents, candidates, precedence, parts, and merging."""
 
 import pytest
 
 from eval.aliases import (
     BREAKS,
     CONTEXT,
+    FILLER,
     IGNORE,
     RULE,
     TRAP,
@@ -20,7 +21,12 @@ from eval.aliases import (
     merge,
     normalize,
     phrase,
+    piece_forms,
+    pieces,
+    plural,
     positions,
+    short_suffix,
+    spans,
     split,
     tokenize,
 )
@@ -64,8 +70,8 @@ def mapped(text, index=INDEX):
 
 
 def credited(text, index=INDEX):
-    """Each document a request names once merged, as (kind, best candidates), without context."""
-    return [(m.kind, m.best) for m in merge(index.map_request(text)) if m.kind != CONTEXT]
+    """Each document a request names once merged, as (kind, best candidates), without context or ignored words."""
+    return [(m.kind, m.best) for m in merge(index.map_request(text)) if m.kind not in (CONTEXT, IGNORE)]
 
 
 def alias(text, kind=RULE, rule_id="R001"):
@@ -111,7 +117,39 @@ def test_tokenize_separators(separator):
 
 
 def test_tokenize_drops_edge_hyphens_and_other_punctuation():
-    assert tokenize("-w-2- (x) y.z: 'q'") == ["w-2", "x", "y", "z", "q"]
+    assert tokenize("-w-2- (x) ab.cd: 'q'") == ["w-2", "x", "ab", "cd", "q"]
+
+
+@pytest.mark.parametrize(
+    "text,expected",
+    [
+        ("1098 e.g. x", ["1098", None, "x"]),
+        ("1098 (e.g., x)", ["1098", None, None, "x"]),
+        ("1098 e.g x", ["1098", None, "x"]),
+        ("i.e. a.k.a. U.S. x", [None, None, None, "x"]),
+        ("1098 T. Rowe", ["1098", None, "Rowe"]),
+        ("1098 T.\tRowe", ["1098", None, "Rowe"]),
+        ("A. Form W-2", [None, "Form", "W-2"]),
+    ],
+)
+def test_tokenize_reads_abbreviations_and_initials_as_separators(text, expected):
+    assert tokenize(text) == expected
+
+
+@pytest.mark.parametrize(
+    "text,expected",
+    [
+        ("Schedule C.", ["Schedule", "C"]),
+        ("Schedule C.\nx", ["Schedule", "C", None, "x"]),
+        ("e.gov", ["e", "gov"]),
+        ("e.g2", ["e", "g2"]),
+        ("1099-B. Next", ["1099-B", "Next"]),
+        ("2. Form", ["2", "Form"]),
+        ("ab. cd", ["ab", "cd"]),
+    ],
+)
+def test_tokenize_keeps_letters_that_are_not_abbreviations(text, expected):
+    assert tokenize(text) == expected
 
 
 def test_tokenize_splits_on_underscores():
@@ -150,6 +188,11 @@ def test_breaks_of_nothing():
     assert breaks("W-2, 1099-INT") == set()
 
 
+def test_an_abbreviation_is_no_break():
+    assert breaks("x e.g. y; z") == {3}
+    assert tokenize("x e.g. y; z") == ["x", None, "y", None, "z"]
+
+
 def test_split_drops_the_cuts_and_empty_runs():
     assert split(range(5), {1, 3}) == [[0], [2], [4]]
     assert split(range(4), {0, 1, 3}) == [[2]]
@@ -158,7 +201,7 @@ def test_split_drops_the_cuts_and_empty_runs():
     assert split([], {0}) == []
 
 
-# key and forms
+# pieces and piece_forms
 
 
 @pytest.mark.parametrize(
@@ -182,17 +225,25 @@ def test_split_drops_the_cuts_and_empty_runs():
         ("us", ("us",)),
         ("is", ("is",)),
         ("s", ("s",)),
+        ("ES", ("es",)),
         ("gas", ("ga",)),
         ("form", ("form",)),
         ("k-1", ("k", "1")),
         ("1098-e", ("1098", "e")),
         ("prior-year", ("prior", "year")),
+        ("prior-years", ("prior", "year")),
         ("CP01A", ("cp", "01", "a")),
         ("a-b-c", ("a", "b", "c")),
+        ("1040-ES", ("1040", "es")),
+        ("1040es", ("1040", "es")),
+        ("1099-Rs", ("1099", "rs")),
+        ("W-2Gs", ("w", "2", "gs")),
+        ("1099-INTs", ("1099", "int")),
+        ("1040-SS", ("1040", "ss")),
     ],
 )
-def test_key(token, expected):
-    assert key(token) == expected
+def test_pieces(token, expected):
+    assert pieces(token) == expected
 
 
 @pytest.mark.parametrize(
@@ -208,77 +259,165 @@ def test_key(token, expected):
         ("2S", {("2", "s")}),
         ("S", {("s",)}),
         ("W-2", {("w", "2")}),
+        ("1040-ES", {("1040", "es"), ("1040", "e")}),
+        ("1040ES", {("1040", "es"), ("1040", "e")}),
+        ("1099-Rs", {("1099", "rs"), ("1099", "r")}),
+        ("W-2GS", {("w", "2", "gs"), ("w", "2", "g")}),
+        ("1040-SS", {("1040", "ss")}),
+        ("ES", {("es",)}),
+        ("GAS", {("ga",)}),
     ],
 )
-def test_forms(token, expected):
-    assert forms(token) == expected
+def test_piece_forms(token, expected):
+    assert piece_forms(token) == expected
 
 
-# positions
+@pytest.mark.parametrize("token,expected", [("gas", True), ("w-2s", True), ("1099s", True), ("es", False),
+                                            ("ss", False), ("boss", False), ("1099-s", False), ("s", False)])
+def test_plural(token, expected):
+    assert plural(token) is expected
+
+
+@pytest.mark.parametrize("token,expected", [("1040-es", True), ("1040es", True), ("w-2gs", True), ("1099-sa", True),
+                                            ("1099-s", False), ("1099-int", False), ("es", False), ("w-2", False),
+                                            ("prior-years", False), ("es-1040", False)])
+def test_short_suffix(token, expected):
+    assert short_suffix(token) is expected
+
+
+# spans
 
 
 A, B, C, X = {("a",)}, {("b",)}, {("c",)}, {("x",)}
 
 
-def test_positions_finds_every_occurrence():
-    assert positions(("a", "b"), [A, B, X, A, B]) == [(0, 2), (3, 5)]
+def test_spans_finds_every_occurrence():
+    assert spans(("a", "b"), [A, B, X, A, B]) == [(0, 2), (3, 5)]
 
 
-def test_positions_finds_a_match_at_the_end():
-    assert positions(("b",), [A, B]) == [(1, 2)]
+def test_spans_finds_a_match_at_the_end():
+    assert spans(("b",), [A, B]) == [(1, 2)]
 
 
-def test_positions_matches_any_form():
-    assert positions(("b",), [{("a",), ("b",)}]) == [(0, 1)]
+def test_spans_matches_any_form():
+    assert spans(("b",), [{("a",), ("b",)}]) == [(0, 1)]
 
 
-def test_positions_spreads_pieces_over_words_and_joins_them_in_one():
-    assert positions(("a", "b"), [{("a", "b")}]) == [(0, 1)]
-    assert positions(("a", "b"), [A, B]) == [(0, 2)]
-    assert positions(("a", "b", "c"), [{("a", "b")}, C]) == [(0, 2)]
-    assert positions(("a", "b", "c"), [A, {("b", "c")}]) == [(0, 2)]
+def test_spans_spreads_pieces_over_words_and_joins_them_in_one():
+    assert spans(("a", "b"), [{("a", "b")}]) == [(0, 1)]
+    assert spans(("a", "b"), [A, B]) == [(0, 2)]
+    assert spans(("a", "b", "c"), [{("a", "b")}, C]) == [(0, 2)]
+    assert spans(("a", "b", "c"), [A, {("b", "c")}]) == [(0, 2)]
 
 
-def test_positions_never_matches_part_of_a_word():
-    assert positions(("a",), [{("a", "b")}]) == []
-    assert positions(("b",), [{("a", "b")}]) == []
-    assert positions(("a", "b"), [{("a", "b", "c")}]) == []
-    assert positions(("a", "b"), [A, {("b", "c")}]) == []
+def test_spans_never_matches_part_of_a_word():
+    assert spans(("a",), [{("a", "b")}]) == []
+    assert spans(("b",), [{("a", "b")}]) == []
+    assert spans(("a", "b"), [{("a", "b", "c")}]) == []
+    assert spans(("a", "b"), [A, {("b", "c")}]) == []
 
 
-def test_positions_never_crosses_a_separator():
-    assert positions(("a", "b"), [A, None, B]) == []
+def test_spans_never_crosses_a_separator():
+    assert spans(("a", "b"), [A, None, B]) == []
 
 
-def test_positions_matches_a_separator_in_the_needle_once_or_not_at_all():
-    assert positions(("a", None, "b"), [A, None, B]) == [(0, 3)]
-    assert positions(("a", None, "b"), [A, B]) == [(0, 2)]
-    assert positions(("a", None, "b"), [A, None, None, B]) == []
-    assert positions(("a", None, None, "b"), [A, None, None, B]) == [(0, 4)]
-    assert positions(("a", None, "b"), [{("a", "b")}]) == []
+def test_spans_matches_a_separator_in_the_needle_once_or_not_at_all():
+    assert spans(("a", None, "b"), [A, None, B]) == [(0, 3)]
+    assert spans(("a", None, "b"), [A, B]) == [(0, 2)]
+    assert spans(("a", None, "b"), [A, None, None, B]) == []
+    assert spans(("a", None, None, "b"), [A, None, None, B]) == [(0, 4)]
+    assert spans(("a", None, "b"), [{("a", "b")}]) == []
 
 
-def test_positions_with_a_separator_left_in_the_needle_at_the_end_of_the_tokens():
-    assert positions(("a", None, "b"), [A]) == []
-    assert positions(("a", None), [A, None]) == [(0, 1), (0, 2)]
+def test_spans_with_a_separator_left_in_the_needle_at_the_end_of_the_tokens():
+    assert spans(("a", None, "b"), [A]) == []
+    assert spans(("a", None), [A, None]) == [(0, 1), (0, 2)]
 
 
-def test_positions_never_starts_at_a_separator():
-    assert positions(("a",), [None, A]) == [(1, 2)]
+def test_spans_never_starts_at_a_separator():
+    assert spans(("a",), [None, A]) == [(1, 2)]
 
 
-def test_positions_lists_every_end_of_one_start_in_order():
-    assert positions(("a", "b"), [{("a", "b"), ("a",)}, B]) == [(0, 1), (0, 2)]
+def test_spans_lists_every_end_of_one_start_in_order():
+    assert spans(("a", "b"), [{("a", "b"), ("a",)}, B]) == [(0, 1), (0, 2)]
 
 
-def test_positions_accepts_a_list_needle():
-    assert positions(["a"], [A]) == [(0, 1)]
-    assert positions(["a", "b"], [{("a", "b")}]) == [(0, 1)]
+def test_spans_accepts_a_list_needle():
+    assert spans(["a"], [A]) == [(0, 1)]
+    assert spans(["a", "b"], [{("a", "b")}]) == [(0, 1)]
 
 
-def test_positions_needs_the_whole_needle():
-    assert positions(("a", "b"), [A]) == []
+def test_spans_needs_the_whole_needle():
+    assert spans(("a", "b"), [A]) == []
+    assert spans(("a",), []) == []
+
+
+# key, forms, and positions: the same comparison, one whole word to one key
+
+
+@pytest.mark.parametrize(
+    "token,expected",
+    [
+        ("w-2", "w2"),
+        ("W-2", "w2"),
+        ("w2", "w2"),
+        ("w-2s", "w2"),
+        ("W-2S", "w2"),
+        ("1099-int", "1099int"),
+        ("1099-ints", "1099int"),
+        ("1099-S", "1099s"),
+        ("1099s", "1099"),
+        ("statements", "statement"),
+        ("us", "us"),
+        ("k-1", "k1"),
+        ("1098-e", "1098e"),
+        ("prior-year", "prioryear"),
+        ("1040-ES", "1040es"),
+    ],
+)
+def test_key_joins_the_pieces(token, expected):
+    assert key(token) == expected
+
+
+@pytest.mark.parametrize(
+    "token,expected",
+    [
+        ("1099S", {"1099", "1099s"}),
+        ("1099s", {"1099"}),
+        ("W-2S", {"w2", "w2s"}),
+        ("1099-S", {"1099s"}),
+        ("FORMS", {"form"}),
+        ("W-2", {"w2"}),
+        ("1040-ES", {"1040es", "1040e"}),
+    ],
+)
+def test_forms_join_the_piece_forms(token, expected):
+    assert forms(token) == expected
+
+
+def test_positions_match_whole_words_one_for_one():
+    assert positions(("a", "b"), [{"a"}, {"b"}, {"x"}, {"a"}, {"b"}]) == [0, 3]
+    assert positions(("b",), [{"a"}, {"b"}]) == [1]
+    assert positions(("b",), [{"a", "b"}]) == [0]
+    assert positions(["a"], [{"a"}]) == [0]
+
+
+def test_positions_never_spread_a_key_over_words():
+    assert positions((key("1099-INT"),), [forms("1099"), forms("INT")]) == []
+    assert positions((key("1099-INT"),), [forms("1099INT")]) == [0]
+    assert positions((key("W-2"), key("from")), [forms("W2"), forms("from")]) == [0]
+
+
+def test_positions_compare_separators_like_keys():
+    assert positions(("a", None, "b"), [{"a"}, {None}, {"b"}]) == [0]
+    assert positions(("a", None, "b"), [{"a"}, {"b"}]) == []
+    assert positions(("a", "b"), [{"a"}, {None}, {"b"}]) == []
+
+
+def test_positions_need_the_whole_needle():
+    assert positions(("a", "b"), [{"a"}]) == []
     assert positions(("a",), []) == []
+    assert positions((), [{"a"}]) == [0, 1]
 
 
 # alias_keys
@@ -304,48 +443,48 @@ def hit(start, end, rule_id="R001", kind=RULE):
     return (start, end, Alias("x", ("x",), kind, rule_id))
 
 
-def spans(groups):
+def group_spans(groups):
     return [(first, last, [a.rule_id for a in aliases]) for first, last, aliases in groups]
 
 
 def test_clusters_keep_apart_hits_that_do_not_overlap():
-    assert spans(clusters([hit(0, 1), hit(1, 2)])) == [(0, 1, ["R001"]), (1, 2, ["R001"])]
+    assert group_spans(clusters([hit(0, 1), hit(1, 2)])) == [(0, 1, ["R001"]), (1, 2, ["R001"])]
 
 
 def test_clusters_merge_a_hit_inside_the_group():
-    assert spans(clusters([hit(0, 3, "R001"), hit(1, 2, "R002")])) == [(0, 3, ["R001", "R002"])]
+    assert group_spans(clusters([hit(0, 3, "R001"), hit(1, 2, "R002")])) == [(0, 3, ["R001", "R002"])]
 
 
 def test_clusters_merge_a_hit_ending_with_the_group():
-    assert spans(clusters([hit(0, 3, "R001"), hit(2, 3, "R002")])) == [(0, 3, ["R001", "R002"])]
+    assert group_spans(clusters([hit(0, 3, "R001"), hit(2, 3, "R002")])) == [(0, 3, ["R001", "R002"])]
 
 
 def test_clusters_merge_a_hit_that_starts_with_the_group_and_holds_it():
-    assert spans(clusters([hit(0, 1, "R001"), hit(0, 3, "R002")])) == [(0, 3, ["R001", "R002"])]
+    assert group_spans(clusters([hit(0, 1, "R001"), hit(0, 3, "R002")])) == [(0, 3, ["R001", "R002"])]
 
 
 def test_clusters_merge_a_partial_overlap_that_shares_a_rule():
-    assert spans(clusters([hit(0, 2, "R001"), hit(1, 4, "R001")])) == [(0, 4, ["R001", "R001"])]
+    assert group_spans(clusters([hit(0, 2, "R001"), hit(1, 4, "R001")])) == [(0, 4, ["R001", "R001"])]
 
 
 def test_clusters_keep_apart_a_partial_overlap_without_a_shared_rule():
-    assert spans(clusters([hit(0, 2, "R001"), hit(1, 4, "R002")])) == [(0, 2, ["R001"]), (1, 4, ["R002"])]
+    assert group_spans(clusters([hit(0, 2, "R001"), hit(1, 4, "R002")])) == [(0, 2, ["R001"]), (1, 4, ["R002"])]
 
 
 def test_clusters_sort_hits_by_start_then_end():
-    assert spans(clusters([hit(3, 4, "R003"), hit(0, 2, "R002"), hit(0, 1, "R001")])) == [
+    assert group_spans(clusters([hit(3, 4, "R003"), hit(0, 2, "R002"), hit(0, 1, "R001")])) == [
         (0, 2, ["R001", "R002"]), (3, 4, ["R003"])]
 
 
 def test_clusters_join_only_the_first_group_that_fits():
     # The last hit shares R001 with the first group and starts with the second.
     groups = clusters([hit(0, 2, "R001"), hit(1, 4, "R002"), hit(1, 5, "R001")])
-    assert spans(groups) == [(0, 5, ["R001", "R001"]), (1, 4, ["R002"])]
+    assert group_spans(groups) == [(0, 5, ["R001", "R001"]), (1, 4, ["R002"])]
 
 
 def test_clusters_check_later_groups_too():
     groups = clusters([hit(0, 2, "R001"), hit(1, 4, "R002"), hit(3, 5, "R002")])
-    assert spans(groups) == [(0, 2, ["R001"]), (1, 5, ["R002", "R002"])]
+    assert group_spans(groups) == [(0, 2, ["R001"]), (1, 5, ["R002", "R002"])]
 
 
 def test_clusters_of_nothing():
@@ -401,9 +540,9 @@ def test_index_keeps_separators_inside_an_alias():
     assert index.aliases == [Alias("a, b", ("a", None, "b"), RULE, "R001")]
 
 
-def test_match_defaults_to_no_rule_ids():
+def test_match_defaults_to_no_rule_ids_in_the_first_part():
     match = Match("x", UNMATCHED)
-    assert (match.rule_ids, match.tied, match.best) == ((), 1, ())
+    assert (match.rule_ids, match.tied, match.best, match.part) == ((), 1, (), 0)
 
 
 def test_match_best_is_the_tied_candidates():
@@ -540,8 +679,8 @@ def test_trap_aliases():
     assert INDEX.map_request("Form 5695") == [Match("form 5695", TRAP, ("T001", "T002"), 2)]
     assert mapped("solar invoice") == [(TRAP, ("T001",))]
     assert mapped("EV purchase agreement") == [(TRAP, ("T003",))]
-    assert INDEX.map_request("Form 5695 for the solar panels") == [
-        Match("form 5695", TRAP, ("T001", "T002"), 2), Match("solar panels", TRAP, ("T001",))]
+    assert INDEX.map_request("Form 5695 for the solar panels") == [Match("form 5695", TRAP, ("T001", "T002"), 2)]
+    assert mapped("Solar panel installation invoice") == [(TRAP, ("T001",))]
 
 
 def test_unmatched_is_the_whole_request_once():
@@ -557,16 +696,45 @@ def test_context_around_a_document_is_not_unmatched():
 
 def test_each_part_without_a_hit_is_one_unmatched_document():
     assert INDEX.map_request("W-2; divorce decree; car title") == [
-        Match("w-2", RULE, ("R001",)), Match("divorce decree", UNMATCHED), Match("car title", UNMATCHED)]
-    assert INDEX.map_request("W-2\ncar title") == [Match("w-2", RULE, ("R001",)), Match("car title", UNMATCHED)]
+        Match("w-2", RULE, ("R001",)), Match("divorce decree", UNMATCHED, part=1),
+        Match("car title", UNMATCHED, part=2)]
+    assert INDEX.map_request("W-2\ncar title") == [Match("w-2", RULE, ("R001",)), Match("car title", UNMATCHED, part=1)]
     assert INDEX.map_request("divorce decree; car title") == [
-        Match("divorce decree", UNMATCHED), Match("car title", UNMATCHED)]
+        Match("divorce decree", UNMATCHED), Match("car title", UNMATCHED, part=1)]
 
 
 def test_a_part_without_a_hit_counts_once_whatever_its_commas():
     assert INDEX.map_request("car title; Mileage log, and receipts for the rental repairs; W-2") == [
-        Match("car title", UNMATCHED), Match("mileage log and receipts for the rental repairs", UNMATCHED),
-        Match("w-2", RULE, ("R001",))]
+        Match("car title", UNMATCHED), Match("mileage log and receipts for the rental repairs", UNMATCHED, part=1),
+        Match("w-2", RULE, ("R001",), part=2)]
+
+
+def test_every_match_records_its_part():
+    assert INDEX.map_request("photo ID; W-2, from Acme\nForm 5695; x") == [
+        Match("photo id", IGNORE), Match("w-2", RULE, ("R001",), part=1), Match("from acme", CONTEXT, part=1),
+        Match("form 5695", TRAP, ("T001", "T002"), 2, part=2), Match("x", UNMATCHED, part=3)]
+    assert [m.part for m in INDEX.map_request(";;W-2;\n1099-INT")] == [0, 1]
+
+
+@pytest.mark.parametrize("text", ["W-2; if applicable", "W-2\nIf Applicable", "W-2; etc.", "W-2; one per bank",
+                                  "W-2\nPlease upload a clear copy", "W-2; from each employer, as needed"])
+def test_a_part_of_filler_words_is_context(text):
+    matches = INDEX.map_request(text)
+    assert [(m.kind, m.part) for m in matches] == [(RULE, 0), (CONTEXT, 1)]
+
+
+def test_every_filler_word_alone_names_nothing():
+    assert all(word == word.casefold() for word in FILLER)
+    text = "W-2; " + " ".join(sorted(FILLER)).upper()
+    assert INDEX.map_request(text) == [Match("w-2", RULE, ("R001",)), Match(" ".join(sorted(FILLER)), CONTEXT, part=1)]
+
+
+def test_a_part_with_one_word_beyond_filler_is_unmatched():
+    assert INDEX.map_request("W-2; if applicable, payment confirmations") == [
+        Match("w-2", RULE, ("R001",)), Match("if applicable payment confirmations", UNMATCHED, part=1)]
+    assert INDEX.map_request("if applicable") == [Match("if applicable", CONTEXT)]
+    assert INDEX.map_request("if applicable; boat") == [
+        Match("if applicable", CONTEXT), Match("boat", UNMATCHED, part=1)]
 
 
 @pytest.mark.parametrize("separator", [",", "&", "/", "+"])
@@ -577,8 +745,9 @@ def test_a_segment_without_a_hit_beside_a_hit_is_context(separator):
 
 def test_context_unmatched_and_ignore_in_one_request_keep_their_order():
     assert INDEX.map_request("car title; Photo ID, medical expense receipts\nW-2, gym bills") == [
-        Match("car title", UNMATCHED), Match("photo id", IGNORE), Match("medical expense receipts", CONTEXT),
-        Match("w-2", RULE, ("R001",)), Match("gym bills", CONTEXT)]
+        Match("car title", UNMATCHED), Match("photo id", IGNORE, part=1),
+        Match("medical expense receipts", CONTEXT, part=1), Match("w-2", RULE, ("R001",), part=2),
+        Match("gym bills", CONTEXT, part=2)]
 
 
 def test_a_hit_across_a_semicolon_covers_both_parts():
@@ -664,7 +833,8 @@ PARAPHRASES = {
     "R009": ["SSA 1099", "Social Security benefit statement", "Form SSA-1099 for Social Security benefits"],
     "R010": ["Unemployment compensation statement", "Unemployment 1099-G", "Unemployment compensation records",
              "Form 1099-G (unemployment compensation statement)"],
-    "R011": ["1099-G for state refund", "State tax refund statement", "Form 1099-G for the state tax refund"],
+    "R011": ["1099-G for state refund", "State tax refund statement", "State refund 1099-G",
+             "1099-G for state tax refund"],
     "R012": ["Form 1095-A from the Marketplace", "Health Insurance Marketplace statement", "1095 A"],
     "R013": ["Form 1099-SA from the HSA", "HSA distribution statement", "1099 SA"],
     "R014": ["Form 1098 from the mortgage lender", "Mortgage interest statement", "1098 for the mortgage"],
@@ -674,16 +844,19 @@ PARAPHRASES = {
     "R018": ["Provider name, address, taxpayer ID and amount paid", "Child care provider name, address, and EIN",
              "Daycare receipts", "Dependent care provider's name and taxpayer ID"],
     "R019": ["Social Security number and date of birth for new dependent", "Social Security card for the new baby",
-             "Dependent's Social Security number", "Birth certificate and Social Security card for new child"],
+             "Dependent's Social Security number", "Birth certificate and Social Security card for new child",
+             "Newborn's SSN"],
     "R020": ["Schedule K-1 from each partnership", "K-1s", "Schedule K-1 and Schedule K-3"],
     "R021": ["Rental property income and expenses", "Records of rental income", "Rental income records for the duplex"],
-    "R022": ["Records of estimated taxes paid", "Estimated tax payment confirmations", "Form 1040-ES vouchers"],
+    "R022": ["Records of estimated taxes paid", "Estimated tax payment confirmations", "Form 1040-ES vouchers",
+             "Form 1040 ES", "Estimated tax records"],
     "R023": ["Form W-2G for gambling winnings", "W2-G", "Gambling winnings statement"],
     "R024": ["IP PIN letter", "Identity Protection PIN", "CP01A notice"],
     "R025": ["Receipts and acknowledgments for charitable contributions", "Charitable donation receipts",
              "Written acknowledgments from the charities"],
-    "R026": ["Records of tips received", "Tip records", "Form 4070 tip reports"],
-    "R027": ["Overtime pay documentation", "Overtime records", "Overtime pay statement from the employer"],
+    "R026": ["Records of tips received", "Tip records", "Form 4070 tip reports", "Pay stubs showing tips"],
+    "R027": ["Overtime pay documentation", "Overtime records", "Overtime pay statement from the employer",
+             "Pay stubs showing overtime hours"],
     "R028": ["Auto loan interest statement", "Form 1098-VLI", "Car loan interest statement from the lender"],
     "R029": ["Form 5498-SA", "HSA contribution records", "5498 SA from the HSA custodian"],
     "R030": ["Sale closing statement", "Form 1099-S", "1099S from the title company"],
@@ -740,7 +913,7 @@ def test_every_alias_and_document_text_names_its_rule_alone():
         ("Form 1099-S", [(RULE, ("R030",))]),
         ("Social Security benefit statement", [(RULE, ("R009",))]),
         ("Form SSA-1099 (Social Security benefits)", [(RULE, ("R009",))]),
-        ("Child care receipts for the new baby", [(RULE, ("R018",))]),
+        ("Child care receipts for the dependent", [(RULE, ("R018",))]),
         ("Form 1098 for the new home", [(RULE, ("R014",))]),
         ("Closing statement for the rental property", [(RULE, ("R015", "R030"))]),
         ("Brokerage 1099-DIV", [(RULE, ("R005",))]),
@@ -755,10 +928,40 @@ def test_every_alias_and_document_text_names_its_rule_alone():
         ("Dependent care FSA statement", [(UNMATCHED, ())]),
         ("Seller report", [(UNMATCHED, ())]),
         ("Pay stubs", [(UNMATCHED, ())]),
+        # Facts named in requests for other documents credit nothing.
+        ("Voided check for direct deposit of your federal and state refunds", []),
+        ("Direct deposit information for your state refund", []),
+        ("State tax refund amount", [(UNMATCHED, ())]),
+        ("Estimated tax penalty notice (if any)", [(UNMATCHED, ())]),
+        ("Spouse's date of birth", []),
+        ("Your Social Security card", []),
+        ("Social Security cards for you and your spouse", []),
+        ("SSA-1099 (shows your Social Security number)", [(RULE, ("R009",))]),
+        ("Form 1099-K for your self-employment income", [(RULE, ("R003",))]),
+        ("Form W-2 showing your reported tip income", [(RULE, ("R001",))]),
+        ("Form W-2 showing overtime compensation", [(RULE, ("R001",))]),
+        ("Rental business income and expenses", [(UNMATCHED, ())]),
+        # An abbreviation's letters never complete a form number.
+        ("Form 1098 (e.g. from your mortgage lender)", [(RULE, ("R014",))]),
+        ("Form 1040 (e.g. PDF)", [(UNMATCHED, ())]),
+        ("Copy of Form 1040 (e.g. last year's)", [(UNMATCHED, ())]),
+        ("Form 1098 (T. Rowe Price)", [(RULE, ("R014",))]),
     ],
 )
 def test_new_aliases_make_no_false_matches(text, expected):
     assert credited(text) == expected
+
+
+def test_a_new_dependent_named_beside_another_document_also_names_r019():
+    # The dependent nouns are R019 aliases, so a passing mention credits R019 too: a known trade-off.
+    assert credited("Child care receipts for the new baby") == [(RULE, ("R018",)), (RULE, ("R019",))]
+
+
+def test_identity_documents_alone_are_ignored_and_with_the_new_dependent_name_r019():
+    assert INDEX.map_request("Social Security card") == [Match("social security card", IGNORE)]
+    assert INDEX.map_request("Social Security card for the new baby") == [
+        Match("social security card", IGNORE), Match("new baby", RULE, ("R019",))]
+    assert mapped("Dependent Social Security card") == [(RULE, ("R019",))]
 
 
 # map_request with synthetic rules
@@ -870,6 +1073,23 @@ def test_merge_joins_traps_but_never_a_trap_with_a_rule():
         Match("a, b", TRAP, ("T001",))]
     matches = [Match("a", TRAP, ("T001",)), Match("b", RULE, ("T001",))]
     assert merge(matches) == matches
+
+
+def test_merge_joins_only_within_one_part():
+    apart = [Match("a", RULE, ("R001",)), Match("b", RULE, ("R001",), part=1), Match("c", TRAP, ("T001",), part=1),
+             Match("d", TRAP, ("T001",), part=2)]
+    assert merge(apart) == apart
+    assert merge([Match("a", RULE, ("R010", "R011"), 2, 3), Match("b", RULE, ("R011",), 1, 3)]) == [
+        Match("a, b", RULE, ("R011",), 1, 3)]
+
+
+def test_merge_on_parts_of_real_requests():
+    assert merge(INDEX.map_request("Form W-2 from Acme; Form W-2 from Beta")) == [
+        Match("form w-2", RULE, ("R001",)), Match("form w-2", RULE, ("R001",), part=1)]
+    assert credited("Form 1099-G (unemployment); Form 1099-G (state refund)") == [
+        (RULE, ("R010", "R011")), (RULE, ("R010", "R011"))]
+    assert credited("Closing statement for the home you sold; closing statement for the home you bought") == [
+        (RULE, ("R015", "R030")), (RULE, ("R015", "R030"))]
 
 
 def test_merge_passes_other_kinds_through():

@@ -45,24 +45,26 @@ Items, in a request list or custom_requests, are a rule ID with a count
 "count"}), or a bare string; a missing or null count is 1. Rule-ID items
 credit first, then free text in list order. Free text maps through
 eval.aliases, where each document an item names is one Match, and
-eval.aliases.merge joins the Matches that name one rule or trap, so an
-item credits a rule or records a trap at most once ("Form W-2 (Wage and
-Tax Statement)" is one W-2), and the item's count applies to each
-document. A Match credits only its best candidates, the rules tied on its
-longest matching alias, so "1099-G for state refund" credits R011 alone.
-Among tied candidates, such as R010 and R011 for a bare "1099-G", it
-credits one that is required and not yet covered, otherwise the first;
-when no best candidate is in the scored statuses, the Match is unscored
-even if a shorter alias names a scored rule. Each part of an item that a
-semicolon or line break sets off and that names no document counts as one
-unmatched request, however many words it has, and so does a mapping with
-neither rule_id nor document. Words around a named document ("W-2 from
-both jobs", "Form W-2, from each employer") are context and never count;
-a segment that a comma, "&", "/", or "+" sets off and that names nothing
-is listed in context_segments so it can be audited. Trap requests and
-ignored requests hold the words that matched ("form 5695", or "form 8936,
-clean vehicle credit" for a joined trap); an unmatched request holds the
-words of its part.
+eval.aliases.merge joins the Matches of one part of the item (cut at
+semicolons and line breaks) that name one rule or trap, so a part credits
+a rule or records a trap at most once ("Form W-2 (Wage and Tax
+Statement)" is one W-2, while "Form W-2 from Acme; Form W-2 from Beta" is
+two), and the item's count applies to each document. A Match credits only
+its best candidates, the rules tied on its longest matching alias, so
+"1099-G for state refund" credits R011 alone. Among tied candidates, such
+as R010 and R011 for a bare "1099-G", it credits one that is required and
+not yet covered, otherwise the first; when no best candidate is in the
+scored statuses, the Match is unscored even if a shorter alias names a
+scored rule. Each part of an item that names no document counts as one
+unmatched request, however many words it has, unless its words are all
+filler ("if applicable", "etc.", "one per bank"), and so does a mapping
+with neither rule_id nor document. Words around a named document ("W-2
+from both jobs", "Form W-2, from each employer") are context and never
+count; a segment that a comma, "&", "/", or "+" sets off and that names
+nothing, and a part of filler words, are listed in context_segments so
+they can be audited. Trap requests and ignored requests hold the words
+that matched ("form 5695", or "form 8936, clean vehicle credit" for a
+joined trap); an unmatched request holds the words of its part.
 
 Scoring follows PRD 6.6. required is engine.required_documents on the true
 facts. Counts matter only for rules with count_from (R001 and R020); every
