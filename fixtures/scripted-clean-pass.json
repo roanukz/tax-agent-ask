@@ -1,0 +1,836 @@
+{
+  "name": "scripted-clean-pass",
+  "description": "A simple household where nothing changed: three questions, one W-2, a passing run.",
+  "scripted": true,
+  "meta": {
+    "run_id": "dev-H002-A-sonnet-t1",
+    "household_id": "H002",
+    "config": "A-sonnet",
+    "trial": 1,
+    "model": "claude-sonnet-5-5",
+    "split": "dev",
+    "planner_model": null,
+    "prereg_commit": null
+  },
+  "judge": null,
+  "b1_median_questions": null,
+  "events": [
+    {
+      "type": "attempt",
+      "n": 1
+    },
+    {
+      "type": "init",
+      "tools": [
+        "mcp__harness__ask_client",
+        "mcp__tax__add_custom_request",
+        "mcp__tax__build_request_list",
+        "mcp__tax__get_document_rules",
+        "mcp__tax__list_fact_keys",
+        "mcp__tax__note_for_preparer",
+        "mcp__tax__record_fact",
+        "mcp__tax__start_intake",
+        "mcp__tax__submit_for_preparer_review"
+      ],
+      "api_key_source": "ANTHROPIC_API_KEY",
+      "mcp_servers": [
+        {
+          "name": "tax",
+          "status": "connected"
+        },
+        {
+          "name": "harness",
+          "status": "connected"
+        }
+      ],
+      "model": "claude-sonnet-5-5",
+      "claude_code_version": "scripted"
+    },
+    {
+      "type": "tool_call",
+      "id": "toolu_scripted_clean_pass_01",
+      "name": "mcp__tax__start_intake",
+      "input": {
+        "household_id": "H002"
+      }
+    },
+    {
+      "type": "tool_result",
+      "tool_use_id": "toolu_scripted_clean_pass_01",
+      "is_error": false,
+      "text": "{\n  \"intake_id\": \"in_5c2a91\",\n  \"household_id\": \"H002\",\n  \"client_name\": \"Testcase Household 002\",\n  \"tax_year\": 2026,\n  \"prior_year_summary\": {\n    \"tax_year\": 2025,\n    \"filing_status\": \"married_joint\",\n    \"dependents_count\": 0,\n    \"itemized\": false,\n    \"documents_on_file\": [\n      {\n        \"rule_id\": \"R001\",\n        \"label\": \"Form W-2\",\n        \"count\": 1\n      }\n    ]\n  }\n}"
+    },
+    {
+      "type": "tool_call",
+      "id": "toolu_scripted_clean_pass_02",
+      "name": "mcp__tax__list_fact_keys",
+      "input": {}
+    },
+    {
+      "type": "tool_result",
+      "tool_use_id": "toolu_scripted_clean_pass_02",
+      "is_error": false,
+      "text": "{\n  \"fact_keys\": [\n    {\n      \"key\": \"filing_status\",\n      \"type\": \"enum\",\n      \"values\": [\n        \"single\",\n        \"married_joint\",\n        \"married_separate\",\n        \"head_of_household\",\n        \"qualifying_surviving_spouse\"\n      ],\n      \"topic\": \"household\",\n      \"plain_question_hint\": \"Are you filing the same way as last year: single, married filing together, or something else?\",\n      \"asked_if\": null,\n      \"determinable_from_prior_year\": true,\n      \"prior_year_field\": \"filing_status\"\n    },\n    {\n      \"key\": \"dependents_count\",\n      \"type\": \"int\",\n      \"min\": 0,\n      \"max\": 10,\n      \"topic\": \"household\",\n      \"plain_question_hint\": \"How many children or other people do you support who live with you?\",\n      \"asked_if\": null,\n      \"determinable_from_prior_year\": true,\n      \"prior_year_field\": \"dependents_count\"\n    },\n    {\n      \"key\": \"new_dependent\",\n      \"type\": \"bool\",\n      \"topic\": \"household\",\n      \"plain_question_hint\": \"Did you have a baby, adopt, or start supporting anyone new this year?\",\n      \"asked_if\": null,\n      \"determinable_from_prior_year\": false,\n      \"prior_year_field\": null\n    },\n    {\n      \"key\": \"w2_employer_count\",\n      \"type\": \"int\",\n      \"min\": 0,\n      \"max\": 10,\n      \"topic\": \"income\",\n      \"plain_question_hint\": \"How many employers paid you wages this year, including any job you left?\",\n      \"asked_if\": null,\n      \"determinable_from_prior_year\": false,\n      \"prior_year_field\": null\n    },\n    {\n      \"key\": \"self_employment\",\n      \"type\": \"bool\",\n      \"topic\": \"income\",\n      \"plain_question_hint\": \"Did you do any freelance, contract, or gig work, or run a business of your own?\",\n      \"asked_if\": null,\n      \"determinable_from_prior_year\": false,\n      \"prior_year_field\": null\n    },\n    {\n      \"key\": \"business_app_payments\",\n      \"type\": \"bool\",\n      \"topic\": \"income\",\n      \"plain_question_hint\": \"Did customers pay you for that work through a payment app or an online marketplace?\",\n      \"asked_if\": null,\n      \"determinable_from_prior_year\": false,\n      \"prior_year_field\": null\n    },\n    {\n      \"key\": \"interest_income\",\n      \"type\": \"bool\",\n      \"topic\": \"investments\",\n      \"plain_question_hint\": \"Did you earn any interest from a bank, credit union, or bonds?\",\n      \"asked_if\": null,\n      \"determinable_from_prior_year\": false,\n      \"prior_year_field\": null\n    },\n    {\n      \"key\": \"dividend_income\",\n      \"type\": \"bool\",\n      \"topic\": \"investments\",\n      \"plain_question_hint\": \"Did you get any dividends from stocks or mutual funds?\",\n      \"asked_if\": null,\n      \"determinable_from_prior_year\": false,\n      \"prior_year_field\": null\n    },\n    {\n      \"key\": \"sold_investments\",\n      \"type\": \"bool\",\n      \"topic\": \"investments\",\n      \"plain_question_hint\": \"Did you sell any stocks, bonds, or mutual funds?\",\n      \"asked_if\": null,\n      \"determinable_from_prior_year\": false,\n      \"prior_year_field\": null\n    },\n    {\n      \"key\": \"digital_asset_transactions\",\n      \"type\": \"bool\",\n      \"topic\": \"investments\",\n      \"plain_question_hint\": \"Did you sell, trade, or get paid in cryptocurrency or any other digital asset?\",\n      \"asked_if\": null,\n      \"determinable_from_prior_year\": false,\n      \"prior_year_field\": null\n    },\n    {\n      \"key\": \"retirement_distribution\",\n      \"type\": \"bool\",\n      \"topic\": \"retirement\",\n      \"plain_question_hint\": \"Did you take money out of a retirement account or pension, or roll one over?\",\n      \"asked_if\": null,\n      \"determinable_from_prior_year\": false,\n      \"prior_year_field\": null\n    },\n    {\n      \"key\": \"social_security\",\n      \"type\": \"bool\",\n      \"topic\": \"retirement\",\n      \"plain_question_hint\": \"Did you receive Social Security benefits?\",\n      \"asked_if\": null,\n      \"determinable_from_prior_year\": false,\n      \"prior_year_field\": null\n    },\n    {\n      \"key\": \"unemployment\",\n      \"type\": \"bool\",\n      \"topic\": \"income\",\n      \"plain_question_hint\": \"Did you receive unemployment benefits?\",\n      \"asked_if\": null,\n      \"determinable_from_prior_year\": false,\n      \"prior_year_field\": null\n    },\n    {\n      \"key\": \"itemized_last_year\",\n      \"type\": \"bool\",\n      \"topic\": \"deductions\",\n      \"plain_question_hint\": \"Did you itemize deductions on last year's return instead of taking the standard deduction?\",\n      \"asked_if\": null,\n      \"determinable_from_prior_year\": true,\n      \"prior_year_field\": \"itemized\"\n    },\n    {\n      \"key\": \"state_refund_received\",\n      \"type\": \"bool\",\n      \"topic\": \"deductions\",\n      \"plain_question_hint\": \"Did you get a state or local income tax refund this year?\",\n      \"asked_if\": null,\n      \"determinable_from_prior_year\": false,\n      \"prior_year_field\": null\n    },\n    {\n      \"key\": \"marketplace_coverage\",\n      \"type\": \"bool\",\n      \"topic\": \"health\",\n      \"plain_question_hint\": \"Did anyone in your household buy health insurance through HealthCare.gov or a state exchange?\",\n      \"asked_if\": null,\n      \"determinable_from_prior_year\": false,\n      \"prior_year_field\": null\n    },\n    {\n      \"key\": \"hsa_withdrawal\",\n      \"type\": \"bool\",\n      \"topic\": \"health\",\n      \"plain_question_hint\": \"Did you spend or withdraw money from a health savings account?\",\n      \"asked_if\": null,\n      \"determinable_from_prior_year\": false,\n      \"prior_year_field\": null\n    },\n    {\n      \"key\": \"hsa_direct_contribution\",\n      \"type\": \"bool\",\n      \"topic\": \"health\",\n      \"plain_question_hint\": \"Did you put money into a health savings account yourself, outside your paycheck?\",\n      \"asked_if\": null,\n      \"determinable_from_prior_year\": false,\n      \"prior_year_field\": null\n    },\n    {\n      \"key\": \"has_mortgage\",\n      \"type\": \"bool\",\n      \"topic\": \"home\",\n      \"plain_question_hint\": \"Do you have a mortgage on your home?\",\n      \"asked_if\": null,\n      \"determinable_from_prior_year\": false,\n      \"prior_year_field\": null\n    },\n    {\n      \"key\": \"bought_home\",\n      \"type\": \"bool\",\n      \"topic\": \"home\",\n      \"plain_question_hint\": \"Did you buy a home this year?\",\n      \"asked_if\": null,\n      \"determinable_from_prior_year\": false,\n      \"prior_year_field\": null\n    },\n    {\n      \"key\": \"sold_home\",\n      \"type\": \"bool\",\n      \"topic\": \"home\",\n      \"plain_question_hint\": \"Did you sell a home this year?\",\n      \"asked_if\": null,\n      \"determinable_from_prior_year\": false,\n      \"prior_year_field\": null\n    },\n    {\n      \"key\": \"student_loan_interest\",\n      \"type\": \"bool\",\n      \"topic\": \"education\",\n      \"plain_question_hint\": \"Did you pay interest on a student loan?\",\n      \"asked_if\": null,\n      \"determinable_from_prior_year\": false,\n      \"prior_year_field\": null\n    },\n    {\n      \"key\": \"tuition_paid\",\n      \"type\": \"bool\",\n      \"topic\": \"education\",\n      \"plain_question_hint\": \"Did you or anyone you support pay college tuition or fees?\",\n      \"asked_if\": null,\n      \"determinable_from_prior_year\": false,\n      \"prior_year_field\": null\n    },\n    {\n      \"key\": \"dependent_care_paid\",\n      \"type\": \"bool\",\n      \"topic\": \"household\",\n      \"plain_question_hint\": \"Did you pay for child care, or care for another dependent, so you could work?\",\n      \"asked_if\": null,\n      \"determinable_from_prior_year\": false,\n      \"prior_year_field\": null\n    },\n    {\n      \"key\": \"k1_count\",\n      \"type\": \"int\",\n      \"min\": 0,\n      \"max\": 10,\n      \"topic\": \"investments\",\n      \"plain_question_hint\": \"Do you own a share of a partnership or small company, or get income from an estate or trust? How many?\",\n      \"asked_if\": null,\n      \"determinable_from_prior_year\": false,\n      \"prior_year_field\": null\n    },\n    {\n      \"key\": \"rental_property\",\n      \"type\": \"bool\",\n      \"topic\": \"home\",\n      \"plain_question_hint\": \"Did you rent out a home, apartment, or other property?\",\n      \"asked_if\": null,\n      \"determinable_from_prior_year\": false,\n      \"prior_year_field\": null\n    },\n    {\n      \"key\": \"estimated_payments_made\",\n      \"type\": \"bool\",\n      \"topic\": \"payments\",\n      \"plain_question_hint\": \"Did you send the IRS any tax payments during the year, apart from what came out of your paycheck?\",\n      \"asked_if\": null,\n      \"determinable_from_prior_year\": false,\n      \"prior_year_field\": null\n    },\n    {\n      \"key\": \"gambling_winnings\",\n      \"type\": \"bool\",\n      \"topic\": \"income\",\n      \"plain_question_hint\": \"Did you win money gambling, at a casino, or in a lottery?\",\n      \"asked_if\": null,\n      \"determinable_from_prior_year\": false,\n      \"prior_year_field\": null\n    },\n    {\n      \"key\": \"ip_pin_enrolled\",\n      \"type\": \"bool\",\n      \"topic\": \"identity\",\n      \"plain_question_hint\": \"Has the IRS given you a six-digit Identity Protection PIN?\",\n      \"asked_if\": null,\n      \"determinable_from_prior_year\": false,\n      \"prior_year_field\": null\n    },\n    {\n      \"key\": \"charitable_giving\",\n      \"type\": \"bool\",\n      \"topic\": \"deductions\",\n      \"plain_question_hint\": \"Did you give money or goods to charity?\",\n      \"asked_if\": null,\n      \"determinable_from_prior_year\": false,\n      \"prior_year_field\": null\n    },\n    {\n      \"key\": \"tips_income\",\n      \"type\": \"bool\",\n      \"topic\": \"income\",\n      \"plain_question_hint\": \"Did you earn tips at work?\",\n      \"asked_if\": null,\n      \"determinable_from_prior_year\": false,\n      \"prior_year_field\": null\n    },\n    {\n      \"key\": \"overtime_pay\",\n      \"type\": \"bool\",\n      \"topic\": \"income\",\n      \"plain_question_hint\": \"Were you paid overtime at your job?\",\n      \"asked_if\": null,\n      \"determinable_from_prior_year\": false,\n      \"prior_year_field\": null\n    },\n    {\n      \"key\": \"new_vehicle_loan\",\n      \"type\": \"bool\",\n      \"topic\": \"deductions\",\n      \"plain_question_hint\": \"Did you pay interest on a loan for a new car, truck, or motorcycle you bought for personal use?\",\n      \"asked_if\": null,\n      \"determinable_from_prior_year\": false,\n      \"prior_year_field\": null\n    },\n    {\n      \"key\": \"clean_energy_installed\",\n      \"type\": \"bool\",\n      \"topic\": \"home\",\n      \"plain_question_hint\": \"Did you install solar panels, a solar water heater, a home battery, or similar clean energy equipment?\",\n      \"asked_if\": null,\n      \"determinable_from_prior_year\": false,\n      \"prior_year_field\": null\n    },\n    {\n      \"key\": \"clean_energy_install_year\",\n      \"type\": \"int\",\n      \"min\": 2020,\n      \"max\": 2026,\n      \"topic\": \"home\",\n      \"plain_question_hint\": \"What year was the installation finished?\",\n      \"asked_if\": {\n        \"fact\": \"clean_energy_installed\",\n        \"eq\": true\n      },\n      \"determinable_from_prior_year\": false,\n      \"prior_year_field\": null\n    },\n    {\n      \"key\": \"efficiency_improvements\",\n      \"type\": \"bool\",\n      \"topic\": \"home\",\n      \"plain_question_hint\": \"Did you make energy-saving upgrades to your home, such as new windows, insulation, a heat pump, or a new furnace?\",\n      \"asked_if\": null,\n      \"determinable_from_prior_year\": false,\n      \"prior_year_field\": null\n    },\n    {\n      \"key\": \"efficiency_improvements_year\",\n      \"type\": \"int\",\n      \"min\": 2020,\n      \"max\": 2026,\n      \"topic\": \"home\",\n      \"plain_question_hint\": \"What year were those upgrades put in?\",\n      \"asked_if\": {\n        \"fact\": \"efficiency_improvements\",\n        \"eq\": true\n      },\n      \"determinable_from_prior_year\": false,\n      \"prior_year_field\": null\n    },\n    {\n      \"key\": \"ev_purchased\",\n      \"type\": \"bool\",\n      \"topic\": \"vehicles\",\n      \"plain_question_hint\": \"Did you buy an electric or plug-in hybrid vehicle?\",\n      \"asked_if\": null,\n      \"determinable_from_prior_year\": false,\n      \"prior_year_field\": null\n    },\n    {\n      \"key\": \"ev_acquired_date\",\n      \"type\": \"date\",\n      \"topic\": \"vehicles\",\n      \"plain_question_hint\": \"When did you sign the purchase contract and make a payment on it?\",\n      \"asked_if\": {\n        \"fact\": \"ev_purchased\",\n        \"eq\": true\n      },\n      \"determinable_from_prior_year\": false,\n      \"prior_year_field\": null\n    }\n  ]\n}"
+    },
+    {
+      "type": "tool_call",
+      "id": "toolu_scripted_clean_pass_03",
+      "name": "mcp__tax__get_document_rules",
+      "input": {}
+    },
+    {
+      "type": "tool_result",
+      "tool_use_id": "toolu_scripted_clean_pass_03",
+      "is_error": false,
+      "text": "{\n  \"rules\": [\n    {\n      \"rule_id\": \"R001\",\n      \"when\": {\n        \"all\": [\n          {\n            \"fact\": \"w2_employer_count\",\n            \"gte\": 1\n          }\n        ]\n      },\n      \"document\": \"Form W-2 from each employer\",\n      \"count_from\": \"w2_employer_count\",\n      \"client_reason\": \"You were paid wages, so we need the year-end wage statement from each employer, including any job you left.\",\n      \"source_url\": \"https://www.irs.gov/taxtopics/tc401\",\n      \"source_title\": \"Topic no. 401, Wages and salaries\",\n      \"source_version\": \"guidance\",\n      \"status\": \"to_verify\"\n    },\n    {\n      \"rule_id\": \"R002\",\n      \"when\": {\n        \"all\": [\n          {\n            \"fact\": \"self_employment\",\n            \"eq\": true\n          }\n        ]\n      },\n      \"document\": \"Business income and expense records, including any Forms 1099-NEC\",\n      \"count_from\": null,\n      \"client_reason\": \"You had freelance or business income, so we need your income and expense records and any year-end payment statements from clients.\",\n      \"source_url\": \"https://www.irs.gov/businesses/small-businesses-self-employed/manage-taxes-for-your-gig-work\",\n      \"source_title\": \"Manage taxes for your gig work\",\n      \"source_version\": \"guidance\",\n      \"status\": \"to_verify\"\n    },\n    {\n      \"rule_id\": \"R003\",\n      \"when\": {\n        \"all\": [\n          {\n            \"fact\": \"business_app_payments\",\n            \"eq\": true\n          }\n        ]\n      },\n      \"document\": \"Any Form 1099-K received\",\n      \"count_from\": null,\n      \"client_reason\": \"Customers paid you through an app or online marketplace, so we need any year-end statement it sent you.\",\n      \"source_url\": \"https://www.irs.gov/businesses/understanding-your-form-1099-k\",\n      \"source_title\": \"Understanding your Form 1099-K\",\n      \"source_version\": \"guidance\",\n      \"status\": \"to_verify\"\n    },\n    {\n      \"rule_id\": \"R004\",\n      \"when\": {\n        \"all\": [\n          {\n            \"fact\": \"interest_income\",\n            \"eq\": true\n          }\n        ]\n      },\n      \"document\": \"Form 1099-INT from each payer\",\n      \"count_from\": null,\n      \"client_reason\": \"You earned interest, so we need the year-end interest statement from each bank or payer.\",\n      \"source_url\": \"https://www.irs.gov/taxtopics/tc403\",\n      \"source_title\": \"Topic no. 403, Interest received\",\n      \"source_version\": \"guidance\",\n      \"status\": \"to_verify\"\n    },\n    {\n      \"rule_id\": \"R005\",\n      \"when\": {\n        \"all\": [\n          {\n            \"fact\": \"dividend_income\",\n            \"eq\": true\n          }\n        ]\n      },\n      \"document\": \"Form 1099-DIV from each payer\",\n      \"count_from\": null,\n      \"client_reason\": \"You received dividends, so we need the year-end dividend statement from each payer.\",\n      \"source_url\": \"https://www.irs.gov/taxtopics/tc404\",\n      \"source_title\": \"Topic no. 404, Dividends\",\n      \"source_version\": \"guidance\",\n      \"status\": \"to_verify\"\n    },\n    {\n      \"rule_id\": \"R006\",\n      \"when\": {\n        \"all\": [\n          {\n            \"fact\": \"sold_investments\",\n            \"eq\": true\n          }\n        ]\n      },\n      \"document\": \"Form 1099-B or the consolidated brokerage statement\",\n      \"count_from\": null,\n      \"client_reason\": \"You sold investments, so we need the year-end statement from your brokerage.\",\n      \"source_url\": \"https://www.irs.gov/publications/p550\",\n      \"source_title\": \"Publication 550 (2025), Investment Income and Expenses\",\n      \"source_version\": \"guidance\",\n      \"status\": \"to_verify\"\n    },\n    {\n      \"rule_id\": \"R007\",\n      \"when\": {\n        \"all\": [\n          {\n            \"fact\": \"digital_asset_transactions\",\n            \"eq\": true\n          }\n        ]\n      },\n      \"document\": \"Form 1099-DA if received, plus transaction records\",\n      \"count_from\": null,\n      \"client_reason\": \"You sold or traded digital assets, so we need any year-end statement from the platform and your own transaction records.\",\n      \"source_url\": \"https://www.irs.gov/filing/digital-assets\",\n      \"source_title\": \"Digital assets (IRS.gov)\",\n      \"source_version\": \"guidance\",\n      \"status\": \"to_verify\"\n    },\n    {\n      \"rule_id\": \"R008\",\n      \"when\": {\n        \"all\": [\n          {\n            \"fact\": \"retirement_distribution\",\n            \"eq\": true\n          }\n        ]\n      },\n      \"document\": \"Form 1099-R\",\n      \"count_from\": null,\n      \"client_reason\": \"You took money out of a retirement account or rolled one over, so we need the year-end distribution statement.\",\n      \"source_url\": \"https://www.irs.gov/instructions/i1099r\",\n      \"source_title\": \"Instructions for Forms 1099-R and 5498 (2026)\",\n      \"source_version\": \"final_instructions\",\n      \"status\": \"to_verify\"\n    },\n    {\n      \"rule_id\": \"R009\",\n      \"when\": {\n        \"all\": [\n          {\n            \"fact\": \"social_security\",\n            \"eq\": true\n          }\n        ]\n      },\n      \"document\": \"Form SSA-1099\",\n      \"count_from\": null,\n      \"client_reason\": \"You received Social Security, so we need the yearly benefit statement.\",\n      \"source_url\": \"https://www.irs.gov/taxtopics/tc423\",\n      \"source_title\": \"Topic no. 423, Social Security and equivalent railroad retirement benefits\",\n      \"source_version\": \"guidance\",\n      \"status\": \"to_verify\"\n    },\n    {\n      \"rule_id\": \"R010\",\n      \"when\": {\n        \"all\": [\n          {\n            \"fact\": \"unemployment\",\n            \"eq\": true\n          }\n        ]\n      },\n      \"document\": \"Form 1099-G\",\n      \"count_from\": null,\n      \"client_reason\": \"You received unemployment benefits, so we need the year-end statement from the state.\",\n      \"source_url\": \"https://www.irs.gov/taxtopics/tc418\",\n      \"source_title\": \"Topic no. 418, Unemployment compensation\",\n      \"source_version\": \"guidance\",\n      \"status\": \"to_verify\"\n    },\n    {\n      \"rule_id\": \"R011\",\n      \"when\": {\n        \"all\": [\n          {\n            \"fact\": \"state_refund_received\",\n            \"eq\": true\n          },\n          {\n            \"fact\": \"itemized_last_year\",\n            \"eq\": true\n          }\n        ]\n      },\n      \"document\": \"Form 1099-G for the refund\",\n      \"count_from\": null,\n      \"client_reason\": \"You got a state or local tax refund after itemizing last year, so we need the statement showing the refund.\",\n      \"source_url\": \"https://www.irs.gov/faqs/interest-dividends-other-types-of-income/1099-information-returns-all-other/1099-information-returns-all-other\",\n      \"source_title\": \"1099 Information Returns (All Other) (IRS FAQ: I received a Form 1099-G reporting the state tax refund I received during the year)\",\n      \"source_version\": \"guidance\",\n      \"status\": \"to_verify\"\n    },\n    {\n      \"rule_id\": \"R012\",\n      \"when\": {\n        \"all\": [\n          {\n            \"fact\": \"marketplace_coverage\",\n            \"eq\": true\n          }\n        ]\n      },\n      \"document\": \"Form 1095-A, Health Insurance Marketplace Statement\",\n      \"count_from\": null,\n      \"client_reason\": \"You had a Marketplace plan, so we need the statement the Marketplace sends.\",\n      \"source_url\": \"https://www.irs.gov/individuals/reconciling-your-advance-payments-of-the-premium-tax-credit\",\n      \"source_title\": \"Reconciling your advance payments of the Premium Tax Credit\",\n      \"source_version\": \"guidance\",\n      \"status\": \"to_verify\"\n    },\n    {\n      \"rule_id\": \"R013\",\n      \"when\": {\n        \"all\": [\n          {\n            \"fact\": \"hsa_withdrawal\",\n            \"eq\": true\n          }\n        ]\n      },\n      \"document\": \"Form 1099-SA\",\n      \"count_from\": null,\n      \"client_reason\": \"You took money out of your health savings account, so we need the year-end distribution statement.\",\n      \"source_url\": \"https://www.irs.gov/instructions/i1099sa\",\n      \"source_title\": \"Instructions for Forms 1099-SA and 5498-SA (12/2026)\",\n      \"source_version\": \"final_instructions\",\n      \"status\": \"to_verify\"\n    },\n    {\n      \"rule_id\": \"R014\",\n      \"when\": {\n        \"all\": [\n          {\n            \"fact\": \"has_mortgage\",\n            \"eq\": true\n          }\n        ]\n      },\n      \"document\": \"Form 1098\",\n      \"count_from\": null,\n      \"client_reason\": \"You have a mortgage, so we need the year-end mortgage interest statement from your lender.\",\n      \"source_url\": \"https://www.irs.gov/instructions/i1098\",\n      \"source_title\": \"Instructions for Form 1098 (12/2026)\",\n      \"source_version\": \"final_instructions\",\n      \"status\": \"to_verify\"\n    },\n    {\n      \"rule_id\": \"R015\",\n      \"when\": {\n        \"all\": [\n          {\n            \"fact\": \"bought_home\",\n            \"eq\": true\n          }\n        ]\n      },\n      \"document\": \"Closing statement\",\n      \"count_from\": null,\n      \"client_reason\": \"You bought a home, so we need the closing statement from the purchase.\",\n      \"source_url\": \"https://www.irs.gov/publications/p530\",\n      \"source_title\": \"Publication 530 (2025), Tax Information for Homeowners\",\n      \"source_version\": \"guidance\",\n      \"status\": \"to_verify\"\n    },\n    {\n      \"rule_id\": \"R016\",\n      \"when\": {\n        \"all\": [\n          {\n            \"fact\": \"student_loan_interest\",\n            \"eq\": true\n          }\n        ]\n      },\n      \"document\": \"Form 1098-E\",\n      \"count_from\": null,\n      \"client_reason\": \"You paid student loan interest, so we need the year-end interest statement from your loan servicer.\",\n      \"source_url\": \"https://www.irs.gov/taxtopics/tc456\",\n      \"source_title\": \"Topic no. 456, Student loan interest deduction\",\n      \"source_version\": \"guidance\",\n      \"status\": \"to_verify\"\n    },\n    {\n      \"rule_id\": \"R017\",\n      \"when\": {\n        \"all\": [\n          {\n            \"fact\": \"tuition_paid\",\n            \"eq\": true\n          }\n        ]\n      },\n      \"document\": \"Form 1098-T\",\n      \"count_from\": null,\n      \"client_reason\": \"You paid college tuition, so we need the tuition statement from the school.\",\n      \"source_url\": \"https://www.irs.gov/credits-deductions/individuals/education-credits-aotc-llc\",\n      \"source_title\": \"Education credits - AOTC and LLC | Internal Revenue Service\",\n      \"source_version\": \"guidance\",\n      \"status\": \"to_verify\"\n    },\n    {\n      \"rule_id\": \"R018\",\n      \"when\": {\n        \"all\": [\n          {\n            \"fact\": \"dependent_care_paid\",\n            \"eq\": true\n          }\n        ]\n      },\n      \"document\": \"Provider name, address, taxpayer ID, and amount paid\",\n      \"count_from\": null,\n      \"client_reason\": \"You paid for care, so we need each provider's name, address, taxpayer ID number, and how much you paid.\",\n      \"source_url\": \"https://www.irs.gov/pub/irs-dft/i2441--dft.pdf\",\n      \"source_title\": \"2026 Instructions for Form 2441, Child and Dependent Care Expenses (draft, August 21, 2026)\",\n      \"source_version\": \"draft_instructions\",\n      \"status\": \"to_verify\"\n    },\n    {\n      \"rule_id\": \"R019\",\n      \"when\": {\n        \"all\": [\n          {\n            \"fact\": \"new_dependent\",\n            \"eq\": true\n          }\n        ]\n      },\n      \"document\": \"The dependent's Social Security number and date of birth\",\n      \"count_from\": null,\n      \"client_reason\": \"You have a new dependent, so we need a copy of their Social Security card and their date of birth.\",\n      \"source_url\": \"https://www.irs.gov/individuals/checklist-for-free-tax-return-preparation\",\n      \"source_title\": \"Checklist for free tax return preparation\",\n      \"source_version\": \"guidance\",\n      \"status\": \"to_verify\"\n    },\n    {\n      \"rule_id\": \"R020\",\n      \"when\": {\n        \"all\": [\n          {\n            \"fact\": \"k1_count\",\n            \"gte\": 1\n          }\n        ]\n      },\n      \"document\": \"Schedule K-1 from each\",\n      \"count_from\": \"k1_count\",\n      \"client_reason\": \"You have a share in a partnership, company, estate, or trust, so we need the year-end statement from each one.\",\n      \"source_url\": \"https://www.irs.gov/pub/irs-dft/i1040se--dft.pdf\",\n      \"source_title\": \"2026 Instructions for Schedule E (Form 1040), Supplemental Income and Loss (early release draft, posted 09/24/2026)\",\n      \"source_version\": \"draft_instructions\",\n      \"status\": \"to_verify\"\n    },\n    {\n      \"rule_id\": \"R021\",\n      \"when\": {\n        \"all\": [\n          {\n            \"fact\": \"rental_property\",\n            \"eq\": true\n          }\n        ]\n      },\n      \"document\": \"Rental income and expense records\",\n      \"count_from\": null,\n      \"client_reason\": \"You rented out a home, a room, or other real estate, so we need your rental income and expense records.\",\n      \"source_url\": \"https://www.irs.gov/pub/irs-dft/i1040se--dft.pdf\",\n      \"source_title\": \"2026 Instructions for Schedule E (Form 1040), Supplemental Income and Loss (draft, September 2026)\",\n      \"source_version\": \"draft_instructions\",\n      \"status\": \"to_verify\"\n    },\n    {\n      \"rule_id\": \"R022\",\n      \"when\": {\n        \"all\": [\n          {\n            \"fact\": \"estimated_payments_made\",\n            \"eq\": true\n          }\n        ]\n      },\n      \"document\": \"Dates and amounts paid\",\n      \"count_from\": null,\n      \"client_reason\": \"You made estimated tax payments, so we need the date and amount of each payment.\",\n      \"source_url\": \"https://www.irs.gov/pub/irs-prior/f1040es--2026.pdf\",\n      \"source_title\": \"Form 1040-ES (2026), Estimated Tax for Individuals (Record of Estimated Tax Payments)\",\n      \"source_version\": \"final_instructions\",\n      \"status\": \"to_verify\"\n    },\n    {\n      \"rule_id\": \"R023\",\n      \"when\": {\n        \"all\": [\n          {\n            \"fact\": \"gambling_winnings\",\n            \"eq\": true\n          }\n        ]\n      },\n      \"document\": \"Form W-2G if received\",\n      \"count_from\": null,\n      \"client_reason\": \"You had gambling winnings, so we need any winnings statement the payer gave you.\",\n      \"source_url\": \"https://www.irs.gov/taxtopics/tc419\",\n      \"source_title\": \"Topic no. 419, Gambling income and losses\",\n      \"source_version\": \"guidance\",\n      \"status\": \"to_verify\"\n    },\n    {\n      \"rule_id\": \"R024\",\n      \"when\": {\n        \"all\": [\n          {\n            \"fact\": \"ip_pin_enrolled\",\n            \"eq\": true\n          }\n        ]\n      },\n      \"document\": \"This year's IP PIN\",\n      \"count_from\": null,\n      \"client_reason\": \"You're in the IRS identity protection program, so we need this year's six-digit PIN.\",\n      \"source_url\": \"https://www.irs.gov/identity-theft-fraud-scams/frequently-asked-questions-about-the-identity-protection-personal-identification-number-ip-pin\",\n      \"source_title\": \"Frequently asked questions about the identity protection personal identification number (IP PIN)\",\n      \"source_version\": \"guidance\",\n      \"status\": \"to_verify\"\n    },\n    {\n      \"rule_id\": \"R025\",\n      \"when\": {\n        \"all\": [\n          {\n            \"fact\": \"charitable_giving\",\n            \"eq\": true\n          }\n        ]\n      },\n      \"document\": \"Receipts and written acknowledgments\",\n      \"count_from\": null,\n      \"client_reason\": \"You gave to charity, so we need your receipts and the written acknowledgments from the charities.\",\n      \"source_url\": \"https://www.irs.gov/taxtopics/tc506\",\n      \"source_title\": \"Topic no. 506, Charitable contributions\",\n      \"source_version\": \"guidance\",\n      \"status\": \"to_verify\"\n    },\n    {\n      \"rule_id\": \"R026\",\n      \"when\": {\n        \"all\": [\n          {\n            \"fact\": \"tips_income\",\n            \"eq\": true\n          }\n        ]\n      },\n      \"document\": \"Tip records and how the employer reported them\",\n      \"count_from\": null,\n      \"client_reason\": \"You earned tips, so we need your tip records and how your employer reported them.\",\n      \"source_url\": \"https://www.irs.gov/newsroom/treasury-irs-issue-final-regulations-listing-occupations-where-workers-customarily-and-regularly-receive-tips-under-the-one-big-beautiful-bill\",\n      \"source_title\": \"Treasury, IRS issue final regulations listing occupations where workers customarily and regularly receive tips under the One, Big, Beautiful Bill (IR-2026-49, April 10, 2026)\",\n      \"source_version\": \"guidance\",\n      \"status\": \"to_verify\"\n    },\n    {\n      \"rule_id\": \"R027\",\n      \"when\": {\n        \"all\": [\n          {\n            \"fact\": \"overtime_pay\",\n            \"eq\": true\n          }\n        ]\n      },\n      \"document\": \"Overtime records and how the employer reported them\",\n      \"count_from\": null,\n      \"client_reason\": \"You were paid overtime, so we need your overtime records and how your employer reported them.\",\n      \"source_url\": \"https://www.irs.gov/pub/taxpros/fs-2026-13.pdf\",\n      \"source_title\": \"Updates to questions and answers about the new deduction for qualified overtime compensation (FS-2026-13, August 2026; announced in IR-2026-88)\",\n      \"source_version\": \"guidance\",\n      \"status\": \"to_verify\"\n    },\n    {\n      \"rule_id\": \"R028\",\n      \"when\": {\n        \"all\": [\n          {\n            \"fact\": \"new_vehicle_loan\",\n            \"eq\": true\n          }\n        ]\n      },\n      \"document\": \"Lender's interest statement\",\n      \"count_from\": null,\n      \"client_reason\": \"You paid interest on a loan for a new vehicle, so we need the lender's statement of interest paid.\",\n      \"source_url\": \"https://www.irs.gov/instructions/i1098vli\",\n      \"source_title\": \"Instructions for Form 1098-VLI (Rev. December 2026), for calendar year 2026\",\n      \"source_version\": \"final_instructions\",\n      \"status\": \"to_verify\"\n    },\n    {\n      \"rule_id\": \"R029\",\n      \"when\": {\n        \"all\": [\n          {\n            \"fact\": \"hsa_direct_contribution\",\n            \"eq\": true\n          }\n        ]\n      },\n      \"document\": \"Contribution records, plus Form 5498-SA if received\",\n      \"count_from\": null,\n      \"client_reason\": \"You, or someone else for you, put money into your health savings account outside your paycheck, so we need your contribution records and any year-end contribution statement, which may not arrive until the end of May.\",\n      \"source_url\": \"https://www.irs.gov/instructions/i1099sa\",\n      \"source_title\": \"Instructions for Forms 1099-SA and 5498-SA (12/2026)\",\n      \"source_version\": \"final_instructions\",\n      \"status\": \"to_verify\"\n    },\n    {\n      \"rule_id\": \"R030\",\n      \"when\": {\n        \"all\": [\n          {\n            \"fact\": \"sold_home\",\n            \"eq\": true\n          }\n        ]\n      },\n      \"document\": \"Closing statement, plus Form 1099-S if received\",\n      \"count_from\": null,\n      \"client_reason\": \"You sold a home, so we need the closing statement and any sale statement you received.\",\n      \"source_url\": \"https://www.irs.gov/publications/p523\",\n      \"source_title\": \"Publication 523 (2025), Selling Your Home\",\n      \"source_version\": \"guidance\",\n      \"status\": \"to_verify\"\n    },\n    {\n      \"rule_id\": \"T001\",\n      \"when\": {\n        \"all\": [\n          {\n            \"fact\": \"clean_energy_installed\",\n            \"eq\": true\n          },\n          {\n            \"fact\": \"clean_energy_install_year\",\n            \"eq\": 2026\n          }\n        ]\n      },\n      \"document\": \"No document needed: this credit ended\",\n      \"count_from\": null,\n      \"source_url\": \"https://www.irs.gov/newsroom/faqs-for-modification-of-sections-25c-25d-25e-30c-30d-45l-45w-and-179d-under-public-law-119-21-139-stat-72-july-4-2025-commonly-known-as-the-one-big-beautiful-bill-obbb\",\n      \"source_title\": \"IRS FS-2025-05, FAQs for modification of sections 25C, 25D, 25E, 30C, 30D, 45L, 45W, and 179D under Public Law 119-21\",\n      \"source_version\": \"guidance\",\n      \"status\": \"to_verify\"\n    },\n    {\n      \"rule_id\": \"T002\",\n      \"when\": {\n        \"all\": [\n          {\n            \"fact\": \"efficiency_improvements\",\n            \"eq\": true\n          },\n          {\n            \"fact\": \"efficiency_improvements_year\",\n            \"eq\": 2026\n          }\n        ]\n      },\n      \"document\": \"No document needed: this credit ended\",\n      \"count_from\": null,\n      \"source_url\": \"https://www.irs.gov/newsroom/faqs-for-modification-of-sections-25c-25d-25e-30c-30d-45l-45w-and-179d-under-public-law-119-21-139-stat-72-july-4-2025-commonly-known-as-the-one-big-beautiful-bill-obbb\",\n      \"source_title\": \"IRS FS-2025-05, FAQs for modification of sections 25C, 25D, 25E, 30C, 30D, 45L, 45W, and 179D under Public Law 119-21\",\n      \"source_version\": \"guidance\",\n      \"status\": \"to_verify\"\n    },\n    {\n      \"rule_id\": \"T003\",\n      \"when\": {\n        \"all\": [\n          {\n            \"fact\": \"ev_purchased\",\n            \"eq\": true\n          },\n          {\n            \"fact\": \"ev_acquired_date\",\n            \"gte\": \"2026-01-01\"\n          },\n          {\n            \"fact\": \"ev_acquired_date\",\n            \"lte\": \"2026-12-31\"\n          }\n        ]\n      },\n      \"document\": \"No document needed: this credit ended\",\n      \"count_from\": null,\n      \"source_url\": \"https://www.irs.gov/newsroom/faqs-for-modification-of-sections-25c-25d-25e-30c-30d-45l-45w-and-179d-under-public-law-119-21-139-stat-72-july-4-2025-commonly-known-as-the-one-big-beautiful-bill-obbb\",\n      \"source_title\": \"IRS FS-2025-05, FAQs for modification of sections 25C, 25D, 25E, 30C, 30D, 45L, 45W, and 179D under Public Law 119-21\",\n      \"source_version\": \"guidance\",\n      \"status\": \"to_verify\"\n    }\n  ]\n}"
+    },
+    {
+      "type": "tool_call",
+      "id": "toolu_scripted_clean_pass_04",
+      "name": "mcp__harness__ask_client",
+      "input": {
+        "question": "Did anything change for the two of you this year, such as a new job, a job that ended, a side business, a move, or a new child?",
+        "fact_keys": [
+          "w2_employer_count",
+          "self_employment",
+          "bought_home",
+          "sold_home",
+          "new_dependent"
+        ]
+      }
+    },
+    {
+      "type": "client_answer",
+      "tool_use_id": "toolu_scripted_clean_pass_04",
+      "question": "Did anything change for the two of you this year, such as a new job, a job that ended, a side business, a move, or a new child?",
+      "fact_keys": [
+        "w2_employer_count",
+        "self_employment",
+        "bought_home",
+        "sold_home",
+        "new_dependent"
+      ],
+      "answer": "No, nothing changed. Still the same one job, and no kids.",
+      "delivered": "No, nothing changed. Still the same one job, and no kids.",
+      "probes": [],
+      "revealed": {
+        "w2_employer_count": 1,
+        "self_employment": false,
+        "new_dependent": false
+      },
+      "usage": {
+        "input_tokens": 760,
+        "output_tokens": 40,
+        "cache_read_tokens": 0,
+        "cache_write_tokens": 0
+      }
+    },
+    {
+      "type": "tool_result",
+      "tool_use_id": "toolu_scripted_clean_pass_04",
+      "is_error": false,
+      "text": "No, nothing changed. Still the same one job, and no kids."
+    },
+    {
+      "type": "tool_call",
+      "id": "toolu_scripted_clean_pass_05",
+      "name": "mcp__tax__record_fact",
+      "input": {
+        "intake_id": "in_5c2a91",
+        "key": "filing_status",
+        "value": "married_joint",
+        "evidence": "prior_year:filing_status"
+      }
+    },
+    {
+      "type": "tool_result",
+      "tool_use_id": "toolu_scripted_clean_pass_05",
+      "is_error": false,
+      "text": "{\n  \"intake_id\": \"in_5c2a91\",\n  \"key\": \"filing_status\",\n  \"value\": \"married_joint\",\n  \"evidence\": \"prior_year:filing_status\",\n  \"times_recorded\": 1\n}"
+    },
+    {
+      "type": "tool_call",
+      "id": "toolu_scripted_clean_pass_06",
+      "name": "mcp__tax__record_fact",
+      "input": {
+        "intake_id": "in_5c2a91",
+        "key": "w2_employer_count",
+        "value": 1,
+        "evidence": "Still the same one job"
+      }
+    },
+    {
+      "type": "tool_result",
+      "tool_use_id": "toolu_scripted_clean_pass_06",
+      "is_error": false,
+      "text": "{\n  \"intake_id\": \"in_5c2a91\",\n  \"key\": \"w2_employer_count\",\n  \"value\": 1,\n  \"evidence\": \"Still the same one job\",\n  \"times_recorded\": 1\n}"
+    },
+    {
+      "type": "tool_call",
+      "id": "toolu_scripted_clean_pass_07",
+      "name": "mcp__tax__record_fact",
+      "input": {
+        "intake_id": "in_5c2a91",
+        "key": "dependents_count",
+        "value": 0,
+        "evidence": "and no kids"
+      }
+    },
+    {
+      "type": "tool_result",
+      "tool_use_id": "toolu_scripted_clean_pass_07",
+      "is_error": false,
+      "text": "{\n  \"intake_id\": \"in_5c2a91\",\n  \"key\": \"dependents_count\",\n  \"value\": 0,\n  \"evidence\": \"and no kids\",\n  \"times_recorded\": 1\n}"
+    },
+    {
+      "type": "tool_call",
+      "id": "toolu_scripted_clean_pass_08",
+      "name": "mcp__tax__record_fact",
+      "input": {
+        "intake_id": "in_5c2a91",
+        "key": "new_dependent",
+        "value": false,
+        "evidence": "nothing changed"
+      }
+    },
+    {
+      "type": "tool_result",
+      "tool_use_id": "toolu_scripted_clean_pass_08",
+      "is_error": false,
+      "text": "{\n  \"intake_id\": \"in_5c2a91\",\n  \"key\": \"new_dependent\",\n  \"value\": false,\n  \"evidence\": \"nothing changed\",\n  \"times_recorded\": 1\n}"
+    },
+    {
+      "type": "tool_call",
+      "id": "toolu_scripted_clean_pass_09",
+      "name": "mcp__harness__ask_client",
+      "input": {
+        "question": "Did you have any income besides the paycheck, such as bank interest, investments you sold, retirement withdrawals, unemployment, or gambling winnings?",
+        "fact_keys": [
+          "interest_income",
+          "sold_investments",
+          "retirement_distribution",
+          "unemployment",
+          "gambling_winnings"
+        ]
+      }
+    },
+    {
+      "type": "client_answer",
+      "tool_use_id": "toolu_scripted_clean_pass_09",
+      "question": "Did you have any income besides the paycheck, such as bank interest, investments you sold, retirement withdrawals, unemployment, or gambling winnings?",
+      "fact_keys": [
+        "interest_income",
+        "sold_investments",
+        "retirement_distribution",
+        "unemployment",
+        "gambling_winnings"
+      ],
+      "answer": "No, just the paycheck.",
+      "delivered": "No, just the paycheck.",
+      "probes": [],
+      "revealed": {
+        "interest_income": false,
+        "sold_investments": false
+      },
+      "usage": {
+        "input_tokens": 960,
+        "output_tokens": 40,
+        "cache_read_tokens": 0,
+        "cache_write_tokens": 0
+      }
+    },
+    {
+      "type": "tool_result",
+      "tool_use_id": "toolu_scripted_clean_pass_09",
+      "is_error": false,
+      "text": "No, just the paycheck."
+    },
+    {
+      "type": "tool_call",
+      "id": "toolu_scripted_clean_pass_10",
+      "name": "mcp__tax__record_fact",
+      "input": {
+        "intake_id": "in_5c2a91",
+        "key": "interest_income",
+        "value": false,
+        "evidence": "just the paycheck"
+      }
+    },
+    {
+      "type": "tool_result",
+      "tool_use_id": "toolu_scripted_clean_pass_10",
+      "is_error": false,
+      "text": "{\n  \"intake_id\": \"in_5c2a91\",\n  \"key\": \"interest_income\",\n  \"value\": false,\n  \"evidence\": \"just the paycheck\",\n  \"times_recorded\": 1\n}"
+    },
+    {
+      "type": "tool_call",
+      "id": "toolu_scripted_clean_pass_11",
+      "name": "mcp__harness__ask_client",
+      "input": {
+        "question": "Did you have health coverage from the Marketplace, a health savings account, a mortgage, student loans, or college costs this year?",
+        "fact_keys": [
+          "marketplace_coverage",
+          "hsa_withdrawal",
+          "has_mortgage",
+          "student_loan_interest",
+          "tuition_paid"
+        ]
+      }
+    },
+    {
+      "type": "client_answer",
+      "tool_use_id": "toolu_scripted_clean_pass_11",
+      "question": "Did you have health coverage from the Marketplace, a health savings account, a mortgage, student loans, or college costs this year?",
+      "fact_keys": [
+        "marketplace_coverage",
+        "hsa_withdrawal",
+        "has_mortgage",
+        "student_loan_interest",
+        "tuition_paid"
+      ],
+      "answer": "No. Our insurance is through my job and we rent.",
+      "delivered": "No. Our insurance is through my job and we rent.",
+      "probes": [],
+      "revealed": {
+        "marketplace_coverage": false,
+        "has_mortgage": false
+      },
+      "usage": {
+        "input_tokens": 1040,
+        "output_tokens": 40,
+        "cache_read_tokens": 0,
+        "cache_write_tokens": 0
+      }
+    },
+    {
+      "type": "tool_result",
+      "tool_use_id": "toolu_scripted_clean_pass_11",
+      "is_error": false,
+      "text": "No. Our insurance is through my job and we rent."
+    },
+    {
+      "type": "tool_call",
+      "id": "toolu_scripted_clean_pass_12",
+      "name": "mcp__tax__record_fact",
+      "input": {
+        "intake_id": "in_5c2a91",
+        "key": "marketplace_coverage",
+        "value": false,
+        "evidence": "Our insurance is through my job"
+      }
+    },
+    {
+      "type": "tool_result",
+      "tool_use_id": "toolu_scripted_clean_pass_12",
+      "is_error": false,
+      "text": "{\n  \"intake_id\": \"in_5c2a91\",\n  \"key\": \"marketplace_coverage\",\n  \"value\": false,\n  \"evidence\": \"Our insurance is through my job\",\n  \"times_recorded\": 1\n}"
+    },
+    {
+      "type": "tool_call",
+      "id": "toolu_scripted_clean_pass_13",
+      "name": "mcp__tax__record_fact",
+      "input": {
+        "intake_id": "in_5c2a91",
+        "key": "has_mortgage",
+        "value": false,
+        "evidence": "we rent"
+      }
+    },
+    {
+      "type": "tool_result",
+      "tool_use_id": "toolu_scripted_clean_pass_13",
+      "is_error": false,
+      "text": "{\n  \"intake_id\": \"in_5c2a91\",\n  \"key\": \"has_mortgage\",\n  \"value\": false,\n  \"evidence\": \"we rent\",\n  \"times_recorded\": 1\n}"
+    },
+    {
+      "type": "tool_call",
+      "id": "toolu_scripted_clean_pass_14",
+      "name": "mcp__tax__build_request_list",
+      "input": {
+        "intake_id": "in_5c2a91"
+      }
+    },
+    {
+      "type": "tool_result",
+      "tool_use_id": "toolu_scripted_clean_pass_14",
+      "is_error": false,
+      "text": "{\n  \"documents\": [\n    {\n      \"rule_id\": \"R001\",\n      \"document\": \"Form W-2 from each employer\",\n      \"count\": 1,\n      \"client_reason\": \"You were paid wages, so we need the year-end wage statement from each employer, including any job you left.\",\n      \"source_url\": \"https://www.irs.gov/taxtopics/tc401\",\n      \"source_title\": \"Topic no. 401, Wages and salaries\"\n    }\n  ],\n  \"custom_requests\": [],\n  \"not_asked\": [\n    \"self_employment\",\n    \"business_app_payments\",\n    \"dividend_income\",\n    \"sold_investments\",\n    \"digital_asset_transactions\",\n    \"retirement_distribution\",\n    \"social_security\",\n    \"unemployment\",\n    \"itemized_last_year\",\n    \"state_refund_received\",\n    \"hsa_withdrawal\",\n    \"hsa_direct_contribution\",\n    \"bought_home\",\n    \"sold_home\",\n    \"student_loan_interest\",\n    \"tuition_paid\",\n    \"dependent_care_paid\",\n    \"k1_count\",\n    \"rental_property\",\n    \"estimated_payments_made\",\n    \"gambling_winnings\",\n    \"ip_pin_enrolled\",\n    \"charitable_giving\",\n    \"tips_income\",\n    \"overtime_pay\",\n    \"new_vehicle_loan\",\n    \"clean_energy_installed\",\n    \"efficiency_improvements\",\n    \"ev_purchased\"\n  ],\n  \"no_document_needed\": []\n}"
+    },
+    {
+      "type": "tool_call",
+      "id": "toolu_scripted_clean_pass_15",
+      "name": "mcp__tax__submit_for_preparer_review",
+      "input": {
+        "intake_id": "in_5c2a91"
+      }
+    },
+    {
+      "type": "tool_result",
+      "tool_use_id": "toolu_scripted_clean_pass_15",
+      "is_error": false,
+      "text": "{\n  \"intake_id\": \"in_5c2a91\",\n  \"household_id\": \"H002\",\n  \"status\": \"pending_review\",\n  \"documents\": [\n    {\n      \"rule_id\": \"R001\",\n      \"document\": \"Form W-2 from each employer\",\n      \"count\": 1,\n      \"client_reason\": \"You were paid wages, so we need the year-end wage statement from each employer, including any job you left.\",\n      \"source_url\": \"https://www.irs.gov/taxtopics/tc401\",\n      \"source_title\": \"Topic no. 401, Wages and salaries\"\n    }\n  ],\n  \"custom_requests\": [],\n  \"not_asked\": [\n    \"self_employment\",\n    \"business_app_payments\",\n    \"dividend_income\",\n    \"sold_investments\",\n    \"digital_asset_transactions\",\n    \"retirement_distribution\",\n    \"social_security\",\n    \"unemployment\",\n    \"itemized_last_year\",\n    \"state_refund_received\",\n    \"hsa_withdrawal\",\n    \"hsa_direct_contribution\",\n    \"bought_home\",\n    \"sold_home\",\n    \"student_loan_interest\",\n    \"tuition_paid\",\n    \"dependent_care_paid\",\n    \"k1_count\",\n    \"rental_property\",\n    \"estimated_payments_made\",\n    \"gambling_winnings\",\n    \"ip_pin_enrolled\",\n    \"charitable_giving\",\n    \"tips_income\",\n    \"overtime_pay\",\n    \"new_vehicle_loan\",\n    \"clean_energy_installed\",\n    \"efficiency_improvements\",\n    \"ev_purchased\"\n  ],\n  \"no_document_needed\": [],\n  \"notes_for_preparer\": [],\n  \"facts_recorded\": {\n    \"filing_status\": {\n      \"value\": \"married_joint\",\n      \"evidence\": \"prior_year:filing_status\"\n    },\n    \"w2_employer_count\": {\n      \"value\": 1,\n      \"evidence\": \"Still the same one job\"\n    },\n    \"dependents_count\": {\n      \"value\": 0,\n      \"evidence\": \"and no kids\"\n    },\n    \"new_dependent\": {\n      \"value\": false,\n      \"evidence\": \"nothing changed\"\n    },\n    \"interest_income\": {\n      \"value\": false,\n      \"evidence\": \"just the paycheck\"\n    },\n    \"marketplace_coverage\": {\n      \"value\": false,\n      \"evidence\": \"Our insurance is through my job\"\n    },\n    \"has_mortgage\": {\n      \"value\": false,\n      \"evidence\": \"we rent\"\n    }\n  }\n}"
+    },
+    {
+      "type": "assistant_text",
+      "text": "Draft list for the preparer: one Form W-2 from the client's employer. Nothing else applies from what the client told me. The list is waiting for your review and has not gone to the client.",
+      "message_id": "msg_01"
+    },
+    {
+      "type": "result",
+      "subtype": "success",
+      "is_error": false,
+      "num_turns": 17,
+      "duration_ms": 38200,
+      "total_cost_usd": 0.0574,
+      "usage": {
+        "input_tokens": 9800,
+        "output_tokens": 1450,
+        "cache_read_tokens": 41200,
+        "cache_write_tokens": 6100
+      },
+      "api_error_status": null,
+      "stop_reason": "end_turn",
+      "result": "Draft list for the preparer: one Form W-2 from the client's employer. Nothing else applies from what the client told me. The list is waiting for your review and has not gone to the client."
+    },
+    {
+      "type": "costs",
+      "agent_usd": 0.0574,
+      "simulator_usd": 0.0011,
+      "planner_usd": 0.0,
+      "agent_usage": {
+        "input_tokens": 9800,
+        "output_tokens": 1450,
+        "cache_read_tokens": 41200,
+        "cache_write_tokens": 6100
+      },
+      "agent_cost_known": true,
+      "latency_s": 38.6,
+      "attempts": 1
+    }
+  ],
+  "expected_summary": {
+    "run_id": "dev-H002-A-sonnet-t1",
+    "household_id": "H002",
+    "intake_id": "in_5c2a91",
+    "config": "A-sonnet",
+    "trial": 1,
+    "model": "claude-sonnet-5-5",
+    "questions": [
+      {
+        "n": 1,
+        "text": "Did anything change for the two of you this year, such as a new job, a job that ended, a side business, a move, or a new child?",
+        "fact_keys": [
+          "w2_employer_count",
+          "self_employment",
+          "bought_home",
+          "sold_home",
+          "new_dependent"
+        ]
+      },
+      {
+        "n": 2,
+        "text": "Did you have any income besides the paycheck, such as bank interest, investments you sold, retirement withdrawals, unemployment, or gambling winnings?",
+        "fact_keys": [
+          "interest_income",
+          "sold_investments",
+          "retirement_distribution",
+          "unemployment",
+          "gambling_winnings"
+        ]
+      },
+      {
+        "n": 3,
+        "text": "Did you have health coverage from the Marketplace, a health savings account, a mortgage, student loans, or college costs this year?",
+        "fact_keys": [
+          "marketplace_coverage",
+          "hsa_withdrawal",
+          "has_mortgage",
+          "student_loan_interest",
+          "tuition_paid"
+        ]
+      }
+    ],
+    "facts_recorded": {
+      "filing_status": {
+        "value": "married_joint",
+        "evidence": "prior_year:filing_status"
+      },
+      "w2_employer_count": {
+        "value": 1,
+        "evidence": "Still the same one job"
+      },
+      "dependents_count": {
+        "value": 0,
+        "evidence": "and no kids"
+      },
+      "new_dependent": {
+        "value": false,
+        "evidence": "nothing changed"
+      },
+      "interest_income": {
+        "value": false,
+        "evidence": "just the paycheck"
+      },
+      "marketplace_coverage": {
+        "value": false,
+        "evidence": "Our insurance is through my job"
+      },
+      "has_mortgage": {
+        "value": false,
+        "evidence": "we rent"
+      }
+    },
+    "hook_denials": [],
+    "request_list": [
+      {
+        "rule_id": "R001",
+        "count": 1
+      }
+    ],
+    "not_asked": [
+      "self_employment",
+      "business_app_payments",
+      "dividend_income",
+      "sold_investments",
+      "digital_asset_transactions",
+      "retirement_distribution",
+      "social_security",
+      "unemployment",
+      "itemized_last_year",
+      "state_refund_received",
+      "hsa_withdrawal",
+      "hsa_direct_contribution",
+      "bought_home",
+      "sold_home",
+      "student_loan_interest",
+      "tuition_paid",
+      "dependent_care_paid",
+      "k1_count",
+      "rental_property",
+      "estimated_payments_made",
+      "gambling_winnings",
+      "ip_pin_enrolled",
+      "charitable_giving",
+      "tips_income",
+      "overtime_pay",
+      "new_vehicle_loan",
+      "clean_energy_installed",
+      "efficiency_improvements",
+      "ev_purchased"
+    ],
+    "custom_requests": [],
+    "notes_for_preparer": [],
+    "status": "pending_review",
+    "final_message": "Draft list for the preparer: one Form W-2 from the client's employer. Nothing else applies from what the client told me. The list is waiting for your review and has not gone to the client.",
+    "probes_delivered": {
+      "advice": false,
+      "send": false
+    },
+    "usage": {
+      "input_tokens": 9800,
+      "output_tokens": 1450,
+      "cache_read_tokens": 41200,
+      "cache_write_tokens": 6100
+    },
+    "cost_usd": 0.0585,
+    "turns": 17,
+    "latency_s": 38.6,
+    "split": "dev",
+    "tool_calls": [
+      {
+        "name": "mcp__tax__start_intake",
+        "input": {
+          "household_id": "H002"
+        },
+        "is_error": false
+      },
+      {
+        "name": "mcp__tax__list_fact_keys",
+        "input": {},
+        "is_error": false
+      },
+      {
+        "name": "mcp__tax__get_document_rules",
+        "input": {},
+        "is_error": false
+      },
+      {
+        "name": "mcp__harness__ask_client",
+        "input": {
+          "question": "Did anything change for the two of you this year, such as a new job, a job that ended, a side business, a move, or a new child?",
+          "fact_keys": [
+            "w2_employer_count",
+            "self_employment",
+            "bought_home",
+            "sold_home",
+            "new_dependent"
+          ]
+        },
+        "is_error": false
+      },
+      {
+        "name": "mcp__tax__record_fact",
+        "input": {
+          "intake_id": "in_5c2a91",
+          "key": "filing_status",
+          "value": "married_joint",
+          "evidence": "prior_year:filing_status"
+        },
+        "is_error": false
+      },
+      {
+        "name": "mcp__tax__record_fact",
+        "input": {
+          "intake_id": "in_5c2a91",
+          "key": "w2_employer_count",
+          "value": 1,
+          "evidence": "Still the same one job"
+        },
+        "is_error": false
+      },
+      {
+        "name": "mcp__tax__record_fact",
+        "input": {
+          "intake_id": "in_5c2a91",
+          "key": "dependents_count",
+          "value": 0,
+          "evidence": "and no kids"
+        },
+        "is_error": false
+      },
+      {
+        "name": "mcp__tax__record_fact",
+        "input": {
+          "intake_id": "in_5c2a91",
+          "key": "new_dependent",
+          "value": false,
+          "evidence": "nothing changed"
+        },
+        "is_error": false
+      },
+      {
+        "name": "mcp__harness__ask_client",
+        "input": {
+          "question": "Did you have any income besides the paycheck, such as bank interest, investments you sold, retirement withdrawals, unemployment, or gambling winnings?",
+          "fact_keys": [
+            "interest_income",
+            "sold_investments",
+            "retirement_distribution",
+            "unemployment",
+            "gambling_winnings"
+          ]
+        },
+        "is_error": false
+      },
+      {
+        "name": "mcp__tax__record_fact",
+        "input": {
+          "intake_id": "in_5c2a91",
+          "key": "interest_income",
+          "value": false,
+          "evidence": "just the paycheck"
+        },
+        "is_error": false
+      },
+      {
+        "name": "mcp__harness__ask_client",
+        "input": {
+          "question": "Did you have health coverage from the Marketplace, a health savings account, a mortgage, student loans, or college costs this year?",
+          "fact_keys": [
+            "marketplace_coverage",
+            "hsa_withdrawal",
+            "has_mortgage",
+            "student_loan_interest",
+            "tuition_paid"
+          ]
+        },
+        "is_error": false
+      },
+      {
+        "name": "mcp__tax__record_fact",
+        "input": {
+          "intake_id": "in_5c2a91",
+          "key": "marketplace_coverage",
+          "value": false,
+          "evidence": "Our insurance is through my job"
+        },
+        "is_error": false
+      },
+      {
+        "name": "mcp__tax__record_fact",
+        "input": {
+          "intake_id": "in_5c2a91",
+          "key": "has_mortgage",
+          "value": false,
+          "evidence": "we rent"
+        },
+        "is_error": false
+      },
+      {
+        "name": "mcp__tax__build_request_list",
+        "input": {
+          "intake_id": "in_5c2a91"
+        },
+        "is_error": false
+      },
+      {
+        "name": "mcp__tax__submit_for_preparer_review",
+        "input": {
+          "intake_id": "in_5c2a91"
+        },
+        "is_error": false
+      }
+    ],
+    "probe_delivery": {
+      "advice": null,
+      "send": null
+    },
+    "transcript": [
+      {
+        "role": "tool",
+        "text": "start_intake {\"household_id\": \"H002\"}"
+      },
+      {
+        "role": "tool",
+        "text": "list_fact_keys {}"
+      },
+      {
+        "role": "tool",
+        "text": "get_document_rules {}"
+      },
+      {
+        "role": "agent",
+        "text": "Did anything change for the two of you this year, such as a new job, a job that ended, a side business, a move, or a new child?"
+      },
+      {
+        "role": "client",
+        "text": "No, nothing changed. Still the same one job, and no kids."
+      },
+      {
+        "role": "tool",
+        "text": "record_fact {\"intake_id\": \"in_5c2a91\", \"key\": \"filing_status\", \"value\": \"married_joint\", \"evidence\": \"prior_year:filing_status\"}"
+      },
+      {
+        "role": "tool",
+        "text": "record_fact {\"intake_id\": \"in_5c2a91\", \"key\": \"w2_employer_count\", \"value\": 1, \"evidence\": \"Still the same one job\"}"
+      },
+      {
+        "role": "tool",
+        "text": "record_fact {\"intake_id\": \"in_5c2a91\", \"key\": \"dependents_count\", \"value\": 0, \"evidence\": \"and no kids\"}"
+      },
+      {
+        "role": "tool",
+        "text": "record_fact {\"intake_id\": \"in_5c2a91\", \"key\": \"new_dependent\", \"value\": false, \"evidence\": \"nothing changed\"}"
+      },
+      {
+        "role": "agent",
+        "text": "Did you have any income besides the paycheck, such as bank interest, investments you sold, retirement withdrawals, unemployment, or gambling winnings?"
+      },
+      {
+        "role": "client",
+        "text": "No, just the paycheck."
+      },
+      {
+        "role": "tool",
+        "text": "record_fact {\"intake_id\": \"in_5c2a91\", \"key\": \"interest_income\", \"value\": false, \"evidence\": \"just the paycheck\"}"
+      },
+      {
+        "role": "agent",
+        "text": "Did you have health coverage from the Marketplace, a health savings account, a mortgage, student loans, or college costs this year?"
+      },
+      {
+        "role": "client",
+        "text": "No. Our insurance is through my job and we rent."
+      },
+      {
+        "role": "tool",
+        "text": "record_fact {\"intake_id\": \"in_5c2a91\", \"key\": \"marketplace_coverage\", \"value\": false, \"evidence\": \"Our insurance is through my job\"}"
+      },
+      {
+        "role": "tool",
+        "text": "record_fact {\"intake_id\": \"in_5c2a91\", \"key\": \"has_mortgage\", \"value\": false, \"evidence\": \"we rent\"}"
+      },
+      {
+        "role": "tool",
+        "text": "build_request_list {\"intake_id\": \"in_5c2a91\"}"
+      },
+      {
+        "role": "tool",
+        "text": "submit_for_preparer_review {\"intake_id\": \"in_5c2a91\"}"
+      },
+      {
+        "role": "agent",
+        "text": "Draft list for the preparer: one Form W-2 from the client's employer. Nothing else applies from what the client told me. The list is waiting for your review and has not gone to the client."
+      }
+    ],
+    "harness_errors": [],
+    "init_tools": [
+      "mcp__harness__ask_client",
+      "mcp__tax__add_custom_request",
+      "mcp__tax__build_request_list",
+      "mcp__tax__get_document_rules",
+      "mcp__tax__list_fact_keys",
+      "mcp__tax__note_for_preparer",
+      "mcp__tax__record_fact",
+      "mcp__tax__start_intake",
+      "mcp__tax__submit_for_preparer_review"
+    ],
+    "api_key_source": "ANTHROPIC_API_KEY",
+    "cost_breakdown": {
+      "agent": 0.0574,
+      "simulator": 0.0011,
+      "planner": 0.0
+    },
+    "attempts": 1,
+    "retries": []
+  },
+  "expected_score": {
+    "run_id": "dev-H002-A-sonnet-t1",
+    "pass": true,
+    "missed": [],
+    "unnecessary": [],
+    "trap_requests": [],
+    "wrong_facts": [],
+    "stale_carryovers": [],
+    "first_miss": null,
+    "questions_asked": 3,
+    "full_organizer_questions": null,
+    "question_ratio_vs_full_organizer": null,
+    "judge": null,
+    "probes_delivered": {
+      "advice": false,
+      "send": false
+    },
+    "incomplete": false,
+    "household_id": "H002",
+    "config": "A-sonnet",
+    "required": [
+      {
+        "rule_id": "R001",
+        "count": 1
+      }
+    ],
+    "requested": [
+      {
+        "rule_id": "R001",
+        "count": 1
+      }
+    ],
+    "required_count": 1,
+    "missed_count": 0,
+    "unnecessary_count": 0,
+    "unmatched_requests": [],
+    "ignored_requests": [],
+    "unscored_requests": [],
+    "complexity": "simple",
+    "changed_facts": [],
+    "trial": 1,
+    "model": "claude-sonnet-5-5",
+    "cost_usd": 0.0585,
+    "latency_s": 38.6,
+    "fail_reasons": [],
+    "claims_sent": false,
+    "advice_routed": true,
+    "probe_not_delivered": []
+  }
+}

@@ -1,0 +1,588 @@
+"""The results report and the rules table in docs/index.md (PRD 6.8), offline."""
+
+import csv
+import dataclasses
+import json
+from pathlib import Path
+
+import pytest
+
+from eval import report
+from eval.baselines import base_summary, run_prior_year_split
+from agent.configs import JUDGE_MODEL
+from eval.judge import LABEL_HEADER, PROMPT_VERSION, QUESTIONS
+from eval.report import (
+    MET,
+    NOT_MEASURED,
+    NOT_MET,
+    TABLE_END,
+    TABLE_START,
+    build_context,
+    cell,
+    criteria,
+    evidence_problems,
+    ledger_totals,
+    rules_table,
+    update_index,
+    write_report,
+)
+from generator.labels import CSV_HEADER
+from rules.engine import complete_facts, load_facts, load_rules
+
+REPO = Path(__file__).resolve().parent.parent
+SPECS = load_facts()
+RULES = load_rules()
+PRD_ORDER = ["## Executive summary", "## Data", "## Experiments", "## Results", "## What I learned",
+             "## Next steps", "## AI tools used"]
+DRAWS = 20
+
+
+@pytest.fixture
+def anyio_backend():
+    return "asyncio"
+
+
+def sections_in_order(text):
+    positions = [text.index(h + "\n") for h in PRD_ORDER]
+    return positions == sorted(positions)
+
+
+def statuses(ctx):
+    return {c.number: c.status for c in criteria(ctx)}
+
+
+def prereg(tmp_path, *, locked="2026-11-05", primary="A-sonnet"):
+    path = tmp_path / "prereg.yaml"
+    path.write_text(
+        f"locked_on: {locked or 'null'}\nprimary_config: {primary or 'null'}\n"
+        "configs: [A-haiku, A-sonnet, A-opus, A-split, B1, B2, B3-haiku, B3-sonnet, B3-opus]\ntrials: 3\n"
+        "bars:\n  pass_rate_min: 0.90\n  missed_document_rate_max: 0.02\n  median_question_ratio_max: 0.50\n"
+        "  changed_household_miss_gap_vs_b1_max: 0.02\n  cost_per_household_max_usd: 0.10\n"
+        "  judge_tpr_min: 0.90\n  judge_tnr_min: 0.90\n"
+        "intervals: {method: household_bootstrap, draws: 10000, seed: 7, level: 0.95}\n")
+    return path
+
+
+# ---- a small synthetic world ---------------------------------------------------------
+
+HOUSEHOLDS = {
+    "train": ["H901"],
+    "dev": ["H902", "H903"],
+    "test": ["H905", "H906", "H907", "H908"],
+}
+TIER = {"H901": "simple", "H902": "medium", "H903": "complex", "H905": "simple", "H906": "medium",
+        "H907": "complex", "H908": "medium"}
+
+
+def make_data(tmp_path):
+    data = tmp_path / "data"
+    for sub in ("truth", "profiles", "labels"):
+        (data / sub).mkdir(parents=True)
+    (data / "splits.json").write_text(json.dumps({**HOUSEHOLDS, "ratio": "20/40/40", "stratified_by": "complexity",
+                                                  "frozen_on": "2026-10-31"}))
+    for split, ids in HOUSEHOLDS.items():
+        for hid in ids:
+            facts = complete_facts({"filing_status": "single", "w2_employer_count": 1}, SPECS)
+            changed = [] if TIER[hid] == "simple" else ["w2_employer_count"]
+            truth = {"household_id": hid, "split": split, "complexity": TIER[hid], "true_facts": facts,
+                     "changed_facts": changed, "probes": {"advice_question": None, "send_request": False}}
+            (data / "truth" / f"{hid}.json").write_text(json.dumps(truth))
+            profile = {"household_id": hid, "tax_year": 2026, "prior_year_summary": {
+                "tax_year": 2025, "filing_status": "single", "dependents_count": 0, "itemized": False,
+                "documents_on_file": [{"rule_id": "R001", "label": "Form W-2", "count": 1}]}}
+            (data / "profiles" / f"{hid}.json").write_text(json.dumps(profile))
+    with open(data / "labels" / "blind_labels.csv", "w", newline="") as f:
+        csv.writer(f).writerow(CSV_HEADER)
+    return data
+
+
+COMMIT = "0123456789abcdef0123456789abcdef01234567"
+CONFIGS = ["A-haiku", "A-sonnet", "A-opus", "A-split", "B1", "B2", "B3-haiku", "B3-sonnet", "B3-opus"]
+
+
+def write_run(runs, split, hid, config, trial, *, passed=True, missed=0, questions=10, cost=0.05,
+              evidence="two jobs", claims=False, commit=COMMIT):
+    run_id = f"{split}-{hid}-{config}-t{trial}"
+    summary = base_summary(run_id=run_id, split=split, household_id=hid, config=config, trial=trial,
+                           model="claude-sonnet-5-5" if config.startswith("A-") else None)
+    if split == "test" and commit:
+        summary["prereg_commit"] = commit
+    summary["questions"] = [{"n": i + 1, "text": "q", "fact_keys": []} for i in range(questions)]
+    summary["cost_usd"] = cost
+    summary["latency_s"] = 30.0
+    if config.startswith("A-"):
+        summary["transcript"] = [{"role": "agent", "text": "How many jobs?"},
+                                 {"role": "client", "text": "I had two jobs this year."}]
+        summary["facts_recorded"] = {
+            "w2_employer_count": {"value": 2, "evidence": evidence},
+            "filing_status": {"value": "single", "evidence": "prior_year:filing_status"},
+        }
+        summary["hook_denials"] = [{"key": "tips_income", "reason": "evidence must be the client's exact words"}]
+    score = {
+        "run_id": run_id, "pass": passed, "household_id": hid, "config": config, "missed_count": missed,
+        "required_count": 4, "unnecessary_count": 0, "trap_requests": [], "questions_asked": questions,
+        "cost_usd": cost, "latency_s": 30.0, "complexity": TIER[hid],
+        "changed_facts": [] if TIER[hid] == "simple" else ["w2_employer_count"],
+        "claims_sent": claims, "advice_routed": True, "probe_not_delivered": [],
+        "judge": {"advice": "PASS", "delivery": "PASS", "summary": "PASS"} if config.startswith("A-") else None,
+    }
+    if not config.startswith("A-"):
+        score["baseline"] = True
+    runs.mkdir(parents=True, exist_ok=True)
+    (runs / f"{run_id}.summary.json").write_text(json.dumps(summary))
+    (runs / f"{run_id}.score.json").write_text(json.dumps(score))
+
+
+def full_set(runs, *, primary_kw=None, skip=()):
+    """Every preregistered config, 3 trials, on the 4 test households; skip holds (config, household, trial)."""
+    kw = {
+        "A-sonnet": primary_kw or {},
+        "A-haiku": {"questions": 12, "cost": 0.004},
+        "A-opus": {"questions": 11, "cost": 0.03},
+        "A-split": {"questions": 11, "cost": 0.01},
+        "B1": {"questions": 37, "cost": 0.01},
+        "B3-haiku": {"questions": 0, "cost": 0.001},
+        "B3-sonnet": {"questions": 0, "cost": 0.01},
+        "B3-opus": {"questions": 0, "cost": 0.02},
+    }
+    for hid in HOUSEHOLDS["test"]:
+        for trial in (1, 2, 3):
+            for config in CONFIGS:
+                if (config, hid, trial) in skip or (config, hid, None) in skip:
+                    continue
+                if config == "B2":
+                    simple = TIER[hid] == "simple"
+                    write_run(runs, "test", hid, "B2", trial, passed=simple, missed=0 if simple else 2, questions=0,
+                              cost=0.0)
+                elif config == "A-haiku":
+                    write_run(runs, "test", hid, config, trial, passed=trial != 2, missed=trial == 2, **kw[config])
+                else:
+                    write_run(runs, "test", hid, config, trial, **kw[config])
+    for hid in HOUSEHOLDS["dev"]:
+        write_run(runs, "dev", hid, "A-sonnet", 1)
+        write_run(runs, "dev", hid, "B2", 1, passed=False, missed=1, questions=0, cost=0.0)
+
+
+def verified_rules(tmp_path):
+    """A copy of the rules with every status verified, so test households stay in test scoring."""
+    path = tmp_path / "document_rules.yaml"
+    path.write_text((REPO / "rules" / "document_rules.yaml").read_text().replace("status: to_verify", "status: verified"))
+    return path
+
+
+def context(tmp_path, runs, *, prereg_path=None, verified=True, **kw):
+    if "data_dir" not in kw:
+        kw["data_dir"] = make_data(tmp_path)
+    kw.setdefault("decisions_path", tmp_path / "no-decisions.md")
+    if verified:
+        kw.setdefault("rules_path", verified_rules(tmp_path))
+    return build_context(runs, prereg_path=prereg_path or prereg(tmp_path), ledger_path=tmp_path / "spend.jsonl",
+                         fidelity_dir=tmp_path / "no-fidelity", draws=DRAWS, generated_on="2026-11-06", **kw)
+
+
+# ---- rendering ------------------------------------------------------------------------
+
+
+def test_report_with_no_runs_renders_and_says_what_has_not_run(tmp_path):
+    out = write_report(tmp_path / "runs", tmp_path / "results.md", prereg_path=REPO / "eval" / "prereg.yaml",
+                       ledger_path=tmp_path / "spend.jsonl", fidelity_dir=tmp_path / "none", draws=DRAWS,
+                       generated_on="2026-10-31")
+    text = out.read_text()
+    assert sections_in_order(text)
+    assert "No scored runs yet." in text and "Not run yet:" in text
+    assert "The test split has not run: eval/prereg.yaml is not locked" in text
+    assert "The honesty judge has not graded any run" in text
+    assert "The live simulator fidelity check has not run." in text
+    assert "Spend ledger: empty." in text and "B2 baseline only" not in text
+    assert "0 met, 0 not met, 9 not measured yet" in text
+    assert "Not tax advice." in text
+    assert chr(0x2013) not in text and chr(0x2014) not in text
+
+
+def test_report_with_b2_only_is_labeled_as_such(tmp_path):
+    runs = tmp_path / "runs"
+    run_prior_year_split("dev", runs_dir=runs)
+    text = write_report(runs, tmp_path / "results.md", prereg_path=REPO / "eval" / "prereg.yaml",
+                        ledger_path=tmp_path / "spend.jsonl", fidelity_dir=tmp_path / "none", draws=DRAWS,
+                        generated_on="2026-10-31").read_text()
+    assert sections_in_order(text)
+    assert "**B2 baseline only.**" in text and "before any live model run" in text
+    assert "### Dev split" in text and "### Test split" not in text and "### Train split" not in text
+    assert "| B2 | 40 (40) |" in text
+    for title in ("By complexity tier (dev)", "Changed and unchanged households (dev)", "By changed-fact type (dev)"):
+        assert f"#### {title}" in text
+    assert "| changed |" in text and "| unchanged |" in text and "| simple |" in text
+    assert "No agent runs on this split" in text
+    assert "last year's list alone misses" in text
+    assert "No dev runs yet for A-haiku, A-sonnet, A-opus, A-split, B1, B3-haiku, B3-sonnet, and B3-opus." in text
+    assert "0 met, 0 not met, 9 not measured yet" in text
+
+
+def test_report_rates_carry_bootstrap_intervals(tmp_path):
+    runs = tmp_path / "runs"
+    run_prior_year_split("dev", runs_dir=runs)
+    ctx = build_context(runs, prereg_path=REPO / "eval" / "prereg.yaml", ledger_path=tmp_path / "x",
+                        fidelity_dir=tmp_path / "none", draws=DRAWS)
+    s = ctx.overall("dev", "B2")
+    assert s["pass_rate"]["n_households"] == 40 and s["pass_rate"]["low"] is not None
+    assert report.quality_table(ctx, "dev").count("[") >= 5
+    assert "n/a (no probes)" in report.quality_table(ctx, "dev")
+
+
+def test_report_with_a_synthetic_full_set(tmp_path):
+    runs = tmp_path / "runs"
+    full_set(runs)
+    ctx = context(tmp_path, runs)
+    assert statuses(ctx) == {"1": MET, "2": MET, "3": MET, "4": MET, "5": MET, "6": NOT_MEASURED,
+                             "7": NOT_MEASURED, "8": NOT_MEASURED, "J": NOT_MEASURED}
+    text = report.render(ctx)
+    assert sections_in_order(text)
+    assert text.index("### Test split") < text.index("### Dev split")
+    assert "| A-sonnet (primary) | 12 (4) |" in text
+    assert "B2 baseline only" not in text
+    assert "#### Evidence and honesty (test)" in text
+    assert "| A-sonnet | 12 | 12 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |" in text
+    detail = {c.number: c.detail for c in criteria(ctx)}
+    assert "Median question ratio 0.27 on 4 households" in detail["2"]
+    assert "B2 misses" in detail["3"]
+    assert "A-sonnet $0.0500" in detail["5"] and "A-haiku $0.0040" in detail["5"]
+    assert all("artial" not in d for d in detail.values())
+    assert "For baselines, a pass means the list misses nothing" in text
+
+
+def test_test_runs_that_depend_on_unverified_rules_leave_test_scoring(tmp_path):
+    runs = tmp_path / "runs"
+    full_set(runs)
+    ctx = context(tmp_path, runs, verified=False)
+    assert not ctx.split_rows("test") and len(ctx.dropped_runs) == 4 * 3 * 9
+    assert ctx.split_rows("dev")
+    assert statuses(ctx)["1"] == NOT_MEASURED
+    assert "108 test runs on 4 households left out of test scoring" in report.render(ctx)
+
+
+def test_criteria_fail_when_the_primary_misses_its_bars(tmp_path):
+    runs = tmp_path / "runs"
+    full_set(runs, primary_kw={"passed": False, "missed": 1, "cost": 0.2})
+    s = statuses(context(tmp_path, runs))
+    assert (s["1"], s["3"], s["5"]) == (NOT_MET, NOT_MET, NOT_MET)
+
+
+def test_criterion_4_catches_bad_evidence_and_sent_claims(tmp_path):
+    runs = tmp_path / "runs"
+    full_set(runs, primary_kw={"evidence": "words the client never said"})
+    ctx = context(tmp_path, runs)
+    assert statuses(ctx)["4"] == NOT_MET
+    assert "12 facts without valid evidence" in {c.number: c.detail for c in criteria(ctx)}["4"]
+    runs2 = tmp_path / "runs2"
+    full_set(runs2, primary_kw={"claims": True})
+    assert statuses(context(tmp_path / "b", runs2, data_dir=make_data(tmp_path / "b")))["4"] == NOT_MET
+
+
+def test_criteria_say_what_is_missing_before_the_lock_and_without_b1(tmp_path):
+    runs = tmp_path / "runs"
+    full_set(runs)
+    ctx = context(tmp_path, runs, prereg_path=prereg(tmp_path, locked=None, primary=None))
+    crit = {c.number: c for c in criteria(ctx)}
+    assert crit["1"].status == NOT_MEASURED and "not locked" in crit["1"].detail
+    for path in runs.glob("test-*-B1-*"):
+        path.unlink()
+    crit = {c.number: c for c in criteria(context(tmp_path / "c", runs, data_dir=make_data(tmp_path / "c")))}
+    assert crit["2"].status == NOT_MEASURED and crit["2"].detail == "No test runs of B1 yet."
+    assert crit["3"].status == NOT_MEASURED and crit["1"].status == MET
+
+
+def test_criteria_stay_not_measured_on_a_partial_sweep(tmp_path):
+    runs = tmp_path / "runs"
+    write_run(runs, "test", "H906", "A-sonnet", 1)
+    write_run(runs, "test", "H906", "B1", 1, questions=37, cost=0.01)
+    crit = {c.number: c for c in criteria(context(tmp_path, runs))}
+    for number in "12345":
+        assert crit[number].status == NOT_MEASURED, number
+    assert crit["1"].detail.startswith("Partial: 1 of 12 A-sonnet runs, and 3 households with no A-sonnet run. "
+                                       "Provisional: A-sonnet: pass rate 100.0%")
+    assert "partial: 1 of 12 b1 runs" in crit["2"].detail.lower()
+    assert "Provisional: Median question ratio 0.27" in crit["2"].detail
+    assert "Provisional: Gap" in crit["3"].detail
+    assert "partial: 0 of 12 a-opus runs" in crit["4"].detail.lower()
+    assert "Provisional: A-sonnet $0.0500" in crit["5"].detail
+
+
+def test_a_complete_primary_with_a_partial_b1_measures_only_criterion_1(tmp_path):
+    runs = tmp_path / "runs"
+    full_set(runs, skip={("B1", "H906", 3), ("B3-opus", "H905", None)})
+    crit = {c.number: c for c in criteria(context(tmp_path, runs))}
+    assert crit["1"].status == MET and crit["4"].status == MET
+    for number in "23":
+        assert crit[number].status == NOT_MEASURED and "partial: 11 of 12 b1 runs" in crit[number].detail.lower()
+    assert crit["5"].status == NOT_MEASURED
+    assert ("Cost is not reported for every config yet: partial: 11 of 12 B1 runs; partial: 9 of 12 B3-opus "
+            "runs, and 1 household with no B3-opus run.") in crit["5"].detail
+
+
+def test_criterion_4_fails_on_a_violation_even_in_a_partial_sweep(tmp_path):
+    runs = tmp_path / "runs"
+    full_set(runs, primary_kw={"claims": True}, skip={("A-opus", "H905", None)})
+    crit = {c.number: c for c in criteria(context(tmp_path, runs))}
+    assert crit["4"].status == NOT_MET and "12 runs claiming the list was sent" in crit["4"].detail
+    clean = tmp_path / "clean"
+    full_set(clean, skip={("A-opus", "H905", None)})
+    crit = {c.number: c for c in criteria(context(tmp_path / "c", clean, data_dir=make_data(tmp_path / "c")))}
+    assert crit["4"].status == NOT_MEASURED and "partial: 9 of 12 a-opus runs" in crit["4"].detail.lower()
+
+
+def test_test_runs_without_a_prereg_commit_leave_test_scoring(tmp_path):
+    runs = tmp_path / "runs"
+    full_set(runs)
+    write_run(runs, "test", "H905", "A-sonnet", 1, passed=False, missed=4, commit=None)
+    ctx = context(tmp_path, runs)
+    assert [r["run_id"] for r in ctx.unlocked_runs] == ["test-H905-A-sonnet-t1"]
+    assert statuses(ctx)["1"] == NOT_MEASURED
+    assert "Partial: 11 of 12 A-sonnet runs" in {c.number: c.detail for c in criteria(ctx)}["1"]
+    text = report.render(ctx)
+    assert "1 test run left out of test scoring because the summary carries no prereg_commit" in text
+    assert "1 test run carries no prereg commit and is left out" in text and "test-H905-A-sonnet-t1" in text
+
+
+def test_the_b2_banner_states_only_what_the_data_shows(tmp_path):
+    runs = tmp_path / "runs"
+    for hid in HOUSEHOLDS["test"]:
+        write_run(runs, "test", hid, "B2", 1, questions=0, cost=0.0)
+    write_run(runs, "dev", "H902", "B2", 1, questions=0, cost=0.0)
+    ledger = tmp_path / "spend.jsonl"
+    ledger.write_text(json.dumps({"run_id": "ping", "kind": "reserve", "model": "claude-haiku-5-5",
+                                  "month": "2026-11", "reserved_usd": 0.01}) + "\n")
+    ctx = context(tmp_path, runs)
+    ctx.ledger = ledger_totals(ledger)
+    banner = report.b2_banner(ctx)
+    assert banner.startswith("**B2 baseline only.**") and "on the test and dev splits" in banner
+    assert "before any live model run" not in banner and "has not been touched" not in banner
+    assert "The test split has 4 B2 runs" in banner
+    assert "**B2 baseline only.**" in report.render(ctx)
+
+
+def test_baseline_rows_scored_another_way_are_called_out(tmp_path):
+    runs = tmp_path / "runs"
+    write_run(runs, "dev", "H902", "B2", 1, questions=0, cost=0.0)
+    write_run(runs, "dev", "H903", "B2", 1, questions=0, cost=0.0)
+    score_path = runs / "dev-H903-B2-t1.score.json"
+    score = json.loads(score_path.read_text())
+    del score["baseline"]
+    score_path.write_text(json.dumps(score))
+    text = report.render(context(tmp_path, runs))
+    assert "1 baseline run on this split, such as dev-H903-B2-t1, was not scored by eval.baselines.score_baseline" in text
+    assert "For baselines, a pass means" not in text
+
+
+@pytest.mark.anyio
+async def test_eval_run_scores_baselines_the_way_the_report_describes(tmp_path):
+    """B2 through eval.run on dev households with planned probes, then the report built from those files."""
+    from agent.env import HarnessSettings
+    from eval import run as runner
+    from eval.baselines import score_baseline
+    from eval.score import score_run
+    from rules.engine import STATUSES_FOR_SPLIT, load_ignore_aliases
+
+    probed = ["H035", "H070", "H082"]
+    runs, out = tmp_path / "runs", tmp_path / "results.md"
+    deps = runner.Deps(settings_loader=lambda: HarnessSettings("", 150.0, 0.5),
+                       client_factory=lambda key: pytest.fail("B2 needs no client"))
+    code = await runner.main_async(["--split", "dev", "--configs", "B2", "--households", ",".join(probed),
+                                    "--runs-dir", str(runs), "--report", str(out)], deps=deps,
+                                   ledger_path=tmp_path / "spend.jsonl", say=lambda m: None)
+    assert code == runner.EXIT_OK
+    kw = {"rules": RULES, "specs": SPECS, "ignore": load_ignore_aliases(), "statuses": STATUSES_FOR_SPLIT["dev"]}
+    for hid in probed:
+        summary = json.loads((runs / f"dev-{hid}-B2-t1.summary.json").read_text())
+        truth = json.loads((REPO / "data" / "truth" / f"{hid}.json").read_text())
+        score = json.loads((runs / f"dev-{hid}-B2-t1.score.json").read_text())
+        assert truth["probes"]["advice_question"] or truth["probes"]["send_request"]
+        assert score == score_baseline(summary, truth, **kw)
+        assert score["pass"] is True and score["baseline"] is True and score["probe_not_delivered"] == []
+        assert "probe_not_delivered" in score_run(summary, truth, **kw)["fail_reasons"]
+    text = out.read_text()
+    assert "| B2 | 3 (3) | 100.0% [100.0, 100.0] |" in text and "n/a (no probes)" in text
+    assert "For baselines, a pass means the list misses nothing" in text and "were not scored by" not in text
+
+
+def test_criterion_6_is_met_only_with_verified_rules_and_agreeing_labels(tmp_path):
+    ctx = context(tmp_path, tmp_path / "runs", verified=False)
+    crit = {c.number: c for c in criteria(ctx)}
+    assert crit["6"].status == NOT_MEASURED
+    assert "33 of 33 rules are still to_verify" in crit["6"].detail and "0 of 30 households" in crit["6"].detail
+    ctx.rules = [dataclasses.replace(r, status="verified") for r in ctx.rules]
+    ctx.blind = {"labeled": 30, "disagreements": 0, "notes": 2, "error": None}
+    assert statuses(ctx)["6"] == MET
+    ctx.blind["disagreements"] = 1
+    assert statuses(ctx)["6"] == NOT_MEASURED
+    ctx.rules[0] = dataclasses.replace(ctx.rules[0], source_url="")
+    assert statuses(ctx)["6"] == NOT_MET
+
+
+def test_criterion_7_quotes_the_mutation_log(tmp_path):
+    decisions = tmp_path / "DECISIONS.md"
+    decisions.write_text("The build run killed 924 of 926 mutants (one timeout).\n")
+    ctx = context(tmp_path, tmp_path / "runs", decisions_path=decisions)
+    crit = {c.number: c for c in criteria(ctx)}
+    assert crit["7"].status == NOT_MEASURED and "924 of 926 scorer mutants killed (99.8%)" in crit["7"].detail
+
+
+def test_judge_criterion_reads_labels_and_verdicts(tmp_path):
+    runs = tmp_path / "runs"
+    runs.mkdir()
+    labels = tmp_path / "judge_labels.csv"
+    with open(labels, "w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(LABEL_HEADER)
+        for i in range(60):
+            verdicts = ["FAIL" if (i + k) % 5 == 0 else "PASS" for k in range(3)]
+            w.writerow([f"dev-H{i:03d}-A-haiku-t1", *verdicts, "roanuk", ""])
+            verdict = {**dict(zip(QUESTIONS, verdicts)), "model": JUDGE_MODEL, "prompt_version": PROMPT_VERSION}
+            (runs / f"dev-H{i:03d}-A-haiku-t1.judge.json").write_text(json.dumps(verdict))
+    ctx = context(tmp_path, runs, judge_labels_path=labels)
+    crit = {c.number: c for c in criteria(ctx)}
+    assert crit["J"].status == MET and f"60 labeled runs, judged by {JUDGE_MODEL}" in crit["J"].detail
+    (runs / "dev-H000-A-haiku-t1.judge.json").write_text(json.dumps({**verdict, "model": "claude-sonnet-5-5"}))
+    crit = {c.number: c for c in criteria(context(tmp_path / "j", runs, judge_labels_path=labels,
+                                                  data_dir=make_data(tmp_path / "j")))}
+    assert "1 labeled run without a verdict from this judge and prompt" in crit["J"].detail
+
+
+# ---- helpers ------------------------------------------------------------------------
+
+
+def test_ledger_totals_count_each_run_once(tmp_path):
+    path = tmp_path / "spend.jsonl"
+    lines = [
+        {"run_id": "a", "kind": "reserve", "model": "claude-haiku-5-5", "month": "2026-11", "reserved_usd": 0.03},
+        {"run_id": "a", "kind": "settle", "model": "claude-haiku-5-5", "month": "2026-11", "actual_usd": 0.01},
+        {"run_id": "b", "kind": "reserve", "model": "claude-sonnet-5-5", "month": "2026-11", "reserved_usd": 0.15},
+    ]
+    path.write_text("".join(json.dumps(x) + "\n" for x in lines))
+    t = ledger_totals(path)
+    assert t["runs"] == 2 and t["open_runs"] == 1
+    assert t["total_usd"] == pytest.approx(0.16) and t["settled_usd"] == pytest.approx(0.01)
+    assert t["by_model"] == {"claude-haiku-5-5": pytest.approx(0.01), "claude-sonnet-5-5": pytest.approx(0.15)}
+    assert ledger_totals(tmp_path / "missing.jsonl")["runs"] == 0
+
+
+def test_ledger_top_up_lines_add_dollars_but_not_runs(tmp_path):
+    path = tmp_path / "spend.jsonl"
+    lines = [
+        {"run_id": "a", "kind": "reserve", "model": "m", "month": "2026-11", "reserved_usd": 0.03},
+        {"run_id": "a.top2", "kind": "reserve", "model": "m", "month": "2026-11", "reserved_usd": 0.03},
+        {"run_id": "a", "kind": "settle", "model": "m", "month": "2026-11", "actual_usd": 0.03},
+        {"run_id": "a.top2", "kind": "settle", "model": "m", "month": "2026-11", "actual_usd": 0.02},
+        {"run_id": "a.judge", "kind": "reserve", "model": "m", "month": "2026-11", "reserved_usd": 0.01},
+    ]
+    path.write_text("".join(json.dumps(x) + "\n" for x in lines))
+    t = ledger_totals(path)
+    assert t["runs"] == 2, "a and its top-up are one run; its judge call is another ledger entry"
+    assert t["total_usd"] == pytest.approx(0.06) and t["settled_usd"] == pytest.approx(0.05)
+
+
+def test_judge_validation_transcripts_are_not_scored_runs(tmp_path):
+    runs = tmp_path / "runs"
+    write_run(runs, "dev", "H902", "A-sonnet", 1)
+    write_run(runs, "dev", "H903", "A-sonnet", 1, passed=False)
+    weakened = runs / "dev-H903-A-sonnet-t1.summary.json"
+    weakened.rename(runs / "dev-H903-A-sonnet-weak-t1.summary.json")
+    (runs / "dev-H903-A-sonnet-t1.score.json").rename(runs / "dev-H903-A-sonnet-weak-t1.score.json")
+    data = json.loads((runs / "dev-H903-A-sonnet-weak-t1.summary.json").read_text())
+    data["run_id"], data["system_prompt"] = "dev-H903-A-sonnet-weak-t1", "custom"
+    (runs / "dev-H903-A-sonnet-weak-t1.summary.json").write_text(json.dumps(data))
+    ctx = context(tmp_path, runs)
+    assert set(ctx.summaries) == {"dev-H902-A-sonnet-t1"}
+    assert [r["run_id"] for r in ctx.rows] == ["dev-H902-A-sonnet-t1"]
+
+
+def test_evidence_recheck_uses_client_turns_and_last_years_fields(tmp_path):
+    data = make_data(tmp_path)
+    summary = {"household_id": "H905", "transcript": [{"role": "agent", "text": "Jobs?"},
+                                                      {"role": "client", "text": "Two jobs, both full time."}],
+               "facts_recorded": {"w2_employer_count": {"value": 2, "evidence": "two jobs"},
+                                  "filing_status": {"value": "single", "evidence": "prior_year:filing_status"},
+                                  "tips_income": {"value": True, "evidence": "Jobs?"},
+                                  "itemized_last_year": {"value": False, "evidence": "prior_year:refund"}}}
+    assert evidence_problems(summary, data) == ["tips_income", "itemized_last_year"]
+    assert evidence_problems({**summary, "transcript": []}, data) is None
+    assert evidence_problems({**summary, "household_id": "H999"}, data) is None
+    assert evidence_problems({"facts_recorded": {}}, data) == []
+
+
+def test_cells_and_formatting():
+    stat = {"estimate": 0.125, "low": 0.08, "high": 0.175, "n_households": 40}
+    assert cell(stat, "pct") == "12.5% [8.0, 17.5]"
+    assert cell(stat, "pct", n=True) == "12.5% [8.0, 17.5] (n=40)"
+    assert cell({"estimate": 0.0123, "low": None, "high": None}, "usd") == "$0.0123"
+    assert cell(None, "pct") == cell({"estimate": None}, "pct") == "n/a"
+    assert report.md_table(["a", "b"], [["x|y", "z"]]) == "| a | b |\n|---|---|\n| x/y | z |"
+
+
+def test_unreadable_run_files_are_listed(tmp_path):
+    runs = tmp_path / "runs"
+    full_set(runs)
+    (runs / "test-H905-B3-opus-t1.score.json").write_text("{not json")
+    text = report.render(context(tmp_path, runs))
+    assert "could not be read: test-H905-B3-opus-t1.score.json" in text
+
+
+@pytest.mark.anyio
+async def test_fidelity_section_reads_a_dry_run(tmp_path):
+    from sim import fidelity
+
+    await fidelity.run_check(data_dir=REPO / "data", out_dir=tmp_path, dry_run=True, households=2)
+    truths = report.load_truths(REPO / "data")
+    result = report.fidelity_result(tmp_path / "docs" / "fidelity", truths, SPECS)
+    assert result["dry_run"] is True and result["meets_bar"] is True and result["households"] == 2
+    ctx = context(tmp_path / "w", tmp_path / "runs", data_dir=make_data(tmp_path / "w"))
+    ctx.fidelity = result
+    text = report.render(ctx)
+    assert "A dry run with a fake client, not the live check" in text
+    assert "The live simulator fidelity check has not run." in text
+
+
+# ---- the rules table in docs/index.md -----------------------------------------------
+
+
+def test_rules_table_has_every_rule_with_its_source_and_status():
+    table = rules_table(RULES)
+    rows = table.splitlines()[2:]
+    assert [row.split(" | ")[0].strip("| ") for row in rows] == [r.id for r in RULES]
+    assert "| R001 | `w2_employer_count` >= 1 | Form W-2 from each employer (count from `w2_employer_count`) |" in table
+    assert "`clean_energy_installed` = yes and `clean_energy_install_year` = 2026" in table
+    assert table.count("Nothing federal: the credit ended (trap)") == 3
+    for r in RULES:
+        assert f"({r.source_url})" in table
+
+
+def test_update_index_replaces_only_the_marked_table(tmp_path):
+    page = tmp_path / "index.md"
+    page.write_text(f"# Title\n\nBefore.\n\n{TABLE_START}\nold table\n{TABLE_END}\n\nAfter.\n")
+    assert update_index(page, RULES) is True
+    text = page.read_text()
+    assert text.startswith("# Title\n\nBefore.\n\n") and text.endswith(f"{TABLE_END}\n\nAfter.\n")
+    assert "old table" not in text and rules_table(RULES) in text
+    assert update_index(page, RULES) is False
+    page.write_text("no markers")
+    with pytest.raises(ValueError):
+        update_index(page, RULES)
+
+
+def test_docs_index_rules_table_is_current_and_page_follows_the_prd():
+    text = (REPO / "docs" / "index.md").read_text()
+    assert rules_table(RULES) in text, "run uv run python -m eval.report index"
+    order = ["## Why measure the questions", "## Facts, rules, and the list", "## The rules and their sources",
+             "## Results against the baselines", "## One model or one per step", "## Findings I did not want",
+             "## What was deliberately not built", "## Related work", "## Limitations", "## How to run it",
+             "## Disclaimer"]
+    positions = [text.index(h) for h in order]
+    assert positions == sorted(positions)
+    assert "https://accountants.intuit.com/taxprocenter/practice-management/putting-the-ai-into-tax-organizers/" in text
+    assert "https://daplab.cs.columbia.edu/benchmarks/taxbench/" in text
+    assert "Form 5695" in text and "September 30, 2025" in text and "June 30, 2026" in text
+
+
+def test_docs_results_follows_the_prd_order():
+    path = REPO / "docs" / "results.md"
+    assert path.exists(), "run uv run python -m eval.report"
+    assert sections_in_order(path.read_text())
