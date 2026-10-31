@@ -486,10 +486,14 @@ class LabelApp:
                 except labels.RevealRefused as e:
                     return error(409, str(e))
             rows, labeled = labels.compare_file(self.labels_path, self.data_dir)
-        by_id = {r.id: r for r in load_rules()}
+            by_id = {r.id: r for r in load_rules()}
+            settlements_file = labels.settlements_path(self.labels_path)
+            settled = labels.settle(rows, labels.read_settlements(settlements_file, set(by_id)))
+        how = {labels.settlement_key(d): s for d, s in settled.settled}
         grouped: dict[str, list[dict[str, Any]]] = {}
         for d in rows:
             rule = by_id.get(d.rule_id)
+            s = how.get(labels.settlement_key(d))
             grouped.setdefault(d.household_id, []).append({
                 "kind": d.kind,
                 "disagreement": labels.is_disagreement(d),
@@ -501,6 +505,8 @@ class LabelApp:
                 "source_title": rule.source_title if rule else "",
                 "source_url": rule.source_url if rule else "",
                 "status": rule.status if rule else "",
+                "settlement": s["settlement"] if s else "",
+                "settlement_note": s["note"] if s else "",
             })
         disagreements = sum(1 for d in rows if labels.is_disagreement(d))
         return json_response(200, {
@@ -509,6 +515,9 @@ class LabelApp:
             "notes": len(rows) - disagreements,
             "labeled": labeled,
             "snapshot_file": display_path(self.snapshot_path),
+            "settlements_file": display_path(settlements_file) if settlements_file.exists() else "",
+            "settled": len(settled.settled),
+            "unsettled": len(settled.unsettled),
         })
 
 

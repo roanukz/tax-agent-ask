@@ -2,7 +2,7 @@
 
 30 synthetic households (10 train, 20 dev, stratified by complexity) for checking the rules by hand. Each description comes from the household's true facts and what changed since last year. Nothing the rules produce appears here, on purpose.
 
-How to label: for each household, write every item the preparer should ask the client for, for the 2026 federal return only, in the documents column of data/labels/blind_labels.csv, one row per household. Separate items with semicolons, and add x2 or x3 after an item when the household needs more than one of the same kind. Use whatever short name you would put on a request list. Leave out what every client brings, such as a photo ID or bank details. Put your name in labeled_by and anything worth noting in notes.
+How to label: for each household, write every item the preparer should ask the client for, for the 2026 federal return only, in the documents column of data/labels/blind_labels.csv, one row per household. Separate items with semicolons, and add x2 or x3 after an item when the household needs more than one of the same kind. Use whatever short name you would put on a request list. Leave out what every client brings, such as a photo ID or bank details, and write none if the preparer should ask for nothing. Put your name in labeled_by and anything worth noting in notes.
 
 The label page does the same with a box per item and a count box: `uv run python -m generator.label_ui`.
 

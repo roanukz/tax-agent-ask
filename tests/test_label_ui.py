@@ -208,6 +208,29 @@ def test_compare_needs_an_explicit_reveal(app):
     assert not app.snapshot_path.exists()
 
 
+def test_compare_shows_how_each_disagreement_was_settled(app):
+    fill_all(app, [item("W-2", 2)])
+    status, data = call(app, "POST", "/api/compare", {"reveal": True})
+    assert status == 200 and data["settlements_file"] == "" and data["settled"] == 0
+    assert data["unsettled"] == data["disagreements"] > 0
+    first = next(r for rs in data["households"].values() for r in rs if r["disagreement"])
+    hid = next(h for h, rs in data["households"].items() if first in rs)
+    with open(labels.settlements_path(app.labels_path), "w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f)
+        w.writerow(labels.SETTLEMENT_HEADER)
+        w.writerow([hid, first["kind"], first["rule_id"], first["rules_say"], first["label_says"], first["item"],
+                    "", "changes_only", "the fact did not change"])
+    status, data = call(app, "POST", "/api/compare", {})
+    assert status == 200 and data["settled"] == 1 and data["unsettled"] == data["disagreements"] - 1
+    assert data["settlements_file"].endswith("blind_labels_settlements.csv")
+    rows = data["households"][hid]
+    assert [(r["settlement"], r["settlement_note"]) for r in rows if r["settlement"]] == [
+        ("changes_only", "the fact did not change")]
+    labels.settlements_path(app.labels_path).write_text("bad header\n", encoding="utf-8")
+    status, data = call(app, "POST", "/api/compare", {})
+    assert status == 409 and "header must be" in data["error"]
+
+
 def test_the_reveal_keeps_the_blind_labels_once_and_matches_the_cli(app):
     fill_all(app, [item("W-2", 2), item("Mortgage interest statement")])
     blind = app.labels_path.read_text(encoding="utf-8")

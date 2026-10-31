@@ -1,0 +1,31 @@
+household_id,documents,labeled_by,notes
+H002,,roanuk,no change
+H011,"new dependent ssn, social security income, mortgage payments, home payment, home upgrade payments that qualify x1",roanuk,"dependent added, home purchased, social security benefits taken"
+H012,,roanuk,no change
+H013,,roanuk,no change
+H015,,roanuk,income change
+H018,healthcare.gov premiums x1,roanuk,"income change, healthcare.gov change"
+H020,"w2 income, cryptocurrency transactions x1",roanuk,"income change, crypto trading income"
+H021,,roanuk,no change
+H022,"dependent ssn, new w2, retirement withdrawal, tuition payments, gambling proceeds amount x1",roanuk,"new income on w2, new gambling income, new retirement account withdrawal, new tuition expenses"
+H024,"new w2, new unemployement benefits, vehicle purchase x1",roanuk,"new income source, new unemployment benefits, new vehicle purchase"
+H029,home sale amount; new w2,roanuk,"new income source, home purchase"
+H044,,roanuk,no change
+H046,freelance income; unemployment benefits amount x1; mortgage payments x1; home purchase amount,roanuk,"new income from freelance, new unemployment benefits, new mortgage, new home purchase"
+H050,unemployment benefits amount x1; healthcare.gov premiums x1; gambling proceeds amount x1; electric vehicle purchase amount,roanuk,"unemployments benefits, gambling proceeds, vehicle purchase"
+H051,new freelance income; social security benefits x1,roanuk,new income
+H053,new w2; new healthcare.gov plan; tuition payments x1; energy installation costs x1,roanuk,"new income, tuition expenses, clean energy costs"
+H056,new income; new energy upgrades x1,roanuk,"new income, energy installation costs"
+H066,retirement account withdrawal; healthcare.gov premiums x1; home purchase amount; energy installation costs x1,roanuk,"remove income source from last year, retirement withdrawal, healthcare.gov plan, home purchase, energy install"
+H067,new income; cryptocurrency transactions x1; retirement account withdrawal; tuition payments x1; energy installation costs x1,roanuk,"new income, crypto, retirement withdrawal, tuition expenses, energy install costs"
+H068,,roanuk,no change
+H079,new income; social security benefits x1,roanuk,"new income, social security benefits"
+H080,energy installation costs x1,roanuk,energy upgrade costs
+H081,,roanuk,no change
+H082,,roanuk,no change
+H084,mortgage payments x1; home purchase amount; electric vehicle purchase amount,roanuk,"new mortgage, new home purchase, electric vehicle purchase"
+H085,retirement account withdrawal; new non government healthcare plan,roanuk,"retirement withdrawal, ask what healthcare plan they currently have since they discontinued healthcare.gov since last year"
+H086,new income,roanuk,new income source
+H087,new freelance income; cryptocurrency transactions x1; home sale amount; tuition payments x1; electric vehicle purchase amount,roanuk,"new income, crypto, home sale, tuition expenses, electric vehicle purchase"
+H088,,roanuk,no change
+H093,new dependent ssn; retirement account withdrawal; gambling proceeds amount x1,roanuk,"new dependent to add to return, retirement withdrawal, gambling proceeds"

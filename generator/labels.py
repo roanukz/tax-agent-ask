@@ -23,7 +23,8 @@ since last year come from sim/simulator.py, which gives the simulated client
 the same lines.
 
 compare reads data/labels/blind_labels.csv, where each documents cell is a
-list separated by semicolons, such as "W-2 x2; 1099-INT; 1095-A". Each item
+list separated by semicolons, such as "W-2 x2; 1099-INT; 1095-A", or "none"
+when the preparer should ask for nothing. Each item
 maps to the rules whose names appear in it as whole words, compared as the
 scorer compares them (eval.aliases key and forms): case, a plural s, and
 hyphens inside a word don't matter, so "W-2s" and "W2" read as "W-2", but
@@ -46,6 +47,13 @@ a number or count word left in the name ("W-2 for two jobs", "W-2s from both
 jobs", "W-2 (2nd job)") and, when no count was read, a plural of the rule's
 name ("W-2s", "K-1 forms"). Other wording can still hide a count ("W-2 from my
 jobs"), which is why the sheet asks for x2 or x3 after an item.
+
+Each disagreement is settled in <name>_settlements.csv beside the labels file
+(blind_labels_settlements.csv for the default file), one row per compare row,
+matched on household, kind, rule, both counts, and the label item, so a rule
+edit that changes a row leaves it unsettled again. compare shows how each row
+was settled, and with --unsettled only the rows still to settle; its exit
+status is then 1 only while a disagreement is unsettled.
 """
 
 from __future__ import annotations
@@ -81,7 +89,20 @@ from sim.simulator import FILING_PLAIN, describe_changes
 SHEET_FILE = "blind_label_sheet.md"
 CSV_FILE = "blind_labels.csv"
 SNAPSHOT_SUFFIX = "_before_compare"
+SETTLEMENTS_SUFFIX = "_settlements"
 CSV_HEADER = ("household_id", "documents", "labeled_by", "notes")
+# A documents cell, or an item, that says the preparer should ask this household for nothing.
+NOTHING = "none"
+SETTLEMENT_HEADER = ("household_id", "kind", "rule_id", "rules_say", "label_says", "item", "maps_to", "settlement",
+                     "note")
+# How a disagreement was settled. changes_only is logged but not checked: the label left that document out
+# because the fact behind it did not change, so nothing was compared against the rule's source.
+SETTLEMENTS = {
+    "same_document": "the label names the rule's document in other words",
+    "rule_stands": "checked against the cited source: the rule is right and the label differs",
+    "label_misread": "the label asks for something the household's facts don't call for",
+    "changes_only": "a document, or part of a count, for a fact that did not change; the label lists only changes",
+}
 # 10 train and 20 dev households. Dev is exactly proportional (6/9/5 of
 # 12/18/10); train rounds 3/4.5/2.5 toward complex, which covers more rules.
 LABEL_PLAN = {"train": {"simple": 3, "medium": 4, "complex": 3}, "dev": {"simple": 6, "medium": 9, "complex": 5}}
@@ -264,7 +285,8 @@ def build_sheet(truths: Mapping[str, Mapping[str, Any]], specs: Mapping[str, Fac
         "federal return only, in the documents column of data/labels/blind_labels.csv, one row per household. "
         "Separate items with semicolons, and add x2 or x3 after an item when the household needs more than one of "
         "the same kind. Use whatever short name you would put on a request list. Leave out what every client brings, "
-        "such as a photo ID or bank details. Put your name in labeled_by and anything worth noting in notes.",
+        "such as a photo ID or bank details, and write none if the preparer should ask for nothing. Put your name in "
+        "labeled_by and anything worth noting in notes.",
         "",
         "The label page does the same with a box per item and a count box: `uv run python -m generator.label_ui`.",
         "",
@@ -392,7 +414,7 @@ def parse_documents(cell: str, rules: list[Rule], ignore_aliases: Sequence[str] 
     items = []
     for raw in cell.split(";"):
         text = raw.strip()
-        if not text:
+        if not text or text.casefold() == NOTHING:
             continue
         name, count = read_count(text)
         candidates = best_matches(name, rules)
@@ -487,7 +509,7 @@ def read_labels(path: Path) -> list[dict[str, str]]:
 
 
 def has_items(cell: str) -> bool:
-    """Whether a documents cell names at least one item, so a cell of only semicolons is no label."""
+    """Whether a documents cell names at least one item or says none, so a cell of only semicolons is no label."""
     return any(piece.strip() for piece in cell.split(";"))
 
 
@@ -556,16 +578,109 @@ def compare_file(labels_path: Path, data_dir: Path = DATA_DIR) -> tuple[list[Dis
     return out, labeled
 
 
+# Settlements.
+
+SettlementKey = tuple[str, str, str, int, int, str]
+
+
+def settlements_path(labels_path: Path) -> Path:
+    """Where each disagreement with a labels file is settled."""
+    labels_path = Path(labels_path)
+    return labels_path.with_name(f"{labels_path.stem}{SETTLEMENTS_SUFFIX}{labels_path.suffix}")
+
+
+def settlement_key(d: Disagreement) -> SettlementKey:
+    return (d.household_id, d.kind, d.rule_id, d.engine_count, d.label_count, d.item)
+
+
+def read_settlements(path: Path, rule_ids: Collection[str] = ()) -> dict[SettlementKey, dict[str, str]]:
+    """The settlements file's rows by the compare row each settles; none when the file doesn't exist.
+
+    Every row needs a known settlement and a note, and maps_to, when given, names a rule in rule_ids or says none.
+    """
+    path = Path(path)
+    if not path.exists():
+        return {}
+    out: dict[SettlementKey, dict[str, str]] = {}
+    try:
+        # utf-8-sig drops the byte order mark a spreadsheet's "CSV UTF-8" save puts first.
+        with open(path, newline="", encoding="utf-8-sig") as f:
+            reader = csv.DictReader(f)
+            if tuple(reader.fieldnames or ()) != SETTLEMENT_HEADER:
+                raise LabelFileError(f"{path}: header must be {','.join(SETTLEMENT_HEADER)}, got {reader.fieldnames}")
+            for row in reader:
+                where = f"{path}: line {reader.line_num}"
+                if None in row:
+                    raise LabelFileError(f"{where} has more than {len(SETTLEMENT_HEADER)} cells")
+                row = {k: (v or "").strip() for k, v in row.items()}
+                if row["settlement"] not in SETTLEMENTS:
+                    raise LabelFileError(f"{where}: settlement must be one of {', '.join(SETTLEMENTS)}")
+                if not row["note"]:
+                    raise LabelFileError(f"{where}: every settlement needs a note saying why")
+                if row["maps_to"] and rule_ids and row["maps_to"] not in {*rule_ids, NOTHING}:
+                    raise LabelFileError(f"{where}: maps_to {row['maps_to']} is not a rule ID or {NOTHING}")
+                try:
+                    k = (row["household_id"], row["kind"], row["rule_id"], int(row["rules_say"]),
+                         int(row["label_says"]), row["item"])
+                except ValueError:
+                    raise LabelFileError(f"{where}: rules_say and label_says must be whole numbers") from None
+                if k in out:
+                    raise LabelFileError(f"{where} settles the same compare row as an earlier line")
+                out[k] = row
+    except UnicodeDecodeError:
+        raise LabelFileError(f"{path} isn't UTF-8 text; save it as UTF-8") from None
+    return out
+
+
+@dataclass(frozen=True)
+class Settled:
+    settled: tuple[tuple[Disagreement, Mapping[str, str]], ...]
+    unsettled: tuple[Disagreement, ...]
+    # Settlement rows that match no current disagreement, such as after a rule edit changed the compare row.
+    stale: tuple[Mapping[str, str], ...]
+
+    def by_kind(self) -> Counter[str]:
+        return Counter(s["settlement"] for _, s in self.settled)
+
+
+def settle(rows: Sequence[Disagreement], settlements: Mapping[SettlementKey, Mapping[str, str]]) -> Settled:
+    """Pairs each disagreement with its settlement. Notes need none, so a settlement for one is stale."""
+    done, open_rows, used = [], [], set()
+    for d in rows:
+        if not is_disagreement(d):
+            continue
+        k = settlement_key(d)
+        if k in settlements:
+            done.append((d, settlements[k]))
+            used.add(k)
+        else:
+            open_rows.append(d)
+    stale = tuple(s for k, s in settlements.items() if k not in used)
+    return Settled(tuple(done), tuple(open_rows), stale)
+
+
+def settlement_summary(s: Settled) -> str:
+    """One line on how the disagreements were settled, such as "170 settled (52 same_document, ...), 6 unsettled"."""
+    kinds = s.by_kind()
+    parts = [f"{n} {k}" for k in SETTLEMENTS if (n := kinds[k])]
+    text = f"{len(s.settled)} settled" + (f" ({', '.join(parts)})" if parts else "") + f", {len(s.unsettled)} unsettled"
+    return text + (f", and {len(s.stale)} stale settlement {'row' if len(s.stale) == 1 else 'rows'}" if s.stale else "")
+
+
 TABLE_COLUMNS = ("household", "kind", "rule", "document", "rules say", "label says", "label item")
 
 
-def format_table(rows: Sequence[Disagreement]) -> str:
-    cells = [TABLE_COLUMNS] + [
+def format_table(rows: Sequence[Disagreement], settled_as: Mapping[SettlementKey, str] | None = None) -> str:
+    """The rows as a text table, with a settled-as column when settled_as is given."""
+    columns = TABLE_COLUMNS + (("settled as",) if settled_as is not None else ())
+    cells = [columns] + [
         (d.household_id, d.kind, d.rule_id, d.document, str(d.engine_count), str(d.label_count), d.item)
+        + ((settled_as.get(settlement_key(d), "" if not is_disagreement(d) else "unsettled"),)
+           if settled_as is not None else ())
         for d in rows
     ]
     cells = [tuple(c.replace("|", "/") for c in row) for row in cells]
-    widths = [max(len(row[i]) for row in cells) for i in range(len(TABLE_COLUMNS))]
+    widths = [max(len(row[i]) for row in cells) for i in range(len(columns))]
 
     def line(row: Sequence[str]) -> str:
         return "| " + " | ".join(c.ljust(w) for c, w in zip(row, widths)) + " |"
@@ -584,6 +699,8 @@ def main(argv: list[str] | None = None) -> int:
     comp.add_argument("--labels", type=Path, default=None, help="labels CSV (default data/labels/blind_labels.csv)")
     comp.add_argument("--reveal", action="store_true",
                       help="the first time: copy the labels to their snapshot, then show the rules' answers")
+    comp.add_argument("--unsettled", action="store_true",
+                      help="show only the disagreements the settlements file does not settle yet")
     args = parser.parse_args(argv)
     if args.command == "sheet":
         sheet_path, csv_path, wrote_csv = write_sheet(args.data)
@@ -609,6 +726,8 @@ def main(argv: list[str] | None = None) -> int:
                 raise RevealRefused(f"{labels_path} does not exist")
             print(f"kept the blind labels in {reveal(labels_path, sheet)}")
         rows, labeled = compare_file(labels_path, args.data)
+        settlements_file = settlements_path(labels_path)
+        settled = settle(rows, read_settlements(settlements_file, {r.id for r in load_rules()}))
     except (LabelFileError, RevealRefused) as e:
         print(f"error: {e}", file=sys.stderr)
         return 2
@@ -616,12 +735,16 @@ def main(argv: list[str] | None = None) -> int:
         print(f"no labels yet in {labels_path}")
         return 0
     disagreements = sum(1 for d in rows if is_disagreement(d))
-    if rows:
-        print(format_table(rows))
+    shown = list(settled.unsettled) if args.unsettled else rows
+    settled_as = {settlement_key(d): s["settlement"] for d, s in settled.settled} if settlements_file.exists() else None
+    if shown:
+        print(format_table(shown, settled_as))
     notes = len(rows) - disagreements
     tail = f" and {notes} {'note' if notes == 1 else 'notes'}" if notes else ""
     print(f"{disagreements or 'no'} disagreements{tail} across {labeled} labeled households")
-    return 1 if disagreements else 0
+    if settlements_file.exists():
+        print(f"{settlement_summary(settled)} in {settlements_file}")
+    return 1 if settled.unsettled else 0
 
 
 if __name__ == "__main__":

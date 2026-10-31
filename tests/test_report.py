@@ -13,6 +13,7 @@ from eval import report
 from eval.baselines import base_summary, run_prior_year_split
 from agent.configs import JUDGE_MODEL
 from eval.judge import LABEL_HEADER, PROMPT_VERSION, QUESTIONS
+from generator.labels import SETTLEMENT_HEADER
 from eval.report import (
     MET,
     NOT_MEASURED,
@@ -505,10 +506,84 @@ def test_the_report_counts_labels_but_no_disagreements_before_the_reveal(tmp_pat
     labels_csv.parent.mkdir(parents=True)
     labels_csv.write_text("household_id,documents,labeled_by,notes\nH002,W-2 x9,roanuk,\nH999,W-2,roanuk,\n")
     result = report.blind_label_result(data)
-    assert result == {"labeled": 1, "disagreements": 0, "notes": 0, "compared": False, "error": None}
+    assert result == {"labeled": 1, "disagreements": 0, "notes": 0, "compared": False, "error": None,
+                      "settled": {}, "unsettled": 0, "stale": 0, "same_document_items": 0,
+                      "settlements_error": None}
     (data / "labels" / "blind_labels_before_compare.csv").write_bytes(labels_csv.read_bytes())
     result = report.blind_label_result(data)
     assert result["compared"] is True and result["labeled"] == 2 and result["disagreements"] > 0
+
+
+def test_the_report_counts_settlements_and_keeps_unchecked_rule_answers_a_gap(tmp_path):
+    data = tmp_path / "data"
+    shutil.copytree(report.REPO / "data" / "truth", data / "truth")
+    labels_csv = data / "labels" / "blind_labels.csv"
+    labels_csv.parent.mkdir(parents=True)
+    labels_csv.write_text('household_id,documents,labeled_by,notes\nH002,"W-2 x2; pay stubs",roanuk,\n')
+    (data / "labels" / "blind_labels_before_compare.csv").write_bytes(labels_csv.read_bytes())
+    result = report.blind_label_result(data)
+    assert result["disagreements"] == 2 and result["unsettled"] == 2 and result["settled"] == {}
+    with open(data / "labels" / "blind_labels_settlements.csv", "w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(SETTLEMENT_HEADER)
+        w.writerow(["H002", "unmatched_item", "", 0, 1, "pay stubs", "none", "label_misread", "not federal"])
+        w.writerow(["H002", "count_differs", "R001", 1, 2, "W-2 x2", "R001", "changes_only", "one W-2 is new"])
+        w.writerow(["H002", "missing_from_label", "R009", 1, 0, "", "", "same_document", "gone"])
+    result = report.blind_label_result(data)
+    assert result["unsettled"] == 0 and result["stale"] == 1
+    assert result["settled"] == {"label_misread": 1, "changes_only": 1}
+    text = report.settlement_sentence(result)
+    assert text.startswith("Compare rows settled in data/labels/blind_labels_settlements.csv: 1 asks for something")
+    assert "; 1 is a document, or part of a count," in text and "Every disagreement is logged." in text
+    assert text.endswith("1 logged settlement no longer matches a disagreement and needs review.")
+
+    ctx = context(tmp_path / "ctx", tmp_path / "runs")
+    ctx.rules = [dataclasses.replace(r, status="verified") for r in ctx.rules]
+    ctx.blind = {"labeled": 30, "disagreements": 2, "notes": 0, "compared": True, "error": None,
+                 "settled": {"same_document": 2}, "unsettled": 0, "stale": 0}
+    assert statuses(ctx)["6"] == MET
+    ctx.blind["settled"] = {"same_document": 1, "changes_only": 1}
+    crit = {c.number: c for c in criteria(ctx)}["6"]
+    assert crit.status == NOT_MEASURED and "1 rule answer, or parts of a W-2 count, for facts that did not change is not checked" in crit.detail
+    assert any("so 1 rule answer, or parts of a W-2 count, for unchanged facts is unchecked by them" in s for s in report.next_steps(ctx))
+    ctx.blind.update(settled={"same_document": 2}, unsettled=1, stale=1)
+    crit = {c.number: c for c in criteria(ctx)}["6"]
+    assert "1 label disagreement to settle" in crit.detail and "1 logged settlement no longer" in crit.detail
+    steps = report.next_steps(ctx)
+    assert any("Settle the open blind label disagreements" in s for s in steps)
+    assert not any("unchanged facts" in s for s in steps)
+
+
+def test_a_broken_settlements_file_keeps_the_comparison_and_names_the_file(tmp_path):
+    data = tmp_path / "data"
+    shutil.copytree(report.REPO / "data" / "truth", data / "truth")
+    labels_csv = data / "labels" / "blind_labels.csv"
+    labels_csv.parent.mkdir(parents=True)
+    labels_csv.write_text('household_id,documents,labeled_by,notes\nH002,"W-2 x2; pay stubs",roanuk,\n')
+    (data / "labels" / "blind_labels_before_compare.csv").write_bytes(labels_csv.read_bytes())
+    settlements = data / "labels" / "blind_labels_settlements.csv"
+    row = "H002,unmatched_item,,0,1,pay stubs,none,label_misread,not federal\n"
+    # A byte order mark, as a spreadsheet's CSV UTF-8 save writes, is fine.
+    settlements.write_text("\ufeff" + ",".join(SETTLEMENT_HEADER) + "\n" + row, encoding="utf-8")
+    result = report.blind_label_result(data)
+    assert result["settled"] == {"label_misread": 1} and result["unsettled"] == 1 and result["settlements_error"] is None
+    settlements.write_text(",".join(SETTLEMENT_HEADER) + "\n" + row.replace("label_misread", "agreed"), encoding="utf-8")
+    result = report.blind_label_result(data)
+    assert result["labeled"] == 1 and result["compared"] is True and result["error"] is None
+    assert result["disagreements"] == result["unsettled"] == 2 and result["settled"] == {}
+    assert "settlement must be one of" in result["settlements_error"]
+
+    ctx = context(tmp_path / "ctx", tmp_path / "runs")
+    ctx.blind = {**result, "labeled": 30}
+    crit = {c.number: c for c in criteria(ctx)}["6"]
+    assert "blind_labels_settlements.csv could not be read" in crit.detail and "0 of 30" not in crit.detail
+    steps = report.next_steps(ctx)
+    assert any("Fix data/labels/blind_labels_settlements.csv" in s for s in steps)
+    assert not any("writes blind labels" in s for s in steps)
+    ctx.blind = {"labeled": 0, "disagreements": 0, "notes": 0, "compared": False, "error": "bad header"}
+    crit = {c.number: c for c in criteria(ctx)}["6"]
+    assert "the blind labels file could not be read" in crit.detail and "0 of 30" not in crit.detail
+    assert any("Fix data/labels/blind_labels.csv" in s for s in report.next_steps(ctx))
 
 
 def test_the_report_flags_runs_under_more_than_one_run_cap():

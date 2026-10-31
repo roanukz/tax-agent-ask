@@ -188,7 +188,7 @@ code { font-size: 13px; background: var(--surface-2); padding: 1px 5px; border-r
     <section id="label-view" hidden>
       <details class="howto" id="howto">
         <summary>How to label</summary>
-        <p>For each household, list every item the preparer should ask the client for, for the 2026 federal return only. Use whatever short name you would put on a request list, one item per row, and put how many in the count box. Leave out what every client brings, such as a photo ID or bank details.</p>
+        <p>For each household, list every item the preparer should ask the client for, for the 2026 federal return only. Use whatever short name you would put on a request list, one item per row, and put how many in the count box. Leave out what every client brings, such as a photo ID or bank details, and write none if the preparer should ask for nothing.</p>
         <p>Everything saves as you type, to <code id="labels-file"></code>. The rules' answers stay hidden until every household has a label and you choose to compare.</p>
         <p class="hint">Enter adds a row. Backspace in an empty row removes it. <span class="kbd-next"></span> goes to the next household.</p>
         <p class="hint">Not tax advice. All households are synthetic.</p>
@@ -225,7 +225,7 @@ code { font-size: 13px; background: var(--surface-2); padding: 1px 5px; border-r
     <section id="compare-view" hidden>
       <div class="hh-head"><h2>Compare with the rules</h2></div>
       <p id="compare-summary"></p>
-      <p class="hint">Settle each disagreement against the rule's cited source, then log it in DECISIONS.md. Claude Code can draft those entries from this page's list, or from <code>uv run python -m generator.labels compare</code>, which reads the same file.</p>
+      <p class="hint">Settle each disagreement against the rule's cited source, then record it as a row in <code>data/labels/blind_labels_settlements.csv</code>, with the reasoning in DECISIONS.md. Claude Code can draft those rows from this page's list, or from <code>uv run python -m generator.labels compare --unsettled</code>, which reads the same files.</p>
       <label class="hint"><input type="checkbox" id="only-disagreements" checked> Only households with disagreements</label>
       <div id="compare-list"></div>
     </section>
@@ -255,6 +255,12 @@ const KINDS = {
   ambiguous_count: ["Count not read", "Compare couldn't read a count in this item. Put the number in the count box."],
   ambiguous_item: ["Note", "This item matches more than one rule; this row shows where its count went."],
   unknown_household: ["Unknown household", "This row's household isn't in the data."],
+};
+const SETTLED = {
+  same_document: "Same document",
+  rule_stands: "Rule stands",
+  label_misread: "Label misread",
+  changes_only: "Unchanged fact",
 };
 
 const S = { households: [], byId: Object.create(null), labels: Object.create(null), total: 0, labeled: 0,
@@ -780,7 +786,8 @@ function compareTable(rows) {
   return el("div", { class: "table-wrap" }, el("table", {},
     el("thead", {}, el("tr", {},
       el("th", { text: "What" }), el("th", { text: "Document" }), el("th", { class: "num", text: "Rules" }),
-      el("th", { class: "num", text: "Label" }), el("th", { text: "Label item" }), el("th", { text: "Source" }))),
+      el("th", { class: "num", text: "Label" }), el("th", { text: "Label item" }), el("th", { text: "Source" }),
+      el("th", { text: "Settled" }))),
     el("tbody", {}, rows.map((r) => {
       const [title, help] = KINDS[r.kind] || [r.kind, ""];
       const source = r.source_url && r.source_url.startsWith("https://")
@@ -793,7 +800,9 @@ function compareTable(rows) {
         el("td", { class: "num", text: r.kind === "unmatched_item" ? "" : String(r.rules_say) }),
         el("td", { class: "num", text: String(r.label_says) }),
         el("td", { text: r.item || "" }),
-        el("td", {}, source));
+        el("td", {}, source),
+        el("td", { title: r.settlement_note || "",
+                   text: r.settlement ? (SETTLED[r.settlement] || r.settlement) : r.disagreement ? "Not yet" : "" }));
     }))));
 }
 
@@ -813,7 +822,8 @@ function renderCompare() {
   if (!data) return;
   const noteText = data.notes ? ` and ${data.notes} ${data.notes === 1 ? "note" : "notes"}` : "";
   $("compare-summary").textContent =
-    `${data.disagreements || "No"} ${data.disagreements === 1 ? "disagreement" : "disagreements"}${noteText} across ${data.labeled} labeled households.`;
+    `${data.disagreements || "No"} ${data.disagreements === 1 ? "disagreement" : "disagreements"}${noteText} across ${data.labeled} labeled households.` +
+    (data.settlements_file ? ` ${data.settled} settled and ${data.unsettled} still to settle in ${data.settlements_file}.` : "");
   const only = $("only-disagreements").checked;
   const list = $("compare-list");
   const parts = [];
@@ -824,7 +834,9 @@ function renderCompare() {
     const labeled = !known(hid) || hasLabel(S.labels[hid]);
     if (only && !n && labeled) continue;
     const h = known(hid) ? S.byId[hid] : null;
-    const status = n ? `${n} ${n === 1 ? "disagreement" : "disagreements"}` : labeled ? "agrees" : "no label";
+    const open = rows.filter((r) => r.disagreement && !r.settlement).length;
+    const status = n ? `${n} ${n === 1 ? "disagreement" : "disagreements"}${data.settlements_file ? (open ? `, ${open} to settle` : ", all settled") : ""}`
+      : labeled ? "agrees" : "no label";
     parts.push(el("div", { class: "cmp-head" },
       el("h3", { text: hid }),
       h ? el("span", { class: "tag", text: `${h.split}, ${h.complexity}` }) : null,

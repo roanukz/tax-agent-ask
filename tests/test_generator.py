@@ -1,5 +1,6 @@
 """Block 2: the seeded household generator, ground truth, frozen splits, and blind labels."""
 
+import csv
 import json
 import os
 import re
@@ -739,3 +740,100 @@ def test_compare_command_reads_the_csv(tmp_path, capsys):
     assert "ambiguous_item" in out and re.search(r"no disagreements and \d+ notes? across 1 labeled households", out)
     csv_path.write_text("id,docs\n")
     assert labels.main(["compare", "--data", str(tmp_path), "--labels", str(csv_path)]) == 2
+
+
+def test_none_says_the_preparer_asks_for_nothing():
+    assert labels.has_items("none") and labels.has_items(" None ")
+    assert labels.parse_documents("none", RULES, IGNORE) == []
+    rows = labels.compare_household("H002", "none", TRUTHS["H002"], RULES, SPECS, IGNORE)
+    assert [(d.kind, d.rule_id, d.engine_count, d.label_count) for d in rows] == [("missing_from_label", "R001", 1, 0)]
+
+
+def write_settlements(path, rows, header=labels.SETTLEMENT_HEADER):
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f)
+        w.writerow(header)
+        w.writerows(rows)
+
+
+def settlement_row(d, settlement="same_document", note="the label names it in other words", maps_to=""):
+    return [d.household_id, d.kind, d.rule_id, d.engine_count, d.label_count, d.item, maps_to, settlement, note]
+
+
+def test_settlements_pair_with_compare_rows_and_go_stale_when_a_row_changes(tmp_path):
+    rows = labels.compare_household("H002", "W-2 x2; pay stubs", TRUTHS["H002"], RULES, SPECS, IGNORE)
+    assert sorted(d.kind for d in rows) == ["count_differs", "unmatched_item"]
+    count, extra = sorted(rows, key=lambda d: d.kind)
+    path = tmp_path / "s.csv"
+    write_settlements(path, [settlement_row(extra, "label_misread", "pay stubs aren't a federal document", "none")])
+    s = labels.settle(rows, labels.read_settlements(path, BY_ID))
+    assert [d for d, _ in s.settled] == [extra] and s.unsettled == (count,) and s.stale == ()
+    write_settlements(path, [settlement_row(extra, "label_misread", "pay stubs aren't a federal document", "none"),
+                             settlement_row(count, "changes_only", "one W-2 is new", "R001")])
+    s = labels.settle(rows, labels.read_settlements(path, BY_ID))
+    assert s.unsettled == () and s.by_kind() == Counter({"label_misread": 1, "changes_only": 1})
+    assert labels.settlement_summary(s) == "2 settled (1 label_misread, 1 changes_only), 0 unsettled"
+    # A different count is a different disagreement: its old settlement goes stale.
+    changed = labels.compare_household("H002", "W-2 x3; pay stubs", TRUTHS["H002"], RULES, SPECS, IGNORE)
+    s = labels.settle(changed, labels.read_settlements(path, BY_ID))
+    assert [d.label_count for d in s.unsettled] == [3] and [r["kind"] for r in s.stale] == ["count_differs"]
+    assert labels.settlement_summary(s).endswith("1 unsettled, and 1 stale settlement row")
+    # Notes need no settlement, so one for a note is stale too.
+    note = labels.Disagreement("H002", "ambiguous_item", "R015", "Closing statement", 1, 1, "closing statement")
+    s = labels.settle([note], {labels.settlement_key(note): {"settlement": "same_document"}})
+    assert s.settled == () and s.unsettled == () and len(s.stale) == 1
+    assert labels.read_settlements(tmp_path / "missing.csv") == {}
+
+
+GOOD = ["H002", "unmatched_item", "", "0", "1", "pay stubs", "none", "label_misread", "not federal"]
+
+
+@pytest.mark.parametrize("rows, header, message", [
+    ([GOOD], ("household_id", "kind"), "header must be"),
+    ([[*GOOD[:7], "agreed", "not federal"]], None, "settlement must be one of"),
+    ([[*GOOD[:8], " "]], None, "needs a note"),
+    ([[*GOOD[:6], "R999", *GOOD[7:]]], None, "is not a rule ID"),
+    ([[*GOOD[:3], "x", *GOOD[4:]]], None, "whole numbers"),
+    ([GOOD, GOOD], None, "same compare row"),
+    ([[*GOOD, "spare"]], None, "more than 9 cells"),
+])
+def test_settlements_file_errors_are_refused(tmp_path, rows, header, message):
+    path = tmp_path / "s.csv"
+    write_settlements(path, rows, header or labels.SETTLEMENT_HEADER)
+    with pytest.raises(labels.LabelFileError, match=message):
+        labels.read_settlements(path, BY_ID)
+
+
+def test_settlements_file_must_be_utf8_and_maps_to_may_say_none_or_be_blank(tmp_path):
+    path = tmp_path / "s.csv"
+    path.write_bytes((",".join(labels.SETTLEMENT_HEADER) + "\n").encode() + "H002,x,,0,1,caf\xe9,,same_document,n\n".encode("latin-1"))
+    with pytest.raises(labels.LabelFileError, match="isn't UTF-8"):
+        labels.read_settlements(path)
+    write_settlements(path, [GOOD, [*GOOD[:5], "pay slips", "", *GOOD[7:]]])
+    assert len(labels.read_settlements(path, BY_ID)) == 2
+    assert labels.settlements_path(Path("data/labels/blind_labels.csv")) == Path(
+        "data/labels/blind_labels_settlements.csv")
+
+
+def test_compare_command_shows_settlements_and_exits_on_unsettled_rows(tmp_path, capsys):
+    shutil.copytree(DATA_DIR / "truth", tmp_path / "truth")
+    csv_path = tmp_path / "labels.csv"
+    csv_path.write_text('household_id,documents,labeled_by,notes\nH002,"W-2 x2; pay stubs",roanuk,\n')
+    labels.snapshot_path(csv_path).write_text("")
+    rows = labels.compare_household("H002", "W-2 x2; pay stubs", TRUTHS["H002"], RULES, SPECS, IGNORE)
+    count, extra = sorted(rows, key=lambda d: d.kind)
+    write_settlements(labels.settlements_path(csv_path), [settlement_row(extra, "label_misread", "not federal")])
+    assert labels.main(["compare", "--data", str(tmp_path), "--labels", str(csv_path)]) == 1
+    out = capsys.readouterr().out
+    assert "settled as" in out and "label_misread" in out and "unsettled" in out
+    assert "1 settled (1 label_misread), 1 unsettled in" in out
+    assert labels.main(["compare", "--data", str(tmp_path), "--labels", str(csv_path), "--unsettled"]) == 1
+    out = capsys.readouterr().out
+    assert "count_differs" in out and "pay stubs" not in out.split("disagreements")[0]
+    write_settlements(labels.settlements_path(csv_path), [settlement_row(extra, "label_misread", "not federal"),
+                                                          settlement_row(count, "changes_only", "one W-2 is new")])
+    assert labels.main(["compare", "--data", str(tmp_path), "--labels", str(csv_path)]) == 0
+    assert "2 settled (1 label_misread, 1 changes_only), 0 unsettled" in capsys.readouterr().out
+    write_settlements(labels.settlements_path(csv_path), [["bad"]], ("x",))
+    assert labels.main(["compare", "--data", str(tmp_path), "--labels", str(csv_path)]) == 2
+    assert "header must be" in capsys.readouterr().err

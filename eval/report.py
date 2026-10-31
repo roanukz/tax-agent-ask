@@ -72,7 +72,10 @@ from generator.labels import (
     compare_file,
     is_disagreement,
     labeled_households,
+    read_settlements,
     select_households,
+    settle,
+    settlements_path,
     snapshot_path,
 )
 from rules.engine import FactSpec, Rule, load_facts, load_rules
@@ -211,7 +214,8 @@ def blind_label_result(data_dir: Path) -> dict[str, Any]:
     only, so reading it while labeling says nothing about the rules' answers.
     """
     path = Path(data_dir) / "labels" / CSV_FILE
-    empty = {"labeled": 0, "disagreements": 0, "notes": 0, "compared": False, "error": None}
+    empty = {"labeled": 0, "disagreements": 0, "notes": 0, "compared": False, "error": None, "settled": {},
+             "unsettled": 0, "stale": 0, "same_document_items": 0, "settlements_error": None}
     if not path.exists():
         return empty
     try:
@@ -227,8 +231,50 @@ def blind_label_result(data_dir: Path) -> dict[str, Any]:
     except (LabelFileError, OSError) as e:
         return {**empty, "error": str(e)}
     disagreements = sum(1 for d in rows if is_disagreement(d))
-    return {"labeled": labeled, "disagreements": disagreements, "notes": len(rows) - disagreements,
-            "compared": True, "error": None}
+    result = {**empty, "labeled": labeled, "disagreements": disagreements, "notes": len(rows) - disagreements,
+              "compared": True, "unsettled": disagreements}
+    # A broken settlements file leaves every disagreement open but keeps the comparison itself.
+    try:
+        settled = settle(rows, read_settlements(settlements_path(path), {r.id for r in load_rules()}))
+    except (LabelFileError, OSError) as e:
+        return {**result, "settlements_error": str(e)}
+    items = sum(1 for d, s in settled.settled if s["settlement"] == "same_document" and d.kind == "unmatched_item")
+    return {**result, "settled": dict(settled.by_kind()), "unsettled": len(settled.unsettled),
+            "stale": len(settled.stale), "same_document_items": items}
+
+
+# How each kind of settlement reads after its count of compare rows, for one row and for several.
+SETTLEMENT_TEXT = {
+    "same_document": ("is a label item or the rule document it names in other words",
+                      "are label items and the rule documents they name in other words"),
+    "rule_stands": ("was checked against the cited source, and the rule stands",
+                    "were checked against the cited source, and the rules stand"),
+    "label_misread": ("asks for something the household's facts don't call for",
+                      "ask for something the household's facts don't call for"),
+    "changes_only": ("is a document, or part of a count, for a fact that did not change, which the labels leave out, "
+                     "so the labels don't check that rule answer",
+                     "are documents, or parts of a count, for facts that did not change, which the labels leave out, "
+                     "so the labels don't check those rule answers"),
+}
+
+
+def stale_text(n: int) -> str:
+    return f"{plural(n, 'logged settlement')} no longer {'matches' if n == 1 else 'match'} a disagreement"
+
+
+def settlement_sentence(blind: Mapping[str, Any]) -> str:
+    """How the blind label disagreements were settled, from blind_label_result."""
+    settled = blind.get("settled", {})
+    parts = [f"{settled[k]} {SETTLEMENT_TEXT[k][settled[k] != 1]}" for k in SETTLEMENT_TEXT if settled.get(k)]
+    items = blind.get("same_document_items", 0)
+    if items and settled.get("same_document"):
+        parts[0] += f" ({plural(items, 'label item')})"
+    unsettled = blind.get("unsettled", 0)
+    text = (f"Compare rows settled in data/labels/blind_labels_settlements.csv: {'; '.join(parts) or 'none yet'}. "
+            + (f"{plural(unsettled, 'disagreement')} still unsettled." if unsettled else "Every disagreement is logged."))
+    if blind.get("stale"):
+        text += f" {stale_text(blind['stale'])} and {'needs' if blind['stale'] == 1 else 'need'} review."
+    return text
 
 
 def display_path(path: Path) -> str:
@@ -770,13 +816,23 @@ def criterion_rules(ctx: Context) -> Criterion:
     gaps = []
     if to_verify:
         gaps.append(f"{len(to_verify)} of {len(ctx.rules)} rules are still to_verify")
-    if blind["labeled"] < BLIND_LABEL_TARGET:
+    if blind.get("error"):
+        gaps.append("the blind labels file could not be read")
+    elif blind["labeled"] < BLIND_LABEL_TARGET:
         gaps.append(f"{blind['labeled']} of {BLIND_LABEL_TARGET} households have blind labels")
     elif not blind.get("compared", True):
         gaps.append("the blind labels have not been compared with the rules yet")
-    if blind["disagreements"]:
-        gaps.append(f"{plural(blind['disagreements'], 'label disagreement')} to settle against the cited source "
-                    "and log in DECISIONS.md")
+    if blind.get("settlements_error"):
+        gaps.append("data/labels/blind_labels_settlements.csv could not be read")
+    if blind.get("unsettled", blind["disagreements"]):
+        gaps.append(f"{plural(blind.get('unsettled', blind['disagreements']), 'label disagreement')} to settle "
+                    "against the cited source and log in data/labels/blind_labels_settlements.csv")
+    unchecked = blind.get("settled", {}).get("changes_only", 0)
+    if unchecked:
+        gaps.append(f"{plural(unchecked, 'rule answer')}, or parts of a W-2 count, for facts that did not change "
+                    f"{'is' if unchecked == 1 else 'are'} not checked by the labels, which list only what changed")
+    if blind.get("stale"):
+        gaps.append(stale_text(blind["stale"]))
     if gaps:
         return Criterion("6", text, bar, NOT_MEASURED,
                          f"Every rule has a source URL, but {join_words(gaps)}.")
@@ -940,6 +996,11 @@ def data_section(ctx: Context) -> list[str]:
     else:
         lines.append(f"{blind['labeled']} of {BLIND_LABEL_TARGET} households labeled; {plural(blind['disagreements'], 'disagreement')} "
                      f"with the rules and {plural(blind['notes'], 'note')} (run uv run python -m generator.labels compare).")
+        if blind.get("settlements_error"):
+            lines += ["", f"The settlements could not be read, so every disagreement counts as open: "
+                          f"{blind['settlements_error']}."]
+        elif blind.get("settled") or blind.get("stale"):
+            lines += ["", settlement_sentence(blind)]
     v = ctx.validation
     labeled = len(v.labels) if v else 0
     lines += ["", f"Judge labels: {labeled} of {JUDGE_LABEL_TARGET} dev runs labeled in data/labels/judge_labels.csv.",
@@ -1212,11 +1273,25 @@ def next_steps(ctx: Context) -> list[str]:
     to_verify = sum(1 for r in ctx.rules if r.status == "to_verify")
     if to_verify:
         steps.append(f"Roanuk verifies or excludes the {to_verify} rules still marked to_verify (Block 1).")
-    if ctx.blind["labeled"] < BLIND_LABEL_TARGET:
+    if ctx.blind.get("error"):
+        steps.append("Fix data/labels/blind_labels.csv so it can be read, then compare and settle (Block 2).")
+    elif ctx.blind["labeled"] < BLIND_LABEL_TARGET:
         steps.append(f"Roanuk writes blind labels for the {BLIND_LABEL_TARGET} households on the label sheet and "
                      "settles each disagreement (Block 2).")
     elif not ctx.blind.get("compared", True):
         steps.append("Roanuk compares the blind labels with the rules and settles each disagreement (Block 2).")
+    else:
+        if ctx.blind.get("settlements_error"):
+            steps.append("Fix data/labels/blind_labels_settlements.csv so it can be read (Block 2).")
+        elif ctx.blind.get("unsettled") or ctx.blind.get("stale"):
+            steps.append("Settle the open blind label disagreements, and review any logged settlement that no longer "
+                         "matches one, in data/labels/blind_labels_settlements.csv (Block 2).")
+        unchecked = ctx.blind.get("settled", {}).get("changes_only", 0)
+        if unchecked:
+            steps.append(f"The blind labels list only what changed, so {plural(unchecked, 'rule answer')}, or parts "
+                         f"of a W-2 count, for unchanged facts {'is' if unchecked == 1 else 'are'} unchecked by them: "
+                         "label full lists for "
+                         "a few households, or rely on rule verification alone for those rules (Block 2).")
     if ctx.fidelity is None or ctx.fidelity.get("dry_run") or ctx.fidelity.get("error"):
         steps.append("Run the live simulator fidelity check and read 30 answers for leaks (Block 4).")
     if not any(is_agent(r.get("config")) for r in ctx.split_rows("dev")):
