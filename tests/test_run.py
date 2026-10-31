@@ -686,11 +686,17 @@ async def test_a_baseline_call_the_month_cap_cannot_cover_is_never_sent(tmp_path
     month = ledger(tmp_path)
     month.reserve("earlier-run", "claude-opus-5-5", 0.01)
     month.settle("earlier-run", 149.92)
-    fakes, messages = Fakes(b3_max_tokens=4096), []
+    fakes, messages, made = Fakes(b3_max_tokens=4096), [], []
+    factory = fakes.client_factory
+    fakes.client_factory = lambda key: made.append(factory(key)) or made[-1]
     code = await sweep(tmp_path, fakes, "--split", "dev", "--configs", "B3-opus", "--households", "H002",
                        messages=messages)
-    # The guard refuses the call: BudgetExceeded (exit 1), or SpendCapExceeded (exit 3) once it names the month cap.
-    assert code in (runner.EXIT_CAP, runner.EXIT_FAILED) and runs(tmp_path, "summary") == {}
+    assert made[0].calls == [] and runs(tmp_path, "summary") == {}
+    # Until ReservedClient raises SpendCapExceeded for a month-cap refusal (the spend contract), the guard raises
+    # BudgetExceeded and only this job fails; with it, the sweep stops. Each outcome is pinned whole.
+    stopped = [m for m in messages if m.startswith("stopped: ")]
+    failed = [m for m in messages if m.startswith("failed: dev-H002-B3-opus-t1: BudgetExceeded: ")]
+    assert (code, len(stopped), len(failed)) in {(runner.EXIT_FAILED, 0, 1), (runner.EXIT_CAP, 1, 0)}
     assert month.month_to_date() <= 150.0
     assert [e["actual_usd"] for e in month.entries() if e["run_id"].startswith("dev-H002")] == [None, 0.0]
 

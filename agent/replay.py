@@ -22,17 +22,19 @@ EvidenceBook fed the recorded answers in order. An ask_client call gets its
 recorded answer back, since the simulator is not called. A call the
 harness's gate denied keeps its recorded result; a gated record_fact still
 goes through record_fact_hook first, since the CLI runs both PreToolUse
-hooks on it live. In a recorded log (the fixture's scripted flag is false),
-a tax call with no recorded result is one the CLI never ran, as when it
-stopped on its budget with tool calls in its last message, so it is passed
-through without a result rather than run. A scripted log records no
-results, so every tax call in it runs. Every other event, such as the
-trace-only post_tool_use and stream_usage events or any type replay does
-not know, is copied through unchanged and never acted on. agent.summary
-then rebuilds the summary from the replayed log, and eval.score.score_run
-scores it with the recorded judge verdict and B1 median; a test-split
-run's score gets its prereg commit, as eval.run stamps it. Nothing here
-spends anything or opens a network socket.
+hooks on it live. In a recorded log (the fixture's scripted flag is false
+or absent), a tax call with no recorded result is one the CLI never ran,
+as when it stopped on its budget with tool calls in its last message, so
+it is passed through without a result rather than run. A scripted log's
+results, if it has any, were made by replay rather than by a live CLI
+(Script records none, and build_fixture stores the replayed ones), so they
+can't tell which calls ran, and every tax call in it runs. Every other
+event, such as the trace-only post_tool_use and stream_usage events or any
+type replay does not know, is copied through unchanged and never acted on.
+agent.summary then rebuilds the summary from the replayed log, and
+eval.score.score_run scores it with the recorded judge verdict and B1
+median; a test-split run's score gets its prereg commit, as eval.run
+stamps it. Nothing here spends anything or opens a network socket.
 
 Script builds the scripted-* fixtures (fixtures/scripted.py): no live run
 existed when they were written, so their answers, costs, and token counts

@@ -1,10 +1,11 @@
 """Offline replay (agent/replay.py) and the fixtures in fixtures/.
 
-Replay re-runs every tax tool call against a fresh in-process server, runs
-the real evidence hook against the recorded answers, rebuilds the summary
-with agent/summary.py, and scores it with eval.score. Each fixture must
-replay to exactly the summary and score it stores, and each scripted
-fixture must still show the case it was written for.
+Replay re-runs every tax tool call the live CLI ran (every one, in a
+scripted log) against a fresh in-process server, runs the real evidence
+hook against the recorded answers, rebuilds the summary with
+agent/summary.py, and scores it with eval.score. Each fixture must replay
+to exactly the summary and score it stores, and each scripted fixture must
+still show the case it was written for.
 """
 
 from __future__ import annotations
@@ -18,7 +19,7 @@ from agent import replay
 from agent.hooks import RECORD_FACT_TOOL
 from agent.prompts import SEND_PROBE
 from agent.replay import FIXTURES_DIR, check, fixture_from_run, load_fixture, recorded_intake_ids, replay_sync
-from agent.summary import build_summary
+from agent.summary import TAX_PREFIX, build_summary
 from fixtures import scripted
 
 FIXTURES = sorted(FIXTURES_DIR.glob("*.json"))
@@ -197,6 +198,23 @@ def test_a_finished_test_split_run_with_a_prereg_commit_becomes_a_fixture(tmp_pa
     made = fixture_from_run(run_id, name="live-test-example", runs_dir=runs)
     assert check(made) == []
     assert replay_sync(made).score["prereg_commit"] == commit
+
+
+@pytest.mark.parametrize("name", sorted(SCRIPTED))
+def test_a_scripted_fixture_stores_a_result_for_every_call_yet_every_tax_call_runs_again(name):
+    f = copy.deepcopy(fixture(name))
+    calls = [e for e in f["events"] if e["type"] == "tool_call"]
+    results = {e["tool_use_id"]: e for e in f["events"] if e["type"] == "tool_result"}
+    assert [c["id"] for c in calls if c["id"] not in results] == [], "build_fixture stores the replayed results"
+    # Those results came from replay, not a live CLI, so they say nothing about what ran: every tax call runs.
+    # (start_intake's result is kept, since it gives the intake ID the server mints.)
+    tax = {c["id"] for c in calls if c["name"].startswith(TAX_PREFIX) and not c["name"].endswith("start_intake")}
+    for call_id in tax:
+        results[call_id]["text"] = "not what the server said"
+    got = replay_sync(f)
+    replayed = {e["tool_use_id"]: e for e in got.events if e["type"] == "tool_result"}
+    assert tax and all(replayed[i]["text"] != "not what the server said" for i in tax)
+    assert got.summary == f["expected_summary"]
 
 
 # Recorded logs: what the live CLI did and did not run.

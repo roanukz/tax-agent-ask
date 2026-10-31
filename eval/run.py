@@ -31,14 +31,21 @@ Phases:
    refused, since it is not that config's run. A sweep starts at 2
    concurrent runs, and the limit rises by one, up to --concurrency, only
    after a clean sweep: no failed run, no harness error, and no 429 retry.
-   An unclean sweep drops it back to 2. Hitting the month's spend cap in
-   any job (an agent run, B1, B3, or a judge call) stops every new run:
-   the job it stopped writes no summary, so the next invocation runs it
-   again. A run whose init check failed stops every new run too, since the
-   wiring is broken for every run after it. It measured no agent behavior,
-   so it is neither judged nor scored, and it is never resumed: the next
-   invocation moves its summary aside to {run_id}.init_failed.json (and its
-   trace to {run_id}.init_failed.trace.json) and runs it again.
+   An unclean sweep drops it back to 2. A ledger.spend.SpendCapExceeded
+   from any job (an agent run, B1, B3, or a judge call) stops every new
+   run, and eval.run writes no summary or verdict for the job it stopped,
+   so the next invocation runs it again. That relies on the spend
+   contract: the month cap refusing a job's first reservation raises it,
+   and when the month cap refuses a call partway through a job,
+   ReservedClient and agent.harness.run_one have to raise it too, run_one
+   writing the trace but no summary. A month-cap refusal reported any
+   other way, as BudgetExceeded or as a run_cap stop with a summary, is a
+   failed job or a finished run here, not a stop. A run whose init check
+   failed stops every new run too, since the wiring is broken for every
+   run after it. It measured no agent behavior, so it is neither judged
+   nor scored, and it is never resumed: the next invocation moves its
+   summary aside to {run_id}.init_failed.json (and its trace to
+   {run_id}.init_failed.trace.json) and runs it again.
 3. Judging: each agent run once, through eval.judge, cached in
    eval/runs/{run_id}.judge.json. A cached verdict is always used, even
    after the spend cap stopped the sweep; only new judge calls stop.
