@@ -4,11 +4,11 @@ An AI intake agent that asks each tax client only what their return needs, then 
 
 This repo measures the questions, not just the list: how many questions the agent asks, and which documents it misses, compared with a full organizer and two other baselines. The agent only learns facts. Code turns facts into the document list through a rules table in which every rule cites an official source, so every miss traces to a fact the conversation didn't learn or a rule that was wrong. The agent can draft a list but has no way to send one.
 
-**Status:** under construction. The design is in [PRD-tax-agent-ask.md](PRD-tax-agent-ask.md) and the decision log is in [DECISIONS.md](DECISIONS.md). Results will appear here after the one preregistered test run.
+**Status:** under construction. Blocks 0 to 5 are built and tested offline; no live model call has been made yet. The design is in [PRD-tax-agent-ask.md](PRD-tax-agent-ask.md) and the decision log is in [DECISIONS.md](DECISIONS.md). Results will appear here after the one preregistered test run.
 
 ## Results
 
-Not run yet.
+Not run yet. The report page, [docs/results.md](docs/results.md), is generated from the runs and says "not measured yet" for each success criterion until the test sweep is complete.
 
 ## How to run
 
@@ -22,7 +22,25 @@ uv run python -m agent.ping --dry-run
 
 `pytest` runs offline with network sockets disabled. The dry-run ping starts the agent harness with a placeholder key against a closed local port, so it spends nothing.
 
-Live runs need an API key from a Claude Console workspace with its own spend limit, stored in `.env` as `TAX_AGENT_API_KEY` (copy `.env.example`). Don't set `ANTHROPIC_API_KEY`: Claude Code switches its own session to that variable when it finds it.
+Other checks that spend nothing:
+
+```bash
+uv run python -m rules.validate                  # every rule has a source and a status
+uv run python -m agent.wiring_check              # the real bundled CLI against a closed port and a local fake API
+uv run python -m agent.replay check              # scripted transcripts reproduce their summary and score
+uv run python -m sim.fidelity --dry-run          # the simulator's scoring, with a stand-in client
+uv run python -m eval.baselines prior-year --split train --split dev
+uv run python -m eval.report                     # regenerates docs/results.md from eval/runs
+uv run mutmut run && uv run mutmut results       # mutation testing of the scorer
+```
+
+Live runs need an API key from a Claude Console workspace with its own spend limit, stored in `.env` as `TAX_AGENT_API_KEY` (copy `.env.example`), with `SPEND_CAP_USD` and `RUN_CAP_USD`. Don't set `ANTHROPIC_API_KEY`: Claude Code switches its own session to that variable when it finds it. Every live call reserves its upper bound in `ledger/spend.jsonl` first, and nothing is sent that could pass either cap. A dev sweep looks like this:
+
+```bash
+uv run python -m eval.run --split dev --configs A-haiku,A-sonnet,B1,B2 --trials 1 --limit 10
+```
+
+The test split is locked until `eval/prereg.yaml` is committed with `locked_on` and `primary_config`; then `uv run python -m eval.run --split test --prereg eval/prereg.yaml` runs exactly the preregistered configs and trials.
 
 ## Disclaimer
 
