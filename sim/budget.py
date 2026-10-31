@@ -11,7 +11,7 @@ month past it.
 A call's upper bound prices its prompt at one token per UTF-8 byte (a token
 always covers at least one byte) plus framing overhead, at the dearer of the
 input and cache write rates, and its output at max_tokens. A call that raises
-or is cancelled counts at that bound, since its usage is unknown.
+or is canceled counts at that bound, since its usage is unknown.
 """
 
 from __future__ import annotations

@@ -14,7 +14,7 @@ TEXT_SUFFIXES = {".py", ".md", ".yaml", ".yml", ".json", ".jsonl", ".csv", ".tom
 DASHES = re.compile("[" + chr(0x2013) + chr(0x2014) + "]")
 BRITISH = re.compile(
     r"\b(colour|behaviour|favour|honour|labour|organisation|organise[ds]?|analyse[ds]?|licence|catalogue|centre|"
-    r"modelling|labelled|travelling|programme|defence|whilst|amongst|artefact|"
+    r"modelling|labelled|travelling|cancelled|cancelling|programme|defence|whilst|amongst|artefact|"
     r"(?:real|recogn|summar|priorit|normal|optim|minim|maxim|util|initial|serial|final|categor|standard|emphas|author)is(?:e|es|ed|ing|ation))\b",
     re.IGNORECASE,
 )
