@@ -1,0 +1,35 @@
+[project]
+name = "tax-agent-ask"
+version = "0.1.0"
+description = "Measures how many questions an AI tax intake agent asks and which documents it misses."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "claude-agent-sdk==0.2.175",
+    "anthropic==2.3.0",
+    "mcp==2.3.0",
+    "pydantic==2.14.2",
+    "pyyaml==6.0.3",
+]
+
+[dependency-groups]
+dev = [
+    "pytest==9.2.0",
+    "pytest-socket==0.8.1",
+    "mutmut==3.7.0",
+]
+
+[tool.uv]
+package = false
+no-build = true
+required-environments = [
+    "sys_platform == 'darwin' and platform_machine == 'x86_64'",
+    "sys_platform == 'darwin' and platform_machine == 'arm64'",
+    "sys_platform == 'linux' and platform_machine == 'x86_64'",
+]
+
+[tool.pytest.ini_options]
+addopts = "--disable-socket --allow-unix-socket"
+testpaths = ["tests"]
+pythonpath = ["."]

@@ -1,0 +1,14 @@
+# Rules for this repo
+- Read PRD-tax-agent-ask.md before any work. Build one block at a time. After each block, report its done-check result and stop until Roanuk says continue.
+- All data is synthetic. Household data uses obviously fake names and never real people's names, Social Security numbers, EINs, street addresses, or real company names.
+- Never reference Roanuk's employer or its clients, or anything nonpublic, anywhere in the repo.
+- The API key lives in .env as TAX_AGENT_API_KEY. After Roanuk adds it, never read, print, or commit .env. Never set ANTHROPIC_API_KEY in this shell or in any file; the harness passes the key only to its own child processes.
+- Model calls run only through the harness. Every call reserves its estimated cost in ledger/spend.jsonl first. Stop before any call that would push this calendar month's spend past SPEND_CAP_USD.
+- Never run the test split until eval/prereg.yaml is committed with locked_on and primary_config set.
+- Every document rule needs an official source URL and a status. Only rules with status verified count in test scoring.
+- The MCP server reads data/profiles/ only. Nothing the agent under test can reach may read data/truth/.
+- Tests run offline with network sockets disabled. Live calls happen only in eval runs.
+- Verify Claude Agent SDK and MCP SDK names against current docs before using them. Record any difference from the PRD in DECISIONS.md.
+- Do not create a GitHub repo, make anything public, enable Pages, or post anything without Roanuk's explicit "proceed".
+- American spelling. No em dashes or en dashes in any file, comment, or commit message.
+- This is not tax advice. The agent never advises a client and never sends anything to a client.
