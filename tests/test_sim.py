@@ -124,23 +124,33 @@ def test_prompt_says_what_changed_since_last_year_after_the_prd_text():
     head, _, tail = prompt.partition("\n\n" + simulator.CHANGES_INTRO)
     assert head.splitlines()[-2].startswith("Your persona: ")
     assert head.splitlines()[-1].startswith("Your recall_gap in plain words: You forget the new part-time job")
-    assert change_section(prompt) == [
-        "Employers paying wages: 1 last year, 2 this year.",
+    # The new job is the change H024's recall gap hides, so the list leaves it out.
+    assert t["changed_facts"][0] == "w2_employer_count" and change_section(prompt) == [
         "New this year: unemployment benefits.",
         "New this year: an electric vehicle purchase.",
     ]
     assert t["persona"]["label"] not in prompt and "label" not in prompt and "a new job" not in prompt
-    assert "Last year only" not in prompt
+    assert "Last year only" not in prompt and "Employers paying wages" not in prompt
+    crypto = ALL_TRUTHS["H020"]
+    assert crypto["changed_facts"] == ["w2_employer_count", "digital_asset_transactions"]
+    prompt = build_system_prompt(crypto, SPECS)
+    assert change_section(prompt) == ["Employers paying wages: 1 last year, 2 this year."]
+    assert "Once one does, you remember it, including that it is new this year, and answer truthfully" in prompt
     quiet = ALL_TRUTHS["H043"]
     assert quiet["changed_facts"] == [] and change_section(build_system_prompt(quiet, SPECS)) == [
         "Nothing changed since last year."]
+    forgot_the_only_change = ALL_TRUTHS["H030"]
+    assert forgot_the_only_change["changed_facts"] == ["digital_asset_transactions"]
+    assert change_section(build_system_prompt(forgot_the_only_change, SPECS)) == ["Nothing changed since last year."]
 
 
-def test_every_changed_fact_of_every_household_is_in_its_prompt():
+def test_every_remembered_change_of_every_household_is_in_its_prompt():
     for hid, t in ALL_TRUTHS.items():
         prompt = build_system_prompt(t, SPECS)
         lines = change_section(prompt)
-        prior, current, changed = t["prior_year_facts"], t["true_facts"], t["changed_facts"]
+        prior, current = t["prior_year_facts"], t["true_facts"]
+        changed = [k for k in t["changed_facts"] if k not in simulator.hidden_facts(t["persona"]["recall_gap"])]
+        assert changed == simulator.remembered_changes(t), hid
         top = [k for k in changed if not SPECS[k].is_follow_up]
         assert top or lines == ["Nothing changed since last year."], hid
         for key in top:
@@ -158,6 +168,26 @@ def test_every_changed_fact_of_every_household_is_in_its_prompt():
         for line in lines:
             assert fidelity.text_leaks(line, SPECS) == [], (hid, line)
         assert t["persona"]["label"] not in prompt, hid
+
+
+def test_no_gap_holder_is_told_the_change_its_gap_hides():
+    told = 0
+    for hid, t in ALL_TRUTHS.items():
+        slug = t["persona"]["recall_gap"]
+        if slug not in gen.RECALL_GAPS:
+            continue
+        hidden = simulator.hidden_facts(slug)
+        assert hidden[0] == gen.RECALL_GAPS[slug][0], slug
+        lines = change_section(build_system_prompt(t, SPECS))
+        names = [simulator.COUNT_CHANGES.get(k) or simulator.CHANGE_NOUNS[k] for k in hidden]
+        assert not [x for x in lines for name in names if name in x], (hid, slug, lines)
+        if set(hidden) & set(t["changed_facts"]):
+            told += 1
+            # Without the gap the same truth lists the hidden change, so the gap is what leaves it out.
+            ungapped = simulator.change_lines({**t, "persona": {}}, SPECS)
+            assert [x for x in ungapped for name in names if name in x], hid
+    # 30 of the 45 holders have a hidden fact that changed since last year.
+    assert told == 30
 
 
 def test_change_lines_need_known_keys_and_last_years_values():
@@ -183,6 +213,9 @@ def test_every_generator_recall_gap_has_a_plain_sentence():
             assert prompt_json(prompt, "Your persona: ")["recall_gap"] == slug
             assert sentence.startswith("You forget ") and sentence.endswith("answer truthfully from then on.")
             assert "_" not in sentence and "{" not in sentence and fidelity.text_leaks(sentence, SPECS) == []
+            key = gen.RECALL_GAPS[slug][0]
+            new = not t["prior_year_facts"][key] and bool(t["true_facts"][key])
+            assert ("including that it is new this year" in sentence) == new, (t["household_id"], slug)
 
 
 @pytest.mark.parametrize("jobs, says", [
@@ -219,12 +252,14 @@ def test_truth_is_copied_and_validated():
     bad["true_facts"]["w2_employer_count"] = "three"
     with pytest.raises(ValueError, match="invalid"):
         ClientSimulator(bad, ScriptedClient([]), specs=SPECS)
-    real = json.loads(json.dumps(ALL_TRUTHS["H024"]))
+    real = json.loads(json.dumps(ALL_TRUTHS["H020"]))
     sim = ClientSimulator(real, ScriptedClient([]), specs=SPECS)
     before = sim.system_prompt
     real["prior_year_facts"]["w2_employer_count"] = 0
     real["changed_facts"].append("sold_home")
-    assert sim.system_prompt == before and change_section(before)[0].startswith("Employers paying wages: 1 last")
+    real["persona"]["recall_gap"] = "none"
+    assert sim.system_prompt == before
+    assert change_section(before) == ["Employers paying wages: 1 last year, 2 this year."]
 
 
 # ---- isolation -------------------------------------------------------------------
@@ -512,10 +547,10 @@ async def test_empty_question_is_rejected():
 
 
 def test_questions_cover_the_topics_in_plain_language():
-    assert len(QUESTIONS) == 10
-    assert len({q.id for q in QUESTIONS}) == 10
+    assert len(QUESTIONS) == 11
+    assert len({q.id for q in QUESTIONS}) == 11
     assert [q.topic for q in QUESTIONS] == [
-        "jobs", "side work", "banks and investments", "retirement and Social Security",
+        "what changed", "jobs", "side work", "banks and investments", "retirement and Social Security",
         "health coverage and HSAs", "home", "school and child care", "charity and gambling",
         "energy upgrades and vehicles", "anything else that changed",
     ]
@@ -529,6 +564,12 @@ def test_questions_cover_the_topics_in_plain_language():
             if parent:
                 assert parent["fact"] in q.asks, key
     assert [q.id for q in QUESTIONS if q.open_to_changes] == ["q10"]
+    # The change question comes first, as the agent's does, and asks about no recall gap's topic.
+    assert [q.id for q in QUESTIONS if q.asks_changes] == ["q00"] and QUESTIONS[0] is fidelity.CHANGE_QUESTION
+    assert QUESTIONS[0].asks == () and "since last year" in QUESTIONS[0].text
+    for _, _, topic in simulator.RECALL_GAP_WORDS.values():
+        for word in topic.replace(",", "").split():
+            assert word in ("or", "other") or word not in QUESTIONS[0].text.lower(), topic
 
 
 @pytest.mark.parametrize(
@@ -611,7 +652,7 @@ def test_every_fact_right_meets_the_bar_and_one_wrong_does_not():
     assert (s.compared, s.matched, s.meets_bar) == (39, 39, True)
     # itemized_last_year was never asked about, so revealing it is a leak.
     assert [x["match"] for x in s.leaks] == ["itemized_last_year"]
-    records[0].revealed["w2_employer_count"] = 5
+    next(r for r in records if r.question_id == "q01").revealed["w2_employer_count"] = 5
     s = score(truths, records, SPECS)
     assert (s.matched, s.meets_bar) == (38, False)
     assert s.match_rate_without_recall_gaps is None
@@ -641,6 +682,76 @@ def test_open_question_may_bring_up_facts_that_changed():
     assert [x["match"] for x in s.leaks] == ["interest_income"]
 
 
+GAP = "forgets_new_part_time_job_unless_asked_about_other_work"
+
+
+def test_change_question_asks_each_remembered_change_and_counts_the_ones_left_out():
+    t = truth("H902")
+    # H902's new part-time job is the change its recall gap hides, so q00 asks about the other three.
+    assert t["changed_facts"][0] == "w2_employer_count" and t["persona"]["recall_gap"] == GAP
+    q00 = fidelity.CHANGE_QUESTION
+    remembered = ("self_employment", "business_app_payments", "clean_energy_installed")
+    assert fidelity.asked_keys(q00, t, SPECS) == remembered and fidelity.allowed_keys(q00, t) == set(remembered)
+    assert fidelity.asked_keys(QUESTIONS[1], t, SPECS) == QUESTIONS[1].asks
+    s = score({"H902": t}, [rec("q00", {"self_employment": True, "clean_energy_installed": True})], SPECS)
+    assert (s.changes_asked, s.changes_named, s.broken_gaps, s.leaks) == (3, 2, [], [])
+    assert s.missed_changes == [{"household_id": "H902", "question_id": "q00", "key": "business_app_payments",
+                                 "truth": True}]
+    assert s.change_coverage == pytest.approx(2 / 3) and (s.asked_facts, s.asked_facts_revealed) == (3, 2)
+    # A false "nothing changed" leaves every remembered change out.
+    s = score({"H902": t}, [rec("q00", {}, "Nothing really changed.")], SPECS)
+    assert (s.changes_named, [m["key"] for m in s.missed_changes]) == (0, list(remembered))
+    # An answer that failed twice is already unscored, so it adds no missed changes.
+    s = score({"H902": t}, [rec("q00", answer=None, error="unusable reply twice", retried=True)], SPECS)
+    assert (s.changes_asked, s.missed_changes, s.change_coverage) == (0, [], None)
+    # A follow-up that changed may come up but isn't asked; a household with no change gets no q00 facts.
+    t["changed_facts"] += ["ev_purchased", "ev_acquired_date"]
+    assert fidelity.asked_keys(q00, t, SPECS) == (*remembered, "ev_purchased")
+    assert "ev_acquired_date" in fidelity.allowed_keys(q00, t)
+    assert fidelity.asked_keys(q00, truth("H901"), SPECS) == ()
+
+
+def test_change_question_catches_a_recall_gap_that_breaks_on_it():
+    t = truth("H902")
+    # The forgetful count is a mismatch the gap explains, not a broken gap.
+    s = score({"H902": t}, [rec("q00", {"w2_employer_count": 2})], SPECS)
+    assert s.broken_gaps == [] and (s.mismatches[0]["key"], s.mismatches[0]["recall_gap"]) == ("w2_employer_count", GAP)
+    s = score({"H902": t}, [rec("q00", {"w2_employer_count": 3, "self_employment": True})], SPECS)
+    assert s.broken_gaps == [{"household_id": "H902", "question_id": "q00", "key": "w2_employer_count", "value": 3,
+                              "recall_gap": GAP}]
+    assert [(x["kind"], x["match"]) for x in s.leaks] == [("unasked_fact", "w2_employer_count")]
+    # A client who volunteers can't leak, but its gap can still break, which is what the check is for.
+    t["persona"]["volunteers_info"] = True
+    s = score({"H902": t}, [rec("q00", {"w2_employer_count": 3})], SPECS)
+    assert s.leaks == [] and [b["key"] for b in s.broken_gaps] == ["w2_employer_count"]
+    # Only the change question asks about no gap's topic, so a later question is judged as before.
+    s = score({"H902": t}, [rec("q01", {"w2_employer_count": 3})], SPECS)
+    assert s.broken_gaps == [] and s.changes_asked == 0
+    side_gig = {**t, "persona": {**t["persona"], "recall_gap": "forgets_side_gig_unless_asked_about_freelance_work"}}
+    assert fidelity.asked_keys(fidelity.CHANGE_QUESTION, side_gig, SPECS) == ("w2_employer_count",
+                                                                              "clean_energy_installed")
+    s = score({"H902": side_gig}, [rec("q00", {"business_app_payments": True})], SPECS)
+    assert [b["key"] for b in s.broken_gaps] == ["business_app_payments"]
+
+
+def test_report_and_review_show_the_change_question():
+    t = truth("H902")
+    record = rec("q00", {"w2_employer_count": 3}, "I picked up a part-time job.")
+    s = score({"H902": t}, [record], SPECS)
+    paths = (Path("report.md"), Path("review.md"), Path("answers.json"))
+    outcome = fidelity.CheckOutcome("run-1", True, s, [record], Usage(), 0.0, 0.0, *paths)
+    report = fidelity.render_report(outcome, {"H902": t}, SPECS, model="fake")
+    assert "remembered changes the answers named: 0 of 3 (0.0%). Recall gaps that broke on it: 1." in report
+    section = report.split("## What changed since last year")[1].split("## Mismatches")[0]
+    assert "| H902 | business_app_payments | true |" in section
+    assert f"| H902 | w2_employer_count | 3 | {GAP} |" in section
+    assert "| q00 | what changed | 1 | 1 | each change the client remembers |" in report
+    review = fidelity.render_review([record], {"H902": t}, SPECS, dry_run=True, leaks=s.leaks)
+    assert ("Facts this question asks about: self_employment true, business_app_payments true, "
+            "clean_energy_installed true") in review
+    assert "Code flags: unasked_fact w2_employer_count" in review
+
+
 def test_null_follow_up_matches_null_truth():
     s = score({"H902": truth("H902")}, [rec("q09", {"ev_purchased": False, "ev_acquired_date": None})], SPECS)
     assert (s.compared, s.matched, s.mismatches) == (2, 2, [])
@@ -657,11 +768,12 @@ def test_null_follow_up_matches_null_truth():
     ],
 )
 def test_unscored_answers_fail_the_bar_whatever_the_match_rate(bad):
-    records = [rec("q01", {"w2_employer_count": 3})] + [rec(q.id, **bad) for q in QUESTIONS[1:]]
+    rest = [q for q in QUESTIONS if q.id != "q01"]
+    records = [rec("q01", {"w2_employer_count": 3})] + [rec(q.id, **bad) for q in rest]
     s = score({"H902": truth("H902")}, records, SPECS)
-    assert (s.compared, s.match_rate, s.answers) == (1, 1.0, 10)
-    assert s.meets_bar is False and len(s.unscored) == 9
-    assert {u["question_id"] for u in s.unscored} == {q.id for q in QUESTIONS[1:]}
+    assert (s.compared, s.match_rate, s.answers) == (1, 1.0, 11)
+    assert s.meets_bar is False and len(s.unscored) == 10
+    assert {u["question_id"] for u in s.unscored} == {q.id for q in rest}
     clean = score({"H902": truth("H902")}, records[:1], SPECS)
     assert clean.meets_bar is True and clean.unscored == []
 
@@ -783,7 +895,7 @@ def test_review_sample_is_deterministic_and_spread_over_questions():
     assert len(sample) == 30
     assert sample == choose_answers_for_review(list(reversed(records)))
     per_question = {q.id: sum(1 for r in sample if r.question_id == q.id) for q in QUESTIONS}
-    assert set(per_question.values()) == {3}
+    assert set(per_question.values()) == {2, 3} and sum(per_question.values()) == 30
     assert all(r.error is None for r in sample)
     assert choose_answers_for_review(records, seed=1) != sample
     small = choose_answers_for_review(records[:25], n=30)
@@ -905,17 +1017,19 @@ def test_dry_run_cli_writes_both_reports(tmp_path, capsys):
     review = (out / fidelity.REVIEW_PATH).read_text()
     answers = json.loads((out / fidelity.ANSWERS_PATH).read_text())
     assert "DRY RUN" in report and "DRY RUN" in review
-    assert "100.0%" in report and "**Met.**" in report and "Answers scored: 200 of 200" in report
-    assert review.count("\n## ") == 30
+    assert "100.0%" in report and "**Met.**" in report and "Answers scored: 220 of 220" in report
+    assert "remembered changes the answers named: " in report and "Recall gaps that broke on it: 0." in report
+    assert "## What changed since last year" in report
+    assert review.count("\n## ") == 30 and "at least 2 per question" in review
     other_lines = [x for x in review.splitlines() if x.startswith("Other facts with a value")]
     assert len(other_lines) == 30 and not any(" null" in x for x in other_lines)
-    assert len(answers["records"]) == 200 and answers["dry_run"] is True and answers["model"] is None
+    assert len(answers["records"]) == 220 and answers["dry_run"] is True and answers["model"] is None
     for test_id in splits["test"]:
         assert test_id not in report and test_id not in review
     for text in (report, review):
         assert chr(0x2014) not in text and chr(0x2013) not in text
     printed = capsys.readouterr().out
-    assert "bar met: True" in printed and "dry_run: True" in printed
+    assert "bar met: True" in printed and "dry_run: True" in printed and "recall gaps broken: 0" in printed
 
 
 @pytest.mark.anyio
@@ -933,6 +1047,8 @@ async def test_dry_run_spends_nothing_and_defaults_to_a_temp_folder(tmp_path, mo
     assert outcome.report_path.exists() and REPO not in outcome.report_path.parents
     assert tmp_path / "tmp" in outcome.report_path.parents
     assert outcome.score.match_rate == 1.0 and outcome.score.leaks == [] and outcome.score.anomalies == []
+    # The fake names every remembered change and no hidden one, so the change question is clean too.
+    assert outcome.score.changes_asked > 0 and outcome.score.change_coverage == 1.0 and outcome.score.broken_gaps == []
     assert outcome.usage.cache_read_tokens > 0 and outcome.usage.cache_write_tokens > 0
     assert outcome.cost_usd > 0 and outcome.estimate_usd > outcome.cost_usd
 
@@ -977,11 +1093,12 @@ async def test_live_mode_reserves_before_any_call_and_settles_after(tmp_path):
         data_dir=data, out_dir=tmp_path / "out", dry_run=False, households=2,
         settings_loader=live_settings(), client_factory=factory, ledger_path=ledger,
     )
-    assert stand_in.calls == 20
+    assert stand_in.calls == 2 * len(QUESTIONS)
     lines = [json.loads(x) for x in ledger.read_text().splitlines()]
     assert [x["kind"] for x in lines] == ["reserve", "settle"]
     assert lines[0]["reserved_usd"] == pytest.approx(outcome.estimate_usd)
-    expected = cost_usd("claude-haiku-5-5", {"input_tokens": 18000, "output_tokens": 800}, load_prices())
+    usage = {"input_tokens": 900 * stand_in.calls, "output_tokens": 40 * stand_in.calls}
+    expected = cost_usd("claude-haiku-5-5", usage, load_prices())
     assert lines[1]["actual_usd"] == pytest.approx(expected) == pytest.approx(outcome.cost_usd)
     report = outcome.report_path.read_text()
     assert "DRY RUN" not in report and "claude-haiku-5-5" in report

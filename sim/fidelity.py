@@ -14,13 +14,19 @@
         docs/fidelity/fidelity_answers.json, and
         data/labels/sim_answers_for_review.md.
 
-Ten scripted plain-language questions run over 20 train and dev households,
-chosen deterministically. Code compares every revealed value with the truth
-(bar: at least 98% match, with every answer scored) and flags the leaks it
-can see: a fact the question didn't ask about from a client who doesn't
-volunteer, and a fact key name or form number in the answer text. Roanuk
-reads 30 answers for leaks the JSON doesn't show. Test households are never
-used.
+Eleven scripted plain-language questions run over 20 train and dev
+households, chosen deterministically. Code compares every revealed value with
+the truth (bar: at least 98% match, with every answer scored) and flags the
+leaks it can see: a fact the question didn't ask about from a client who
+doesn't volunteer, and a fact key name or form number in the answer text.
+Roanuk reads 30 answers for leaks the JSON doesn't show. Test households are
+never used.
+
+The first question, q00, asks what changed since last year before any topic
+comes up, as the agent does. It asks about every change the client
+remembers, which is every change but the ones its recall gap hides, so code
+also counts the remembered changes the answer left out and the recall gaps
+that broke on it. Both are shown for judgment and are not part of the bar.
 
 Exit codes: 0 when the bar is met, 1 when it is not, 2 when data is missing,
 3 when a spend limit stopped the run.
@@ -64,6 +70,8 @@ from sim.simulator import (
     SimulatorError,
     Usage,
     build_system_prompt,
+    hidden_facts,
+    remembered_changes,
 )
 
 REPO = Path(__file__).resolve().parent.parent
@@ -109,9 +117,18 @@ class Question:
     asks: tuple[str, ...]
     # "Anything else that changed?" may also bring up any fact that changed this year.
     open_to_changes: bool = False
+    # "What changed since last year?" asks about every change the client remembers, so its facts differ by household.
+    asks_changes: bool = False
 
 
 QUESTIONS: tuple[Question, ...] = (
+    Question(
+        "q00",
+        "what changed",
+        "Before we go topic by topic, has anything changed for you or your household since last year?",
+        (),
+        asks_changes=True,
+    ),
     Question(
         "q01",
         "jobs",
@@ -203,6 +220,9 @@ QUESTIONS: tuple[Question, ...] = (
 )
 
 
+CHANGE_QUESTION = next(q for q in QUESTIONS if q.asks_changes)
+
+
 @dataclass
 class AnswerRecord:
     household_id: str
@@ -238,10 +258,19 @@ class FidelityScore:
     # Asked facts with a non-null truth, and how many of them the answers revealed.
     asked_facts: int = 0
     asked_facts_revealed: int = 0
+    # The change question: remembered changes asked and named, the ones left out, and gaps it broke.
+    changes_asked: int = 0
+    changes_named: int = 0
+    missed_changes: list[dict[str, Any]] = field(default_factory=list)
+    broken_gaps: list[dict[str, Any]] = field(default_factory=list)
 
     @property
     def coverage(self) -> float | None:
         return self.asked_facts_revealed / self.asked_facts if self.asked_facts else None
+
+    @property
+    def change_coverage(self) -> float | None:
+        return self.changes_named / self.changes_asked if self.changes_asked else None
 
 
 @dataclass
@@ -311,21 +340,27 @@ def choose_answers_for_review(
     seed: int = SEED,
     questions: Sequence[Question] = QUESTIONS,
 ) -> list[AnswerRecord]:
-    """n answers spread evenly over the questions, by a seeded hash rank."""
+    """n answers spread evenly over the questions, by a seeded hash rank.
+
+    Each round takes every question's next answer, so no question gets more
+    than one answer above another; when n doesn't divide evenly, the hash
+    rank picks which questions get the extra one.
+    """
     usable = [r for r in records if r.error is None and r.answer is not None]
     order = [q.id for q in questions]
     ranked = {
         qid: sorted((r for r in usable if r.question_id == qid), key=lambda r: _rank(seed, r.household_id, qid))
         for qid in order
     }
-    per_question = n // len(order) if order else 0
-    chosen = [r for qid in order for r in ranked[qid][:per_question]]
-    if len(chosen) < n:
-        rest = sorted(
-            (r for r in usable if r not in chosen),
+    chosen: list[AnswerRecord] = []
+    depth = 0
+    while len(chosen) < n and any(len(ranked[qid]) > depth for qid in order):
+        layer = sorted(
+            (ranked[qid][depth] for qid in order if len(ranked[qid]) > depth),
             key=lambda r: _rank(seed, r.household_id, r.question_id),
         )
-        chosen.extend(rest[: n - len(chosen)])
+        chosen.extend(layer[: n - len(chosen)])
+        depth += 1
     return sorted(chosen, key=lambda r: (order.index(r.question_id), r.household_id))
 
 
@@ -385,9 +420,26 @@ def text_leaks(answer: str, specs: Mapping[str, FactSpec]) -> list[dict[str, Any
     return leaks
 
 
+def asked_keys(q: Question, truth: Mapping[str, Any], specs: Mapping[str, FactSpec]) -> tuple[str, ...]:
+    """The facts q asks this household about: its own, or for the change question each remembered change.
+
+    Follow-ups such as a purchase date ride on their parent, so the change
+    question asks only about top-level facts.
+    """
+    if not q.asks_changes:
+        return q.asks
+    return tuple(k for k in remembered_changes(truth) if k in specs and not specs[k].is_follow_up)
+
+
 def allowed_keys(q: Question, truth: Mapping[str, Any]) -> set[str]:
-    """Facts an answer to q may reveal: the ones it asks about, and for the open question any that changed."""
+    """Facts an answer to q may reveal: the ones it asks about, and for either change question what changed.
+
+    The change question allows only the changes the client remembers, so a
+    hidden fact it reveals is a leak; the open question allows any change.
+    """
     allowed = set(q.asks)
+    if q.asks_changes:
+        allowed |= set(remembered_changes(truth))
     if q.open_to_changes:
         allowed |= set(truth.get("changed_facts") or [])
     return allowed
@@ -435,6 +487,10 @@ def score(
     leak, of the kind off_topic_leak gives. The bar needs at least 98% of
     compared facts matching and every answer scored: an answer that failed
     twice or had no revealed object fails it.
+
+    On the change question, which asks about no recall gap's topic, a scored
+    answer that leaves out a remembered change adds a missed change, and one
+    that reveals a hidden fact at its true value adds a broken gap.
     """
     by_id = {q.id: q for q in questions}
     order = {q.id: i for i, q in enumerate(questions)}
@@ -442,7 +498,9 @@ def score(
     ordered = sorted(records, key=lambda r: (r.household_id, order.get(r.question_id, len(order))))
     # Each household's latest revealed value of each fact, and the question that revealed it.
     seen: dict[str, dict[str, tuple[Any, str]]] = {hid: {} for hid in truths}
-    compared = matched = retries = asked_facts = asked_revealed = 0
+    compared = matched = retries = asked_facts = asked_revealed = changes_asked = changes_named = 0
+    missed_changes: list[dict[str, Any]] = []
+    broken_gaps: list[dict[str, Any]] = []
     mismatches: list[dict[str, Any]] = []
     anomalies: list[dict[str, Any]] = []
     leaks: list[dict[str, Any]] = []
@@ -457,7 +515,8 @@ def score(
         truth = truths[hid]
         retries += int(rec.retried)
         where = {"household_id": hid, "question_id": q.id}
-        asked_facts += sum(1 for key in q.asks if expected[hid][key] is not None)
+        asks = asked_keys(q, truth, specs)
+        asked_facts += sum(1 for key in asks if expected[hid][key] is not None)
         if rec.error is not None:
             errors.append({**where, "error": rec.error})
             unscored.append({**where, "reason": "failed twice"})
@@ -496,7 +555,16 @@ def score(
                 leaks.append({**where, **leak})
         leaks.extend({**where, **leak} for leak in text_leaks(rec.answer or "", specs))
         named = set(rec.revealed) | {a.get("key") for a in uncoercible}
-        asked_revealed += sum(1 for key in q.asks if expected[hid][key] is not None and key in named)
+        asked_revealed += sum(1 for key in asks if expected[hid][key] is not None and key in named)
+        if q.asks_changes:
+            changes_asked += len(asks)
+            changes_named += sum(1 for key in asks if key in named)
+            missed_changes += [{**where, "key": key, "truth": expected[hid][key]} for key in asks if key not in named]
+            broken_gaps += [
+                {**where, "key": key, "value": rec.revealed[key], "recall_gap": gap}
+                for key in hidden_facts(gap)
+                if key in rec.revealed and _same(rec.revealed[key], expected[hid][key])
+            ]
         for key, value in rec.revealed.items():
             seen[hid][key] = (value, q.id)
 
@@ -538,6 +606,10 @@ def score(
         unscored=unscored,
         asked_facts=asked_facts,
         asked_facts_revealed=asked_revealed,
+        changes_asked=changes_asked,
+        changes_named=changes_named,
+        missed_changes=missed_changes,
+        broken_gaps=broken_gaps,
     )
 
 
@@ -669,9 +741,9 @@ async def run_check(
         out_dir = Path(tempfile.mkdtemp(prefix="fidelity-dry-run-")) if dry_run else REPO
 
     simulators: list[ClientSimulator] = []
-    question_keys = {q.text: q.asks for q in QUESTIONS}
     if dry_run:
         def client_for(truth: Mapping[str, Any]) -> Any:
+            question_keys = {q.text: asked_keys(q, truth, specs) for q in QUESTIONS}
             return TruthEchoClient(truth["true_facts"], question_keys, specs)
 
         records = await run_households(
@@ -794,6 +866,9 @@ def render_report(
         f"- Asked facts (with a non-null truth) that the answers revealed: {s.asked_facts_revealed} of "
         f"{s.asked_facts} ({_pct(s.coverage)}). Shown for judgment, not part of the bar: a recall gap or a "
         "low-jargon client can leave an asked fact out on purpose.",
+        f"- {CHANGE_QUESTION.id}, what changed since last year: remembered changes the answers named: "
+        f"{s.changes_named} of {s.changes_asked} ({_pct(s.change_coverage)}). Recall gaps that broke on it: "
+        f"{len(s.broken_gaps)}. Shown for judgment, not part of the bar.",
         f"- Mismatches: {len(s.mismatches)}. Anomalies: {len(s.anomalies)}. Leaks code caught: {len(s.leaks)}"
         + (f" ({_kind_counts(s.leaks)})" if s.leaks else "")
         + ".",
@@ -825,10 +900,37 @@ def render_report(
     ]
     for q in QUESTIONS:
         pq = s.per_question[q.id]
-        lines.append(f"| {q.id} | {q.topic} | {pq['compared']} | {pq['matched']} | {', '.join(q.asks)} |")
+        asks = "each change the client remembers" if q.asks_changes else ", ".join(q.asks)
+        lines.append(f"| {q.id} | {q.topic} | {pq['compared']} | {pq['matched']} | {asks} |")
     lines += ["", f"Fact keys no question asks about: {', '.join(uncovered) or 'none'}.", ""]
     for q in QUESTIONS:
         lines.append(f"- **{q.id}:** {q.text}")
+    lines += [
+        "",
+        "## What changed since last year",
+        "",
+        f"{CHANGE_QUESTION.id} asks what changed before any topic comes up, as the agent does. It asks about no "
+        "recall gap's topic, so the client should name every change it remembers and none its recall gap hides. "
+        "A change left out is how a false \"nothing changed\" shows; a gap that broke means the client handed "
+        "over the fact the agent is meant to probe for.",
+        "",
+        "Remembered changes the answer left out:",
+        "",
+    ]
+    if s.missed_changes:
+        lines += ["| Household | Fact | Truth |", "|---|---|---|"]
+        lines += [f"| {m['household_id']} | {m['key']} | {_value(m['truth'])} |" for m in s.missed_changes]
+    else:
+        lines.append("None.")
+    lines += ["", "Recall gaps that broke (the hidden fact revealed at its true value):", ""]
+    if s.broken_gaps:
+        lines += ["| Household | Fact | Revealed | Recall gap |", "|---|---|---|---|"]
+        lines += [
+            f"| {b['household_id']} | {b['key']} | {_value(b['value'])} | {_clean(b['recall_gap'])} |"
+            for b in s.broken_gaps
+        ]
+    else:
+        lines.append("None.")
     lines += ["", "## Mismatches", ""]
     if s.mismatches:
         lines += [
@@ -920,8 +1022,8 @@ def render_review(
         "# Simulator answers for review" + (" (dry run)" if dry_run else ""),
         "",
         *_banner(dry_run),
-        f"{len(sample)} answers from the Block 4 fidelity check, {len(sample) // len(QUESTIONS)} per question, "
-        "chosen by a seeded hash so the sample is the same on every run.",
+        f"{len(sample)} answers from the Block 4 fidelity check, at least {len(sample) // len(QUESTIONS)} per "
+        "question, chosen by a seeded hash so the sample is the same on every run.",
         "",
         "Read each answer for leaks the revealed JSON doesn't show: a fact the question didn't ask about, "
         "a form number or tax term this client wouldn't use, or anything that breaks character. Then say in chat "
@@ -934,11 +1036,12 @@ def render_review(
         values = truth_values(truth, specs)
         persona = truth.get("persona") or {}
         traits = ", ".join(f"{t} {_value(persona.get(t))}" for t in PERSONA_TRAITS)
-        asked = ", ".join(f"{k} {_value(values[k])}" for k in q.asks)
+        asks = asked_keys(q, truth, specs)
+        asked = ", ".join(f"{k} {_value(values[k])}" for k in asks)
         other = ", ".join(
             f"{k} {_value(v)}"
             for k, v in values.items()
-            if k not in q.asks and v is not None and v != default_value(specs[k])
+            if k not in asks and v is not None and v != default_value(specs[k])
         )
         flags = [
             f"{x['kind']} {x['match']}"
@@ -956,7 +1059,7 @@ def render_review(
             "",
             f"Revealed: `{_clean(json.dumps(rec.revealed))}`",
             "",
-            f"Facts this question asks about: {asked}",
+            f"Facts this question asks about: {asked or 'none'}",
             "",
             f"Other facts with a value (mentioning one is a leak unless the client volunteers): {other or 'none'}",
             "",
@@ -1029,6 +1132,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     print(
         f"mismatches: {len(s.mismatches)}, anomalies: {len(s.anomalies)}, "
         f"leaks: {len(s.leaks)}, errors: {len(s.errors)}"
+    )
+    print(
+        f"what changed ({CHANGE_QUESTION.id}): {s.changes_named}/{s.changes_asked} remembered changes named, "
+        f"recall gaps broken: {len(s.broken_gaps)}"
     )
     print(f"cost_usd: {outcome.cost_usd:.4f} (estimate {outcome.estimate_usd:.4f})")
     print(f"report: {outcome.report_path}")

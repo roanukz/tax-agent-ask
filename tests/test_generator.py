@@ -536,12 +536,15 @@ def test_parse_is_case_insensitive_and_matches_whole_tokens():
     assert parsed("  ;  ; ") == []
 
 
-@pytest.mark.parametrize("cell, count", [
-    ("W-2 x2", 2), ("W-2 x 2", 2), ("W-2 (x2)", 2), ("W-2 (2)", 2), ("W-2( x 2 )", 2), ("2 W-2s", 2),
-    ("two W-2s", 2), ("Two W-2", 2), ("W-2s", 1), ("W2", 1), ("3 W2s", 3),
+@pytest.mark.parametrize("cell, rule_id, count", [
+    ("W-2 x2", "R001", 2), ("W-2 x 2", "R001", 2), ("W-2 (x2)", "R001", 2), ("W-2 (2)", "R001", 2),
+    ("W-2( x 2 )", "R001", 2), ("2 W-2s", "R001", 2), ("two W-2s", "R001", 2), ("Two W-2", "R001", 2),
+    ("W-2s", "R001", 1), ("W2", "R001", 1), ("3 W2s", "R001", 3),
+    # A form number or a year in parentheses has more than two digits, so it stays part of the name.
+    ("K-1 (1065)", "R020", 1), ("K-1 (1041)", "R020", 1), ("W-2 (2026)", "R001", 1), ("K-1 x1065", "R020", 1),
 ])
-def test_parse_reads_every_way_of_writing_a_count(cell, count):
-    assert parsed(cell) == [(("R001",), count, False)]
+def test_parse_reads_every_way_of_writing_a_count(cell, rule_id, count):
+    assert parsed(cell) == [((rule_id,), count, False)]
 
 
 def test_parse_reads_plurals_and_hyphen_free_spellings_as_the_scorer_does():
@@ -595,10 +598,50 @@ def test_a_count_it_cannot_read_is_a_disagreement_not_a_silent_one():
     assert notes == [] and rows == [("ambiguous_count", "R001", 1, 1)]
     notes, rows = notes_and_disagreements("W-2 x2 x3", two_jobs)
     assert rows == [("ambiguous_count", "R001", 2, 3), ("count_differs", "R001", 2, 3)]
-    (row,) = labels.compare_household("HX", "1099-INT from 2 banks", {"split": "dev", "true_facts": {
-        "interest_income": True}}, RULES, SPECS, IGNORE)
-    assert (row.kind, row.rule_id, row.item) == ("ambiguous_count", "R004", "1099-INT from 2 banks (count not read: 2)")
+    (row,) = labels.compare_household("HX", "W-2 for two jobs", {"split": "dev", "true_facts": {
+        "w2_employer_count": 1}}, RULES, SPECS, IGNORE)
+    assert (row.kind, row.rule_id, row.item) == ("ambiguous_count", "R001", "W-2 for two jobs (count not read: two)")
     assert labels.is_disagreement(row)
+
+
+@pytest.mark.parametrize("cell, unread", [
+    ("W-2s from both jobs", ("both", "W-2s")),
+    ("a couple of W-2s", ("couple", "W-2s")),
+    ("W-2s for 1st and 2nd jobs", ("1st", "2nd", "W-2s")),
+    ("W-2 (2nd job)", ("2nd",)),
+    ("W-2 from the second job", ("second",)),
+    ("multiple W-2", ("multiple",)),
+    ("W-2s", ("W-2s",)),
+    ("W-2 forms", ("forms",)),
+    ("W-2 from my employers", ("employers",)),
+    ("K-1s", ("K-1s",)),
+])
+def test_count_hints_and_plurals_on_a_counted_rule_are_never_read_silently(cell, unread):
+    (item,) = labels.parse_documents(cell, RULES, IGNORE)
+    assert (item.count, item.unread_counts) == (1, unread)
+    facts = {"k1_count": 1} if "K-1" in cell else {"w2_employer_count": 1}
+    rule_id = "R020" if "K-1" in cell else "R001"
+    assert notes_and_disagreements(cell, facts) == ([], [("ambiguous_count", rule_id, 1, 1)]), cell
+
+
+def test_a_plural_with_a_count_or_a_name_with_a_form_number_is_read_as_written():
+    for cell, facts in [("2 W-2s", {"w2_employer_count": 2}), ("W-2s x2", {"w2_employer_count": 2}),
+                        ("K-1s (2)", {"k1_count": 2}), ("W-2 (2026)", {"w2_employer_count": 1}),
+                        ("K-1 (1065)", {"k1_count": 1}), ("Schedule K-1 (Form 1065)", {"k1_count": 1})]:
+        assert notes_and_disagreements(cell, facts) == ([], []), cell
+    # "third" names a rule ("third party network"), so it is no count hint.
+    (item,) = labels.parse_documents("payment card and third party network transactions", RULES, IGNORE)
+    assert item.candidates == parsed("1099-K")[0][0] and item.unread_counts == ()
+
+
+def test_an_unread_count_on_a_rule_that_is_not_counted_is_no_disagreement():
+    for cell, facts in [("1099-INT from 2 banks", {"interest_income": True}),
+                        ("1099-INT (2 banks)", {"interest_income": True}),
+                        ("brokerage statements from 3 accounts", {"sold_investments": True}),
+                        ("1099-INT x2", {"interest_income": True})]:
+        (item,) = labels.parse_documents(cell, RULES, IGNORE)
+        assert not BY_ID[item.candidates[0]].count_from, cell
+        assert notes_and_disagreements(cell, facts) == ([], []), cell
 
 
 def test_ambiguous_items_resolve_to_what_the_engine_requires_and_say_so():
