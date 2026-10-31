@@ -1,7 +1,16 @@
 """Blind labels: Roanuk lists each household's documents from a plain description, then code compares.
 
     uv run python -m generator.labels sheet     writes data/labels/blind_label_sheet.md and the empty CSV
+    uv run python -m generator.label_ui         a local page for entering the labels (see generator.label_ui)
     uv run python -m generator.labels compare   prints every disagreement with the rules engine
+
+compare shows the rules' answers, and a label written after seeing them is no
+longer blind. So compare runs only once the labels are on record: the first
+time, it needs --reveal (or the label page's Compare button) and a label for
+every household on the sheet, and it copies the labels file byte for byte to
+<name>_before_compare.csv beside it (blind_labels_before_compare.csv for the
+default file) before showing anything. After that, compare runs freely while
+disagreements are settled.
 
 The sheet describes 30 households (10 train, 20 dev, stratified by complexity)
 from their true facts and what changed since last year. It never shows rule
@@ -43,9 +52,11 @@ from __future__ import annotations
 
 import argparse
 import csv
+import os
 import random
 import re
 import sys
+import tempfile
 from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
@@ -69,6 +80,7 @@ from sim.simulator import FILING_PLAIN, describe_changes
 
 SHEET_FILE = "blind_label_sheet.md"
 CSV_FILE = "blind_labels.csv"
+SNAPSHOT_SUFFIX = "_before_compare"
 CSV_HEADER = ("household_id", "documents", "labeled_by", "notes")
 # 10 train and 20 dev households. Dev is exactly proportional (6/9/5 of
 # 12/18/10); train rounds 3/4.5/2.5 toward complex, which covers more rules.
@@ -130,7 +142,11 @@ YES_LINES = {
 
 
 class LabelFileError(ValueError):
-    """The labels CSV doesn't have the expected header."""
+    """The labels CSV can't be read safely: a wrong header, a row with more cells than the header, or not UTF-8."""
+
+
+class RevealRefused(ValueError):
+    """compare would show the rules' answers before the blind labels are complete or on record."""
 
 
 # The sheet.
@@ -170,12 +186,24 @@ def describe_this_year(f: Mapping[str, Any], specs: Mapping[str, FactSpec]) -> l
     return lines
 
 
-def household_section(truth: Mapping[str, Any], specs: Mapping[str, FactSpec]) -> str:
+def household_description(truth: Mapping[str, Any], specs: Mapping[str, FactSpec]) -> dict[str, Any]:
+    """What the sheet shows for one household, and all the label page shows: its ID, split, tier, and plain lines."""
     current, prior = truth["true_facts"], truth["prior_year_facts"]
-    parts = [f"## {truth['household_id']} ({truth['split']}, {truth['complexity']})", "", "This year:", ""]
-    parts += [f"- {line}" for line in describe_this_year(current, specs)]
+    return {
+        "household_id": truth["household_id"],
+        "split": truth["split"],
+        "complexity": truth["complexity"],
+        "this_year": describe_this_year(current, specs),
+        "changed": describe_changes(prior, current, truth["changed_facts"], specs),
+    }
+
+
+def household_section(truth: Mapping[str, Any], specs: Mapping[str, FactSpec]) -> str:
+    d = household_description(truth, specs)
+    parts = [f"## {d['household_id']} ({d['split']}, {d['complexity']})", "", "This year:", ""]
+    parts += [f"- {line}" for line in d["this_year"]]
     parts += ["", "Changed since last year:", ""]
-    parts += [f"- {line}" for line in describe_changes(prior, current, truth["changed_facts"], specs)]
+    parts += [f"- {line}" for line in d["changed"]]
     return "\n".join(parts) + "\n"
 
 
@@ -238,7 +266,12 @@ def build_sheet(truths: Mapping[str, Mapping[str, Any]], specs: Mapping[str, Fac
         "the same kind. Use whatever short name you would put on a request list. Leave out what every client brings, "
         "such as a photo ID or bank details. Put your name in labeled_by and anything worth noting in notes.",
         "",
-        "Then run `uv run python -m generator.labels compare` to list every disagreement with the rules.",
+        "The label page does the same with a box per item and a count box: `uv run python -m generator.label_ui`.",
+        "",
+        "When every household has a label, compare them with the rules, with the label page's Compare button or "
+        "`uv run python -m generator.labels compare --reveal`. Either first copies the labels to "
+        "data/labels/blind_labels_before_compare.csv, since labels written after seeing the rules' answers are no "
+        "longer blind.",
         "",
         "Not tax advice. All households are synthetic.",
         "",
@@ -435,11 +468,74 @@ def compare_household(household_id: str, cell: str, truth: Mapping[str, Any], ru
 
 
 def read_labels(path: Path) -> list[dict[str, str]]:
-    with open(path, newline="", encoding="utf-8") as f:
-        reader = csv.DictReader(f)
-        if tuple(reader.fieldnames or ()) != CSV_HEADER:
-            raise LabelFileError(f"{path}: header must be {','.join(CSV_HEADER)}, got {reader.fieldnames}")
-        return [row for row in reader]
+    """The rows of a labels CSV. A missing trailing cell reads as empty; an extra cell is an error, since a
+    rewrite would drop it."""
+    try:
+        with open(path, newline="", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            if tuple(reader.fieldnames or ()) != CSV_HEADER:
+                raise LabelFileError(f"{path}: header must be {','.join(CSV_HEADER)}, got {reader.fieldnames}")
+            rows = []
+            for row in reader:
+                if None in row:
+                    raise LabelFileError(f"{path}: line {reader.line_num} has more than {len(CSV_HEADER)} cells; "
+                                         "put quotes around any cell that holds a comma")
+                rows.append({k: v or "" for k, v in row.items()})
+            return rows
+    except UnicodeDecodeError:
+        raise LabelFileError(f"{path} isn't UTF-8 text; save it as UTF-8") from None
+
+
+def has_items(cell: str) -> bool:
+    """Whether a documents cell names at least one item, so a cell of only semicolons is no label."""
+    return any(piece.strip() for piece in cell.split(";"))
+
+
+def snapshot_path(labels_path: Path) -> Path:
+    """Where the labels are kept as they were before compare first showed the rules' answers."""
+    labels_path = Path(labels_path)
+    return labels_path.with_name(f"{labels_path.stem}{SNAPSHOT_SUFFIX}{labels_path.suffix}")
+
+
+def is_snapshot(path: Path) -> bool:
+    """Whether path is a snapshot itself, which nothing may open as a labels file to edit or reveal."""
+    return Path(path).stem.endswith(SNAPSHOT_SUFFIX)
+
+
+def labeled_households(labels_path: Path) -> set[str]:
+    return {row["household_id"].strip() for row in read_labels(labels_path) if has_items(row["documents"])}
+
+
+def reveal(labels_path: Path, households: Sequence[str]) -> Path:
+    """Copies the labels file byte for byte to its snapshot, once, if every household on the sheet has a label.
+
+    The copy is written to a temp file and linked into place, so the snapshot is never partial and an existing
+    one is never replaced. Returns the snapshot path; raises RevealRefused when a household has no label.
+    """
+    labels_path = Path(labels_path)
+    snapshot = snapshot_path(labels_path)
+    if snapshot.exists():
+        return snapshot
+    done = labeled_households(labels_path)
+    missing = [h for h in households if h not in done]
+    if missing:
+        raise RevealRefused(f"{len(households) - len(missing)} of {len(households)} households have labels "
+                            f"(none yet for {', '.join(missing[:5])}{', ...' if len(missing) > 5 else ''}). "
+                            "Label every household before comparing.")
+    data = labels_path.read_bytes()
+    fd, tmp = tempfile.mkstemp(dir=snapshot.parent, prefix=f".{snapshot.name}.", suffix=".tmp")
+    try:
+        with os.fdopen(fd, "wb") as f:
+            f.write(data)
+            f.flush()
+            os.fsync(f.fileno())
+        try:
+            os.link(tmp, snapshot)
+        except FileExistsError:
+            pass
+    finally:
+        Path(tmp).unlink(missing_ok=True)
+    return snapshot
 
 
 def compare_file(labels_path: Path, data_dir: Path = DATA_DIR) -> tuple[list[Disagreement], int]:
@@ -450,7 +546,7 @@ def compare_file(labels_path: Path, data_dir: Path = DATA_DIR) -> tuple[list[Dis
     labeled = 0
     for row in read_labels(labels_path):
         hid, cell = (row.get("household_id") or "").strip(), (row.get("documents") or "").strip()
-        if not cell:
+        if not has_items(cell):
             continue
         labeled += 1
         if hid not in truths:
@@ -486,6 +582,8 @@ def main(argv: list[str] | None = None) -> int:
     comp = sub.add_parser("compare", help="print every disagreement between the labels and the rules")
     comp.add_argument("--data", type=Path, default=DATA_DIR)
     comp.add_argument("--labels", type=Path, default=None, help="labels CSV (default data/labels/blind_labels.csv)")
+    comp.add_argument("--reveal", action="store_true",
+                      help="the first time: copy the labels to their snapshot, then show the rules' answers")
     args = parser.parse_args(argv)
     if args.command == "sheet":
         sheet_path, csv_path, wrote_csv = write_sheet(args.data)
@@ -493,9 +591,25 @@ def main(argv: list[str] | None = None) -> int:
         print(f"wrote {csv_path}" if wrote_csv else f"kept {csv_path}: it already holds labels")
         return 0
     labels_path = args.labels or args.data / LABELS / CSV_FILE
+    if is_snapshot(labels_path):
+        print(f"error: {labels_path} is the record of the blind labels; compare the labels file it was copied from",
+              file=sys.stderr)
+        return 2
     try:
+        if not snapshot_path(labels_path).exists():
+            sheet = select_households(load_truths(args.data))
+            if not args.reveal:
+                done = len(labeled_households(labels_path) & set(sheet)) if labels_path.exists() else 0
+                print(f"{done} of {len(sheet)} households have labels. compare shows the rules' answers, and labels "
+                      "written after seeing them aren't blind. Once every household has a label, run compare "
+                      f"--reveal (or the label page's Compare button): it first copies {labels_path} to "
+                      f"{snapshot_path(labels_path)}.", file=sys.stderr)
+                return 2
+            if not labels_path.exists():
+                raise RevealRefused(f"{labels_path} does not exist")
+            print(f"kept the blind labels in {reveal(labels_path, sheet)}")
         rows, labeled = compare_file(labels_path, args.data)
-    except LabelFileError as e:
+    except (LabelFileError, RevealRefused) as e:
         print(f"error: {e}", file=sys.stderr)
         return 2
     if not labeled:

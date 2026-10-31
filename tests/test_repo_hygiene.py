@@ -43,14 +43,19 @@ def test_scan_sees_files():
     assert {"CLAUDE.md", "PRD-tax-agent-ask.md", "pyproject.toml"} <= names
 
 
-@pytest.mark.parametrize("path", FILES, ids=lambda p: str(p.relative_to(REPO)))
+# A blind label snapshot (data/labels/*_before_compare.csv) is a byte copy of what Roanuk wrote, kept as the
+# record, so it is never edited to pass the dash and spelling checks; the labels file it copies still is checked.
+WRITTEN_FILES = [p for p in FILES if not p.stem.endswith("_before_compare")]
+
+
+@pytest.mark.parametrize("path", WRITTEN_FILES, ids=lambda p: str(p.relative_to(REPO)))
 def test_no_em_or_en_dashes(path):
     hits = [i + 1 for i, line in enumerate(path.read_text(errors="replace").splitlines()) if DASHES.search(line)]
     assert not hits, f"em or en dash on lines {hits}"
 
 
 # This file has to spell the words it forbids.
-SPELLING_FILES = [p for p in FILES if p.name != "test_repo_hygiene.py"]
+SPELLING_FILES = [p for p in WRITTEN_FILES if p.name != "test_repo_hygiene.py"]
 
 
 @pytest.mark.parametrize("path", SPELLING_FILES, ids=lambda p: str(p.relative_to(REPO)))

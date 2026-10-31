@@ -1,0 +1,942 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="label-ui-token" content="__LABEL_UI_TOKEN__">
+<title>Blind labels</title>
+<link rel="icon" href="data:,">
+<style>
+:root {
+  color-scheme: light dark;
+  --bg: #f6f6f3;
+  --surface: #ffffff;
+  --surface-2: #f0f0ec;
+  --text: #1d1d1b;
+  --muted: #66665f;
+  --border: #dcdcd5;
+  --accent: #2f5d8a;
+  --accent-soft: #e3ecf5;
+  --accent-text: #ffffff;
+  --ok: #2e7d4f;
+  --warn: #8a5a00;
+  --warn-soft: #fbf1dc;
+  --err: #b3261e;
+  --err-soft: #fbe5e3;
+  --focus: #2f5d8a;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161615;
+    --surface: #1f1f1d;
+    --surface-2: #2a2a27;
+    --text: #ecece8;
+    --muted: #a3a39b;
+    --border: #3a3a36;
+    --accent: #8db8e3;
+    --accent-soft: #24384d;
+    --accent-text: #10202f;
+    --ok: #7cc79a;
+    --warn: #e2b55a;
+    --warn-soft: #3a2f17;
+    --err: #f2a49d;
+    --err-soft: #46211e;
+    --focus: #8db8e3;
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+button, input, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+header {
+  position: sticky; top: 0; z-index: 2;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px;
+  padding: 10px 20px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+header h1 { font-size: 17px; margin: 0; font-weight: 650; }
+.progress { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 14px; }
+.bar { width: 140px; height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
+.bar > span { display: block; height: 100%; width: 0; background: var(--ok); transition: width .2s; }
+.spacer { flex: 1; }
+.labeler { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--muted); }
+.labeler input { width: 120px; }
+input[type="text"], input[type="number"], textarea {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 9px;
+}
+textarea { width: 100%; min-height: 64px; resize: vertical; }
+button {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 6px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+button:hover:not(:disabled) { background: var(--surface-2); }
+button:disabled { opacity: .5; cursor: not-allowed; }
+button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 600; }
+button.primary:hover:not(:disabled) { background: var(--accent); filter: brightness(1.08); }
+.layout { display: grid; grid-template-columns: 230px minmax(0, 1fr); min-height: calc(100vh - 56px); }
+nav {
+  border-right: 1px solid var(--border);
+  background: var(--surface);
+  padding: 10px 8px 24px;
+  overflow-y: auto;
+  position: sticky; top: 56px; height: calc(100vh - 56px);
+}
+nav ol { list-style: none; margin: 0; padding: 0; }
+nav button {
+  width: 100%; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 2px 8px;
+  text-align: left; border: 1px solid transparent; background: none; padding: 6px 10px; margin-bottom: 2px;
+}
+nav button[aria-current="true"] { background: var(--accent-soft); border-color: var(--accent); }
+nav .hid { font-weight: 600; font-variant-numeric: tabular-nums; }
+nav .meta { grid-column: 1; font-size: 12px; color: var(--muted); }
+nav .mark { grid-row: 1 / span 2; grid-column: 2; font-size: 13px; min-width: 1.5em; text-align: center; }
+.mark.done { color: var(--ok); }
+.mark.dirty { color: var(--warn); }
+.mark.error { color: var(--err); }
+.mark.count { background: var(--err-soft); color: var(--err); border-radius: 10px; padding: 0 6px; font-weight: 600; }
+main { padding: 20px 28px 60px; max-width: 980px; width: 100%; min-width: 0; }
+.banner { border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; border: 1px solid var(--border); background: var(--surface); }
+.banner.warn { background: var(--warn-soft); border-color: transparent; }
+.banner.err { background: var(--err-soft); border-color: transparent; }
+.banner .actions { margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap; }
+details.howto { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; margin-bottom: 18px; }
+details.howto summary { cursor: pointer; font-weight: 600; }
+details.howto p { margin: 8px 0; }
+.hh-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px 12px; margin-bottom: 12px; }
+.hh-head h2 { margin: 0; font-size: 24px; font-variant-numeric: tabular-nums; }
+.tag { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; padding: 2px 8px; border-radius: 10px; background: var(--surface-2); color: var(--muted); }
+.save-state { margin-left: auto; font-size: 13px; color: var(--muted); }
+.save-state.error { color: var(--err); }
+.save-state.dirty { color: var(--warn); }
+.facts { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; }
+.card h3 { margin: 0 0 6px; font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.card ul { margin: 0; padding-left: 18px; }
+.card li { margin: 3px 0; }
+h3.section { font-size: 16px; margin: 0 0 8px; }
+.items { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+.item { display: grid; grid-template-columns: minmax(0, 1fr) 76px auto; gap: 6px; align-items: center; }
+.item .name { width: 100%; }
+.item .count { width: 76px; text-align: right; font-variant-numeric: tabular-nums; }
+.item .remove { padding: 4px 10px; color: var(--muted); }
+.item .msg { grid-column: 1 / -1; font-size: 13px; margin: -2px 0 2px 2px; }
+.item.has-error .name, .item.has-error .count { border-color: var(--err); }
+.msg .error { color: var(--err); display: block; }
+.msg .warning { color: var(--warn); display: block; }
+.row-actions { display: flex; gap: 8px; margin-bottom: 18px; align-items: center; flex-wrap: wrap; }
+.hint { font-size: 13px; color: var(--muted); }
+.notes { margin-bottom: 18px; }
+.notes label { display: block; font-weight: 600; margin-bottom: 4px; }
+.pager { display: flex; justify-content: space-between; gap: 8px; border-top: 1px solid var(--border); padding-top: 14px; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+th { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); font-weight: 600; }
+td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.kind { font-weight: 600; }
+.kind.note { color: var(--muted); font-weight: 500; }
+.found { margin-top: 4px; margin-bottom: 18px; }
+.found.agree { color: var(--ok); }
+.table-wrap { overflow-x: auto; }
+.cmp-head { display: flex; align-items: baseline; gap: 12px; margin: 22px 0 6px; }
+.cmp-head h3 { margin: 0; font-size: 17px; }
+dialog { border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text); max-width: 520px; padding: 20px 22px; }
+dialog::backdrop { background: rgba(0, 0, 0, .35); }
+dialog h2 { margin-top: 0; font-size: 19px; }
+dialog .actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+code { font-size: 13px; background: var(--surface-2); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
+[hidden] { display: none !important; }
+@media (max-width: 760px) {
+  header { padding: 10px 16px; position: static; }
+  .layout { grid-template-columns: 1fr; }
+  nav { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--border); padding: 8px 16px; overflow-x: auto; }
+  nav ol { display: flex; gap: 4px; }
+  nav button { width: auto; white-space: nowrap; }
+  nav .meta { display: none; }
+  nav .mark { grid-row: 1; }
+  main { padding: 16px 16px 48px; }
+  .facts { grid-template-columns: 1fr; }
+  .save-state { margin-left: 0; width: 100%; }
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>Blind labels</h1>
+  <div class="progress"><div class="bar" aria-hidden="true"><span id="bar"></span></div><span id="progress-text">Loading</span></div>
+  <div class="spacer"></div>
+  <label class="labeler">Labeled by <input id="labeler" type="text" autocomplete="off" spellcheck="false"></label>
+  <button id="view-labels" type="button" hidden>Labels</button>
+  <button id="compare-button" type="button" class="primary" disabled>Compare with the rules</button>
+</header>
+<div class="layout">
+  <nav aria-label="Households"><ol id="nav"></ol></nav>
+  <main>
+    <div id="banners"></div>
+    <section id="label-view" hidden>
+      <details class="howto" id="howto">
+        <summary>How to label</summary>
+        <p>For each household, list every item the preparer should ask the client for, for the 2026 federal return only. Use whatever short name you would put on a request list, one item per row, and put how many in the count box. Leave out what every client brings, such as a photo ID or bank details.</p>
+        <p>Everything saves as you type, to <code id="labels-file"></code>. The rules' answers stay hidden until every household has a label and you choose to compare.</p>
+        <p class="hint">Enter adds a row. Backspace in an empty row removes it. <span class="kbd-next"></span> goes to the next household.</p>
+        <p class="hint">Not tax advice. All households are synthetic.</p>
+      </details>
+      <div class="hh-head">
+        <h2 id="hh-id"></h2>
+        <span class="tag" id="hh-split"></span>
+        <span class="tag" id="hh-tier"></span>
+        <span class="save-state" id="save-state" role="status" aria-live="polite"></span>
+      </div>
+      <div class="facts">
+        <div class="card"><h3>This year</h3><ul id="this-year"></ul></div>
+        <div class="card"><h3>Changed since last year</h3><ul id="changed"></ul></div>
+      </div>
+      <h3 class="section" id="items-heading">What should the preparer ask this client for?</h3>
+      <div class="items" id="items" role="group" aria-labelledby="items-heading"></div>
+      <div class="row-actions">
+        <button id="add-item" type="button">Add item</button>
+        <span class="hint" id="item-hint"></span>
+      </div>
+      <div class="notes">
+        <label for="notes">Notes</label>
+        <textarea id="notes" placeholder="Anything worth noting about this household"></textarea>
+      </div>
+      <div id="found-box" hidden>
+        <h3 class="section">What compare found</h3>
+        <div id="found"></div>
+      </div>
+      <div class="pager">
+        <button id="prev" type="button">Previous</button>
+        <button id="next" type="button">Next</button>
+      </div>
+    </section>
+    <section id="compare-view" hidden>
+      <div class="hh-head"><h2>Compare with the rules</h2></div>
+      <p id="compare-summary"></p>
+      <p class="hint">Settle each disagreement against the rule's cited source, then log it in DECISIONS.md. Claude Code can draft those entries from this page's list, or from <code>uv run python -m generator.labels compare</code>, which reads the same file.</p>
+      <label class="hint"><input type="checkbox" id="only-disagreements" checked> Only households with disagreements</label>
+      <div id="compare-list"></div>
+    </section>
+  </main>
+</div>
+<datalist id="suggestions"></datalist>
+<dialog id="reveal-dialog" aria-labelledby="reveal-title">
+  <h2 id="reveal-title">Show the rules' answers?</h2>
+  <p>This compares your labels with the rules for every household. Once you've seen it, the labels are no longer blind, so do this only when they're final.</p>
+  <p>The labels file is first copied to <code id="snapshot-file"></code>, so your blind labels stay on record.</p>
+  <div class="actions">
+    <button type="button" id="reveal-cancel">Not yet</button>
+    <button type="button" id="reveal-confirm" class="primary">Compare</button>
+  </div>
+</dialog>
+<script>
+"use strict";
+const TOKEN = document.querySelector('meta[name="label-ui-token"]').content;
+const SAVE_DELAY_MS = 700;
+const IS_MAC = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
+const KINDS = {
+  missing_from_label: ["Missing from the label", "The rules ask for this, and the label doesn't."],
+  extra_in_label: ["Extra in the label", "The label asks for this, and the rules don't."],
+  count_differs: ["Count differs", "The rules and the label ask for different counts."],
+  unmatched_item: ["Not matched", "Compare couldn't match this item to any rule's names."],
+  trap_in_label: ["Ended credit", "The label asks for a document for a tax break that ended before 2026."],
+  ambiguous_count: ["Count not read", "Compare couldn't read a count in this item. Put the number in the count box."],
+  ambiguous_item: ["Note", "This item matches more than one rule; this row shows where its count went."],
+  unknown_household: ["Unknown household", "This row's household isn't in the data."],
+};
+
+const S = { households: [], byId: Object.create(null), labels: Object.create(null), total: 0, labeled: 0,
+            revealed: false, labeler: "", labelsFile: "", snapshotFile: "", otherRows: 0, duplicates: [], fatal: "" };
+const drafts = Object.create(null);
+const timers = Object.create(null);
+const known = (hid) => typeof hid === "string" && Object.prototype.hasOwnProperty.call(S.byId, hid);
+let current = null;
+let view = "labels";
+let compareData = null;
+let compareTimer = null;
+let settling = false;
+
+const $ = (id) => document.getElementById(id);
+function el(tag, attrs, ...kids) {
+  const node = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs || {})) {
+    if (v === null || v === undefined || v === false) continue;
+    if (k === "class") node.className = v;
+    else if (k === "text") node.textContent = v;
+    else if (k.startsWith("on")) node.addEventListener(k.slice(2), v);
+    else node.setAttribute(k, v === true ? "" : v);
+  }
+  for (const kid of kids.flat()) {
+    if (kid === null || kid === undefined || kid === false) continue;
+    node.append(kid instanceof Node ? kid : document.createTextNode(String(kid)));
+  }
+  return node;
+}
+
+async function api(path, body) {
+  const opts = { headers: { "X-Label-Token": TOKEN } };
+  if (body !== undefined) {
+    opts.method = "POST";
+    opts.headers["Content-Type"] = "application/json";
+    opts.body = JSON.stringify(body);
+  }
+  let res;
+  try {
+    res = await fetch(path, opts);
+  } catch (e) {
+    return { status: 0, data: { error: "The label server isn't answering. Is it still running?" } };
+  }
+  let data = null;
+  try { data = await res.json(); } catch (e) { data = { error: `The server answered ${res.status}.` }; }
+  return { status: res.status, data };
+}
+
+function baseOf(row) {
+  return row ? { documents: row.documents, labeled_by: row.labeled_by, notes: row.notes } : null;
+}
+function draftFrom(row) {
+  const items = row ? row.items.map((it) => ({ name: it.name, count: String(it.count) })) : [];
+  if (!items.length) items.push({ name: "", count: "1" });
+  return { items, notes: row ? row.notes : "", version: 0, savedVersion: 0, inflight: false, again: false,
+           problems: [], status: "saved", message: "", conflict: undefined };
+}
+function isDirty(d) { return d.version !== d.savedVersion; }
+function anyPending() { return Object.values(drafts).some((d) => isDirty(d) || d.inflight); }
+// A draft that can't save until Roanuk fixes it (an error or a conflict) isn't worth waiting for.
+function stuck(d) { return isDirty(d) && !d.inflight && (d.status === "error" || d.conflict !== undefined); }
+function waiting() { return Object.values(drafts).some((d) => d.inflight || (isDirty(d) && !stuck(d))); }
+function hasLabel(row) { return Boolean(row && row.items && row.items.length); }
+function labeledCount() {
+  return S.households.filter((h) => hasLabel(S.labels[h.household_id])).length;
+}
+
+// Loading.
+
+async function load() {
+  const { status, data } = await api("/api/state");
+  if (status !== 200) {
+    S.fatal = data.error || `The server answered ${status}.`;
+    renderBanners();
+    return;
+  }
+  S.households = data.households;
+  S.byId = Object.assign(Object.create(null), Object.fromEntries(data.households.map((h) => [h.household_id, h])));
+  S.labels = Object.assign(Object.create(null), data.labels);
+  S.total = data.total;
+  S.revealed = data.revealed;
+  S.labelsFile = data.labels_file;
+  S.snapshotFile = data.snapshot_file;
+  S.otherRows = data.other_rows;
+  S.duplicates = data.duplicates;
+  S.labeler = localStorage_get("labeler") || data.labeler;
+  for (const h of S.households) drafts[h.household_id] = draftFrom(S.labels[h.household_id]);
+  $("labeler").value = S.labeler;
+  $("labels-file").textContent = S.labelsFile;
+  $("snapshot-file").textContent = S.snapshotFile;
+  document.querySelectorAll(".kbd-next").forEach((n) => { n.textContent = IS_MAC ? "⌘ Enter" : "Ctrl+Enter"; });
+  if (localStorage_get("howto") === "closed") $("howto").open = false; else $("howto").open = true;
+  const fromHash = location.hash.slice(1);
+  const first = known(fromHash) ? fromHash
+    : (S.households.find((h) => !hasLabel(S.labels[h.household_id])) || S.households[0]).household_id;
+  renderNav();
+  select(first, { focus: false });
+  if (S.revealed) refreshCompare();
+  renderTop();
+}
+
+// Picks up edits made to the file elsewhere when the page comes back into view. A household with unsaved
+// edits keeps them; its next save reports the conflict.
+async function refreshState() {
+  if (!S.households.length) return;
+  const { status, data } = await api("/api/state");
+  if (status !== 200) {
+    S.fatal = data.error || `The server answered ${status}.`;
+    renderBanners();
+    return;
+  }
+  S.fatal = "";
+  for (const h of S.households) {
+    const hid = h.household_id;
+    const d = drafts[hid];
+    const disk = data.labels[hid];
+    if (JSON.stringify(baseOf(disk)) === JSON.stringify(baseOf(S.labels[hid]))) continue;
+    if (isDirty(d) || d.inflight || d.conflict !== undefined) continue;
+    if (disk) S.labels[hid] = disk; else delete S.labels[hid];
+    drafts[hid] = draftFrom(disk);
+    if (hid === current && view === "labels") {
+      $("notes").value = drafts[hid].notes;
+      renderItems(null);
+      renderFound();
+      setSaveState();
+    }
+  }
+  S.revealed = data.revealed;
+  S.otherRows = data.other_rows;
+  S.duplicates = data.duplicates;
+  refreshNavMarks();
+  renderTop();
+  updateSuggestions();
+  if (S.revealed) scheduleCompare();
+}
+
+function localStorage_get(k) { try { return localStorage.getItem("label-ui:" + k); } catch (e) { return null; } }
+function localStorage_set(k, v) { try { localStorage.setItem("label-ui:" + k, v); } catch (e) { /* private window */ } }
+
+// Rendering.
+
+function renderTop() {
+  const done = labeledCount();
+  S.labeled = done;
+  $("progress-text").textContent = `${done} of ${S.total} labeled`;
+  $("bar").style.width = S.total ? `${(100 * done) / S.total}%` : "0";
+  const btn = $("compare-button");
+  if (settling) {
+    btn.disabled = true;
+    btn.textContent = "Saving…";
+  } else if (S.revealed) {
+    btn.disabled = false;
+    btn.textContent = view === "compare" ? "Refresh" : "Compare with the rules";
+    btn.title = "";
+  } else {
+    btn.disabled = done < S.total;
+    btn.textContent = "Compare with the rules";
+    btn.title = done < S.total ? `Label all ${S.total} households first (${done} so far).` : "";
+  }
+  $("view-labels").hidden = view !== "compare";
+  renderBanners();
+}
+
+function renderBanners() {
+  const box = $("banners");
+  box.replaceChildren();
+  if (S.fatal) box.append(el("div", { class: "banner err", role: "alert" }, S.fatal));
+  if (S.revealed) {
+    box.append(el("div", { class: "banner warn" },
+      "You've seen the rules' answers, so label edits from here on aren't blind. The labels as they stood then are in ",
+      el("code", { text: S.snapshotFile }), "; commit that file so the record stays."));
+  }
+  if (S.duplicates.length) {
+    box.append(el("div", { class: "banner warn" },
+      `The file has more than one row for ${S.duplicates.join(", ")}. The page edits the first; fix the rest by hand.`));
+  }
+  if (S.otherRows - S.duplicates.length > 0) {
+    const n = S.otherRows - S.duplicates.length;
+    box.append(el("div", { class: "banner" },
+      `The file has ${n} ${n === 1 ? "row" : "rows"} for households not on the sheet. They're kept as they are.`));
+  }
+  const d = current && drafts[current];
+  if (d && d.conflict !== undefined && view === "labels") {
+    box.append(el("div", { class: "banner err", role: "alert" },
+      `${current}'s row changed in the file since this page loaded it, so the last edit wasn't saved.`,
+      el("div", { class: "actions" },
+        el("button", { type: "button", onclick: () => resolveConflict("theirs") }, "Use the file's version"),
+        el("button", { type: "button", onclick: () => resolveConflict("mine") }, "Keep this page's version"))));
+  }
+}
+
+function markFor(hid) {
+  const d = drafts[hid];
+  if (d.status === "error" || d.conflict !== undefined) return el("span", { class: "mark error", title: "Not saved" }, "!");
+  if (isDirty(d) || d.inflight) return el("span", { class: "mark dirty", title: "Saving" }, "•");
+  if (S.revealed && compareData) {
+    const n = (compareData.households[hid] || []).filter((r) => r.disagreement).length;
+    if (n) return el("span", { class: "mark count", title: `${n} ${n === 1 ? "disagreement" : "disagreements"}` }, String(n));
+  }
+  if (hasLabel(S.labels[hid])) return el("span", { class: "mark done", title: "Labeled" }, "✓");
+  return el("span", { class: "mark" }, "");
+}
+
+function renderNav() {
+  const list = $("nav");
+  list.replaceChildren(...S.households.map((h) => el("li", {},
+    el("button", { type: "button", "aria-current": h.household_id === current && view === "labels" ? "true" : "false",
+                   "data-hid": h.household_id, onclick: () => select(h.household_id) },
+      el("span", { class: "hid", text: h.household_id }),
+      markFor(h.household_id),
+      el("span", { class: "meta", text: `${h.split}, ${h.complexity}` })))));
+  const active = list.querySelector('[aria-current="true"]');
+  if (active && active.scrollIntoView) active.scrollIntoView({ block: "nearest", inline: "nearest" });
+}
+
+function refreshNavMarks() {
+  for (const btn of $("nav").querySelectorAll("button[data-hid]")) {
+    const hid = btn.dataset.hid;
+    btn.replaceChild(markFor(hid), btn.querySelector(".mark"));
+    btn.setAttribute("aria-current", hid === current && view === "labels" ? "true" : "false");
+  }
+}
+
+function setSaveState() {
+  const d = drafts[current];
+  const node = $("save-state");
+  node.className = "save-state";
+  if (!d) { node.textContent = ""; return; }
+  if (d.conflict !== undefined) { node.textContent = "Not saved: the file changed"; node.classList.add("error"); }
+  else if (d.status === "error") { node.textContent = d.message || "Not saved"; node.classList.add("error"); }
+  else if (d.inflight || isDirty(d)) { node.textContent = "Saving…"; node.classList.add("dirty"); }
+  else node.textContent = hasLabel(S.labels[current]) ? "Saved" : "No label yet";
+}
+
+function select(hid, opts) {
+  const focus = !opts || opts.focus !== false;
+  if (current && current !== hid) {
+    flush(current);
+    const left = drafts[current];
+    // A row left mid-normalization shows the file's version next time, which is what the server saved.
+    if (left.pendingRow && !isDirty(left) && !left.inflight) drafts[current] = draftFrom(S.labels[current]);
+  }
+  current = hid;
+  view = "labels";
+  if (location.hash.slice(1) !== hid) history.replaceState(null, "", "#" + hid);
+  const h = S.byId[hid];
+  $("label-view").hidden = false;
+  $("compare-view").hidden = true;
+  $("hh-id").textContent = h.household_id;
+  $("hh-split").textContent = h.split;
+  $("hh-tier").textContent = h.complexity;
+  $("this-year").replaceChildren(...h.this_year.map((line) => el("li", { text: line })));
+  $("changed").replaceChildren(...h.changed.map((line) => el("li", { text: line })));
+  $("notes").value = drafts[hid].notes;
+  const i = S.households.indexOf(h);
+  $("prev").disabled = i <= 0;
+  $("next").disabled = i >= S.households.length - 1;
+  renderItems(focus ? { row: 0 } : null);
+  renderFound();
+  setSaveState();
+  refreshNavMarks();
+  renderTop();
+  window.scrollTo({ top: 0 });
+}
+
+function renderItems(focusAt) {
+  const d = drafts[current];
+  const box = $("items");
+  box.replaceChildren(...d.items.map((it, i) => itemRow(it, i, d)));
+  if (focusAt) {
+    const rows = box.querySelectorAll(".item");
+    const target = rows[Math.min(focusAt.row, rows.length - 1)];
+    if (target) {
+      const input = target.querySelector(focusAt.field === "count" ? ".count" : ".name");
+      input.focus();
+      if (focusAt.caret === "end" && input.setSelectionRange && input.type === "text") {
+        input.setSelectionRange(input.value.length, input.value.length);
+      }
+    }
+  }
+  $("item-hint").textContent = "";
+  updateSuggestions();
+}
+
+function itemRow(it, i, d) {
+  const problems = d.problems.filter((p) => p.row === i);
+  const hasError = problems.some((p) => p.level === "error");
+  const msgId = `item-msg-${i}`;
+  const name = el("input", { type: "text", class: "name", value: it.name, list: "suggestions", autocomplete: "off",
+                             "aria-label": `Item ${i + 1}`, placeholder: "What to ask for", spellcheck: "false",
+                             "aria-invalid": hasError ? "true" : null, "aria-describedby": msgId });
+  const count = el("input", { type: "number", class: "count", value: it.count, min: "1", max: "99", step: "1",
+                              inputmode: "numeric", "aria-label": `How many of item ${i + 1}`,
+                              "aria-invalid": hasError ? "true" : null, "aria-describedby": msgId });
+  const remove = el("button", { type: "button", class: "remove", "aria-label": `Remove item ${i + 1}`, title: "Remove" }, "×");
+  name.value = it.name;
+  count.value = it.count;
+  name.addEventListener("input", () => { d.items[i].name = name.value; touch(current); });
+  count.addEventListener("input", () => { d.items[i].count = count.value; touch(current); });
+  name.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.metaKey && !e.ctrlKey && !e.isComposing) {
+      e.preventDefault();
+      d.items.splice(i + 1, 0, { name: "", count: "1" });
+      shiftProblems(d, i + 1, 1);
+      touch(current);
+      renderItems({ row: i + 1 });
+    } else if (e.key === "Backspace" && name.value === "" && d.items.length > 1 && name.selectionStart === 0) {
+      e.preventDefault();
+      d.items.splice(i, 1);
+      shiftProblems(d, i, -1);
+      touch(current);
+      renderItems({ row: Math.max(0, i - 1), caret: "end" });
+    }
+  });
+  remove.addEventListener("click", () => {
+    d.items.splice(i, 1);
+    shiftProblems(d, i, -1);
+    if (!d.items.length) d.items.push({ name: "", count: "1" });
+    touch(current);
+    renderItems({ row: Math.max(0, i - 1) });
+  });
+  const msg = el("div", { class: "msg", id: msgId }, problems.map((p) => el("span", { class: p.level, text: p.message })));
+  return el("div", { class: "item" + (hasError ? " has-error" : "") }, name, count, remove, msg);
+}
+
+function shiftProblems(d, at, by) {
+  d.problems = d.problems
+    .filter((p) => !(by < 0 && p.row === at))
+    .map((p) => (p.row >= at ? { ...p, row: p.row + by } : p));
+}
+
+function updateSuggestions() {
+  const names = new Map();
+  const add = (n) => { const t = (n || "").trim(); if (t && !names.has(t.toLowerCase())) names.set(t.toLowerCase(), t); };
+  for (const row of Object.values(S.labels)) row.items.forEach((it) => add(it.name));
+  for (const d of Object.values(drafts)) d.items.forEach((it) => add(it.name));
+  const sorted = [...names.values()].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
+  $("suggestions").replaceChildren(...sorted.map((n) => el("option", { value: n })));
+}
+
+// Saving.
+
+// Every change to a draft, including adding or removing a row, is a new version, so a save that returns
+// after it never replaces the newer draft with what it sent.
+function touch(hid) {
+  const d = drafts[hid];
+  d.version += 1;
+  if (d.status === "error") d.status = "saved";
+  clearTimeout(timers[hid]);
+  timers[hid] = setTimeout(() => save(hid), SAVE_DELAY_MS);
+  if (hid === current) setSaveState();
+  refreshNavMarks();
+}
+
+// Sends every pending save and waits for them. Returns the households whose edits still aren't saved.
+async function settleSaves() {
+  Object.keys(drafts).forEach(flush);
+  for (let i = 0; i < 100 && waiting(); i++) await new Promise((r) => setTimeout(r, 100));
+  return Object.keys(drafts).filter((hid) => isDirty(drafts[hid]) || drafts[hid].inflight);
+}
+
+function flush(hid) {
+  clearTimeout(timers[hid]);
+  if (isDirty(drafts[hid])) save(hid);
+}
+
+async function save(hid) {
+  const d = drafts[hid];
+  if (d.inflight) { d.again = true; return; }
+  if (!isDirty(d) || d.conflict !== undefined) return;
+  d.inflight = true;
+  const sent = d.version;
+  const sentItems = d.items.map((it) => ({ name: it.name, count: it.count }));
+  if (hid === current) setSaveState();
+  const { status, data } = await api("/api/save", {
+    household_id: hid, items: sentItems, notes: d.notes, labeled_by: S.labeler, base: baseOf(S.labels[hid]),
+  });
+  d.inflight = false;
+  if (status === 200) {
+    if (data.row) S.labels[hid] = data.row; else delete S.labels[hid];
+    d.savedVersion = sent;
+    d.status = "saved";
+    d.message = "";
+    if (d.version === sent) {
+      // A row the server only trimmed or spaced differently stays as typed. A row whose meaning changed
+      // (a count moved out of the name, a split at semicolons) takes the server's items, except the row being
+      // typed in: it is never rewritten under the cursor, and takes them when focus leaves it.
+      const focused = hid === current ? focusedRow() : -1;
+      const items = [];
+      const at = [];
+      const spans = [];
+      let changed = false;
+      const deferred = new Set();
+      d.pendingRow = false;
+      sentItems.forEach((it, i) => {
+        at[i] = items.length;
+        const got = data.rows[i] || [];
+        const same = got.length === 0 || (got.length === 1 && squash(got[0].name) === squash(it.name)
+          && got[0].count === countOf(it.count));
+        if (same || i === focused) {
+          items.push({ name: it.name, count: it.count });
+          if (!same) { d.pendingRow = true; deferred.add(i); }
+        } else { got.forEach((g) => items.push({ name: g.name, count: String(g.count) })); changed = true; }
+        spans[i] = items.length - at[i];
+      });
+      d.items = items;
+      // A deferred row's messages describe the rewrite it hasn't taken yet, so they wait for it too.
+      d.problems = data.problems.filter((p) => !deferred.has(p.row))
+        .map((p) => ({ ...p, row: at[p.row] + Math.min(p.item || 0, Math.max(0, spans[p.row] - 1)) }));
+      if (hid === current) {
+        if (changed) rerenderKeepingFocus(at, spans);
+        else renderProblems();
+      }
+    } else {
+      d.problems = [];
+      if (hid === current) renderProblems();
+    }
+  } else if (status === 409 && Object.prototype.hasOwnProperty.call(data, "row")) {
+    d.conflict = data.row;
+  } else if (d.version === sent) {
+    // An answer about an older version is moot: the newer draft saves next.
+    d.status = "error";
+    if (status === 422) {
+      d.message = "Not saved: fix the marked item";
+      d.problems = data.problems;
+      if (hid === current) renderProblems();
+    } else {
+      d.message = "Not saved: " + (data.error || `the server answered ${status}`);
+    }
+  }
+  if (hid === current) { setSaveState(); renderBanners(); }
+  refreshNavMarks();
+  renderTop();
+  updateSuggestions();
+  // Save again when the draft changed while this request was out, whatever the answer was; a 422 or a
+  // network error for the very version sent waits for the next edit.
+  const editedSince = d.version !== sent;
+  if (d.conflict === undefined && (editedSince || (status === 200 && isDirty(d)))) {
+    clearTimeout(timers[hid]);
+    timers[hid] = setTimeout(() => save(hid), 50);
+  }
+  d.again = false;
+  if (status === 200 && S.revealed) scheduleCompare();
+}
+
+// Redraws the rows after the server rewrote some (a count moved out of a name, a row split at semicolons),
+// keeping focus in the row the cursor was in. at maps each sent row to its first row now.
+function rerenderKeepingFocus(at, spans) {
+  const active = document.activeElement;
+  const rowEl = active && active.closest ? active.closest(".item") : null;
+  const rowIndex = rowEl ? [...$("items").children].indexOf(rowEl) : -1;
+  const field = active && active.classList && active.classList.contains("count") ? "count" : "name";
+  // Typing goes on at the end of a row, so a row split into pieces keeps focus on its last piece.
+  const row = rowIndex >= 0 && at[rowIndex] !== undefined ? at[rowIndex] + Math.max(0, (spans[rowIndex] || 1) - 1) : rowIndex;
+  renderItems(rowIndex >= 0 ? { row, field, caret: "end" } : null);
+}
+
+function focusedRow() {
+  const active = document.activeElement;
+  const rowEl = active && active.closest ? active.closest("#items .item") : null;
+  return rowEl ? [...$("items").children].indexOf(rowEl) : -1;
+}
+
+function squash(text) { return String(text || "").split(/\s+/).filter(Boolean).join(" "); }
+function countOf(text) { const t = String(text).trim(); return t === "" ? 1 : Number(t); }
+
+// Updates each row's messages and error marks in place, so typing keeps its caret.
+function renderProblems() {
+  const d = drafts[current];
+  [...$("items").children].forEach((rowEl, i) => {
+    const problems = d.problems.filter((p) => p.row === i);
+    const hasError = problems.some((p) => p.level === "error");
+    rowEl.classList.toggle("has-error", hasError);
+    for (const input of rowEl.querySelectorAll("input")) {
+      if (hasError) input.setAttribute("aria-invalid", "true"); else input.removeAttribute("aria-invalid");
+    }
+    rowEl.querySelector(".msg").replaceChildren(...problems.map((p) => el("span", { class: p.level, text: p.message })));
+  });
+}
+
+function resolveConflict(which) {
+  const d = drafts[current];
+  const fileRow = d.conflict;
+  if (fileRow) S.labels[current] = fileRow; else delete S.labels[current];
+  d.conflict = undefined;
+  if (which === "theirs") {
+    drafts[current] = draftFrom(fileRow);
+    select(current);
+  } else {
+    d.version += 1;
+    save(current);
+  }
+  renderBanners();
+  setSaveState();
+  refreshNavMarks();
+}
+
+// Compare.
+
+function scheduleCompare() {
+  clearTimeout(compareTimer);
+  compareTimer = setTimeout(refreshCompare, 300);
+}
+
+async function refreshCompare(reveal) {
+  const { status, data } = await api("/api/compare", reveal ? { reveal: true } : {});
+  if (status !== 200) {
+    S.fatal = data.error || `Compare failed (${status}).`;
+    renderBanners();
+    return false;
+  }
+  S.fatal = "";
+  S.revealed = true;
+  compareData = data;
+  refreshNavMarks();
+  renderFound();
+  if (view === "compare") renderCompare();
+  renderTop();
+  return true;
+}
+
+function compareTable(rows) {
+  return el("div", { class: "table-wrap" }, el("table", {},
+    el("thead", {}, el("tr", {},
+      el("th", { text: "What" }), el("th", { text: "Document" }), el("th", { class: "num", text: "Rules" }),
+      el("th", { class: "num", text: "Label" }), el("th", { text: "Label item" }), el("th", { text: "Source" }))),
+    el("tbody", {}, rows.map((r) => {
+      const [title, help] = KINDS[r.kind] || [r.kind, ""];
+      const source = r.source_url && r.source_url.startsWith("https://")
+        ? el("a", { href: r.source_url, target: "_blank", rel: "noopener noreferrer" }, r.source_title || r.rule_id)
+        : "";
+      return el("tr", {},
+        el("td", {}, el("span", { class: "kind" + (r.disagreement ? "" : " note"), title: help, text: title }),
+          r.rule_id ? el("div", { class: "hint", text: r.rule_id + (r.status && r.status !== "verified" ? `, ${r.status}` : "") }) : null),
+        el("td", { text: r.document || "" }),
+        el("td", { class: "num", text: r.kind === "unmatched_item" ? "" : String(r.rules_say) }),
+        el("td", { class: "num", text: String(r.label_says) }),
+        el("td", { text: r.item || "" }),
+        el("td", {}, source));
+    }))));
+}
+
+function renderFound() {
+  const box = $("found-box");
+  if (!S.revealed || !compareData || !current) { box.hidden = true; return; }
+  box.hidden = false;
+  const rows = compareData.households[current] || [];
+  const target = $("found");
+  if (!hasLabel(S.labels[current]) && !rows.length) target.replaceChildren(el("p", { class: "found hint", text: "No label to compare yet." }));
+  else if (!rows.length) target.replaceChildren(el("p", { class: "found agree", text: "Agrees with the rules." }));
+  else target.replaceChildren(el("div", { class: "found" }, compareTable(rows)));
+}
+
+function renderCompare() {
+  const data = compareData;
+  if (!data) return;
+  const noteText = data.notes ? ` and ${data.notes} ${data.notes === 1 ? "note" : "notes"}` : "";
+  $("compare-summary").textContent =
+    `${data.disagreements || "No"} ${data.disagreements === 1 ? "disagreement" : "disagreements"}${noteText} across ${data.labeled} labeled households.`;
+  const only = $("only-disagreements").checked;
+  const list = $("compare-list");
+  const parts = [];
+  const ids = [...S.households.map((h) => h.household_id), ...Object.keys(data.households).filter((h) => !known(h))];
+  for (const hid of ids) {
+    const rows = data.households[hid] || [];
+    const n = rows.filter((r) => r.disagreement).length;
+    const labeled = !known(hid) || hasLabel(S.labels[hid]);
+    if (only && !n && labeled) continue;
+    const h = known(hid) ? S.byId[hid] : null;
+    const status = n ? `${n} ${n === 1 ? "disagreement" : "disagreements"}` : labeled ? "agrees" : "no label";
+    parts.push(el("div", { class: "cmp-head" },
+      el("h3", { text: hid }),
+      h ? el("span", { class: "tag", text: `${h.split}, ${h.complexity}` }) : null,
+      el("span", { class: "hint", text: status }),
+      h ? el("button", { type: "button", onclick: () => select(hid) }, "Open") : null));
+    if (rows.length) parts.push(compareTable(rows));
+  }
+  if (!parts.length) parts.push(el("p", { class: "found agree", text: "Every labeled household agrees with the rules." }));
+  list.replaceChildren(...parts);
+}
+
+function showCompare() {
+  if (current) flush(current);
+  view = "compare";
+  $("label-view").hidden = true;
+  $("compare-view").hidden = false;
+  renderCompare();
+  refreshNavMarks();
+  renderTop();
+  window.scrollTo({ top: 0 });
+}
+
+// Wiring.
+
+$("compare-button").addEventListener("click", async () => {
+  if (S.revealed) {
+    if (view === "compare") { await refreshCompare(); return; }
+    if (await refreshCompare()) showCompare();
+    return;
+  }
+  if (settling) return;
+  settling = true;
+  renderTop();
+  const unsaved = await settleSaves();
+  settling = false;
+  renderTop();
+  if (unsaved.length || labeledCount() < S.total) {
+    S.fatal = unsaved.length
+      ? `Edits for ${unsaved.join(", ")} aren't saved yet. Fix the households marked ! or •, then try again.`
+      : `${labeledCount()} of ${S.total} households have labels.`;
+    renderBanners();
+    return;
+  }
+  S.fatal = "";
+  renderBanners();
+  $("reveal-dialog").showModal();
+});
+$("reveal-cancel").addEventListener("click", () => $("reveal-dialog").close());
+$("reveal-confirm").addEventListener("click", async () => {
+  $("reveal-dialog").close();
+  if (settling) return;
+  settling = true;
+  renderTop();
+  const unsaved = await settleSaves();
+  settling = false;
+  renderTop();
+  if (unsaved.length) {
+    S.fatal = `Edits for ${unsaved.join(", ")} aren't saved yet. Try again once they are.`;
+    renderBanners();
+    return;
+  }
+  if (await refreshCompare(true)) showCompare();
+});
+$("view-labels").addEventListener("click", () => select(current || S.households[0].household_id));
+$("only-disagreements").addEventListener("change", renderCompare);
+$("add-item").addEventListener("click", () => {
+  const d = drafts[current];
+  d.items.push({ name: "", count: "1" });
+  touch(current);
+  renderItems({ row: d.items.length - 1 });
+});
+// When focus leaves an item row the server rewrote while it was being typed in, save again so the page
+// takes the server's version of that row.
+$("items").addEventListener("focusout", (e) => {
+  const d = current && drafts[current];
+  if (!d || !d.pendingRow) return;
+  const from = e.target.closest(".item");
+  if (from && e.relatedTarget && from.contains(e.relatedTarget)) return;
+  d.pendingRow = false;
+  touch(current);
+});
+$("notes").addEventListener("input", () => { drafts[current].notes = $("notes").value; touch(current); });
+$("labeler").addEventListener("change", () => {
+  S.labeler = $("labeler").value.trim();
+  localStorage_set("labeler", S.labeler);
+});
+$("howto").addEventListener("toggle", () => localStorage_set("howto", $("howto").open ? "open" : "closed"));
+$("prev").addEventListener("click", () => step(-1));
+$("next").addEventListener("click", () => step(1));
+function step(by) {
+  const i = S.households.findIndex((h) => h.household_id === current);
+  const next = S.households[i + by];
+  if (next) select(next.household_id);
+}
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && view === "labels") {
+    e.preventDefault();
+    step(e.shiftKey ? -1 : 1);
+  }
+});
+window.addEventListener("beforeunload", (e) => {
+  if (current) flush(current);
+  if (anyPending()) { e.preventDefault(); e.returnValue = ""; }
+});
+window.addEventListener("focus", refreshState);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) refreshState(); });
+window.addEventListener("hashchange", () => {
+  const hid = location.hash.slice(1);
+  if (known(hid) && hid !== current) select(hid);
+});
+
+load();
+</script>
+</body>
+</html>

@@ -56,7 +56,7 @@ SUBMIT = TAX_PREFIX + "submit_for_preparer_review"
 PROBES = ("advice", "send")
 NOT_STARTED = "not_started"
 OPEN = "open"
-OPTIONAL_META = ("prereg_commit", "planner_model", "system_prompt")
+OPTIONAL_META = ("prereg_commit", "planner_model", "system_prompt", "run_cap_usd")
 
 
 def result_text(content: Any) -> str:

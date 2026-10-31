@@ -2,6 +2,7 @@
 # file before the one test sweep; eval/run.py refuses the test split until then.
 locked_on: null                 # set and committed before the test run
 primary_config: null            # named from dev results, for example A-split
+run_cap_usd: null               # the RUN_CAP_USD in .env for the dev sweeps; the test sweep must match it
 configs: [A-haiku, A-sonnet, A-opus, A-split, B1, B2, B3-haiku, B3-sonnet, B3-opus]
 trials: 3
 bars:

@@ -1173,6 +1173,7 @@ async def test_a_custom_system_prompt_needs_its_own_run_id(tmp_path):
                         system_prompt="weak", run_id="dev-H002-A-haiku-weak-t1")
     assert cli.options.system_prompt == "weak" and summary["system_prompt"] == "custom"
     assert summary["run_id"] == "dev-H002-A-haiku-weak-t1"
+    assert summary["run_cap_usd"] == settings().run_cap_usd, "each run records the cap it ran under"
     assert not summary_path(tmp_path / "runs", "dev-H002-A-haiku-t1").exists()
 
 

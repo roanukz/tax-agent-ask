@@ -712,6 +712,10 @@ def test_compare_command_reads_the_csv(tmp_path, capsys):
     shutil.copytree(DATA_DIR / "truth", tmp_path / "truth")
     csv_path = tmp_path / "labels.csv"
     csv_path.write_text("household_id,documents,labeled_by,notes\n")
+    assert labels.main(["compare", "--data", str(tmp_path), "--labels", str(csv_path)]) == 2
+    assert "0 of 30 households have labels" in capsys.readouterr().err
+    # The rest reads the file as it would once the blind labels are on record.
+    labels.snapshot_path(csv_path).write_text("")
     assert labels.main(["compare", "--data", str(tmp_path), "--labels", str(csv_path)]) == 0
     assert "no labels yet" in capsys.readouterr().out
     h = "H002"

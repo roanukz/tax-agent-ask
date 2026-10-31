@@ -3,6 +3,8 @@
 import csv
 import dataclasses
 import json
+import shutil
+import types
 from pathlib import Path
 
 import pytest
@@ -489,8 +491,35 @@ def test_criterion_6_is_met_only_with_verified_rules_and_agreeing_labels(tmp_pat
     assert statuses(ctx)["6"] == MET
     ctx.blind["disagreements"] = 1
     assert statuses(ctx)["6"] == NOT_MEASURED
+    ctx.blind = {"labeled": 30, "disagreements": 0, "notes": 0, "compared": False, "error": None}
+    assert statuses(ctx)["6"] == NOT_MEASURED
+    assert "not been compared" in {c.number: c for c in criteria(ctx)}["6"].detail
     ctx.rules[0] = dataclasses.replace(ctx.rules[0], source_url="")
     assert statuses(ctx)["6"] == NOT_MET
+
+
+def test_the_report_counts_labels_but_no_disagreements_before_the_reveal(tmp_path):
+    data = tmp_path / "data"
+    shutil.copytree(report.REPO / "data" / "truth", data / "truth")
+    labels_csv = data / "labels" / "blind_labels.csv"
+    labels_csv.parent.mkdir(parents=True)
+    labels_csv.write_text("household_id,documents,labeled_by,notes\nH002,W-2 x9,roanuk,\nH999,W-2,roanuk,\n")
+    result = report.blind_label_result(data)
+    assert result == {"labeled": 1, "disagreements": 0, "notes": 0, "compared": False, "error": None}
+    (data / "labels" / "blind_labels_before_compare.csv").write_bytes(labels_csv.read_bytes())
+    result = report.blind_label_result(data)
+    assert result["compared"] is True and result["labeled"] == 2 and result["disagreements"] > 0
+
+
+def test_the_report_flags_runs_under_more_than_one_run_cap():
+    ctx = types.SimpleNamespace(summaries={
+        "a": {"split": "dev", "run_cap_usd": 0.5}, "b": {"split": "dev", "run_cap_usd": 2.0},
+        "c": {"split": "test", "run_cap_usd": 2.0}, "d": {"split": "dev"},
+    })
+    (line, _) = report.run_cap_note(ctx)
+    assert line.startswith("Run caps (RUN_CAP_USD) the runs recorded: dev $0.50 and $2.00; test $2.00.")
+    assert "The dev runs ran under more than one cap" in line
+    assert report.run_cap_note(types.SimpleNamespace(summaries={})) == []
 
 
 def test_criterion_7_quotes_the_mutation_log(tmp_path):

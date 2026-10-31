@@ -34,13 +34,15 @@ uv run python -m eval.report                     # regenerates docs/results.md f
 uv run mutmut run && uv run mutmut results       # mutation testing of the scorer
 ```
 
-Live runs need an API key from a Claude Console workspace with its own spend limit, stored in `.env` as `TAX_AGENT_API_KEY` (copy `.env.example`), with `SPEND_CAP_USD` and `RUN_CAP_USD`. Don't set `ANTHROPIC_API_KEY`: Claude Code switches its own session to that variable when it finds it. Every live call reserves its upper bound in `ledger/spend.jsonl` first, and nothing is sent that could pass either cap. A dev sweep looks like this:
+Blind labels for 30 households check the rules by hand. `uv run python -m generator.label_ui` opens a local page that saves them to `data/labels/blind_labels.csv` as you type and shows nothing from the rules until all 30 are in. Its Compare button, or `uv run python -m generator.labels compare --reveal`, first copies the labels to `data/labels/blind_labels_before_compare.csv`, then lists every disagreement.
+
+Live runs need an API key from a Claude Console workspace with its own spend limit, stored in `.env` as `TAX_AGENT_API_KEY` (copy `.env.example`), with `SPEND_CAP_USD` (default $150 a month) and `RUN_CAP_USD` (default $2.00 a run). A value in `.env` beats the default, and every sweep prints the caps it runs under. Don't set `ANTHROPIC_API_KEY`: Claude Code switches its own session to that variable when it finds it. Every live call reserves its upper bound in `ledger/spend.jsonl` first, and nothing is sent that could pass either cap. A dev sweep looks like this:
 
 ```bash
 uv run python -m eval.run --split dev --configs A-haiku,A-sonnet,B1,B2 --trials 1 --limit 10
 ```
 
-The test split is locked until `eval/prereg.yaml` is committed with `locked_on` and `primary_config`; then `uv run python -m eval.run --split test --prereg eval/prereg.yaml` runs exactly the preregistered configs and trials.
+The test split is locked until `eval/prereg.yaml` is committed with `locked_on`, `primary_config`, and `run_cap_usd` (the dev sweeps' `RUN_CAP_USD`, which the test sweep must match); then `uv run python -m eval.run --split test --prereg eval/prereg.yaml` runs exactly the preregistered configs and trials.
 
 ## Disclaimer
 

@@ -117,8 +117,13 @@ def load_settings(path: Path = DEFAULT_DOTENV, *, require_key: bool = True) -> H
     return HarnessSettings(
         api_key=key,
         spend_cap_usd=float(values.get("SPEND_CAP_USD", "150")),
-        run_cap_usd=float(values.get("RUN_CAP_USD", "0.50")),
+        run_cap_usd=float(values.get("RUN_CAP_USD", "2.00")),
     )
+
+
+def caps_line(settings: HarnessSettings) -> str:
+    """The caps in effect, for a sweep to print before it spends: a value in .env beats the default."""
+    return f"caps from .env: RUN_CAP_USD ${settings.run_cap_usd:.2f} a run, SPEND_CAP_USD ${settings.spend_cap_usd:.2f} a month"
 
 
 def child_env(settings: HarnessSettings, config_dir: Path) -> dict[str, str]:

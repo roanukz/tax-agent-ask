@@ -25,6 +25,7 @@ from sim.fakes import FakeUsage, ScriptedClient
 
 LOCKED = """locked_on: 2026-11-15
 primary_config: A-split
+run_cap_usd: 0.50
 configs: [A-haiku, A-sonnet, A-opus, A-split, B1, B2, B3-haiku, B3-sonnet, B3-opus]
 trials: 3
 """
@@ -303,6 +304,30 @@ async def test_the_test_split_is_refused_until_prereg_is_locked(tmp_path):
                        messages=messages, repo=root(path))
     assert code == runner.EXIT_REFUSED and "locked_on" in messages[0]
     assert fakes.calls == [] and not (tmp_path / "runs").exists()
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("cap, why", [
+    (None, "needs run_cap_usd"),
+    ("2.00", "locks the run cap at $2.00, but .env sets RUN_CAP_USD=0.50"),
+])
+async def test_the_test_split_runs_only_under_the_preregistered_run_cap(tmp_path, cap, why):
+    text = plan("B2").replace("run_cap_usd: 0.50\n", "" if cap is None else f"run_cap_usd: {cap}\n")
+    path = prereg_repo(tmp_path, text)
+    fakes, messages = Fakes(), []
+    code = await sweep(tmp_path, fakes, "--split", "test", "--configs", "B2", "--households", "H001",
+                       "--prereg", str(path), messages=messages, repo=root(path))
+    assert code == runner.EXIT_REFUSED and why in messages[0]
+    assert fakes.calls == [] and not (tmp_path / "runs").exists()
+
+
+@pytest.mark.anyio
+async def test_a_sweep_prints_the_caps_in_effect(tmp_path):
+    fakes, messages = Fakes(), []
+    code = await sweep(tmp_path, fakes, "--split", "dev", "--configs", "B2", "--households", "H002", key="",
+                       messages=messages)
+    assert code == runner.EXIT_OK
+    assert "caps from .env: RUN_CAP_USD $0.50 a run, SPEND_CAP_USD $150.00 a month" in messages
 
 
 @pytest.mark.anyio

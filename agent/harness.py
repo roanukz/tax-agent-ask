@@ -1194,6 +1194,8 @@ async def run_one(
         "run_id": run_id, "household_id": household_id, "config": config, "trial": trial,
         "model": cfg.model, "split": split, "planner_model": cfg.planner_model, "prereg_commit": prereg_commit,
         "system_prompt": None if system_prompt == SYSTEM_PROMPT else "custom",
+        # A run-cap stop is a scored failure, so each run records the cap it ran under.
+        "run_cap_usd": settings.run_cap_usd,
     }
 
     started = clock()

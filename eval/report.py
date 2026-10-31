@@ -65,7 +65,16 @@ from eval import stats
 from eval.score import dropped, is_prior_year
 from generator.files import load_truths
 from generator.generate import DEFAULT_SEED
-from generator.labels import CSV_FILE, LabelFileError, compare_file, is_disagreement
+from generator.files import load_truths
+from generator.labels import (
+    CSV_FILE,
+    LabelFileError,
+    compare_file,
+    is_disagreement,
+    labeled_households,
+    select_households,
+    snapshot_path,
+)
 from rules.engine import FactSpec, Rule, load_facts, load_rules
 
 REPO = Path(__file__).resolve().parent.parent
@@ -196,15 +205,30 @@ def fidelity_result(fidelity_dir: Path, truths: Mapping[str, Mapping[str, Any]],
 
 
 def blind_label_result(data_dir: Path) -> dict[str, Any]:
+    """How many households have blind labels and, once the labels are on record, how many disagree.
+
+    Until compare has copied the labels to their snapshot (generator.labels reveal), the report counts labels
+    only, so reading it while labeling says nothing about the rules' answers.
+    """
     path = Path(data_dir) / "labels" / CSV_FILE
+    empty = {"labeled": 0, "disagreements": 0, "notes": 0, "compared": False, "error": None}
     if not path.exists():
-        return {"labeled": 0, "disagreements": 0, "notes": 0, "error": None}
+        return empty
     try:
+        if not snapshot_path(path).exists():
+            done = labeled_households(path)
+            if done:
+                try:
+                    done &= set(select_households(load_truths(Path(data_dir))))
+                except ValueError:
+                    pass
+            return {**empty, "labeled": len(done)}
         rows, labeled = compare_file(path, Path(data_dir))
     except (LabelFileError, OSError) as e:
-        return {"labeled": 0, "disagreements": 0, "notes": 0, "error": str(e)}
+        return {**empty, "error": str(e)}
     disagreements = sum(1 for d in rows if is_disagreement(d))
-    return {"labeled": labeled, "disagreements": disagreements, "notes": len(rows) - disagreements, "error": None}
+    return {"labeled": labeled, "disagreements": disagreements, "notes": len(rows) - disagreements,
+            "compared": True, "error": None}
 
 
 def display_path(path: Path) -> str:
@@ -748,6 +772,8 @@ def criterion_rules(ctx: Context) -> Criterion:
         gaps.append(f"{len(to_verify)} of {len(ctx.rules)} rules are still to_verify")
     if blind["labeled"] < BLIND_LABEL_TARGET:
         gaps.append(f"{blind['labeled']} of {BLIND_LABEL_TARGET} households have blind labels")
+    elif not blind.get("compared", True):
+        gaps.append("the blind labels have not been compared with the rules yet")
     if blind["disagreements"]:
         gaps.append(f"{plural(blind['disagreements'], 'label disagreement')} to settle against the cited source "
                     "and log in DECISIONS.md")
@@ -908,6 +934,9 @@ def data_section(ctx: Context) -> list[str]:
     elif not blind["labeled"]:
         lines.append(f"No blind labels yet: data/labels/blind_labels.csv has 0 of {BLIND_LABEL_TARGET} households "
                      "labeled, so the rules have not been checked against Roanuk's own lists.")
+    elif not blind.get("compared", True):
+        lines.append(f"{blind['labeled']} of {BLIND_LABEL_TARGET} households labeled. Not compared with the rules yet, "
+                     "so the labels are still blind (compare from the label page, uv run python -m generator.label_ui).")
     else:
         lines.append(f"{blind['labeled']} of {BLIND_LABEL_TARGET} households labeled; {plural(blind['disagreements'], 'disagreement')} "
                      f"with the rules and {plural(blind['notes'], 'note')} (run uv run python -m generator.labels compare).")
@@ -1048,6 +1077,23 @@ def honesty_table(ctx: Context, split: str) -> list[str]:
             "change pass or fail.", ""]
 
 
+def run_cap_note(ctx: Context) -> list[str]:
+    """The RUN_CAP_USD values the runs recorded, by split, flagging a split that ran under more than one."""
+    caps: dict[str, set[float]] = {}
+    for s in ctx.summaries.values():
+        if s.get("run_cap_usd") is not None:
+            caps.setdefault(str(s.get("split")), set()).add(float(s["run_cap_usd"]))
+    if not caps:
+        return []
+    parts = [f"{split} " + " and ".join(f"${c:.2f}" for c in sorted(v)) for split, v in sorted(caps.items())]
+    line = "Run caps (RUN_CAP_USD) the runs recorded: " + "; ".join(parts) + "."
+    mixed = [split for split, v in sorted(caps.items()) if len(v) > 1]
+    if mixed:
+        line += (f" The {' and '.join(mixed)} runs ran under more than one cap, and a run-cap stop is a scored "
+                 "failure, so their pass rates are not all comparable.")
+    return [line, ""]
+
+
 def cost_section(ctx: Context) -> list[str]:
     lines = ["### Cost and latency", ""]
     rows = []
@@ -1061,6 +1107,7 @@ def cost_section(ctx: Context) -> list[str]:
     if rows:
         lines += [md_table(["Split", "Config", "Runs", "Run cost", "Cost per household", "Latency per household"],
                            rows), ""]
+    lines += run_cap_note(ctx)
     led = ctx.ledger
     if led["runs"]:
         lines.append(f"Spend ledger: {plural(led['runs'], 'run')}, {fmt(led['total_usd'], 'usd')} in all "
@@ -1168,6 +1215,8 @@ def next_steps(ctx: Context) -> list[str]:
     if ctx.blind["labeled"] < BLIND_LABEL_TARGET:
         steps.append(f"Roanuk writes blind labels for the {BLIND_LABEL_TARGET} households on the label sheet and "
                      "settles each disagreement (Block 2).")
+    elif not ctx.blind.get("compared", True):
+        steps.append("Roanuk compares the blind labels with the rules and settles each disagreement (Block 2).")
     if ctx.fidelity is None or ctx.fidelity.get("dry_run") or ctx.fidelity.get("error"):
         steps.append("Run the live simulator fidelity check and read 30 answers for leaks (Block 4).")
     if not any(is_agent(r.get("config")) for r in ctx.split_rows("dev")):

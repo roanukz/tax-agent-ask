@@ -82,7 +82,7 @@ import yaml
 
 from agent import harness
 from agent.configs import CONFIGS, JUDGE_MODEL, JUDGE_RESERVE_USD, SIMULATOR_MODEL, Config, get_config
-from agent.env import DEFAULT_DOTENV, HarnessSettings, load_settings, messages_client
+from agent.env import DEFAULT_DOTENV, HarnessSettings, caps_line, load_settings, messages_client
 from agent.harness import (
     INIT_CHECK, TEST_SPLIT, Budget, Reservation, run_id_for, summary_path, trace_path, write_json,
 )
@@ -165,6 +165,20 @@ def prereg_plan(path: Path | None = None, *, repo: Path | None = None) -> tuple[
     if isinstance(trials, bool) or not isinstance(trials, int) or trials < 1:
         raise PreregError(f"{PREREG_RELATIVE} needs trials, a whole number of at least 1, not {trials!r}")
     return config_names(str(c) for c in listed), trials, commit
+
+
+def prereg_run_cap(repo: Path | None = None) -> float:
+    """The run cap the locked eval/prereg.yaml names, which the test sweep's RUN_CAP_USD must equal.
+
+    A run_cap stop is a scored failure, so the cap shapes pass rates; the test sweep runs under the cap the
+    dev sweeps used, recorded when the prereg is locked.
+    """
+    data = yaml.safe_load((Path(REPO if repo is None else repo).resolve() / PREREG_RELATIVE).read_text()) or {}
+    cap = data.get("run_cap_usd")
+    if isinstance(cap, bool) or not isinstance(cap, (int, float)) or cap <= 0:
+        raise PreregError(f"{PREREG_RELATIVE} needs run_cap_usd, the RUN_CAP_USD the dev sweeps ran under, "
+                          f"not {cap!r}")
+    return float(cap)
 
 
 def config_names(names: Iterable[str]) -> list[str]:
@@ -603,10 +617,15 @@ async def main_async(
                 "Paste the workspace key into .env, or run only B2, which needs no key."
             )
         if args.split == TEST_SPLIT:
+            locked_cap = prereg_run_cap(repo)
+            if abs(locked_cap - settings.run_cap_usd) > 1e-9:
+                raise Refused(f"{PREREG_RELATIVE} locks the run cap at ${locked_cap:.2f}, but .env sets "
+                              f"RUN_CAP_USD={settings.run_cap_usd:.2f}; the test sweep runs under the dev sweeps' cap")
             households, out = drop_unverified(data_dir, households)
             say(f"dropped {len(out)} test households whose list depends on an unverified rule")
             write_json(args.runs_dir / "test-dropped.json", {"dropped": out, "prereg_commit": commit})
         ledger = Ledger(ledger_path, cap_usd=settings.spend_cap_usd, run_cap_usd=settings.run_cap_usd)
+        say(caps_line(settings))
         sweep = Sweep(
             split=args.split, configs=configs, households=households, trials=trials, ceiling=args.concurrency,
             settings=settings, ledger=ledger, deps=deps, runs_dir=args.runs_dir, data_dir=data_dir,
