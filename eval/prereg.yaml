@@ -1,0 +1,15 @@
+# Preregistration. Roanuk sets locked_on and primary_config and commits this
+# file before the one test sweep; eval/run.py refuses the test split until then.
+locked_on: null                 # set and committed before the test run
+primary_config: null            # named from dev results, for example A-split
+configs: [A-haiku, A-sonnet, A-opus, A-split, B1, B2, B3-haiku, B3-sonnet, B3-opus]
+trials: 3
+bars:
+  pass_rate_min: 0.90
+  missed_document_rate_max: 0.02
+  median_question_ratio_max: 0.50
+  changed_household_miss_gap_vs_b1_max: 0.02
+  cost_per_household_max_usd: 0.10
+  judge_tpr_min: 0.90
+  judge_tnr_min: 0.90
+intervals: {method: household_bootstrap, draws: 10000, seed: 7, level: 0.95}
