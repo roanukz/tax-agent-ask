@@ -3,6 +3,7 @@ import copy
 import pytest
 import yaml
 
+from generator import labels
 from rules import engine
 from rules.engine import (
     FactError,
@@ -188,6 +189,29 @@ def test_as_multiset_and_rule_facts():
 def test_every_fact_a_rule_reads_exists():
     for r in RULES:
         assert rule_facts(r.when) <= set(SPECS), r.id
+
+
+def plain_fact_lines():
+    """Every plain sentence and noun the blind label sheet can show for a household's facts."""
+    everything = {k: (True if s.type == "bool" else None) for k, s in SPECS.items()}
+    everything.update(filing_status="single", dependents_count=2, w2_employer_count=2, k1_count=1, new_dependent=True,
+                      clean_energy_install_year=2026, efficiency_improvements_year=2026, ev_acquired_date="2026-03-01")
+    return [*labels.describe_this_year(everything, SPECS), *labels.CHANGE_NOUNS.values()]
+
+
+def test_no_alias_is_a_plain_fact_description():
+    # The blind label sheet must never show a document name, and an alias names a document, not a fact.
+    lines = plain_fact_lines()
+    assert len(lines) > 40
+    for r in RULES:
+        for text in r.aliases:
+            assert not any(labels.contains(labels.tokens(line), labels.tokens(text)) for line in lines), (r.id, text)
+
+
+def test_source_titles_are_plain_titles_without_pipes():
+    # A pipe splits a Markdown table cell in the review packet and the report.
+    assert [r.id for r in RULES if "|" in r.source_title] == []
+    assert next(r for r in RULES if r.id == "R017").source_title == "Education credits: AOTC and LLC"
 
 
 # Validator: start from a valid copy of the repo files and break one thing at a time.

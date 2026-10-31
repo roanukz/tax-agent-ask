@@ -178,6 +178,7 @@ def test_passing_run_full_shape():
         "unmatched_requests": [],
         "ignored_requests": [],
         "unscored_requests": [],
+        "context_segments": [],
         "complexity": "medium",
         "changed_facts": ["marketplace_coverage"],
         "trial": 1,
@@ -224,10 +225,10 @@ def test_failing_run_full_shape():
         "missed": [{"rule_id": "R001", "count": 1}, {"rule_id": "R011", "count": 1}, {"rule_id": "R012", "count": 1}],
         "unnecessary": [
             {"kind": "rule", "rule_id": "R005", "count": 1},
-            {"kind": "trap", "request": "form 5695", "rule_ids": ["T001", "T002"]},
+            {"kind": "trap", "request": "form 5695, solar panels", "rule_ids": ["T001"]},
             {"kind": "unmatched", "request": "receipts for the boat"},
         ],
-        "trap_requests": [{"request": "form 5695", "rule_ids": ["T001", "T002"]}],
+        "trap_requests": [{"request": "form 5695, solar panels", "rule_ids": ["T001"]}],
         "wrong_facts": wrong,
         "stale_carryovers": [wrong[1]],
         "first_miss": {"rule_id": "R001", "fact": "w2_employer_count", "cause": "wrong_value", "nearest_question": 1},
@@ -247,6 +248,7 @@ def test_failing_run_full_shape():
         "unmatched_requests": ["receipts for the boat"],
         "ignored_requests": ["photo id"],
         "unscored_requests": [],
+        "context_segments": [],
         "complexity": "medium",
         "changed_facts": ["marketplace_coverage"],
         "trial": 1,
@@ -468,6 +470,7 @@ def test_score_list_full_shape():
         "unmatched_requests": [],
         "ignored_requests": [],
         "unscored_requests": [],
+        "context_segments": [],
         "complexity": "medium",
         "changed_facts": ["marketplace_coverage"],
     }
@@ -666,6 +669,158 @@ def test_hyphen_free_1099s_credits_the_home_sale():
     assert lst(["1099S"], truth(sold_home=True))["requested"] == [{"rule_id": "R030", "count": 1}]
 
 
+# one item credits a rule or records a trap at most once
+
+
+def w2s(n):
+    return {"true_facts": {"w2_employer_count": n}}
+
+
+@pytest.mark.parametrize("text", ["Form W-2 (Wage and Tax Statement)", "Form W-2, Wage and Tax Statement",
+                                  "Form W-2 Wage and Tax Statement", "W-2 or W-2c"])
+def test_a_form_and_its_title_credit_one_w2(text):
+    result = lst([{"document": text, "count": 1}], w2s(1))
+    assert result["requested"] == [{"rule_id": "R001", "count": 1}]
+    assert result["unnecessary"] == []
+    assert result["pass"] is True
+
+
+def test_a_form_and_its_title_credit_the_item_count():
+    result = lst([{"document": "Form W-2 (Wage and Tax Statement)", "count": 2}], w2s(2))
+    assert result["requested"] == [{"rule_id": "R001", "count": 2}]
+    assert result["unnecessary_count"] == 0
+    assert result["pass"] is True
+
+
+def test_a_form_and_its_title_once_still_miss_the_second_w2():
+    result = lst([{"document": "Form W-2 (Wage and Tax Statement)", "count": 1}], w2s(2))
+    assert result["missed"] == [{"rule_id": "R001", "count": 1}]
+    assert result["pass"] is False
+
+
+def test_a_corrected_w2_custom_request_is_one_more_w2():
+    result = lst([{"rule_id": "R001", "count": 1}, {"document": "Corrected Form W-2 (W-2c) from employer"}], w2s(1))
+    assert result["requested"] == [{"rule_id": "R001", "count": 2}]
+    assert result["unnecessary_count"] == 1
+    assert result["pass"] is True
+
+
+def test_k1_and_k3_in_one_item_are_one_k1():
+    assert lst(["Schedule K-1 and Schedule K-3"], truth(k1_count=1))["requested"][-1] == {"rule_id": "R020", "count": 1}
+
+
+@pytest.mark.parametrize("text,words,rule_ids", [
+    ("Form 8936, Clean Vehicle Credit", "form 8936, clean vehicle credit", ["T003"]),
+    ("Form 8936 (Clean Vehicle Credit)", "form 8936, clean vehicle credit", ["T003"]),
+    ("Form 5695 (Residential Clean Energy Credit)", "form 5695, residential clean energy credit", ["T001"]),
+    ("Form 5695 and solar invoice", "form 5695, solar invoice", ["T001"]),
+])
+def test_a_trap_named_twice_in_one_item_is_one_trap_request(text, words, rule_ids):
+    result = lst(["W-2", text], w2s(1))
+    assert result["trap_requests"] == [{"request": words, "rule_ids": rule_ids}]
+    assert result["unnecessary_count"] == 1
+    assert result["pass"] is True
+
+
+def test_two_traps_in_one_item_are_two_trap_requests():
+    result = lst(["solar invoice and energy-efficient windows"], w2s(0))
+    assert result["trap_requests"] == [{"request": "solar invoice", "rule_ids": ["T001"]},
+                                       {"request": "energy-efficient", "rule_ids": ["T002"]}]
+    assert result["unnecessary_count"] == 2
+
+
+def test_two_close_documents_in_one_item_credit_both():
+    result = lst(["1099-G for state refund, unemployment 1099-G"], truth(unemployment=True))
+    assert [d["rule_id"] for d in result["requested"]] == ["R010", "R011"]
+
+
+# natural phrasings of required documents (B3 lists)
+
+
+def test_a_b3_list_in_natural_wording_passes():
+    t = {"true_facts": {"w2_employer_count": 1, "self_employment": True, "dependent_care_paid": True,
+                        "new_dependent": True}}
+    items = [{"document": "Form W-2", "count": 1},
+             {"document": "Business income and expense records", "count": 1},
+             {"document": "Provider name, address, taxpayer ID and amount paid", "count": 1},
+             {"document": "Social Security number and date of birth for new dependent", "count": 1},
+             {"document": "Prior year tax return"}]
+    result = lst(items, t)
+    assert result["missed"] == []
+    assert result["unnecessary_count"] == 0
+    assert result["ignored_requests"] == ["prior year tax return"]
+    assert result["pass"] is True
+
+
+@pytest.mark.parametrize("text,trap", [("Solar panel installation invoice", "T001"),
+                                       ("Receipts for solar installation", "T001"),
+                                       ("Receipts for energy-efficient windows", "T002")])
+def test_trap_phrasings_are_trap_requests(text, trap):
+    assert [t["rule_ids"] for t in lst([text])["trap_requests"]] == [[trap]]
+
+
+# separators: semicolon and line-break parts count, comma segments are context
+
+
+def test_semicolon_parts_without_a_hit_are_unnecessary():
+    one = lst(["W-2; divorce decree; car title; boat receipts"], w2s(1))
+    apart = lst(["W-2", "divorce decree", "car title", "boat receipts"], w2s(1))
+    assert one["unmatched_requests"] == apart["unmatched_requests"] == ["divorce decree", "car title", "boat receipts"]
+    assert one["unnecessary_count"] == apart["unnecessary_count"] == 3
+    assert one["pass"] is False
+
+
+def test_a_line_break_part_without_a_hit_is_unnecessary():
+    result = lst(["1099-INT\ndivorce decree"])
+    assert result["unmatched_requests"] == ["divorce decree"]
+    assert result["unnecessary_count"] == 1
+
+
+def test_comma_segments_are_context_and_recorded():
+    result = lst(["Photo ID, medical expense receipts, gym membership bills"], w2s(0))
+    assert result["ignored_requests"] == ["photo id"]
+    assert result["context_segments"] == ["medical expense receipts", "gym membership bills"]
+    assert result["unnecessary_count"] == 0
+
+
+def test_comma_notes_beside_a_document_are_context():
+    t = truth(k1_count=1)
+    result = lst(["Form W-2, from each employer", {"document": "Form W-2", "count": 1}, "Schedule K-1, one per partnership",
+                  "Form 1099-INT, if any", "1099-G for state refund", "1095-A"], t)
+    assert result["context_segments"] == ["from each employer", "one per partnership", "if any"]
+    assert result["unmatched_requests"] == []
+    assert result["pass"] is True
+
+
+def test_score_run_carries_context_segments():
+    s = passing()
+    s["custom_requests"] = [{"document": "Form 1095-A, from the exchange", "reason": "x"}]
+    assert run(s)["context_segments"] == ["from the exchange"]
+
+
+# a request naming one rule specifically credits that rule
+
+
+def test_a_specific_alias_never_credits_its_sibling():
+    unemployed = lst(["1099-G for state refund"], {"true_facts": {"unemployment": True}})
+    assert unemployed["missed"] == [{"rule_id": "R010", "count": 1}]
+    assert unemployed["requested"] == [{"rule_id": "R011", "count": 1}]
+    assert unemployed["pass"] is False
+    refund = lst(["unemployment 1099-G"], {"true_facts": {"itemized_last_year": True, "state_refund_received": True}})
+    assert refund["missed"] == [{"rule_id": "R011", "count": 1}]
+    buyer = lst(["sale closing statement"], {"true_facts": {"bought_home": True}})
+    assert buyer["missed"] == [{"rule_id": "R015", "count": 1}]
+    assert buyer["unnecessary"] == [{"kind": "rule", "rule_id": "R030", "count": 1}]
+
+
+def test_a_specific_alias_of_an_unscored_rule_is_unscored():
+    rules = with_status("excluded", "R011")
+    result = lst(["1099-G for state refund"], {"true_facts": {"unemployment": True}}, rules=rules)
+    assert result["unscored_requests"] == [{"request": "1099-g for state refund", "rule_ids": ["R011", "R010"]}]
+    assert result["requested"] == []
+    assert result["missed"] == [{"rule_id": "R010", "count": 1}]
+
+
 def test_two_unmatched_items_count_twice():
     result = lst([*REQUIRED, "boat receipts", "Mileage log and gas receipts"])
     assert result["unnecessary_count"] == 2
@@ -767,15 +922,25 @@ def test_score_list_null_count_credits_once():
 # Tally directly
 
 
-def test_tally_ignores_and_unmatched():
+def test_tally_ignores_unmatched_and_context():
     tally = S.Tally(RULES, VERIFIED, S.Counter())
     tally.credit_match(Match("photo id", "ignore"), 1)
     tally.credit_match(Match("boat", "unmatched"), 1)
+    tally.credit_match(Match("from each employer", "context"), 1)
     assert tally.ignored == ["photo id"]
     assert tally.unmatched == ["boat"]
+    assert tally.context == ["from each employer"]
     assert tally.traps == []
     assert tally.unscored == []
     assert tally.requested() == S.Counter()
+
+
+def test_tally_credits_best_candidates_only():
+    tally = S.Tally(RULES, VERIFIED, S.Counter({"R010": 1}))
+    tally.credit_match(Match("x", "rule", ("R011", "R010")), 2)
+    assert tally.credited == S.Counter({"R011": 2})
+    tally.credit_match(Match("y", "rule", ("R011", "R010"), 2), 2)
+    assert tally.credited == S.Counter({"R011": 3, "R010": 1})
 
 
 def test_tally_requested_caps_presence_only():

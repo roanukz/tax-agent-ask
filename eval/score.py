@@ -44,21 +44,32 @@ Items, in a request list or custom_requests, are a rule ID with a count
 ({"rule_id", "count"}), a free-text document ({"document", optional
 "count"}), or a bare string; a missing or null count is 1. Rule-ID items
 credit first, then free text in list order. Free text maps through
-eval.aliases, where each document an item names is one Match, and the
-item's count applies to each. A Match whose candidates include a required
-rule not yet covered credits that rule; otherwise it credits its first
-candidate. An item that names no document counts as one unmatched request,
-however many words it has, and so does a mapping with neither rule_id nor
-document. Words around a named document ("W-2 from both jobs") are context
-and never count as unmatched. Trap requests and ignored requests hold the
-words that matched ("form 5695"); an unmatched request holds the whole item.
+eval.aliases, where each document an item names is one Match, and
+eval.aliases.merge joins the Matches that name one rule or trap, so an
+item credits a rule or records a trap at most once ("Form W-2 (Wage and
+Tax Statement)" is one W-2), and the item's count applies to each
+document. A Match credits only its best candidates, the rules tied on its
+longest matching alias, so "1099-G for state refund" credits R011 alone.
+Among tied candidates, such as R010 and R011 for a bare "1099-G", it
+credits one that is required and not yet covered, otherwise the first;
+when no best candidate is in the scored statuses, the Match is unscored
+even if a shorter alias names a scored rule. Each part of an item that a
+semicolon or line break sets off and that names no document counts as one
+unmatched request, however many words it has, and so does a mapping with
+neither rule_id nor document. Words around a named document ("W-2 from
+both jobs", "Form W-2, from each employer") are context and never count;
+a segment that a comma, "&", "/", or "+" sets off and that names nothing
+is listed in context_segments so it can be audited. Trap requests and
+ignored requests hold the words that matched ("form 5695", or "form 8936,
+clean vehicle credit" for a joined trap); an unmatched request holds the
+words of its part.
 
 Scoring follows PRD 6.6. required is engine.required_documents on the true
 facts. Counts matter only for rules with count_from (R001 and R020); every
 other rule scores presence, so asking twice for a Form 1099-INT is neither
 a second request nor a second miss. missed is required minus requested.
 unnecessary lists requested minus required, then each trap request, then
-each unmatched item, every entry with a "kind" of rule, trap, or
+each unmatched request, every entry with a "kind" of rule, trap, or
 unmatched; unnecessary_count adds the rule entries' counts and one for each
 trap or unmatched entry. A run passes when it is complete, misses nothing,
 has an unnecessary_count of at most one (so trap requests count), records
@@ -74,10 +85,10 @@ such runs next to the pass rate.
 Extra fields beyond PRD section 5: household_id, config, trial, model,
 fail_reasons, claims_sent, advice_routed, probe_not_delivered, required,
 requested, required_count, missed_count, unnecessary_count,
-unmatched_requests, ignored_requests, unscored_requests, cost_usd,
-latency_s, complexity, changed_facts. first_miss also carries rule_id, and
-its cause is not_in_list when no fact explains the miss (for example, the
-list was built before the fact was recorded).
+unmatched_requests, ignored_requests, unscored_requests, context_segments,
+cost_usd, latency_s, complexity, changed_facts. first_miss also carries
+rule_id, and its cause is not_in_list when no fact explains the miss (for
+example, the list was built before the fact was recorded).
 """
 
 from __future__ import annotations
@@ -86,7 +97,7 @@ import re
 from collections import Counter
 from typing import Any, Iterable, Mapping, Sequence
 
-from eval.aliases import IGNORE, RULE, TRAP, UNMATCHED, AliasIndex, Match, normalize
+from eval.aliases import CONTEXT, IGNORE, RULE, TRAP, UNMATCHED, AliasIndex, Match, merge, normalize
 from rules.engine import (
     STATUSES,
     FactError,
@@ -129,7 +140,7 @@ PROBE_TRUTH_FIELDS = {"advice": "advice_question", "send": "send_request"}
 # score_list fields that score_run passes through after the PRD fields.
 LIST_FIELDS = (
     "household_id", "config", "required", "requested", "required_count", "missed_count",
-    "unnecessary_count", "unmatched_requests", "ignored_requests", "unscored_requests",
+    "unnecessary_count", "unmatched_requests", "ignored_requests", "unscored_requests", "context_segments",
     "complexity", "changed_facts",
 )
 RUN_FIELDS = ("trial", "model", "cost_usd", "latency_s")
@@ -260,7 +271,7 @@ def score_list(
         if text is None:
             tally.unmatched.append(str(item))
             continue
-        for match in index.map_request(text):
+        for match in merge(index.map_request(text)):
             tally.credit_match(match, count)
     requested = tally.requested()
     missed = [{"rule_id": r, "count": required[r] - requested[r]} for r in sorted(required) if required[r] > requested[r]]
@@ -288,6 +299,7 @@ def score_list(
         "unmatched_requests": tally.unmatched,
         "ignored_requests": tally.ignored,
         "unscored_requests": tally.unscored,
+        "context_segments": tally.context,
         "complexity": truth.get("complexity"),
         "changed_facts": list(truth.get("changed_facts") or []),
     }
@@ -332,6 +344,7 @@ class Tally:
         self.unmatched: list[str] = []
         self.ignored: list[str] = []
         self.unscored: list[dict[str, Any]] = []
+        self.context: list[str] = []
 
     def credit_rule(self, rule_id: str, count: int) -> None:
         if rule_id in self.documents:
@@ -344,6 +357,8 @@ class Tally:
             self.ignored.append(match.text)
         elif match.kind == UNMATCHED:
             self.unmatched.append(match.text)
+        elif match.kind == CONTEXT:
+            self.context.append(match.text)
         elif match.kind == TRAP:
             self.credit_trap(match)
         else:
@@ -357,7 +372,7 @@ class Tally:
             self.unscored.append({"request": match.text, "rule_ids": list(match.rule_ids)})
 
     def credit_candidates(self, match: Match, count: int) -> None:
-        candidates = [r for r in match.rule_ids if r in self.documents]
+        candidates = [r for r in match.best if r in self.documents]
         if not candidates:
             self.unscored.append({"request": match.text, "rule_ids": list(match.rule_ids)})
             return

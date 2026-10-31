@@ -22,7 +22,7 @@ For each rule, reply in chat with one of: **verify**, **exclude** (with a reason
 | R014 | `has_mortgage = true` | [Instructions for Form 1098 (12/2026)](https://www.irs.gov/instructions/i1098) | final_instructions | Supported |
 | R015 | `bought_home = true` | [Publication 530 (2025), Tax Information for Homeowners](https://www.irs.gov/publications/p530) | guidance | Supported |
 | R016 | `student_loan_interest = true` | [Topic no. 456, Student loan interest deduction](https://www.irs.gov/taxtopics/tc456) | guidance | Supported |
-| R017 | `tuition_paid = true` | [Education credits - AOTC and LLC | Internal Revenue Service](https://www.irs.gov/credits-deductions/individuals/education-credits-aotc-llc) | guidance | Supported |
+| R017 | `tuition_paid = true` | [Education credits: AOTC and LLC](https://www.irs.gov/credits-deductions/individuals/education-credits-aotc-llc) | guidance | Supported |
 | R018 | `dependent_care_paid = true` | [2026 Instructions for Form 2441, Child and Dependent Care Expenses [...]](https://www.irs.gov/pub/irs-dft/i2441--dft.pdf) | draft_instructions | Replaced |
 | R019 | `new_dependent = true` | [Checklist for free tax return preparation](https://www.irs.gov/individuals/checklist-for-free-tax-return-preparation) | guidance | Replaced |
 | R020 | `k1_count >= 1` | [2026 Instructions for Schedule E (Form 1040), Supplemental Income and [...]](https://www.irs.gov/pub/irs-dft/i1040se--dft.pdf) | draft_instructions | Supported |
@@ -73,7 +73,7 @@ For each rule, reply in chat with one of: **verify**, **exclude** (with a reason
   - Watch for double counting gross receipts across Form 1099-NEC, Form 1099-K, and the client's own records.
   - Gig work done as an employee is W-2 income (R001); confirm worker classification before requesting business records.
 - **Suggested document wording (not applied):** Business income and expense records (income records, receipts, mileage logs, and bank or payment app statements), including any Forms 1099-NEC received
-- **Aliases:** 1099-NEC, Form 1099-NEC, business income records, business expense records, self-employment records, Schedule C records, nonemployee compensation
+- **Aliases:** 1099-NEC, Form 1099-NEC, business income records, business expense records, self-employment records, Schedule C records, nonemployee compensation, business income and expenses, self-employment income
 - **Your call:** 
 
 ## R003
@@ -145,7 +145,7 @@ For each rule, reply in chat with one of: **verify**, **exclude** (with a reason
   - Crypto and other digital assets, including tokenized securities, are reported on Form 1099-DA, not Form 1099-B, starting with 2025 and 2026 sales. Confirm that a separate digital asset rule exists, and that 'sold stocks' wording does not pull in crypto or miss it.
   - The consolidated brokerage statement usually also contains the 1099-DIV and 1099-INT. Deduplicate requests with R004 and R005. Brokers have until February 15 to furnish 1099-B, and corrected statements often follow, so the agent may want to warn clients against filing early.
 - **Suggested document wording (not applied):** Form 1099-B (or the broker's consolidated or substitute statement) from each brokerage or fund company, plus purchase and sale records for any sale not reported on a form or with basis not reported
-- **Aliases:** 1099-B, Form 1099-B, consolidated brokerage statement, brokerage statement, consolidated 1099
+- **Aliases:** 1099-B, Form 1099-B, consolidated brokerage statement, brokerage statement, consolidated 1099, consolidated Form 1099, brokerage 1099
 - **Your call:** 
 
 ## R007
@@ -163,7 +163,7 @@ For each rule, reply in chat with one of: **verify**, **exclude** (with a reason
   - The rule correctly keys on activity, not on receiving a form. IRS FAQ 108 (frequently-asked-questions-on-digital-asset-transactions) says income, gain, or loss must be reported regardless of the amount or whether a payee statement is received.
   - Basis will often be missing on 2026 forms (assets acquired before 2026, or moved in from another wallet or exchange), so the transaction-records part of the request matters most. Preparers should ask for acquisition date and cost for every lot sold.
 - **Suggested document wording (not applied):** Form 1099-DA (if received), plus the client's own records for every digital asset sold, exchanged, spent, or used to pay fees: date and time acquired, cost basis, date disposed, and proceeds or fair market value in U.S. dollars
-- **Aliases:** 1099-DA, Form 1099-DA, digital asset transaction records, crypto transaction records, cryptocurrency records, digital asset proceeds
+- **Aliases:** 1099-DA, Form 1099-DA, digital asset transaction records, crypto transaction records, cryptocurrency records, digital asset proceeds, crypto transaction, crypto exchange, cryptocurrency transaction, cryptocurrency exchange, digital asset transaction
 - **Your call:** 
 
 ## R008
@@ -217,7 +217,7 @@ For each rule, reply in chat with one of: **verify**, **exclude** (with a reason
   - Identity theft: the 2026 Form 1099-G recipient instructions warn against reporting an incorrect Box 1 amount if you suspect identity theft. Intake should ask whether the client actually claimed the benefits and whether the amount looks right.
   - Scope: benefits from an employer-financed supplemental unemployment fund are not unemployment compensation. They are taxed as wages on Form W-2 (Pub 525). Private unemployment fund and union-paid benefits are reported on Schedule 1, line 8z, not line 7. State paid family leave now appears in Box 10 of the same Form 1099-G and should not be counted [...]
 - **Suggested document wording (not applied):** Form 1099-G, Certain Government Payments, from each agency that paid unemployment (state unemployment agency or Railroad Retirement Board): Box 1 unemployment compensation and Box 4 federal income tax withheld
-- **Aliases:** 1099-G, Form 1099-G, unemployment compensation statement, unemployment 1099-G
+- **Aliases:** 1099-G, Form 1099-G, unemployment compensation statement, unemployment 1099-G, unemployment compensation
 - **Your call:** 
 
 ## R011
@@ -235,7 +235,7 @@ For each rule, reply in chat with one of: **verify**, **exclude** (with a reason
   - Keying on the activity is correct. The 2025 Form 1040 instructions say to report any taxable refund even without a Form 1099-G, and they note the form may be available only electronically. States may also skip mailing it when they believe the client did not itemize.
   - Even when both facts are true, the refund may be partly or fully nontaxable. Examples: the client elected to deduct sales tax instead of income tax, the SALT limit capped the deduction, or the itemized total exceeded the standard deduction by less than the refund. The preparer needs the prior-year Schedule A or return as well as the refund [...]
 - **Suggested document wording (not applied):** Form 1099-G from the state or local tax agency: Box 2 state or local income tax refunds, credits, or offsets (including amounts applied to estimated tax, offset, or donated) and Box 3 tax year of the refund; plus the prior-year return or Schedule A for that tax year if not on file
-- **Aliases:** 1099-G, Form 1099-G, state refund 1099-G, state tax refund statement, 1099-G for state refund
+- **Aliases:** 1099-G, Form 1099-G, state refund 1099-G, state tax refund statement, 1099-G for state refund, state refund, state tax refund
 - **Your call:** 
 
 ## R012
@@ -333,7 +333,7 @@ For each rule, reply in chat with one of: **verify**, **exclude** (with a reason
 - **When:** `tuition_paid = true`
 - **Document:** Form 1098-T
 - **Client reason:** You paid college tuition, so we need the tuition statement from the school.
-- **Source:** [Education credits - AOTC and LLC | Internal Revenue Service](https://www.irs.gov/credits-deductions/individuals/education-credits-aotc-llc) (guidance)
+- **Source:** [Education credits: AOTC and LLC](https://www.irs.gov/credits-deductions/individuals/education-credits-aotc-llc) (guidance)
 - **Excerpt:** "To be eligible for an education credit, the law requires the student to have received Form 1098-T, Tuition Statement, from an eligible educational institution, domestic or foreign."
 - **Skeptic:** supported. Verified 2026-10-30: IRS education credits guidance page (reviewed 12-Aug-2026) states the Form 1098-T requirement; its eligibility table still describes 2025 periods. The 2026 draft Form 8863 instructions (Sep 11, 2026) repeat the requirement and add the valid SSN rule. Recheck against the final 2026 Form 8863 instructions when posted.
 - **2026 notes:** Final 2026 Form 8863 instructions are not out; the latest is a 2026 draft dated Sep 11, 2026 (https://www.irs.gov/pub/irs-dft/i8863--dft.pdf), and the final HTML instructions at https://www.irs.gov/instructions/i8863 are still the 2025 version. New for 2026 (draft 8863 What's New and footnote 3 on https://www.irs.gov/credits-deductions/individuals/education-credits-aotc-llc): beginning in tax year 2026 you must have a valid SSN (valid for employment and issued before the due date of the 2026 return, including extensions) to claim the AOTC or LLC; on a joint return only one spouse needs a valid SSN per the draft; a dependent student must also have a valid SSN. MAGI limits stay at $90,000 [...]
@@ -361,7 +361,7 @@ For each rule, reply in chat with one of: **verify**, **exclude** (with a reason
   - Payments to the taxpayer's spouse, the parent of the qualifying child, a dependent, or the taxpayer's own child under age 19 do not qualify; the intake should ask who the provider is.
   - Line 1e is the amount actually paid in 2026 regardless of when the care was incurred; 2025 expenses paid in 2026 use a separate worksheet and 2026 care prepaid or paid in 2027 is excluded from line 2, so the client should break out payments by period.
 - **Suggested document wording (not applied):** For each care provider: name, address, taxpayer identification number (SSN or ITIN for an individual, EIN for a business; name and address only for a tax-exempt organization), whether the provider was your household employee in 2026 (for example a nanny in your home), and the total amount actually paid to that provider in 2026 (Form 2441 Part I, lines 1a to 1e; Form W-10 can be used to collect it). Also any dependent care benefits received from [...]
-- **Aliases:** dependent care provider information, care provider information, child care provider information, provider taxpayer ID, Form W-10, child care receipts, dependent care receipts
+- **Aliases:** dependent care provider information, care provider information, child care provider information, provider taxpayer ID, Form W-10, child care receipts, dependent care receipts, childcare provider, child care provider name and taxpayer ID, child care provider, dependent care provider, child care expenses, dependent care expenses, daycare
 - **Your call:** 
 
 ## R019
@@ -379,7 +379,7 @@ For each rule, reply in chat with one of: **verify**, **exclude** (with a reason
   - An SSN is required for every dependent listed, not only new ones; the rule assumes prior-year dependents are already on file, which a reviewer should confirm.
   - For pending adoptions the FAQ points to an ATIN (Form W-7A), which expires 2 years after issue and supports only the credit for other dependents, not the CTC/ACTC; the intake should record which identifier the client has.
 - **Suggested document wording (not applied):** A copy of the new dependent's Social Security card (name and number as printed) and their date of birth; if the SSN has not been issued, the date it was applied for, or an ATIN (Form W-7A) for a pending adoption, or an ITIN for a dependent who cannot get an SSN; for a child born and died in 2026 without an SSN, a birth certificate, death certificate, or hospital record showing live birth
-- **Aliases:** dependent Social Security number, dependent SSN, dependent date of birth, Social Security card for dependent, new dependent information
+- **Aliases:** dependent Social Security number, dependent SSN, dependent date of birth, Social Security card for dependent, new dependent information, Social Security number, Social Security card, SSN, date of birth
 - **Your call:** 
 
 ## R020
@@ -415,7 +415,7 @@ For each rule, reply in chat with one of: **verify**, **exclude** (with a reason
   - The trigger should be renting out any real property during 2026, not receiving a 1099. That includes short-term or vacation rentals through platforms, renting a room or part of the home, and renting to relatives. Topic 414 says the cash or fair market value of property or services received for use of the property is rental income. With the [...]
   - Edge cases that change the schedule or remove the reporting: Publication 527 says rent from a dwelling used as a home and rented less than 15 days is not included in income. Substantial services for the tenant's convenience go on Schedule C (Topic 414). Personal property rentals do not go on Schedule E. Farm rental income may go on Form 4835. The [...]
 - **Suggested document wording (not applied):** For each rental real estate property: rents and other amounts received (including the fair market value of any property or services received as rent), expenses paid, the number of days rented at a fair rental price and the number of days of personal use, purchase, improvement, and prior depreciation records, a dated mileage log if car expenses are claimed, and any Forms 1099-MISC or 1099-K received
-- **Aliases:** rental income records, rental expense records, rental property records, Schedule E records
+- **Aliases:** rental income records, rental expense records, rental property records, Schedule E records, rental records, records of rental income, rental property income, rental property expenses
 - **Your call:** 
 
 ## R022
@@ -433,7 +433,7 @@ For each rule, reply in chat with one of: **verify**, **exclude** (with a reason
   - The trigger should be any 2026 estimated payment, by any method: Direct Pay, EFTPS, Online Account, card, check with voucher, or a 2025 overpayment applied to 2026. The IRS sends no year-end form listing these payments, so the client's records or Online Account are the only sources. Watch for timing errors: the payment made in January 2026 for the [...]
   - Line 26 only needs the total. Payment dates matter for the underpayment penalty on Form 2210: Publication 505 says you may be charged a penalty if you don't pay enough by each due date. Keep the dates in the request even though the return line shows only the total.
 - **Suggested document wording (not applied):** Date and amount of each federal estimated tax payment for tax year 2026 (including the payment made in January 2027, any 2025 overpayment applied to 2026, and any estimated tax credited by a trust), and the name and SSN each payment was made under, for example from the Record of Estimated Tax Payments, Direct Pay or EFTPS confirmations, or IRS Online Account payment history
-- **Aliases:** estimated tax payments, estimated payment records, 1040-ES, Form 1040-ES, estimated payment dates and amounts, Record of Estimated Tax Payments
+- **Aliases:** estimated tax payments, estimated payment records, 1040-ES, Form 1040-ES, estimated payment dates and amounts, Record of Estimated Tax Payments, estimated payments, estimated tax payment records, estimated tax, estimated taxes
 - **Your call:** 
 
 ## R023
@@ -487,7 +487,7 @@ For each rule, reply in chat with one of: **verify**, **exclude** (with a reason
   - Itemizers face a new 0.5% of AGI floor and a top-bracket reduction starting in 2026 (Pub 505 (2026)); Topic 506 does not yet mention the floor or the donor-advised fund exclusion.
   - Substantiation tiers to confirm: a bank record or written communication for any cash gift; a contemporaneous written acknowledgment for a single gift of $250 or more; Form 8283 if noncash deductions exceed $500; a qualified appraisal for items or groups over $5,000; reduce the deduction by the value of any benefit received (quid pro quo). Topic [...]
 - **Suggested document wording (not applied):** Charitable gift records: for each cash gift, a bank or card record, canceled check, or receipt or letter from the charity showing its name, the date, and the amount; for any single gift of $250 or more, a written acknowledgment from the charity stating the amount and whether goods or services were given in return; for noncash gifts, records supporting Form 8283 when over $500 and a qualified appraisal for any item or group over $5,000
-- **Aliases:** charitable receipts, donation receipts, charitable contribution receipts, written acknowledgment, contemporaneous written acknowledgment, Form 8283
+- **Aliases:** charitable receipts, donation receipts, charitable contribution receipts, written acknowledgment, contemporaneous written acknowledgment, Form 8283, charitable contributions, charitable donations, receipts and acknowledgments
 - **Your call:** 
 
 ## R026
@@ -505,7 +505,7 @@ For each rule, reply in chat with one of: **verify**, **exclude** (with a reason
   - Secondary sources mentioned a box 12 code TS for tips in a specified service trade or business in a W-2 draft. The final 2026 W-2/W-3 instructions I read listed codes TA, TP, and TT and did not show TS; verify.
   - Form 4137 is for employees' tips not reported to the employer (and allocated tips); it does not cover self-employed tip income. Confirm how allocated tips in W-2 box 8 are treated for the deduction in the final 2026 instructions.
 - **Suggested document wording (not applied):** Tip records and how they were reported: Form W-2 (box 12 code TP for cash tips reported to the employer, box 14b Treasury Tipped Occupation Code, box 7 social security tips, box 8 allocated tips); any Form 1099-NEC, 1099-MISC, or 1099-K showing qualified tips for self-employed work; the client's daily tip record (such as Form 4070-A) and copies of monthly tip reports given to the employer (such as Form 4070), used to figure any tips not reported [...]
-- **Aliases:** tip records, tip income records, Form 4070, tips reported to employer
+- **Aliases:** tip records, tip income records, Form 4070, tips reported to employer, tips received, tip income
 - **Your call:** 
 
 ## R027
@@ -523,7 +523,7 @@ For each rule, reply in chat with one of: **verify**, **exclude** (with a reason
   - Source is a PDF fact sheet, not a stable HTML page; the only HTML FAQ page (FS-2026-01) is marked superseded. The FAQs are not published in the Internal Revenue Bulletin and may be updated.
   - 2026 Schedule 1-A and its instructions are draft or not yet released.
 - **Suggested document wording (not applied):** Overtime records and how the employer reported them: Form W-2 with box 12 code TT (qualified overtime compensation, the FLSA-required premium above the regular rate); Form 1099-NEC box 1d or Form 1099-MISC box 14 in the rare case the client was an FLSA employee treated as a contractor; corrected Form W-2c if the code TT amount is missing or understated (a substitute Form 4852 does not count); pay stubs or payroll records to check the amount
-- **Aliases:** overtime records, overtime pay records, overtime pay statement
+- **Aliases:** overtime records, overtime pay records, overtime pay statement, overtime pay documentation, overtime compensation
 - **Your call:** 
 
 ## R028
@@ -593,7 +593,7 @@ For each rule, reply in chat with one of: **verify**, **exclude** (with a reason
   - Trigger wording should key on the date installation was completed (or, for new construction, the date the client began using the home), not on the payment or contract date. A system paid for in 2025 but finished in 2026 gets nothing; a system finished in 2025 belongs on the 2025 return (or an amended 2025 return), not the 2026 return.
   - The IRS Residential Clean Energy Credit page (last reviewed 04-Jul-2026) uses different wording ('placed in service after December 31, 2025') and still carries stale text about claiming the credit 'until the credit begins to phase out in 2033'. Rely on FS-2025-05 FAQ 7 and the 2026 draft Form 5695 instructions.
   - 'Nothing federal' is about the credit only. The residential clean energy page notes that some state energy incentives labeled as rebates could be included in gross income, so a reviewer should confirm whether a separate rule asks about state or utility incentive payments received in 2026.
-- **Aliases:** Form 5695, 5695, solar receipt, solar invoice, clean energy invoice, residential clean energy credit
+- **Aliases:** Form 5695, 5695, solar receipt, solar invoice, clean energy invoice, residential clean energy credit, solar panel, solar installation, solar energy system
 - **Your call:** 
 
 ## T002
@@ -609,7 +609,7 @@ For each rule, reply in chat with one of: **verify**, **exclude** (with a reason
   - The IRS Energy Efficient Home Improvement Credit page (last reviewed 28-Apr-2026) says property placed in service 'before December 31, 2025', while FS-2025-05 and the draft 2026 instructions say the credit ends for property placed in service 'after December 31, 2025'. This only matters for a December 31, 2025 install on a 2025 return, but a [...]
   - Do not let this trap suppress a separate request for a prior-year Form 5695 when the household also has an unused residential clean energy (25D) carryforward; the 2026 Form 5695 still exists for that.
   - 'Nothing federal' assumes a personal residence. Energy improvements to a rental property or business-use space can be capital or depreciation items on other schedules, and some state incentives labeled as rebates may be taxable income per the IRS 25C page. A reviewer should confirm other rules cover those.
-- **Aliases:** Form 5695, 5695, energy efficiency receipts, home energy improvement receipts, manufacturer certification statement, energy efficient home improvement credit
+- **Aliases:** Form 5695, 5695, energy efficiency receipts, home energy improvement receipts, manufacturer certification statement, energy efficient home improvement credit, energy-efficient, energy efficiency
 - **Your call:** 
 
 ## T003
@@ -625,6 +625,6 @@ For each rule, reply in chat with one of: **verify**, **exclude** (with a reason
   - If a dealer applied a point-of-sale credit transfer at a 2026 delivery, Form 8936 and Schedule A are mandatory, and the draft 2026 instructions say the client must repay the transferred amount if they no longer qualify. Request the seller report in that case rather than treating it as nothing.
   - This trap must not suppress separate 2026 rules that an EV purchase can trigger: the car loan interest deduction (new vehicle, final assembly in the US, personal use, loan after 2024, up to $10,000) and the home charger credit (30C) for chargers placed in service by June 30, 2026. Both were confirmed on IRS pages fetched in this session.
   - A leased EV never gives the lessee the credit (the draft instructions say only the lessor is entitled), so the trap also holds for leases; business-use EVs fall under 45W, which ended on the same acquisition date, but depreciation for business use is a separate item.
-- **Aliases:** Form 8936, 8936, clean vehicle credit, EV purchase agreement, seller report, time of sale report
+- **Aliases:** Form 8936, 8936, clean vehicle credit, EV purchase agreement, clean vehicle seller report, time of sale report
 - **Your call:** 
 
