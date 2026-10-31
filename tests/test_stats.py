@@ -14,6 +14,7 @@ from eval.stats import (
     Household,
     bootstrap,
     bootstrap_difference,
+    bootstrap_ratio,
     breakdown,
     group_values,
     households,
@@ -148,7 +149,7 @@ def test_metrics_on_known_households():
     assert METRICS["unnecessary_per_household"](hs) == (2 / 3 + 0) / 2
     assert METRICS["trap_requests_per_household"](hs) == (1 / 3 + 0) / 2
     assert METRICS["median_questions"](hs) == 10
-    assert METRICS["median_question_ratio"](hs) == 0.25
+    assert METRICS["median_per_run_question_ratio"](hs) == 0.25
     assert METRICS["cost_per_household_usd"](hs) == pytest.approx((0.02 + 0.02) / 2)
     assert METRICS["latency_per_household_s"](hs) == pytest.approx(20.0)
 
@@ -156,7 +157,7 @@ def test_metrics_on_known_households():
 def test_metric_names():
     assert list(METRICS) == [
         "pass_rate", "pass_k", "missed_document_rate", "unnecessary_per_household",
-        "trap_requests_per_household", "median_questions", "median_question_ratio",
+        "trap_requests_per_household", "median_questions", "median_per_run_question_ratio",
         "cost_per_household_usd", "latency_per_household_s", "probe_not_delivered_rate"]
 
 
@@ -164,7 +165,7 @@ def test_metrics_without_data_are_none():
     empty = household(runs=1, required=0, questions=(), ratios=(), costs=(), latencies=())
     assert stats.missed_document_rate([empty]) is None
     assert stats.median_questions([empty]) is None
-    assert stats.median_question_ratio([empty]) is None
+    assert stats.median_per_run_question_ratio([empty]) is None
     assert stats.cost_per_household_usd([empty]) is None
     assert stats.latency_per_household_s([empty]) is None
     for name, metric in METRICS.items():
@@ -315,3 +316,36 @@ def test_bootstrap_difference_none_when_a_side_has_no_data():
 def test_bootstrap_difference_without_common_households():
     result = bootstrap_difference([score("H1", True)], [score("H2", True)], "pass_rate", draws=20)
     assert result == {"estimate": None, "low": None, "high": None, "n_households": 0}
+
+
+def test_bootstrap_ratio_is_criterion_2s_ratio_of_medians():
+    # B1 asks 36 to 39 questions; per-run ratios to each household's B1 count land above 0.50 while the
+    # agent's median count over B1's lands below it, so the two readings must not share a name.
+    b1 = {"H1": 36, "H2": 39, "H3": 39}
+    agent = {"H1": 19, "H2": 19, "H3": 20}
+    a = [score(h, True, questions_asked=q, question_ratio_vs_full_organizer=q / b1[h]) for h, q in agent.items()]
+    b = [score(h, True, config="B1", questions_asked=q) for h, q in b1.items()]
+    result = bootstrap_ratio(a, b, "median_questions", draws=200)
+    assert result["estimate"] == pytest.approx(19 / 39) and result["n_households"] == 3
+    assert result["low"] <= result["estimate"] <= result["high"]
+    assert set(result) == {"estimate", "low", "high", "n_households"}
+    assert stats.median_per_run_question_ratio(households(a)) == pytest.approx(20 / 39)
+
+
+def test_bootstrap_ratio_uses_common_households_and_pairs_them():
+    a = [score("H1", True, questions_asked=10), score("H2", True, questions_asked=20),
+         score("H3", True, questions_asked=99)]
+    b = [score("H1", True, config="B1", questions_asked=40), score("H2", True, config="B1", questions_asked=40),
+         score("H9", True, config="B1", questions_asked=1)]
+    result = bootstrap_ratio(a, b, "median_questions", draws=300)
+    assert result["estimate"] == pytest.approx(15 / 40) and result["n_households"] == 2
+    # Every draw resamples H1 and H2 together, so the ratio is 10/40, 15/40, or 20/40.
+    assert result["low"] >= 0.25 and result["high"] <= 0.5
+
+
+def test_bootstrap_ratio_is_none_when_the_denominator_is_zero_or_missing():
+    a = [score("H1", True, questions_asked=5)]
+    zero = bootstrap_ratio(a, [score("H1", True, config="B2", questions_asked=0)], "median_questions", draws=20)
+    assert zero == {"estimate": None, "low": None, "high": None, "n_households": 1}
+    none = bootstrap_ratio(a, [score("H2", True, config="B1")], "median_questions", draws=20)
+    assert none == {"estimate": None, "low": None, "high": None, "n_households": 0}

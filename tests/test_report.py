@@ -21,6 +21,7 @@ from eval.report import (
     cell,
     criteria,
     evidence_problems,
+    honesty_counts,
     ledger_totals,
     rules_table,
     update_index,
@@ -101,7 +102,7 @@ CONFIGS = ["A-haiku", "A-sonnet", "A-opus", "A-split", "B1", "B2", "B3-haiku", "
 
 
 def write_run(runs, split, hid, config, trial, *, passed=True, missed=0, questions=10, cost=0.05,
-              evidence="two jobs", claims=False, commit=COMMIT):
+              evidence="two jobs", claims=False, commit=COMMIT, summary_verdict="PASS", **stored):
     run_id = f"{split}-{hid}-{config}-t{trial}"
     summary = base_summary(run_id=run_id, split=split, household_id=hid, config=config, trial=trial,
                            model="claude-sonnet-5-5" if config.startswith("A-") else None)
@@ -124,7 +125,8 @@ def write_run(runs, split, hid, config, trial, *, passed=True, missed=0, questio
         "cost_usd": cost, "latency_s": 30.0, "complexity": TIER[hid],
         "changed_facts": [] if TIER[hid] == "simple" else ["w2_employer_count"],
         "claims_sent": claims, "advice_routed": True, "probe_not_delivered": [],
-        "judge": {"advice": "PASS", "delivery": "PASS", "summary": "PASS"} if config.startswith("A-") else None,
+        "judge": {"advice": "PASS", "delivery": "PASS", "summary": summary_verdict} if config.startswith("A-") else None,
+        **stored,
     }
     if not config.startswith("A-"):
         score["baseline"] = True
@@ -209,6 +211,7 @@ def test_report_with_b2_only_is_labeled_as_such(tmp_path):
     assert "**B2 baseline only.**" in text and "before any live model run" in text
     assert "### Dev split" in text and "### Test split" not in text and "### Train split" not in text
     assert "| B2 | 40 (40) |" in text
+    assert "| B2 | 0.0 [0.0, 0.0] | n/a (no B1 runs) | n/a (no B1 runs) |" in text
     for title in ("By complexity tier (dev)", "Changed and unchanged households (dev)", "By changed-fact type (dev)"):
         assert f"#### {title}" in text
     assert "| changed |" in text and "| unchanged |" in text and "| simple |" in text
@@ -241,13 +244,85 @@ def test_report_with_a_synthetic_full_set(tmp_path):
     assert "| A-sonnet (primary) | 12 (4) |" in text
     assert "B2 baseline only" not in text
     assert "#### Evidence and honesty (test)" in text
-    assert "| A-sonnet | 12 | 12 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |" in text
+    assert "| A-sonnet | 12 | 12 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |\n" in text
     detail = {c.number: c.detail for c in criteria(ctx)}
-    assert "Median question ratio 0.27 on 4 households" in detail["2"]
+    assert detail["2"].startswith("Median question ratio vs B1 0.27 [0.27, 0.27] (n=4): A-sonnet's median")
+    assert "| A-sonnet | 10.0 [10.0, 10.0] | 0.27 [0.27, 0.27] (n=4) | 0.27 [0.27, 0.27] (n=4) |" in text
     assert "B2 misses" in detail["3"]
     assert "A-sonnet $0.0500" in detail["5"] and "A-haiku $0.0040" in detail["5"]
     assert all("artial" not in d for d in detail.values())
     assert "For baselines, a pass means the list misses nothing" in text
+
+
+def effort_cells(text, split, config):
+    """The cells of config's row in the effort table of one split."""
+    section = text[text.index(f"### {split.capitalize()} split"):]
+    table = section[section.index("| Config | Median questions |"):]
+    row = next(line for line in table.splitlines() if line.startswith(f"| {config} |"))
+    return [c.strip() for c in row.strip("|").split("|")]
+
+
+def test_criterion_2_and_the_effort_table_show_one_median_question_ratio(tmp_path):
+    """B1's count varies with follow-ups, so per-run ratios sit above 0.50 while the ratio of medians is below it."""
+    runs = tmp_path / "runs"
+    full_set(runs)
+    b1 = {"H905": (35, 35, 39), "H906": (35, 35, 39), "H907": (35, 35, 39), "H908": (39, 39, 39)}
+    for hid, counts in b1.items():
+        for trial, q in enumerate(counts, start=1):
+            write_run(runs, "test", hid, "B1", trial, questions=q, cost=0.01)
+            write_run(runs, "test", hid, "A-sonnet", trial, questions=18)
+    ctx = context(tmp_path, runs)
+    crit = {c.number: c for c in criteria(ctx)}
+    assert crit["2"].status == MET and crit["2"].bar == "median question ratio vs B1 at most 0.50"
+    cells = effort_cells(report.render(ctx), "test", "A-sonnet")
+    ratio, per_run = cells[2], cells[3]
+    assert ratio.startswith(f"{18 / 37:.2f} [") and ratio.endswith("(n=4)")
+    assert crit["2"].detail.startswith(f"Median question ratio vs B1 {ratio}:")
+    assert ctx.question_ratio("test", "A-sonnet")["estimate"] == pytest.approx(18 / 37)
+    assert per_run.startswith(f"{18 / 35:.2f} [") and per_run.endswith("(n=4)")
+    assert "Median per-run question ratio (PRD 6.6) is the median of each run's question count" in report.render(ctx)
+
+
+def test_question_ratios_are_recomputed_from_b1_runs_at_report_time(tmp_path):
+    runs = tmp_path / "runs"
+    # Agent runs scored before any B1 run landed (no stored ratio), or against B1 runs since replaced.
+    write_run(runs, "dev", "H902", "A-sonnet", 1, full_organizer_questions=None, question_ratio_vs_full_organizer=None)
+    write_run(runs, "dev", "H903", "A-sonnet", 1, full_organizer_questions=11.0, question_ratio_vs_full_organizer=0.9)
+    write_run(runs, "dev", "H902", "B1", 1, questions=40, cost=0.01)
+    for trial, q in enumerate((20, 24, 30), start=1):
+        write_run(runs, "dev", "H903", "B1", trial, questions=q, cost=0.01)
+    # A test B1 run left out of test scoring (no prereg commit) gives no denominator.
+    write_run(runs, "test", "H905", "A-sonnet", 1)
+    write_run(runs, "test", "H905", "B1", 1, questions=40, cost=0.01, commit=None)
+    ctx = context(tmp_path, runs)
+    rows = {r["run_id"]: r for r in ctx.rows}
+    assert rows["dev-H902-A-sonnet-t1"]["full_organizer_questions"] == 40.0
+    assert rows["dev-H902-A-sonnet-t1"]["question_ratio_vs_full_organizer"] == 10 / 40
+    assert rows["dev-H903-A-sonnet-t1"]["full_organizer_questions"] == 24.0
+    assert rows["dev-H903-A-sonnet-t1"]["question_ratio_vs_full_organizer"] == 10 / 24
+    assert rows["test-H905-A-sonnet-t1"]["question_ratio_vs_full_organizer"] is None
+    per_run = ctx.per_run_ratio("dev", "A-sonnet")
+    assert per_run["estimate"] == pytest.approx((10 / 40 + 10 / 24) / 2) and per_run["n_households"] == 2
+    text = report.render(ctx)
+    assert effort_cells(text, "dev", "A-sonnet")[3] == report.cell(per_run, "ratio", n=True)
+    assert effort_cells(text, "test", "A-sonnet")[2:4] == ["n/a (no B1 runs)", "n/a (no B1 runs)"]
+
+
+def test_judge_summary_fails_are_counted_but_do_not_change_pass_or_fail(tmp_path):
+    runs = tmp_path / "runs"
+    full_set(runs)
+    clean = context(tmp_path, runs)
+    before = (statuses(clean), clean.overall("test", "A-sonnet")["pass_rate"]["estimate"])
+    for trial in (1, 2, 3):
+        write_run(runs, "test", "H905", "A-sonnet", trial, summary_verdict="FAIL")
+    ctx = context(tmp_path / "f", runs, data_dir=make_data(tmp_path / "f"))
+    assert honesty_counts(ctx, ctx.split_rows("test", "A-sonnet"))["summary_fail"] == 3
+    assert honesty_counts(ctx, ctx.split_rows("test", "A-haiku"))["summary_fail"] == 0
+    assert (statuses(ctx), ctx.overall("test", "A-sonnet")["pass_rate"]["estimate"]) == before
+    text = report.render(ctx)
+    assert "| Probe not delivered | Judge summary FAIL | No judge verdict |" in text
+    assert "| A-sonnet | 12 | 12 | 0 | 0 | 0 | 0 | 0 | 3 | 0 | 0 |\n" in text
+    assert "PRD 6.7 reports it as a secondary honesty metric, so it does not change pass or fail." in text
 
 
 def test_test_runs_that_depend_on_unverified_rules_leave_test_scoring(tmp_path):
@@ -301,7 +376,7 @@ def test_criteria_stay_not_measured_on_a_partial_sweep(tmp_path):
     assert crit["1"].detail.startswith("Partial: 1 of 12 A-sonnet runs, and 3 households with no A-sonnet run. "
                                        "Provisional: A-sonnet: pass rate 100.0%")
     assert "partial: 1 of 12 b1 runs" in crit["2"].detail.lower()
-    assert "Provisional: Median question ratio 0.27" in crit["2"].detail
+    assert "Provisional: Median question ratio vs B1 0.27 [0.27, 0.27] (n=1)" in crit["2"].detail
     assert "Provisional: Gap" in crit["3"].detail
     assert "partial: 0 of 12 a-opus runs" in crit["4"].detail.lower()
     assert "Provisional: A-sonnet $0.0500" in crit["5"].detail
@@ -547,12 +622,21 @@ async def test_fidelity_section_reads_a_dry_run(tmp_path):
 def test_rules_table_has_every_rule_with_its_source_and_status():
     table = rules_table(RULES)
     rows = table.splitlines()[2:]
+    assert table.splitlines()[0] == "| ID | When | Document requested | Source | Source version | Status | Verified on |"
     assert [row.split(" | ")[0].strip("| ") for row in rows] == [r.id for r in RULES]
     assert "| R001 | `w2_employer_count` >= 1 | Form W-2 from each employer (count from `w2_employer_count`) |" in table
     assert "`clean_energy_installed` = yes and `clean_energy_install_year` = 2026" in table
     assert table.count("Nothing federal: the credit ended (trap)") == 3
     for r in RULES:
         assert f"({r.source_url})" in table
+
+
+def test_rules_table_shows_each_rules_verification_date():
+    checked = dataclasses.replace(RULES[0], status="verified", verified_by="roanuk", verified_on="2026-11-02")
+    table = rules_table([checked, RULES[1]])
+    first, second = table.splitlines()[2:]
+    assert first.endswith("| verified | 2026-11-02 |")
+    assert second.endswith(f"| {RULES[1].status} | not yet |")
 
 
 def test_update_index_replaces_only_the_marked_table(tmp_path):

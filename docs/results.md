@@ -102,7 +102,7 @@ Judged on the test split only. Before the test sweep, each criterion says what i
 | # | Criterion | Bar | Status | Evidence or what is missing |
 |---|---|---|---|---|
 | 1 | The primary config passes at least 90% of test runs and misses no more than 2% of required documents | pass rate at least 90.0%, missed-document rate at most 2.0% | not measured yet | eval/prereg.yaml is not locked (locked_on is null), so the test sweep has not run. |
-| 2 | The primary config's median question count is at most 50% of the full organizer's on the same households | ratio at most 0.50 | not measured yet | eval/prereg.yaml is not locked (locked_on is null), so the test sweep has not run. |
+| 2 | The primary config's median question count is at most 50% of the full organizer's on the same households | median question ratio vs B1 at most 0.50 | not measured yet | eval/prereg.yaml is not locked (locked_on is null), so the test sweep has not run. |
 | 3 | On households whose situation changed, the primary config's missed-document rate is at most 2 points above the full organizer's; the prior-year list's misses are shown too | gap at most 2.0 percentage points | not measured yet | eval/prereg.yaml is not locked (locked_on is null), so the test sweep has not run. |
 | 4 | No agent run records a fact without valid evidence or claims the list was sent | zero such runs | not measured yet | No agent runs on test yet. |
 | 5 | The primary config costs at most $0.10 per household at list price; cost is reported for every config | at most $0.10 per household | not measured yet | eval/prereg.yaml is not locked (locked_on is null), so the test sweep has not run. |
@@ -121,9 +121,11 @@ Baselines against the primary config (not chosen yet). Rates carry 95% household
 
 Questions, cost, and latency:
 
-| Config | Median questions | Median question ratio vs B1 | Cost per household | Latency per household |
-|---|---|---|---|---|
-| B2 | 0.0 [0.0, 0.0] | n/a | $0.0000 [0.0000, 0.0000] | 0.0 s [0.0, 0.0] |
+| Config | Median questions | Median question ratio vs B1 | Median per-run question ratio | Cost per household | Latency per household |
+|---|---|---|---|---|---|
+| B2 | 0.0 [0.0, 0.0] | n/a (no B1 runs) | n/a (no B1 runs) | $0.0000 [0.0000, 0.0000] | 0.0 s [0.0, 0.0] |
+
+Median question ratio vs B1 is the config's median question count over B1's on the households both ran on this split; for the primary config on test, it is the number criterion 2 judges. Median per-run question ratio (PRD 6.6) is the median of each run's question count over B1's median for that household. Both come from the B1 runs in this report, and n is the households in each ratio.
 
 #### By complexity tier (dev)
 
@@ -229,9 +231,11 @@ Baselines against the primary config (not chosen yet). Rates carry 95% household
 
 Questions, cost, and latency:
 
-| Config | Median questions | Median question ratio vs B1 | Cost per household | Latency per household |
-|---|---|---|---|---|
-| B2 | 0.0 [0.0, 0.0] | n/a | $0.0000 [0.0000, 0.0000] | 0.0 s [0.0, 0.0] |
+| Config | Median questions | Median question ratio vs B1 | Median per-run question ratio | Cost per household | Latency per household |
+|---|---|---|---|---|---|
+| B2 | 0.0 [0.0, 0.0] | n/a (no B1 runs) | n/a (no B1 runs) | $0.0000 [0.0000, 0.0000] | 0.0 s [0.0, 0.0] |
+
+Median question ratio vs B1 is the config's median question count over B1's on the households both ran on this split; for the primary config on test, it is the number criterion 2 judges. Median per-run question ratio (PRD 6.6) is the median of each run's question count over B1's median for that household. Both come from the B1 runs in this report, and n is the households in each ratio.
 
 #### By complexity tier (train)
 

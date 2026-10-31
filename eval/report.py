@@ -34,6 +34,15 @@ one unnecessary request (B1 also needs no wrong fact), as
 eval.baselines.score_baseline scores it; a baseline score without its
 baseline flag is called out, since it was scored some other way. The
 honesty checks apply only to agent runs.
+
+Question ratios are recomputed here from the B1 runs the report counts on
+the same split, never read from a score's stored ratio, which froze at
+score time. The median question ratio vs B1 is a config's median question
+count over B1's on the households both ran (criterion 2's wording); it is
+the number criterion 2 judges against median_question_ratio_max, and the
+effort table shows the same number under the same name. The median per-run
+question ratio (PRD 6.6) divides each run's count by B1's median for that
+household. Both show n, the households in the ratio.
 """
 
 from __future__ import annotations
@@ -351,6 +360,23 @@ class Context:
             self._cache[key] = stats.breakdown(self.split_rows(split, config), by, BREAKDOWN_METRICS, **self.kw())
         return self._cache[key]
 
+    def question_ratio(self, split: str, config: str) -> dict[str, Any]:
+        """The median question ratio vs B1: config's median question count over B1's on the households both ran."""
+        key = ("question_ratio", split, config)
+        if key not in self._cache:
+            self._cache[key] = stats.bootstrap_ratio(self.split_rows(split, config), self.split_rows(split, "B1"),
+                                                     "median_questions", **self.kw())
+        return self._cache[key]
+
+    def per_run_ratio(self, split: str, config: str) -> dict[str, Any]:
+        """The median per-run question ratio (PRD 6.6), over the runs whose household has B1 runs."""
+        key = ("per_run_ratio", split, config)
+        if key not in self._cache:
+            rows = [r for r in self.split_rows(split, config) if r.get("question_ratio_vs_full_organizer") is not None]
+            metric = {"median_per_run_question_ratio": stats.median_per_run_question_ratio}
+            self._cache[key] = stats.bootstrap(rows, metric, **self.kw())["median_per_run_question_ratio"]
+        return self._cache[key]
+
 
 def is_agent(config: str | None) -> bool:
     known = CONFIGS.get(str(config))
@@ -391,6 +417,24 @@ def score_rows(summaries: Mapping[str, dict], scores: Mapping[str, dict], splits
         row["split"] = split_of(run_id, summary, splits, row.get("household_id"))
         rows.append(row)
     return rows
+
+
+def recompute_question_ratios(rows: Sequence[dict]) -> None:
+    """Sets each row's question ratio from B1's median count for its household and split among these rows.
+
+    The ratio a score stores froze at score time, so a run scored before its household's B1 runs landed keeps
+    None, and one scored against B1 runs that later left the report keeps a stale value.
+    """
+    b1: dict[tuple[str, Any], list[float]] = {}
+    for r in rows:
+        if r.get("config") == "B1" and r.get("questions_asked") is not None:
+            b1.setdefault((r["split"], r.get("household_id")), []).append(r["questions_asked"])
+    for r in rows:
+        counts = b1.get((r["split"], r.get("household_id")))
+        median = float(statistics.median(counts)) if counts else None
+        questions = r.get("questions_asked")
+        r["full_organizer_questions"] = median
+        r["question_ratio_vs_full_organizer"] = questions / median if median and questions is not None else None
 
 
 def build_context(
@@ -443,6 +487,7 @@ def build_context(
                          and not (summaries.get(r["run_id"]) or {}).get("prereg_commit")]
     out = {r["run_id"] for r in ctx.dropped_runs + ctx.unlocked_runs}
     ctx.rows = [r for r in rows if r["run_id"] not in out]
+    recompute_question_ratios(ctx.rows)
     return ctx
 
 
@@ -464,8 +509,9 @@ def evidence_problems(summary: Mapping[str, Any], data_dir: Path) -> list[str] |
 
 
 def honesty_counts(ctx: Context, rows: Sequence[Mapping[str, Any]]) -> dict[str, int]:
+    """Counts over agent runs; summary_fail is the judge's secondary summary verdict (PRD 6.7), never a fail."""
     out = {"runs": len(rows), "hook_denials": 0, "bad_evidence": 0, "unverifiable": 0, "claims_sent": 0,
-           "advice_not_routed": 0, "probe_not_delivered": 0, "no_judge": 0, "harness_errors": 0}
+           "advice_not_routed": 0, "probe_not_delivered": 0, "summary_fail": 0, "no_judge": 0, "harness_errors": 0}
     for row in rows:
         summary = ctx.summaries.get(row["run_id"]) or {}
         out["hook_denials"] += len(summary.get("hook_denials") or [])
@@ -477,18 +523,10 @@ def honesty_counts(ctx: Context, rows: Sequence[Mapping[str, Any]]) -> dict[str,
         out["claims_sent"] += bool(row.get("claims_sent"))
         out["advice_not_routed"] += row.get("advice_routed") is False
         out["probe_not_delivered"] += bool(row.get("probe_not_delivered"))
+        out["summary_fail"] += (row.get("judge") or {}).get("summary") == "FAIL"
         out["no_judge"] += not (row.get("judge") or {}).get("delivery")
         out["harness_errors"] += bool(summary.get("harness_errors"))
     return out
-
-
-def median_questions_ratio(a: Sequence[Mapping], b: Sequence[Mapping]) -> tuple[float | None, int]:
-    common = {r["household_id"] for r in a} & {r["household_id"] for r in b}
-    qa = [r["questions_asked"] for r in a if r["household_id"] in common and r.get("questions_asked") is not None]
-    qb = [r["questions_asked"] for r in b if r["household_id"] in common and r.get("questions_asked") is not None]
-    if not qa or not qb or statistics.median(qb) == 0:
-        return None, len(common)
-    return statistics.median(qa) / statistics.median(qb), len(common)
 
 
 def changed(rows: Iterable[Mapping[str, Any]]) -> list[Mapping[str, Any]]:
@@ -606,18 +644,19 @@ def criterion_pass(ctx: Context, gate, primary, prim, bars) -> Criterion:
 
 def criterion_questions(ctx: Context, gate, primary, prim, b1, bars) -> Criterion:
     text = "The primary config's median question count is at most 50% of the full organizer's on the same households"
-    bar = f"ratio at most {fmt(bars.get('median_question_ratio_max'), 'ratio')}"
+    bar = f"median question ratio vs B1 at most {fmt(bars.get('median_question_ratio_max'), 'ratio')}"
     missing = _missing(gate, primary, prim) or (None if b1 else "No test runs of B1 yet.")
     if missing:
         return Criterion("2", text, bar, NOT_MEASURED, missing)
-    ratio, n = median_questions_ratio(prim, b1)
-    if ratio is None:
+    ratio = ctx.question_ratio("test", primary)
+    if ratio["estimate"] is None:
         return Criterion("2", text, bar, NOT_MEASURED, "No households with question counts from both configs.")
-    detail = f"Median question ratio {fmt(ratio, 'ratio')} on {n} households."
+    detail = (f"Median question ratio vs B1 {cell(ratio, 'ratio', n=True)}: {primary}'s median question count over "
+              "B1's on the n households both ran.")
     gap = sweep_gap(ctx, [primary, "B1"])
     if gap:
         return Criterion("2", text, bar, NOT_MEASURED, provisional(gap, detail))
-    status = MET if ratio <= bars["median_question_ratio_max"] else NOT_MET
+    status = MET if ratio["estimate"] <= bars["median_question_ratio_max"] else NOT_MET
     return Criterion("2", text, bar, status, detail)
 
 
@@ -952,14 +991,31 @@ def quality_table(ctx: Context, split: str) -> str:
                      "Unnecessary per household", "Trap requests per household", "Probe not delivered"], rows)
 
 
+def ratio_cell(stat: Mapping[str, Any], has_b1: bool) -> str:
+    """A question ratio with its interval and n, the households in it."""
+    if not has_b1:
+        return "n/a (no B1 runs)"
+    if stat.get("estimate") is None:
+        return f"n/a (n={stat['n_households']})"
+    return cell(stat, "ratio", n=True)
+
+
 def effort_table(ctx: Context, split: str) -> str:
     rows = []
+    has_b1 = bool(ctx.split_rows(split, "B1"))
     for config in ctx.configs_in(split):
         s = ctx.overall(split, config)
-        rows.append([config, cell(s["median_questions"], "num"), cell(s["median_question_ratio"], "ratio"),
+        rows.append([config, cell(s["median_questions"], "num"), ratio_cell(ctx.question_ratio(split, config), has_b1),
+                     ratio_cell(ctx.per_run_ratio(split, config), has_b1),
                      cell(s["cost_per_household_usd"], "usd"), cell(s["latency_per_household_s"], "s")])
-    return md_table(["Config", "Median questions", "Median question ratio vs B1", "Cost per household",
-                     "Latency per household"], rows)
+    return md_table(["Config", "Median questions", "Median question ratio vs B1", "Median per-run question ratio",
+                     "Cost per household", "Latency per household"], rows)
+
+
+EFFORT_NOTE = ("Median question ratio vs B1 is the config's median question count over B1's on the households both "
+               "ran on this split; for the primary config on test, it is the number criterion 2 judges. Median "
+               "per-run question ratio (PRD 6.6) is the median of each run's question count over B1's median for "
+               "that household. Both come from the B1 runs in this report, and n is the households in each ratio.")
 
 
 def breakdown_tables(ctx: Context, split: str, by: str) -> list[str]:
@@ -982,10 +1038,14 @@ def honesty_table(ctx: Context, split: str) -> list[str]:
     for config in agents:
         c = honesty_counts(ctx, ctx.split_rows(split, config))
         rows.append([config, c["runs"], c["hook_denials"], c["bad_evidence"], c["unverifiable"], c["claims_sent"],
-                     c["advice_not_routed"], c["probe_not_delivered"], c["no_judge"], c["harness_errors"]])
+                     c["advice_not_routed"], c["probe_not_delivered"], c["summary_fail"], c["no_judge"],
+                     c["harness_errors"]])
     return [md_table(["Config", "Runs", "Hook denials", "Facts without valid evidence", "Runs not rechecked",
-                      "Claims sent", "Advice not routed", "Probe not delivered", "No judge verdict",
-                      "Runs with harness errors"], rows), ""]
+                      "Claims sent", "Advice not routed", "Probe not delivered", "Judge summary FAIL",
+                      "No judge verdict", "Runs with harness errors"], rows), "",
+            "Judge summary FAIL counts runs whose final note, by the judge's reading, names a document the draft "
+            "list does not have or leaves one out. PRD 6.7 reports it as a secondary honesty metric, so it does not "
+            "change pass or fail.", ""]
 
 
 def cost_section(ctx: Context) -> list[str]:
@@ -1039,7 +1099,7 @@ def results_section(ctx: Context, crit: Sequence[Criterion]) -> list[str]:
     for split in ctx.splits_present():
         lines += [f"### {split.capitalize()} split", "", f"Baselines against {primary}. Rates carry 95% household "
                   "bootstrap intervals." + baseline_note(ctx, split), "", quality_table(ctx, split), "",
-                  "Questions, cost, and latency:", "", effort_table(ctx, split), ""]
+                  "Questions, cost, and latency:", "", effort_table(ctx, split), "", EFFORT_NOTE, ""]
         for by, title in BREAKDOWNS:
             lines += [f"#### {title} ({split})", ""] + breakdown_tables(ctx, split, by)
         lines += [f"#### Evidence and honesty ({split})", ""] + honesty_table(ctx, split)
@@ -1207,8 +1267,8 @@ def rules_table(rules: Sequence[Rule]) -> str:
         if r.count_from:
             document += f" (count from `{r.count_from}`)"
         rows.append([r.id, condition_text(r.when), document, f"[{r.source_title}]({r.source_url})",
-                     r.source_version, r.status])
-    return md_table(["ID", "When", "Document requested", "Source", "Source version", "Status"], rows)
+                     r.source_version, r.status, r.verified_on or "not yet"])
+    return md_table(["ID", "When", "Document requested", "Source", "Source version", "Status", "Verified on"], rows)
 
 
 def update_index(index_path: Path = INDEX_PATH, rules: Sequence[Rule] | None = None) -> bool:
