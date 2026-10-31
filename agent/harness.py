@@ -25,26 +25,79 @@ Order of a run:
    record_fact goes through the evidence hook; PostToolUse appends to the
    trace. The CLI sends the init frame only after it has the first user
    message, so a failed check can't keep the first model request from
-   starting: the harness interrupts at once and counts what the result
-   message reports.
+   starting: the harness interrupts at once, and since that request may
+   have been cut short, the run settles at no less than its reservation,
+   which covered the request's bound before the session started.
 6. On a 429 that ended the session (ResultMessage.api_error_status 429, an
    assistant message with error rate_limit in a session that ended in error,
    or anthropic.RateLimitError from the simulator), back off and run a fresh
    session, up to MAX_ATTEMPTS, waiting BACKOFF_S and then twice as long
    each time. The planner backs off the same way on its own call.
 7. Settle the ledger with the actual total, write the trace and the summary.
+   A run the month's spend cap stopped writes no summary (see below).
 
-Spend. The agent's cost is ResultMessage.total_cost_usd, or the list price
-of its usage when that is missing; the simulator's and planner's costs come
-from their guards. A run may spend only what it has reserved in the ledger,
-so runs going at once never count on the same headroom and the month can't
-pass SPEND_CAP_USD. When the next call needs more, the run tops its
-reservation up first (Reservation.cover), against the month cap and under
-the ledger's lock, up to RUN_CAP_USD in all. The simulator and planner
-guards top up before each call, by that call's upper bound, and refuse it
-when the ledger won't allow it; the harness interrupts the agent when
-another call priced like its last can't be covered. The CLI's own
-max_budget_usd is a backstop at the most the run could still reserve.
+Spend. A run may spend only what it has reserved in the ledger, so runs
+going at once never count on the same headroom. When the run needs more, it
+tops its reservation up first (Reservation.cover), against the month cap
+and under the ledger's lock, up to RUN_CAP_USD in all. The simulator and
+planner guards top up before each of their HTTP attempts, the anthropic
+client's own retries included, by that attempt's upper bound, and refuse it
+when the ledger won't allow it (see sim.budget).
+
+The agent's calls go through the CLI, so the harness bounds them itself.
+Every agent call asks for at most the config's max_output_tokens
+(CLAUDE_CODE_MAX_OUTPUT_TOKENS). The CLI streams each call's API events,
+since its AssistantMessage usage shows only the stream's opening count (1
+output token). A call counts at its prompt (from message_start) and that
+output cap, with no cache discount, until its message_delta gives the real
+output, and from then on at its list price; each call adds a stream_usage
+event to the trace. A message the CLI writes itself (model <synthetic>,
+such as its "API Error" text after a 429) is no API call and costs nothing.
+Before the agent's next call is sent, the run holds that call's upper bound
+as committed spend: a prompt of the last call's prompt and output, the tool
+results going back, and framing (or, for an attempt's first call, the
+system prompt, the first message, and CLI_PROMPT_TOKENS for the CLI's own
+part), at one token per byte and no cache discount, plus the output cap.
+While a call streams, what is held is that call's own bound. The
+simulator's and planner's guards can't spend what is held. The hold is
+checked, with a top-up if needed, at the start of every attempt and in the
+PostToolBatch hook, which the CLI awaits after a turn's tool calls and
+before it sends their results back to the model. When it can't be covered,
+the attempt never starts, or the hook tells the CLI to stop (continue
+false), so the call is never sent; agent.wiring_check shows the bundled CLI
+honoring both the output cap and the stop. So no agent call that starts an
+attempt or follows a tool call can take a run past what it reserved or past
+RUN_CAP_USD, or, with runs going at once, take the month past
+SPEND_CAP_USD. Holding a whole call's bound costs room: on Opus it is about
+$0.16 of output plus $0.05 per 10,000 prompt tokens, so an A-opus run stops
+with run_cap once it has spent RUN_CAP_USD less that (see agent.configs).
+
+Three kinds of agent call have no hook before them, so the harness checks
+them as early as the stream shows they are coming: the CLI's own follow-up
+to a response that ended without a tool call and without ending the turn
+(it hit the output cap, for one; message_delta shows it), its resume or
+retry after a stream that ended with no message_delta (message_stop shows
+it), and its retry of a request that got no HTTP answer (a system api_retry
+message with no error status shows it, and that request counts at the
+bound held for it, since it may have been billed). In each case the harness
+holds the next call's bound at once, and stops and interrupts when it
+can't be covered. The CLI sends a follow-up or resume within milliseconds,
+and a retry after about half a second, so the call may already be on the
+wire; then it can overshoot by what it costs before the interrupt lands,
+and it counts at its bound. A retry after an error status (a 429, say)
+needs no new hold, since the API bills nothing for the refused request. A
+call still streaming when the session ends, a call cut off mid-stream, a
+request that got no answer, or an interrupt that may have cut a call short
+makes the agent's cost unknown, and the run settles at no less than its
+reservation.
+
+The month cap and the run cap stop a run differently. A run-cap stop is a
+run_cap harness error, and the run is scored. A stop because the month's
+headroom ran out (Reservation.cover reports which limit refused) is a
+month_cap stop: the run settles every line at no less than its
+reservation, writes its trace but no summary, and raises
+ledger.spend.SpendCapExceeded, so the sweep halts and a later sweep runs it
+again under the next free ID.
 
 Retries and the ledger. A run reserves under its run ID, and every attempt
 spends from that one reservation and its top-ups: a 429 retry never
@@ -77,6 +130,7 @@ from claude_agent_sdk import (
     ClaudeSDKClient,
     HookMatcher,
     ResultMessage,
+    StreamEvent,
     SystemMessage,
     TextBlock,
     ToolResultBlock,
@@ -86,8 +140,10 @@ from claude_agent_sdk import (
 
 from agent.ask_client import (
     ASK_CLIENT_TOOL,
+    MONTH_CAP,
     RATE_LIMITED,
     RUN_CAP,
+    STOPPED,
     ClientChannel,
     ProbeSchedule,
     RunControl,
@@ -103,7 +159,7 @@ from ledger.spend import Ledger, RunCapExceeded, SpendCapExceeded, cost_usd, loa
 from rules import engine
 from server.intake import fact_view, rule_view
 from server.tax_server import TOOL_NAMES
-from sim.budget import BudgetedClient, BudgetExceeded, call_bound_usd
+from sim.budget import BudgetedClient, BudgetExceeded
 from sim.simulator import ClientSimulator, reply_text
 
 REPO = Path(__file__).resolve().parent.parent
@@ -122,6 +178,22 @@ BACKOFF_S = 30.0
 DRAIN_TIMEOUT_S = 30.0
 PLANNER_MAX_TOKENS = 4096
 SLACK_USD = 1e-9  # float slack, a billionth of a dollar, so an exactly covered call is not refused
+# Upper bounds, in tokens at one per byte, on what the CLI adds to the agent's prompts. Its own part of
+# the first prompt (its system text, the environment block, and the 9 tool definitions) was under 9,000
+# bytes on CLI 2.1.314. Each later call adds the turn's framing and a reminder line, and each tool
+# result its own framing (or a denial, whose text the PostToolBatch hook does not show).
+CLI_PROMPT_TOKENS = 12_000
+TURN_TOKENS = 256
+RESULT_TOKENS = 256
+# The CLI's own message asking the model to resume a response it cut short, under 400 bytes on CLI 2.1.314.
+RESUME_TOKENS = 512
+# Stop reasons after which the CLI sends no further call on its own; after tool_use the PostToolBatch hook comes first.
+ENDS_TURN = ("end_turn", "stop_sequence")
+TOOL_USE = "tool_use"
+FINAL_USAGE_WAIT_S = 5.0
+STREAM_USAGE = "stream_usage"
+# The model name on a message the CLI writes itself, such as its "API Error" text after a refused request.
+SYNTHETIC_MODEL = "<synthetic>"
 
 INIT_CHECK = "init_check"
 API_ERROR = "api_error"
@@ -260,24 +332,30 @@ class Reservation:
         self.ledger.reserve(line_id, self.model, amount)
         self.lines.append((line_id, round(amount, 6)))
 
-    def cover(self, need_usd: float) -> bool:
-        """True when the reservation covers need_usd, topping it up first when the run cap and the month cap allow."""
+    def cover(self, need_usd: float) -> str | None:
+        """None when the reservation covers need_usd, after a top-up if needed; otherwise the limit that refused.
+
+        RUN_CAP when the run would pass RUN_CAP_USD, MONTH_CAP when the month's
+        spend cap left no room for even the shortfall.
+        """
         if need_usd <= self.reserved + SLACK_USD:
-            return True
+            return None
         short = ceil_usd(need_usd - self.reserved)
         room = round(self.run_cap_usd - self.reserved, 6)
         if short > room:
-            return False
+            return RUN_CAP
+        refused = MONTH_CAP
         for amount in dict.fromkeys((round(min(max(self.step_usd, short), room), 6), short)):
             try:
                 self._add(f"{self.ledger_id}.top{len(self.lines) + 1}", amount)
-            except (SpendCapExceeded, RunCapExceeded):
+            except SpendCapExceeded:
+                refused = MONTH_CAP
                 continue
-            return True
-        return False
-
-    def headroom(self) -> float:
-        return max(0.0, self.ledger.cap_usd - self.ledger.month_to_date())
+            except RunCapExceeded:
+                refused = RUN_CAP
+                continue
+            return None
+        return refused
 
     def settle(self, total_usd: float) -> None:
         """Each line takes the total up to its own amount, in order; the last line takes anything past the reservation.
@@ -294,32 +372,95 @@ class Reservation:
 
 
 class ReservedClient(BudgetedClient):
-    """A BudgetedClient whose limit, before each call, is its share of the run's reservation, topped up for that call."""
+    """A BudgetedClient whose limit, before each attempt, is its share of the run's reservation, topped up for it.
+
+    The anthropic client's own retries are attempts too, so each one tops up
+    before it is sent. When the month's spend cap is what kept the
+    reservation from covering an attempt, it raises SpendCapExceeded instead
+    of BudgetExceeded.
+    """
 
     def __init__(self, client: Any, *, model: str, prices: Mapping[str, Any],
-                 room: Callable[[BudgetedClient, float], float]) -> None:
+                 room: Callable[[BudgetedClient, float], tuple[float, str | None]]) -> None:
         super().__init__(client, model=model, prices=prices, limit_usd=0.0)
         self.room = room
-        self.call_prices = dict(prices)
 
-    async def create(self, kwargs: Mapping[str, Any]) -> Any:
-        self.limit_usd = self.room(self, call_bound_usd(kwargs, self.model, self.call_prices))
-        return await super().create(kwargs)
+    def _admit(self, bound: float) -> None:
+        self.limit_usd, refused = self.room(self, bound)
+        if refused == MONTH_CAP and committed_usd(self) + bound > self.limit_usd:
+            raise SpendCapExceeded(
+                f"the next call could cost ${bound:.6f}, and the month's spend cap leaves no room to reserve it")
+        super()._admit(bound)
+
+
+def first_prompt_tokens(system_prompt: str, prompt: str) -> int:
+    """An upper bound on the prompt of an attempt's first agent call, at one token per byte."""
+    return CLI_PROMPT_TOKENS + len(system_prompt.encode()) + len(prompt.encode())
+
+
+def result_tokens(response: Any) -> int:
+    """An upper bound on one tool result's tokens in the next prompt, at one per byte of its JSON, plus framing."""
+    return len(json.dumps(response, default=str).encode()) + RESULT_TOKENS
+
+
+def synthetic(message: AssistantMessage) -> bool:
+    """A message the CLI wrote itself, with no API call behind it: its "API Error" text after a 429, for one.
+
+    The CLI names its model SYNTHETIC_MODEL; an error message with no usage
+    at all is taken as one too.
+    """
+    if message.model == SYNTHETIC_MODEL:
+        return True
+    return message.error is not None and not any(normalize_usage(message.usage).values())
+
+
+@dataclasses.dataclass
+class AgentCall:
+    """One agent API call as the CLI streams it: message_start gives its prompt, message_delta its output.
+
+    cut is a call whose stream ended (message_stop) with no message_delta,
+    so its output is unknown and it counts at its bound.
+    """
+
+    message_id: str
+    raw: dict[str, Any]
+    held_prompt: int | None
+    usage: dict[str, int] = dataclasses.field(default_factory=dict)
+    streamed: bool = True
+    done: bool = False
+    cut: bool = False
+    stop_reason: str | None = None
+    final: anyio.Event | None = None
+
+    @property
+    def prompt(self) -> int:
+        return self.usage["input_tokens"] + self.usage["cache_read_tokens"] + self.usage["cache_write_tokens"]
 
 
 class Budget:
-    """One run's spend against its reservation: the agent's messages as they stream, plus each guarded client."""
+    """One run's spend against its reservation: the agent's calls as they stream, the hold for its next one, and each guarded client.
 
-    def __init__(self, reservation: Reservation, model: str | None, prices: Mapping[str, Any]) -> None:
+    model and max_output_tokens are the agent's; eval.run and eval.judge make
+    a Budget with no model for guarded clients alone, which never holds
+    anything for an agent.
+    """
+
+    def __init__(self, reservation: Reservation, model: str | None, prices: Mapping[str, Any], *,
+                 max_output_tokens: int = 0) -> None:
         self.reservation = reservation
         self.model = model
         self.prices = dict(prices)
+        self.output_cap = int(max_output_tokens)
         self.agent_done_usd = 0.0
         self.agent_usage = normalize_usage({})
         self.clients: dict[str, ReservedClient] = {}
         self.unknown = False
-        self._messages: dict[str, tuple[float, dict[str, int]]] = {}
-        self.last_call_usd = 0.0
+        self.calls: dict[str, AgentCall] = {}
+        self.last: AgentCall | None = None
+        self.next_prompt: int | None = None
+        self.pending_results = 0
+        self.sent = False
+        self.lost_usd = 0.0
 
     def client(self, name: str, inner: Any, model: str) -> ReservedClient:
         """A guard on inner whose calls spend from this run's reservation."""
@@ -330,61 +471,193 @@ class Budget:
         guard = self.clients.get(name)
         return guard.spent_usd if guard is not None else 0.0
 
+    # The agent's calls.
+
+    def call_bound(self, prompt_tokens: int) -> float:
+        """The most one agent call with this prompt can cost: no cache discount, and the whole output cap."""
+        if self.model is None:
+            return 0.0
+        as_input = cost_usd(self.model, {"input_tokens": prompt_tokens, "output_tokens": self.output_cap},
+                            self.prices, prompt_tokens=prompt_tokens)
+        as_write = cost_usd(self.model, {"cache_write_tokens": prompt_tokens, "output_tokens": self.output_cap},
+                            self.prices, prompt_tokens=prompt_tokens)
+        return max(as_input, as_write)
+
+    def call_cost(self, call: AgentCall) -> float:
+        """A finished call at list price; one still streaming at its bound."""
+        if call.done:
+            return cost_usd(self.model, call.usage, self.prices, prompt_tokens=call.prompt)
+        return self.call_bound(call.prompt)
+
+    def hold(self) -> float:
+        """The bound held for the agent's next call, or 0 when none is pending."""
+        return self.call_bound(self.next_prompt) if self.next_prompt is not None else 0.0
+
+    def follow_up_prompt(self) -> int:
+        """The next call's prompt: the last one's prompt and output (the cap until it is known), the results, and framing."""
+        last = self.last
+        if last is None:
+            return self.pending_results + TURN_TOKENS
+        output = last.usage["output_tokens"] if last.done else self.output_cap
+        return last.prompt + output + self.pending_results + TURN_TOKENS
+
+    def start_attempt(self, first_prompt: int) -> None:
+        self.calls = {}
+        self.last = None
+        self.pending_results = 0
+        self.sent = False
+        self.next_prompt = first_prompt
+
+    def call_started(self, message_id: str, usage: Mapping[str, Any] | None, *, streamed: bool = True) -> AgentCall:
+        """message_start (or, with no stream, the call's first AssistantMessage): at its bound until it finishes."""
+        raw = dict(usage or {})
+        call = AgentCall(message_id=message_id, raw=raw, held_prompt=self.next_prompt, usage=normalize_usage(raw),
+                         streamed=streamed)
+        self.calls[message_id] = call
+        self.last = call
+        self.next_prompt = None
+        self.pending_results = 0
+        self.sent = False
+        return call
+
+    def resume_pending(self) -> None:
+        """The CLI follows a response it cut short with a call of its own, and no hook precedes it: hold that call."""
+        self.next_prompt = self.follow_up_prompt() + RESUME_TOKENS
+
+    def cut_off(self) -> AgentCall | None:
+        """message_stop with no message_delta: the stream ended early, so the call's output is unknown, at its bound."""
+        call = self.last
+        if call is None or not call.streamed or call.done or call.cut:
+            return None
+        call.cut = True
+        self.resume_pending()
+        return call
+
+    def no_answer(self) -> tuple[str, float]:
+        """The CLI will send an agent request again (system api_retry) after the last one got no answer.
+
+        A request that got no answer may have been billed. One that never
+        started streaming counts at the bound held for it, and that bound
+        stays held for the retry; one that had started streaming already
+        counts at its bound, and its retry sends the same prompt.
+        Returns which of the two it was (or "none", when no agent request
+        was open) and what was added.
+        """
+        last = self.last
+        if self.next_prompt is not None and (self.sent or last is None or last.done):
+            lost = self.call_bound(self.next_prompt)
+            self.lost_usd += lost
+            self.sent = True
+            return "pending", lost
+        if last is not None and not last.done:
+            last.cut = True
+            self.next_prompt = max(self.next_prompt or 0, last.prompt)
+            self.sent = True
+            return "streaming", 0.0
+        return "none", 0.0
+
+    def call_finished(self, usage: Mapping[str, Any] | None, stop_reason: str | None) -> AgentCall | None:
+        """message_delta: the streaming call's final usage, which also sizes the hold for any call after it."""
+        call = self.last
+        if call is None or call.done:
+            return None
+        merged = {**call.raw, **{k: v for k, v in dict(usage or {}).items() if v is not None}}
+        call.usage = normalize_usage(merged)
+        call.done = True
+        call.stop_reason = stop_reason
+        self.next_prompt = None if stop_reason in ENDS_TURN else self.follow_up_prompt()
+        if call.final is not None:
+            call.final.set()
+        return call
+
+    async def wait_final(self, timeout_s: float) -> None:
+        """Lets the message reader catch up with the last call's message_delta, which the CLI sent before its hook."""
+        call = self.last
+        if call is not None and call.streamed and not call.done and not call.cut:
+            call.final = call.final or anyio.Event()
+            with anyio.move_on_after(timeout_s):
+                await call.final.wait()
+
+    def add_results(self, tokens: int) -> None:
+        """Tool results on their way back to the model grow the next call's prompt."""
+        self.pending_results += tokens
+        if self.next_prompt is not None:
+            self.next_prompt = self.follow_up_prompt()
+
+    def batch_done(self, tokens: int) -> None:
+        """PostToolBatch: every result of the turn is in, and the next call is pending."""
+        self.pending_results = max(self.pending_results, tokens)
+        self.next_prompt = self.follow_up_prompt()
+
+    def request_sent(self) -> None:
+        """The CLI says it is sending a request (system status requesting): the pending call is on the wire."""
+        if self.next_prompt is not None:
+            self.sent = True
+
+    def request_open(self) -> bool:
+        """Whether an agent request may be on the wire: one pending or one still streaming."""
+        return self.next_prompt is not None or any(not c.done for c in self.calls.values())
+
+    # Totals.
+
     def agent_running(self) -> float:
-        return self.agent_done_usd + sum(cost for cost, _ in self._messages.values())
+        return self.agent_done_usd + self.lost_usd + sum(self.call_cost(c) for c in self.calls.values())
 
     def committed(self) -> float:
-        return self.agent_running() + sum(committed_usd(c) for c in self.clients.values())
+        return self.agent_running() + self.hold() + sum(committed_usd(c) for c in self.clients.values())
 
     def total(self) -> float:
         return round(self.agent_running() + sum(c.spent_usd for c in self.clients.values()), 6)
 
-    def make_room(self, extra_usd: float) -> bool:
-        """True when the reservation covers everything committed plus extra_usd, after a top-up if one is needed."""
+    def make_room(self, extra_usd: float = 0.0) -> str | None:
+        """None when the reservation covers everything committed plus extra_usd, after a top-up if needed; otherwise the limit that refused."""
         return self.reservation.cover(self.committed() + extra_usd)
 
-    def room(self, client: BudgetedClient, bound_usd: float) -> float:
-        """client's limit for a call that could cost bound_usd: the reservation, less everything else committed."""
-        self.make_room(bound_usd)
+    def room(self, client: BudgetedClient, bound_usd: float) -> tuple[float, str | None]:
+        """client's limit for a call that could cost bound_usd (the reservation, less everything else committed), and any refusal."""
+        refused = self.make_room(bound_usd)
         others = self.committed() - committed_usd(client)
-        return self.reservation.reserved - others + SLACK_USD
+        return self.reservation.reserved - others + SLACK_USD, refused
 
-    def backstop(self) -> float:
-        """The CLI's max_budget_usd: the most the run could still reserve, under the run cap and the month's headroom."""
-        most = min(self.reservation.run_cap_usd, self.reservation.reserved + self.reservation.headroom())
-        return round(max(0.0, most - self.total()), 6)
+    def end_attempt(self, result: ResultMessage | None, *, queried: bool, cut_short: bool = False) -> None:
+        """Adds the attempt's agent cost: the larger of the CLI's figure and the streamed calls (open ones at their bound).
 
-    def record_message(self, key: str, usage: Mapping[str, Any] | None) -> None:
-        """Prices one agent API call as it streams; split messages share an ID and count once."""
-        if not usage:
-            return
-        tokens = normalize_usage(dict(usage))
-        prompt = tokens["input_tokens"] + tokens["cache_read_tokens"] + tokens["cache_write_tokens"]
-        cost = cost_usd(self.model, tokens, self.prices, prompt_tokens=prompt)
-        old = self._messages.get(key)
-        if old is None or cost >= old[0]:
-            self._messages[key] = (cost, tokens)
-        self.last_call_usd = cost
-
-    def end_attempt(self, result: ResultMessage | None, *, queried: bool) -> None:
-        streamed_cost = sum(cost for cost, _ in self._messages.values())
+        Requests that got no answer count at their bounds on top. The cost is
+        unknown when there was no result, when a call never finished
+        streaming, when a request got no answer, or when cut_short says an
+        interrupt may have cut off a request the stream never showed.
+        """
+        streamed_cost = self.lost_usd + sum(self.call_cost(c) for c in self.calls.values())
         streamed_usage = normalize_usage({})
-        for _, tokens in self._messages.values():
-            for name, value in tokens.items():
+        for call in self.calls.values():
+            for name, value in call.usage.items():
                 streamed_usage[name] += value
         if result is not None and result.total_cost_usd is not None:
-            cost = float(result.total_cost_usd)
+            cost = max(float(result.total_cost_usd), streamed_cost)
         elif result is not None and result.usage:
-            cost = cost_usd(self.model, result.usage, self.prices)
+            cost = max(cost_usd(self.model, result.usage, self.prices), streamed_cost)
         else:
             cost = streamed_cost
             self.unknown = self.unknown or queried
+        if any(not c.done for c in self.calls.values()) or self.lost_usd or cut_short:
+            self.unknown = True
         usage = normalize_usage(result.usage) if result is not None and result.usage else streamed_usage
         self.agent_done_usd = round(self.agent_done_usd + cost, 6)
         for name, value in usage.items():
             self.agent_usage[name] += value
-        self._messages = {}
-        self.last_call_usd = 0.0
+        self.calls = {}
+        self.last = None
+        self.next_prompt = None
+        self.pending_results = 0
+        self.sent = False
+        self.lost_usd = 0.0
+
+
+def over_budget(budget: Budget, refused: str, what: str, bound_usd: float) -> str:
+    """The stop message when the reservation can't cover what the run has committed."""
+    limit = "the run cap" if refused == RUN_CAP else "the month's spend cap"
+    return (f"${budget.total():.4f} spent of ${budget.reservation.reserved:.4f} reserved; {what} "
+            f"could cost up to ${bound_usd:.4f}, and {limit} leaves no room to reserve it")
 
 
 class Session:
@@ -409,6 +682,7 @@ class Session:
         self.rate_limited = False
         self.result: ResultMessage | None = None
         self.queried = False
+        self.cut_short = False
         self._messages = 0
 
     @property
@@ -420,10 +694,30 @@ class Session:
             return True
         return self.rate_limited and (self.result is None or self.result.is_error)
 
+    def check(self, what: str, bound_usd: float | None = None) -> None:
+        """Stops the run when the reservation can't cover everything committed, even after a top-up.
+
+        what is the call the check is for, and bound_usd its bound, the hold by default.
+        """
+        if self.control.stop_kind is None:
+            refused = self.budget.make_room()
+            if refused:
+                bound = self.budget.hold() if bound_usd is None else bound_usd
+                self.control.stop(refused, over_budget(self.budget, refused, what, bound))
+
+    def stop_output(self) -> dict[str, Any]:
+        """Hook output that tells the CLI to stop instead of sending anything more to the model."""
+        self.budget.next_prompt = None
+        return {"continue_": False, "stopReason": STOPPED.format(kind=self.control.stop_kind)}
+
     # Hooks.
 
     async def gate(self, input_data: dict[str, Any], tool_use_id: str | None, context: Any) -> dict[str, Any]:
-        """PreToolUse on every tool: nothing runs before the init check passes, after a stop, or outside the allowed set."""
+        """PreToolUse on every tool: nothing runs before the init check passes, after a stop, or outside the allowed set.
+
+        After a stop, the denial also tells the CLI not to continue, so it
+        never sends the denial back to the model.
+        """
         name = input_data.get("tool_name")
         if not self.init_ok:
             reason = "the tool list check has not passed"
@@ -436,13 +730,16 @@ class Session:
                 self.channel.expect(tool_use_id, input_data.get("tool_input") or {})
             return {}
         self.events.append({"type": "gate_denial", "tool_use_id": tool_use_id, "tool_name": name, "reason": reason})
-        return {
+        out: dict[str, Any] = {
             "hookSpecificOutput": {
                 "hookEventName": "PreToolUse",
                 "permissionDecision": "deny",
                 "permissionDecisionReason": reason,
             }
         }
+        if self.control.stop_kind is not None:
+            out.update(self.stop_output())
+        return out
 
     async def check_evidence(self, input_data: dict[str, Any], tool_use_id: str | None, context: Any) -> dict[str, Any]:
         """record_fact_hook, logging each denial where it happened."""
@@ -459,7 +756,26 @@ class Session:
             "tool_name": input_data.get("tool_name"),
             "tool_response": input_data.get("tool_response"),
         })
+        self.budget.add_results(result_tokens(input_data.get("tool_response")))
         return {}
+
+    async def post_tool_failure(self, input_data: dict[str, Any], tool_use_id: str | None, context: Any) -> dict[str, Any]:
+        self.budget.add_results(result_tokens(input_data.get("error")))
+        return {}
+
+    async def check_next_call(self, input_data: dict[str, Any], tool_use_id: str | None, context: Any) -> dict[str, Any]:
+        """PostToolBatch: the CLI awaits it after a turn's tool calls and before it sends their results to the model.
+
+        The next call is held at its bound (the last call's prompt and output,
+        every result in the batch, and the output cap) and must fit in the
+        reservation, after a top-up if needed; otherwise the CLI is told to
+        stop, and the call is never sent.
+        """
+        await self.budget.wait_final(FINAL_USAGE_WAIT_S)
+        responses = [c.get("tool_response") for c in input_data.get("tool_calls") or [] if isinstance(c, Mapping)]
+        self.budget.batch_done(sum(result_tokens(r) for r in responses))
+        self.check("the agent's next call")
+        return self.stop_output() if self.control.stop_kind is not None else {}
 
     def hooks(self) -> dict[str, list[HookMatcher]]:
         return {
@@ -468,6 +784,8 @@ class Session:
                 HookMatcher(matcher=RECORD_FACT_TOOL, hooks=[self.check_evidence]),
             ],
             "PostToolUse": [HookMatcher(matcher=None, hooks=[self.post_tool_use])],
+            "PostToolUseFailure": [HookMatcher(matcher=None, hooks=[self.post_tool_failure])],
+            "PostToolBatch": [HookMatcher(matcher=None, hooks=[self.check_next_call])],
         }
 
     # Messages.
@@ -492,6 +810,59 @@ class Session:
             return
         self.init_ok = True
 
+    def usage_event(self, call: AgentCall, outcome: str) -> dict[str, Any]:
+        """A stream_usage trace event: one agent call's usage, cost, and the prompt held for it before it was sent."""
+        return {
+            "type": STREAM_USAGE,
+            "message_id": call.message_id,
+            "usage": dict(call.usage),
+            "stop_reason": call.stop_reason,
+            "cost_usd": self.budget.call_cost(call),
+            "held_prompt_tokens": call.held_prompt,
+            "outcome": outcome,
+        }
+
+    def on_stream(self, message: StreamEvent) -> None:
+        """Each agent call's message_start, message_delta, and message_stop, where the real usage is."""
+        event = message.event or {}
+        kind = event.get("type")
+        if kind == "message_start":
+            data = event.get("message") or {}
+            call = self.budget.call_started(str(data.get("id") or f"call-{len(self.budget.calls) + 1}"), data.get("usage"))
+            self.check("an agent call the CLI started", self.budget.call_cost(call))
+        elif kind == "message_delta":
+            stop_reason = (event.get("delta") or {}).get("stop_reason")
+            call = self.budget.call_finished(event.get("usage"), stop_reason)
+            if call is None:
+                return
+            self.events.append(self.usage_event(call, "finished"))
+            if stop_reason not in ENDS_TURN and stop_reason != TOOL_USE:
+                # The CLI follows this response with a call of its own, which no hook precedes.
+                self.budget.resume_pending()
+                self.check("the CLI's next call, which no hook precedes,")
+        elif kind == "message_stop":
+            call = self.budget.cut_off()
+            if call is None:
+                return
+            # The stream ended with no message_delta: the CLI resumes or retries the call, and no hook precedes it.
+            self.events.append(self.usage_event(call, "cut_off"))
+            self.check("the CLI's call after a cut-off stream, which no hook precedes,")
+
+    def on_system(self, message: SystemMessage) -> None:
+        """The CLI's status and api_retry messages, which say when an agent request goes out and when one is sent again."""
+        data = message.data or {}
+        if message.subtype == "status" and data.get("status") == "requesting":
+            self.budget.request_sent()
+        elif message.subtype == "api_retry" and data.get("error_status") is None:
+            # No HTTP answer (a timeout or a lost connection), so it may have been billed; an error status bills nothing.
+            held = self.budget.next_prompt
+            which, lost = self.budget.no_answer()
+            self.events.append({
+                "type": STREAM_USAGE, "message_id": None, "usage": normalize_usage({}), "stop_reason": None,
+                "cost_usd": lost, "held_prompt_tokens": held, "outcome": f"no_answer_{which}",
+            })
+            self.check("the CLI's retry of an agent call that got no answer, which no hook precedes,")
+
     def on_assistant(self, message: AssistantMessage) -> None:
         self._messages += 1
         key = message.message_id or f"message-{self._messages}"
@@ -502,14 +873,11 @@ class Session:
                 self.events.append({"type": "tool_call", "id": block.id, "name": block.name, "input": block.input})
         if message.error == "rate_limit":
             self.rate_limited = True
-        self.budget.record_message(key, message.usage)
-        calls_tool = any(isinstance(b, ToolUseBlock) for b in message.content)
-        if calls_tool and not self.budget.make_room(self.budget.last_call_usd):
-            self.control.stop(
-                RUN_CAP,
-                f"${self.budget.total():.4f} spent of ${self.budget.reservation.reserved:.4f} reserved; another "
-                "agent call like the last needs more than the run cap or the month's headroom allows",
-            )
+        if message.message_id and message.message_id not in self.budget.calls and not synthetic(message):
+            # No message_start came for this call, so count it from here, at its bound. A message the CLI wrote
+            # itself (its "API Error" text after a 429, say) is no API call and costs nothing.
+            call = self.budget.call_started(message.message_id, message.usage, streamed=False)
+            self.check("an agent call the CLI started", self.budget.call_cost(call))
 
     def on_user(self, message: UserMessage) -> None:
         if isinstance(message.content, str):
@@ -535,14 +903,23 @@ class Session:
             "usage": normalize_usage(message.usage),
             "api_error_status": message.api_error_status,
             "stop_reason": message.stop_reason,
+            "terminal_reason": message.terminal_reason,
             "result": message.result,
         })
         if message.api_error_status is not None and message.api_error_status != 429:
             self.control.error(API_ERROR, f"the agent's API call failed with status {message.api_error_status}")
+        if message.subtype == "error_max_budget_usd" or message.terminal_reason == "budget_exhausted":
+            self.control.stop(RUN_CAP, f"the CLI's own spend budget ended the session ({message.subtype}, "
+                                       f"{message.terminal_reason}) at ${float(message.total_cost_usd or 0):.4f}")
 
     def handle(self, message: Any) -> None:
-        if isinstance(message, SystemMessage) and message.subtype == "init":
+        if isinstance(message, StreamEvent):
+            if message.parent_tool_use_id is None:
+                self.on_stream(message)
+        elif isinstance(message, SystemMessage) and message.subtype == "init":
             self.on_init(message.data)
+        elif isinstance(message, SystemMessage):
+            self.on_system(message)
         elif isinstance(message, AssistantMessage):
             self.on_assistant(message)
         elif isinstance(message, UserMessage):
@@ -558,8 +935,9 @@ class Session:
         with anyio.CancelScope() as scope:
             async for message in client.receive_response():
                 self.handle(message)
-                if self.control.stop_kind is not None and not interrupted:
+                if self.control.stop_kind is not None and not interrupted and self.result is None:
                     interrupted = True
+                    self.cut_short = self.budget.request_open()
                     scope.deadline = anyio.current_time() + DRAIN_TIMEOUT_S
                     try:
                         await client.interrupt()
@@ -673,6 +1051,9 @@ class Run:
         except BudgetExceeded as e:
             control.error(RUN_CAP, f"planner call not sent: {e}")
             return None
+        except SpendCapExceeded as e:
+            control.error(MONTH_CAP, f"planner call not sent: {e}")
+            return None
         except anthropic.APIError as e:
             control.error(PLANNER_API, f"{type(e).__name__}: {e}")
             return None
@@ -699,8 +1080,8 @@ class Run:
             },
             hooks=session.hooks(),
             max_turns=MAX_TURNS,
+            max_output_tokens=self.cfg.max_output_tokens,
         )
-        options = dataclasses.replace(options, max_budget_usd=self.budget.backstop())
         return self.adjust_options(options) if self.adjust_options else options
 
     async def attempt(self, prompt: str) -> Session:
@@ -711,14 +1092,22 @@ class Run:
         simulator = ClientSimulator(self.truth, self.sim_guard, model=SIMULATOR_MODEL, specs=self.specs)
         channel = ClientChannel(simulator, book, ProbeSchedule.from_truth(self.truth), control)
         session = Session(events=self.events, control=control, budget=self.budget, channel=channel, book=book)
-        with tempfile.TemporaryDirectory(prefix=f"tax-agent-ask-{self.meta['run_id']}-") as tmp:
+        self.budget.start_attempt(first_prompt_tokens(self.system_prompt, prompt))
+        session.check("the attempt's first agent call")
+        if control.stop_kind is not None:
+            self.budget.end_attempt(None, queried=False)
+            return session
+        # A neutral name: the CLI shows the agent its working folder, which must not name the run.
+        with tempfile.TemporaryDirectory(prefix="intake-") as tmp:
             try:
                 async with self.client_factory(options=self.options(Path(tmp), session, channel)) as client:
                     await session.converse(client, prompt)
             except Exception as e:
                 control.error(EXCEPTION, f"{type(e).__name__}: {e}")
             finally:
-                self.budget.end_attempt(session.result, queried=session.queried)
+                stopped_at_hook = session.result is not None and session.result.terminal_reason == "hook_stopped"
+                self.budget.end_attempt(session.result, queried=session.queried,
+                                        cut_short=session.cut_short and not stopped_at_hook)
         return session
 
     async def converse(self, prompt: str) -> None:
@@ -777,6 +1166,9 @@ async def run_one(
     other prompt says so in its system_prompt field. prereg_repo is the
     repository whose eval/prereg.yaml unlocks the test split, REPO except
     in tests.
+
+    Raises SpendCapExceeded, after settling and writing the trace but no
+    summary, when the month's spend cap stopped the run.
     """
     cfg = get_config(config)
     if cfg.kind != "agent":
@@ -806,7 +1198,7 @@ async def run_one(
 
     started = clock()
     reservation = Reservation(ledger, run_id, cfg.model, cfg.reserve_usd, run_cap_usd=settings.run_cap_usd)
-    budget = Budget(reservation, cfg.model, prices)
+    budget = Budget(reservation, cfg.model, prices, max_output_tokens=cfg.max_output_tokens)
     sim_guard = budget.client(SIMULATOR_GUARD, sim_client, SIMULATOR_MODEL)
     run = Run(
         cfg=cfg, meta=meta, profile=profile, truth=truth, settings=settings, budget=budget,
@@ -823,6 +1215,12 @@ async def run_one(
         if prompt is not None:
             await run.converse(prompt)
         run.events.append(run.costs_event(clock() - started))
+        month = [e for e in run.events if e.get("type") == "harness_error" and e.get("kind") == MONTH_CAP]
+        if month:
+            reservation.settle(max(budget.total(), reservation.reserved))
+            settled = True
+            write_json(trace_path(runs_dir, run_id), {"meta": meta, "events": run.events})
+            raise SpendCapExceeded(f"{run_id}: {month[0]['message']}")
         total = budget.total()
         reservation.settle(max(total, reservation.reserved) if budget.unknown else total)
         settled = True
