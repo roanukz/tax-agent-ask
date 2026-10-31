@@ -10,13 +10,18 @@ month past it.
 
 A call's upper bound prices its prompt at one token per UTF-8 byte (a token
 always covers at least one byte) plus framing overhead, at the dearer of the
-input and cache write rates, and its output at max_tokens. A call that raises
-or is canceled counts at that bound, since its usage is unknown.
+input and cache write rates, and its output at max_tokens. A call the API
+answers with an error status (anthropic.APIStatusError, such as a 429)
+costs nothing, since the API bills no tokens for it. A call that times out,
+loses its connection, or is canceled counts at its bound, since its usage
+is unknown.
 """
 
 from __future__ import annotations
 
 from typing import Any, Mapping
+
+import anthropic
 
 from ledger.spend import cost_usd
 from sim.simulator import Usage
@@ -102,6 +107,8 @@ class BudgetedClient:
         self.in_flight_usd += bound
         try:
             response = await self._client.messages.create(**kwargs)
+        except anthropic.APIStatusError:
+            raise  # an error status bills no tokens
         except BaseException:
             self.unknown_usd += bound
             raise

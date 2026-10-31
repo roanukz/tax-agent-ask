@@ -3,6 +3,15 @@
 reserve_usd is what a run reserves in the ledger before its first call:
 about twice the PRD section 7 per-run estimate, since conversations can run
 long, and never more than RUN_CAP_USD.
+
+max_output_tokens is an agent config's CLAUDE_CODE_MAX_OUTPUT_TOKENS: the CLI
+sends it as max_tokens on every agent call, so it bounds each call's output,
+and the harness holds that much output for the agent's next call before it
+is sent. It must leave room for adaptive thinking, which counts toward it.
+Every agent config uses 8192, so no model gets more room than another: at
+Opus prices the hold for one call is then about $0.16 of output plus its
+prompt, which leaves a typical A-opus run room under a RUN_CAP_USD of
+$0.50, where 16384 would stop it after a few calls.
 """
 
 from __future__ import annotations
@@ -16,6 +25,7 @@ OPUS = "claude-opus-5-5"
 SIMULATOR_MODEL = HAIKU
 JUDGE_MODEL = HAIKU
 MAX_TURNS = 40
+DEFAULT_MAX_OUTPUT_TOKENS = 8192
 
 
 @dataclass(frozen=True)
@@ -25,6 +35,7 @@ class Config:
     model: str | None = None
     planner_model: str | None = None
     reserve_usd: float = 0.0
+    max_output_tokens: int = DEFAULT_MAX_OUTPUT_TOKENS
 
     @property
     def uses_simulator(self) -> bool:

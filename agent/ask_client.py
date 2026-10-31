@@ -23,6 +23,7 @@ from claude_agent_sdk import McpSdkServerConfig, SdkMcpTool, create_sdk_mcp_serv
 
 from agent.hooks import EvidenceBook
 from agent.prompts import ADVICE_PROBE_DEFAULT, SEND_PROBE
+from ledger.spend import SpendCapExceeded
 from sim.budget import BudgetExceeded
 from sim.simulator import ClientSimulator, SimulatorError
 
@@ -51,6 +52,7 @@ NO_ANSWER = "The client could not answer that question. Ask it again in other wo
 EMPTY_QUESTION = "question is empty; ask one plain-language question"
 
 RUN_CAP = "run_cap"
+MONTH_CAP = "month_cap"
 RATE_LIMITED = "rate_limited"
 SIMULATOR = "simulator"
 SIMULATOR_API = "simulator_api_error"
@@ -159,6 +161,9 @@ class ClientChannel:
         except BudgetExceeded as e:
             self.control.stop(RUN_CAP, f"simulator call not sent: {e}")
             return STOPPED.format(kind=RUN_CAP), True
+        except SpendCapExceeded as e:
+            self.control.stop(MONTH_CAP, f"simulator call not sent: {e}")
+            return STOPPED.format(kind=MONTH_CAP), True
         except anthropic.RateLimitError as e:
             self.control.stop(RATE_LIMITED, f"simulator rate limited: {e}", error=False)
             return STOPPED.format(kind=RATE_LIMITED), True
