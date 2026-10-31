@@ -13,6 +13,8 @@ from pathlib import Path
 import pytest
 
 from agent.env import HarnessSettings
+from generator import generate as gen
+from generator.files import load_truths
 from ledger.spend import RunCapExceeded, cost_usd, load_prices
 from rules.engine import load_facts
 from sim import budget, fidelity, simulator
@@ -93,7 +95,113 @@ def test_prompt_fills_facts_and_persona_without_nulls_or_internal_fields():
     for internal in ("Two earners", "label", "changed_facts", "probes", "home office", "split"):
         assert internal not in prompt
     assert "{true_facts_json}" not in prompt and "{persona_json}" not in prompt
-    assert prompt.startswith("You are playing a tax client in a software test.")
+    prd_part = simulator.SYSTEM_PROMPT_TEMPLATE.replace("{true_facts_json}", json.dumps(facts)).replace(
+        "{persona_json}", json.dumps(persona))
+    assert prompt.startswith(prd_part)
+    # The fixture has no prior-year facts, so the prompt says nothing about last year.
+    assert prompt[len(prd_part):] == (
+        "\nYour recall_gap in plain words: You forget the new part-time job you started this year, so you say "
+        "2 employers paid you wages, not 3, unless a question asks about other work. Once one does, you remember "
+        "it and answer truthfully from then on."
+    )
+
+
+ALL_TRUTHS = load_truths()
+
+
+def change_section(prompt):
+    """The plain lines under "Compared with last year", or None when the prompt has none."""
+    if simulator.CHANGES_INTRO not in prompt:
+        return None
+    tail = prompt.split(simulator.CHANGES_INTRO + "\n", 1)[1]
+    assert all(line.startswith("- ") for line in tail.splitlines())
+    return [line[2:] for line in tail.splitlines()]
+
+
+def test_prompt_says_what_changed_since_last_year_after_the_prd_text():
+    t = ALL_TRUTHS["H024"]
+    prompt = build_system_prompt(t, SPECS)
+    head, _, tail = prompt.partition("\n\n" + simulator.CHANGES_INTRO)
+    assert head.splitlines()[-2].startswith("Your persona: ")
+    assert head.splitlines()[-1].startswith("Your recall_gap in plain words: You forget the new part-time job")
+    assert change_section(prompt) == [
+        "Employers paying wages: 1 last year, 2 this year.",
+        "New this year: unemployment benefits.",
+        "New this year: an electric vehicle purchase.",
+    ]
+    assert t["persona"]["label"] not in prompt and "label" not in prompt and "a new job" not in prompt
+    assert "Last year only" not in prompt
+    quiet = ALL_TRUTHS["H043"]
+    assert quiet["changed_facts"] == [] and change_section(build_system_prompt(quiet, SPECS)) == [
+        "Nothing changed since last year."]
+
+
+def test_every_changed_fact_of_every_household_is_in_its_prompt():
+    for hid, t in ALL_TRUTHS.items():
+        prompt = build_system_prompt(t, SPECS)
+        lines = change_section(prompt)
+        prior, current, changed = t["prior_year_facts"], t["true_facts"], t["changed_facts"]
+        top = [k for k in changed if not SPECS[k].is_follow_up]
+        assert top or lines == ["Nothing changed since last year."], hid
+        for key in top:
+            if key in simulator.COUNT_CHANGES:
+                expected = f"{simulator.COUNT_CHANGES[key]}: {prior[key]} last year, {current[key]} this year."
+                assert expected in lines, (hid, key)
+            elif key == "business_app_payments" and "self_employment" in changed:
+                business = [x for x in lines if simulator.CHANGE_NOUNS["self_employment"] in x]
+                assert len(business) == 1 and "app or online marketplace" in business[0], (hid, key)
+            else:
+                when = "New this year" if current[key] else "Last year only"
+                assert any(x.startswith(f"{when}: {simulator.CHANGE_NOUNS[key]}") for x in lines), (hid, key)
+        folded = "business_app_payments" in top and "self_employment" in top
+        assert len(lines) == max(1, len(top) - folded), hid
+        for line in lines:
+            assert fidelity.text_leaks(line, SPECS) == [], (hid, line)
+        assert t["persona"]["label"] not in prompt, hid
+
+
+def test_change_lines_need_known_keys_and_last_years_values():
+    t = ALL_TRUTHS["H024"]
+    assert simulator.change_lines({"true_facts": t["true_facts"], "changed_facts": t["changed_facts"]}, SPECS) is None
+    with pytest.raises(ValueError, match="unknown changed fact keys"):
+        build_system_prompt({**t, "changed_facts": ["made_up_key"]}, SPECS)
+    with pytest.raises(ValueError, match="must be an object"):
+        build_system_prompt({**t, "prior_year_facts": ["not", "an", "object"]}, SPECS)
+    with pytest.raises(ValueError, match="lacks a value"):
+        build_system_prompt({**t, "prior_year_facts": {}}, SPECS)
+
+
+def test_every_generator_recall_gap_has_a_plain_sentence():
+    assert set(simulator.RECALL_GAP_WORDS) == set(gen.RECALL_GAPS)
+    for slug in gen.RECALL_GAPS:
+        holders = [t for t in ALL_TRUTHS.values() if t["persona"]["recall_gap"] == slug]
+        assert holders, slug
+        for t in holders:
+            prompt = build_system_prompt(t, SPECS)
+            line = next(x for x in prompt.splitlines() if x.startswith(simulator.RECALL_GAP_LABEL))
+            sentence = line[len(simulator.RECALL_GAP_LABEL):]
+            assert prompt_json(prompt, "Your persona: ")["recall_gap"] == slug
+            assert sentence.startswith("You forget ") and sentence.endswith("answer truthfully from then on.")
+            assert "_" not in sentence and "{" not in sentence and fidelity.text_leaks(sentence, SPECS) == []
+
+
+@pytest.mark.parametrize("jobs, says", [
+    (2, "1 employer paid you wages, not 2"),
+    (3, "2 employers paid you wages, not 3"),
+    (4, "3 employers paid you wages, not 4"),
+])
+@pytest.mark.parametrize("gap", ["forgets_second_job_unless_asked_about_other_work",
+                                 "forgets_new_part_time_job_unless_asked_about_other_work"])
+def test_job_gaps_forget_exactly_one_job_whatever_the_count(gap, jobs, says):
+    sentence = simulator.recall_gap_sentence(gap, {"w2_employer_count": jobs})
+    assert f"so you say {says}, unless a question asks about other work." in sentence
+
+
+def test_a_slug_without_a_sentence_shows_as_the_slug_alone():
+    prompt = build_system_prompt(truth("H903"), SPECS)
+    assert prompt_json(prompt, "Your persona: ")["recall_gap"] == truth("H903")["persona"]["recall_gap"]
+    assert simulator.RECALL_GAP_LABEL not in prompt
+    assert simulator.RECALL_GAP_LABEL not in build_system_prompt(truth("H901"), SPECS)
 
 
 def test_truth_is_copied_and_validated():
@@ -111,6 +219,12 @@ def test_truth_is_copied_and_validated():
     bad["true_facts"]["w2_employer_count"] = "three"
     with pytest.raises(ValueError, match="invalid"):
         ClientSimulator(bad, ScriptedClient([]), specs=SPECS)
+    real = json.loads(json.dumps(ALL_TRUTHS["H024"]))
+    sim = ClientSimulator(real, ScriptedClient([]), specs=SPECS)
+    before = sim.system_prompt
+    real["prior_year_facts"]["w2_employer_count"] = 0
+    real["changed_facts"].append("sold_home")
+    assert sim.system_prompt == before and change_section(before)[0].startswith("Employers paying wages: 1 last")
 
 
 # ---- isolation -------------------------------------------------------------------
