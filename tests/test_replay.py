@@ -15,8 +15,10 @@ import json
 import pytest
 
 from agent import replay
+from agent.hooks import RECORD_FACT_TOOL
 from agent.prompts import SEND_PROBE
 from agent.replay import FIXTURES_DIR, check, fixture_from_run, load_fixture, recorded_intake_ids, replay_sync
+from agent.summary import build_summary
 from fixtures import scripted
 
 FIXTURES = sorted(FIXTURES_DIR.glob("*.json"))
@@ -28,6 +30,11 @@ SCRIPTED = {
 
 def fixture(name: str) -> dict:
     return load_fixture(FIXTURES_DIR / f"{name}.json")
+
+
+def recorded(name: str) -> dict:
+    """A scripted fixture as if a live run had recorded it: its events with their tool results, scripted false."""
+    return {**copy.deepcopy(fixture(name)), "scripted": False}
 
 
 def test_the_six_scripted_fixtures_exist_on_real_households():
@@ -190,3 +197,83 @@ def test_a_finished_test_split_run_with_a_prereg_commit_becomes_a_fixture(tmp_pa
     made = fixture_from_run(run_id, name="live-test-example", runs_dir=runs)
     assert check(made) == []
     assert replay_sync(made).score["prereg_commit"] == commit
+
+
+# Recorded logs: what the live CLI did and did not run.
+
+def test_a_gated_record_fact_still_meets_the_evidence_hook_as_live():
+    f = recorded("scripted-clean-pass")
+    events = f["events"]
+    reason = "evidence must be the client's exact words from an answer, or prior_year:<field>"
+    call = {"type": "tool_call", "id": "toolu_gated", "name": RECORD_FACT_TOOL,
+            "input": {"intake_id": "in_5c2a91", "key": "w2_employer_count", "value": 1, "evidence": "made up words"}}
+    # Live, the CLI runs both PreToolUse hooks on a record_fact the gate denies, so both denials are logged.
+    at = next(i for i, e in enumerate(events) if e["type"] == "assistant_text")
+    events[at:at] = [
+        call,
+        {"type": "gate_denial", "tool_use_id": "toolu_gated", "tool_name": RECORD_FACT_TOOL,
+         "reason": "the intake has stopped (run_cap)"},
+        {"type": "hook_denial", "tool_use_id": "toolu_gated", "key": "w2_employer_count", "value": 1,
+         "evidence": "made up words", "reason": reason},
+        {"type": "tool_result", "tool_use_id": "toolu_gated", "is_error": True,
+         "text": f"PreToolUse:{RECORD_FACT_TOOL} hook error: {reason}"},
+    ]
+    live = build_summary(f["meta"], events)
+    assert [d["evidence"] for d in live["hook_denials"]] == ["made up words"]
+    got = replay_sync({**f, "events": events})
+    assert got.mismatches == [] and got.summary == live
+
+
+def test_a_recorded_tax_call_with_no_result_is_passed_through_not_run():
+    f = recorded("scripted-clean-pass")
+    # Live, the CLI stopped on its budget after asking for these two calls, so neither ran.
+    unrun = {"toolu_scripted_clean_pass_14", "toolu_scripted_clean_pass_15"}
+    events = [e for e in f["events"] if not (e["type"] == "tool_result" and e["tool_use_id"] in unrun)]
+    live = build_summary(f["meta"], events)
+    assert live["request_list"] == [] and [c["is_error"] for c in live["tool_calls"][-2:]] == [True, True]
+    for unflagged in ({**f, "events": events}, {k: v for k, v in f.items() if k != "scripted"} | {"events": events}):
+        got = replay_sync(unflagged)
+        assert got.summary == live, "a log without the scripted flag is a recorded one"
+        assert not any(e["type"] == "tool_result" and e["tool_use_id"] in unrun for e in got.events)
+    scripted = replay_sync({**f, "events": events, "scripted": True})
+    assert scripted.summary["request_list"] == [{"rule_id": "R001", "count": 1}], "a scripted log runs every call"
+
+
+def test_a_start_intake_the_cli_never_ran_mints_no_intake_id():
+    f = recorded("scripted-clean-pass")
+    start = next(e for e in f["events"] if e["type"] == "tool_call" and e["name"].endswith("start_intake"))
+    started = next(e for e in f["events"] if e["type"] == "tool_result" and e["tool_use_id"] == start["id"])
+    first = [
+        {"type": "attempt", "n": 1},
+        {**start, "id": "toolu_a1_01"},
+        {**started, "tool_use_id": "toolu_a1_01", "text": started["text"].replace("in_5c2a91", "in_0a0a0a")},
+        # The attempt ends on two calls the CLI never ran: a second start_intake, and a record_fact on the first.
+        {**start, "id": "toolu_a1_02"},
+        {"type": "tool_call", "id": "toolu_a1_03", "name": RECORD_FACT_TOOL, "input": {
+            "intake_id": "in_0a0a0a", "key": "filing_status", "value": "married_joint",
+            "evidence": "prior_year:filing_status"}},
+        {"type": "retry", "reason": "rate_limited", "after_s": 30.0},
+    ]
+    events = first + [{**e, "n": 2} if e["type"] == "attempt" else e for e in f["events"]]
+    assert recorded_intake_ids(events) == ["in_0a0a0a", "in_5c2a91"]
+    assert recorded_intake_ids(events, scripted=True) == ["in_0a0a0a", "in_0a0a0a", "in_5c2a91"]
+    got = replay_sync({**f, "events": events})
+    assert got.mismatches == [], "the second attempt's server mints the ID its start_intake returned live"
+    assert got.summary["intake_id"] == "in_5c2a91" and got.summary["questions"] == f["expected_summary"]["questions"]
+
+
+def test_trace_only_and_unknown_events_are_copied_through_and_never_acted_on():
+    assert "stream_usage" in replay.TRACE_ONLY
+    f = recorded("scripted-clean-pass")
+    extra = [{"type": "stream_usage", "message_id": "msg_01", "usage": {"input_tokens": 900, "output_tokens": 30}},
+             {"type": "not_a_known_event", "id": "toolu_x", "tool_use_id": "toolu_scripted_clean_pass_14"}]
+    events = []
+    for e in f["events"]:
+        if e["type"] == "tool_call":
+            events.extend(copy.deepcopy(extra))
+        events.append(e)
+    assert build_summary(f["meta"], events) == f["expected_summary"], "build_summary skips them"
+    got = replay_sync({**f, "events": events})
+    assert got.mismatches == [] and got.summary == f["expected_summary"] and got.score == f["expected_score"]
+    kept = [e for e in got.events if e["type"] in ("stream_usage", "not_a_known_event")]
+    assert kept == [e for e in events if e["type"] in ("stream_usage", "not_a_known_event")]

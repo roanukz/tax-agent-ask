@@ -20,11 +20,19 @@ one server per session attempt, minting the intake IDs the log recorded.
 record_fact first goes through the real record_fact_hook, with an
 EvidenceBook fed the recorded answers in order. An ask_client call gets its
 recorded answer back, since the simulator is not called. A call the
-harness's gate denied keeps its recorded result. agent.summary then rebuilds
-the summary from the replayed log, and eval.score.score_run scores it with
-the recorded judge verdict and B1 median; a test-split run's score gets its
-prereg commit, as eval.run stamps it. Nothing here spends anything or opens
-a network socket.
+harness's gate denied keeps its recorded result; a gated record_fact still
+goes through record_fact_hook first, since the CLI runs both PreToolUse
+hooks on it live. In a recorded log (the fixture's scripted flag is false),
+a tax call with no recorded result is one the CLI never ran, as when it
+stopped on its budget with tool calls in its last message, so it is passed
+through without a result rather than run. A scripted log records no
+results, so every tax call in it runs. Every other event, such as the
+trace-only post_tool_use and stream_usage events or any type replay does
+not know, is copied through unchanged and never acted on. agent.summary
+then rebuilds the summary from the replayed log, and eval.score.score_run
+scores it with the recorded judge verdict and B1 median; a test-split
+run's score gets its prereg commit, as eval.run stamps it. Nothing here
+spends anything or opens a network socket.
 
 Script builds the scripted-* fixtures (fixtures/scripted.py): no live run
 existed when they were written, so their answers, costs, and token counts
@@ -56,6 +64,8 @@ from server.tax_server import build_server
 
 FIXTURES_DIR = REPO / "fixtures"
 REBUILT = ("tool_result", "hook_denial", "client_answer")
+# Trace-only events replay copies through without acting on them, as it does any type it does not know.
+TRACE_ONLY = ("post_tool_use", "stream_usage")
 FIXTURE_FIELDS = ("name", "description", "scripted", "meta", "judge", "b1_median_questions")
 
 
@@ -82,11 +92,12 @@ def mcp_text(result: Any) -> str:
     return "".join(getattr(block, "text", "") for block in result.content if getattr(block, "type", "") == "text")
 
 
-def recorded_intake_ids(events: Sequence[Mapping[str, Any]]) -> list[str]:
+def recorded_intake_ids(events: Sequence[Mapping[str, Any]], *, scripted: bool = False) -> list[str]:
     """The intake ID each start_intake call returned, in order.
 
-    When a log has no result for a start_intake call (a scripted log), the
-    ID is the one the next call after it passed.
+    When a scripted log has no result for a start_intake call, the ID is the
+    one the next call after it passed. In a recorded log such a call never
+    ran, so it minted no ID.
     """
     results = {e["tool_use_id"]: e for e in events if e.get("type") == "tool_result"}
     calls = [e for e in events if e.get("type") == "tool_call"]
@@ -99,6 +110,8 @@ def recorded_intake_ids(events: Sequence[Mapping[str, Any]]) -> list[str]:
             value = parsed(result.get("text"))
             if not result.get("is_error") and isinstance(value, Mapping) and value.get("intake_id"):
                 ids.append(value["intake_id"])
+            continue
+        if not scripted:
             continue
         later = next((c["input"]["intake_id"] for c in calls[i + 1:] if (c.get("input") or {}).get("intake_id")), None)
         if later:
@@ -149,17 +162,19 @@ def same_result(name: str, a: Mapping[str, Any], b: Mapping[str, Any]) -> bool:
 class Replayer:
     """One pass over a recorded log, rebuilding tool results with a fresh server per attempt."""
 
-    def __init__(self, meta: Mapping[str, Any], events: Sequence[Mapping[str, Any]], *, data_dir: Path, state_root: Path) -> None:
+    def __init__(self, meta: Mapping[str, Any], events: Sequence[Mapping[str, Any]], *, data_dir: Path, state_root: Path,
+                 scripted: bool = False) -> None:
         self.meta = meta
         self.events = [dict(e) for e in events]
+        self.scripted = scripted
         self.split = meta["split"]
         self.data_dir = Path(data_dir)
         self.state_root = Path(state_root)
         self.profile, _ = load_household(self.data_dir, meta["household_id"])
         self.recorded = {e["tool_use_id"]: e for e in self.events if e.get("type") == "tool_result"}
         self.answers = self._answers()
-        self.gated = {e["tool_use_id"] for e in self.events if e.get("type") == "gate_denial"}
-        self.mint = id_factory(recorded_intake_ids(self.events))
+        self.gated_ids = {e["tool_use_id"] for e in self.events if e.get("type") == "gate_denial"}
+        self.mint = id_factory(recorded_intake_ids(self.events, scripted=scripted))
         self.out: list[dict[str, Any]] = []
         self.mismatches: list[dict[str, Any]] = []
         self.client: Client | None = None
@@ -217,15 +232,30 @@ class Replayer:
         self.out.append(dict(answer))
         self.result(call, is_error=False, text=answer["delivered"])
 
+    async def evidence(self, call: Mapping[str, Any]) -> dict[str, Any]:
+        """record_fact_hook on this call, logging each denial as the harness does; the hook's decision."""
+        before = len(self.book.denials)
+        hook = record_fact_hook(self.book)
+        decision = await hook({"tool_name": call["name"], "tool_input": dict(call.get("input") or {})}, call["id"], None)
+        for denial in self.book.denials[before:]:
+            self.out.append({"type": "hook_denial", **denial})
+        return decision
+
+    async def gated(self, call: Mapping[str, Any]) -> None:
+        """A call the gate denied keeps its recorded result; record_fact still meets the evidence hook, as live."""
+        if call["name"] == RECORD_FACT_TOOL:
+            await self.evidence(call)
+        self.passthrough(call)
+
+    def ran(self, call: Mapping[str, Any]) -> bool:
+        """Whether the live CLI ran this call: always in a scripted log, else when the log has its result."""
+        return self.scripted or call["id"] in self.recorded
+
     async def tax_tool(self, call: Mapping[str, Any]) -> None:
         tool_input = dict(call.get("input") or {})
         if call["name"] == RECORD_FACT_TOOL:
-            before = len(self.book.denials)
-            hook = record_fact_hook(self.book)
-            decision = await hook({"tool_name": call["name"], "tool_input": tool_input}, call["id"], None)
+            decision = await self.evidence(call)
             if decision:
-                for denial in self.book.denials[before:]:
-                    self.out.append({"type": "hook_denial", **denial})
                 reason = decision["hookSpecificOutput"]["permissionDecisionReason"]
                 self.result(call, is_error=True, text=reason)
                 return
@@ -240,16 +270,19 @@ class Replayer:
         kind = event.get("type")
         if kind in REBUILT:
             return
+        if kind in TRACE_ONLY:
+            self.out.append(event)
+            return
         if kind == "attempt" or (kind == "tool_call" and self.client is None):
             await self.new_session()
         self.out.append(event)
         if kind != "tool_call":
-            return
-        if event["id"] in self.gated:
-            self.passthrough(event)
+            return  # attempt, init, assistant_text, gate_denial, result, and any type replay does not know
+        if event["id"] in self.gated_ids:
+            await self.gated(event)
         elif event["name"] == ASK_CLIENT_TOOL:
             await self.ask_client(event)
-        elif event["name"].startswith(TAX_PREFIX):
+        elif event["name"].startswith(TAX_PREFIX) and self.ran(event):
             await self.tax_tool(event)
         else:
             self.passthrough(event)
@@ -267,11 +300,12 @@ async def replay_events(
     meta: Mapping[str, Any],
     events: Sequence[Mapping[str, Any]],
     *,
+    scripted: bool = False,
     data_dir: Path = DATA_DIR,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
-    """(replayed events, tool results that differ from the recorded ones)."""
+    """(replayed events, tool results that differ from the recorded ones). scripted is the fixture's flag."""
     with tempfile.TemporaryDirectory(prefix="tax-agent-ask-replay-") as tmp:
-        replayer = Replayer(meta, events, data_dir=data_dir, state_root=Path(tmp))
+        replayer = Replayer(meta, events, data_dir=data_dir, state_root=Path(tmp), scripted=scripted)
         out = await replayer.run()
         return out, replayer.mismatches
 
@@ -297,8 +331,10 @@ def score_summary(
 
 
 async def replay(fixture: Mapping[str, Any], *, data_dir: Path = DATA_DIR) -> Replayed:
+    """A fixture without a scripted flag is replayed as a recorded log."""
     meta = fixture["meta"]
-    events, mismatches = await replay_events(meta, fixture["events"], data_dir=data_dir)
+    events, mismatches = await replay_events(
+        meta, fixture["events"], scripted=bool(fixture.get("scripted")), data_dir=data_dir)
     summary = build_summary(meta, events)
     _, truth = load_household(data_dir, meta["household_id"])
     score = score_summary(
