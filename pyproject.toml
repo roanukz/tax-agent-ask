@@ -33,3 +33,9 @@ required-environments = [
 addopts = "--disable-socket --allow-unix-socket"
 testpaths = ["tests"]
 pythonpath = ["."]
+
+[tool.mutmut]
+# Mutation testing of the scorer (PRD criterion 7). Run: uv run mutmut run, then uv run mutmut results.
+source_paths = ["eval/score.py", "eval/aliases.py"]
+also_copy = ["rules/", "eval/__init__.py"]
+pytest_add_cli_args_test_selection = ["tests/test_aliases.py", "tests/test_score.py"]

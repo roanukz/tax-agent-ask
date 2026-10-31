@@ -61,7 +61,7 @@ def split_first_message(household_id: str, plan_json: str) -> str:
 
 B3_PROMPT = """You are helping a tax preparer get ready for a client's 2026 federal income tax return (Form 1040). Below are the facts about the client's year, each with a plain-language description. List every document or record the preparer should ask this client to send. Do not list documents the preparer already has or doesn't need.
 
-Respond only with JSON: {"documents": ["<document>", ...]}
+Respond only with JSON: {"documents": [{"document": "<document>", "count": <how many of it>}, ...]}
 
 Client facts:
 {facts_json}"""
