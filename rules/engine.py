@@ -10,12 +10,13 @@ Rule conditions are structured data, never evaluated as code:
     {any: [<condition>, ...]}       at least one holds
 
 A fact that was never recorded counts as false for bool, 0 for int, and
-unknown (None) for enum and date. An unknown value never satisfies eq, in,
+unknown (None) for enum, date, and follow-up keys. An unknown value never satisfies eq, in,
 gte, or lte, so a rule that needs it does not apply.
 """
 
 from __future__ import annotations
 
+import re
 from collections import Counter
 from dataclasses import dataclass
 from datetime import date
@@ -23,6 +24,9 @@ from pathlib import Path
 from typing import Any, Iterable, Mapping
 
 import yaml
+
+_INT_TEXT = re.compile(r"-?[0-9]+")
+_DATE_TEXT = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}")
 
 RULES_DIR = Path(__file__).resolve().parent
 FACTS_PATH = RULES_DIR / "facts.yaml"
@@ -143,7 +147,7 @@ def coerce(spec: FactSpec, value: Any) -> Any:
     if spec.type == "int":
         if isinstance(value, bool):
             raise FactError(f"{spec.key} needs a whole number, got {value!r}")
-        if isinstance(value, str) and value.strip().lstrip("-").isdigit():
+        if isinstance(value, str) and _INT_TEXT.fullmatch(value.strip()):
             value = int(value.strip())
         if not isinstance(value, int):
             raise FactError(f"{spec.key} needs a whole number, got {value!r}")
@@ -157,7 +161,7 @@ def coerce(spec: FactSpec, value: Any) -> Any:
             raise FactError(f"{spec.key} must be one of {list(spec.values or ())}, got {value!r}")
         return value
     if spec.type == "date":
-        if not isinstance(value, str):
+        if not isinstance(value, str) or not _DATE_TEXT.fullmatch(value.strip()):
             raise FactError(f"{spec.key} needs a date as YYYY-MM-DD, got {value!r}")
         try:
             return date.fromisoformat(value.strip()).isoformat()
@@ -167,6 +171,8 @@ def coerce(spec: FactSpec, value: Any) -> Any:
 
 
 def default_value(spec: FactSpec) -> Any:
+    if spec.is_follow_up:
+        return None
     if spec.type == "bool":
         return False
     if spec.type == "int":

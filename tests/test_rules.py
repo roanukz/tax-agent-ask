@@ -84,6 +84,12 @@ def test_coerce_accepts(key, value, stored):
         ("ev_acquired_date", "March 2026"),
         ("ev_acquired_date", 2026),
         ("clean_energy_install_year", 2027),
+        ("w2_employer_count", "\u00b2"),
+        ("w2_employer_count", "--3"),
+        ("w2_employer_count", "3.0"),
+        ("ev_acquired_date", "20260304"),
+        ("ev_acquired_date", "2026-W10-3"),
+        ("ev_acquired_date", "2026-02-30"),
     ],
 )
 def test_coerce_rejects(key, value):
@@ -97,6 +103,7 @@ def test_unrecorded_facts_count_as_no_or_zero():
     assert full["w2_employer_count"] == 0
     assert full["filing_status"] is None
     assert full["ev_acquired_date"] is None
+    assert full["clean_energy_install_year"] is None
     with pytest.raises(FactError):
         complete_facts({"not_a_key": True}, SPECS)
 
