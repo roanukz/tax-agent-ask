@@ -3,6 +3,8 @@ import copy
 import pytest
 import yaml
 
+from eval.aliases import RULE, TRAP, AliasIndex
+from generator import labels
 from rules import engine
 from rules.engine import (
     FactError,
@@ -11,6 +13,7 @@ from rules.engine import (
     complete_facts,
     condition_holds,
     load_facts,
+    load_ignore_aliases,
     load_rules,
     required_documents,
     rule_facts,
@@ -188,6 +191,53 @@ def test_as_multiset_and_rule_facts():
 def test_every_fact_a_rule_reads_exists():
     for r in RULES:
         assert rule_facts(r.when) <= set(SPECS), r.id
+
+
+def plain_fact_lines():
+    """Every plain sentence the blind label sheet can show for a household's facts and what changed."""
+    everything = {k: (True if s.type == "bool" else None) for k, s in SPECS.items()}
+    everything.update(filing_status="single", dependents_count=2, w2_employer_count=2, k1_count=1, new_dependent=True,
+                      clean_energy_install_year=2026, efficiency_improvements_year=2026, ev_acquired_date="2026-03-01")
+    nothing = {k: (False if s.type == "bool" else None) for k, s in SPECS.items()}
+    nothing.update(filing_status="married_joint", dependents_count=0, w2_employer_count=0, k1_count=0)
+    changed = [k for k in SPECS if not SPECS[k].is_follow_up]
+    lines = labels.describe_this_year(everything, SPECS)
+    for key in changed:
+        lines += labels.describe_changes(nothing, everything, [key], SPECS)
+        lines += labels.describe_changes(everything, nothing, [key], SPECS)
+    return lines
+
+
+# The hint for ip_pin_enrolled asks about the IP PIN itself, which is the document R024 asks for.
+HINTS_THAT_NAME_A_DOCUMENT = {"ip_pin_enrolled": ["R024"]}
+
+
+INDEX = AliasIndex(RULES, load_ignore_aliases())
+
+
+def named_rules(text):
+    """The rules and traps the scorer reads in text."""
+    return [r for m in INDEX.map_request(text) if m.kind in (RULE, TRAP) for r in m.rule_ids]
+
+
+def test_no_alias_is_a_plain_fact_description():
+    # The blind label sheet must never show a document name, and an alias names a document, not a fact.
+    lines = plain_fact_lines()
+    assert len(lines) > 90
+    assert any("solar panels" in line for line in lines)
+    assert [(line, named_rules(line)) for line in lines if named_rules(line)] == []
+
+
+def test_no_alias_is_a_plain_question_hint():
+    # B3 sees these hints, so a list that echoes one names no document by that alone.
+    named = {k: named_rules(s.plain_question_hint) for k, s in SPECS.items()}
+    assert {k: rule_ids for k, rule_ids in named.items() if rule_ids} == HINTS_THAT_NAME_A_DOCUMENT
+
+
+def test_source_titles_are_plain_titles_without_pipes():
+    # A pipe splits a Markdown table cell in the review packet and the report.
+    assert [r.id for r in RULES if "|" in r.source_title] == []
+    assert next(r for r in RULES if r.id == "R017").source_title == "Education credits: AOTC and LLC"
 
 
 # Validator: start from a valid copy of the repo files and break one thing at a time.

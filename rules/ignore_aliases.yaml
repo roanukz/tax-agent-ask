@@ -1,5 +1,7 @@
 # Requests the scorer ignores: things a preparer collects from every client,
 # which no rule asks for and which don't count as unnecessary.
+# Social Security cards and dates of birth are collected for everyone on the
+# return; a request names R019 only when it names the new dependent.
 ignore:
   - photo ID
   - driver's license
@@ -8,7 +10,15 @@ ignore:
   - bank account and routing number
   - direct deposit information
   - voided check
+  - Social Security card
+  - Social Security number
+  - SSN
+  - date of birth
   - last year's return
   - prior year return
   - prior-year tax return
   - copy of last year's tax return
+  - last year's tax return
+  - previous year's tax return
+  - 2025 tax return
+  - 2025 return

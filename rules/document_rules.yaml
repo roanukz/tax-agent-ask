@@ -25,7 +25,7 @@
       - {fact: self_employment, eq: true}
   document: "Business income and expense records, including any Forms 1099-NEC"
   count_from: null
-  aliases: ["1099-NEC", "Form 1099-NEC", "business income records", "business expense records", "self-employment records", "Schedule C records", "nonemployee compensation"]
+  aliases: ["1099-NEC", "Form 1099-NEC", "business income records", "business expense records", "self-employment records", "Schedule C records", "nonemployee compensation", "business income and expense records", "records of business income", "self-employment income records"]
   client_reason: "You had freelance or business income, so we need your income and expense records and any year-end payment statements from clients."
   source_url: "https://www.irs.gov/businesses/small-businesses-self-employed/manage-taxes-for-your-gig-work"
   source_title: "Manage taxes for your gig work"
@@ -93,7 +93,7 @@
       - {fact: sold_investments, eq: true}
   document: "Form 1099-B or the consolidated brokerage statement"
   count_from: null
-  aliases: ["1099-B", "Form 1099-B", "consolidated brokerage statement", "brokerage statement", "consolidated 1099"]
+  aliases: ["1099-B", "Form 1099-B", "consolidated brokerage statement", "brokerage statement", "consolidated 1099", "consolidated Form 1099", "brokerage 1099"]
   client_reason: "You sold investments, so we need the year-end statement from your brokerage."
   source_url: "https://www.irs.gov/publications/p550"
   source_title: "Publication 550 (2025), Investment Income and Expenses"
@@ -110,7 +110,7 @@
       - {fact: digital_asset_transactions, eq: true}
   document: "Form 1099-DA if received, plus transaction records"
   count_from: null
-  aliases: ["1099-DA", "Form 1099-DA", "digital asset transaction records", "crypto transaction records", "cryptocurrency records", "digital asset proceeds"]
+  aliases: ["1099-DA", "Form 1099-DA", "digital asset transaction records", "crypto transaction records", "cryptocurrency records", "digital asset proceeds", "crypto transaction history", "cryptocurrency transaction history", "digital asset transaction history", "crypto exchange", "cryptocurrency exchange"]
   client_reason: "You sold or traded digital assets, so we need any year-end statement from the platform and your own transaction records."
   source_url: "https://www.irs.gov/filing/digital-assets"
   source_title: "Digital assets (IRS.gov)"
@@ -161,7 +161,7 @@
       - {fact: unemployment, eq: true}
   document: "Form 1099-G"
   count_from: null
-  aliases: ["1099-G", "Form 1099-G", "unemployment compensation statement", "unemployment 1099-G"]
+  aliases: ["1099-G", "Form 1099-G", "unemployment compensation statement", "unemployment 1099-G", "unemployment compensation"]
   client_reason: "You received unemployment benefits, so we need the year-end statement from the state."
   source_url: "https://www.irs.gov/taxtopics/tc418"
   source_title: "Topic no. 418, Unemployment compensation"
@@ -179,7 +179,7 @@
       - {fact: itemized_last_year, eq: true}
   document: "Form 1099-G for the refund"
   count_from: null
-  aliases: ["1099-G", "Form 1099-G", "state refund 1099-G", "state tax refund statement", "1099-G for state refund"]
+  aliases: ["1099-G", "Form 1099-G", "state refund 1099-G", "state tax refund statement", "1099-G for state refund", "state tax refund 1099-G", "1099-G for state tax refund", "state refund statement"]
   client_reason: "You got a state or local tax refund after itemizing last year, so we need the statement showing the refund."
   source_url: "https://www.irs.gov/faqs/interest-dividends-other-types-of-income/1099-information-returns-all-other/1099-information-returns-all-other"
   source_title: "1099 Information Returns (All Other) (IRS FAQ: I received a Form 1099-G reporting the state tax refund I received during the year)"
@@ -284,7 +284,7 @@
   aliases: ["1098-T", "Form 1098-T", "tuition statement"]
   client_reason: "You paid college tuition, so we need the tuition statement from the school."
   source_url: "https://www.irs.gov/credits-deductions/individuals/education-credits-aotc-llc"
-  source_title: "Education credits - AOTC and LLC | Internal Revenue Service"
+  source_title: "Education credits: AOTC and LLC"
   source_version: guidance
   tax_years: [2026]
   trap: false
@@ -298,7 +298,7 @@
       - {fact: dependent_care_paid, eq: true}
   document: "Provider name, address, taxpayer ID, and amount paid"
   count_from: null
-  aliases: ["dependent care provider information", "care provider information", "child care provider information", "provider taxpayer ID", "Form W-10", "child care receipts", "dependent care receipts", "childcare provider", "child care provider name and taxpayer ID"]
+  aliases: ["dependent care provider information", "care provider information", "child care provider information", "provider taxpayer ID", "Form W-10", "child care receipts", "dependent care receipts", "childcare provider", "child care provider name and taxpayer ID", "child care provider", "dependent care provider", "child care expenses", "dependent care expenses", "daycare"]
   client_reason: "You paid for care, so we need each provider's name, address, taxpayer ID number, and how much you paid."
   source_url: "https://www.irs.gov/pub/irs-dft/i2441--dft.pdf"
   source_title: "2026 Instructions for Form 2441, Child and Dependent Care Expenses (draft, August 21, 2026)"
@@ -315,7 +315,7 @@
       - {fact: new_dependent, eq: true}
   document: "The dependent's Social Security number and date of birth"
   count_from: null
-  aliases: ["dependent Social Security number", "dependent SSN", "dependent date of birth", "Social Security card for dependent", "new dependent information"]
+  aliases: ["dependent Social Security number", "dependent SSN", "dependent date of birth", "Social Security card for dependent", "new dependent information", "dependent Social Security card", "new dependent", "new baby", "newborn", "new child"]
   client_reason: "You have a new dependent, so we need a copy of their Social Security card and their date of birth."
   source_url: "https://www.irs.gov/individuals/checklist-for-free-tax-return-preparation"
   source_title: "Checklist for free tax return preparation"
@@ -349,7 +349,7 @@
       - {fact: rental_property, eq: true}
   document: "Rental income and expense records"
   count_from: null
-  aliases: ["rental income records", "rental expense records", "rental property records", "Schedule E records", "rental records", "records of rental income"]
+  aliases: ["rental income records", "rental expense records", "rental property records", "Schedule E records", "rental records", "records of rental income", "rental property income and expenses"]
   client_reason: "You rented out a home, a room, or other real estate, so we need your rental income and expense records."
   source_url: "https://www.irs.gov/pub/irs-dft/i1040se--dft.pdf"
   source_title: "2026 Instructions for Schedule E (Form 1040), Supplemental Income and Loss (draft, September 2026)"
@@ -366,7 +366,7 @@
       - {fact: estimated_payments_made, eq: true}
   document: "Dates and amounts paid"
   count_from: null
-  aliases: ["estimated tax payments", "estimated payment records", "1040-ES", "Form 1040-ES", "estimated payment dates and amounts", "Record of Estimated Tax Payments", "estimated payments", "estimated tax payment records"]
+  aliases: ["estimated tax payments", "estimated payment records", "1040-ES", "Form 1040-ES", "estimated payment dates and amounts", "Record of Estimated Tax Payments", "estimated payments", "estimated tax payment records", "estimated tax records", "records of estimated taxes", "estimated taxes paid"]
   client_reason: "You made estimated tax payments, so we need the date and amount of each payment."
   source_url: "https://www.irs.gov/pub/irs-prior/f1040es--2026.pdf"
   source_title: "Form 1040-ES (2026), Estimated Tax for Individuals (Record of Estimated Tax Payments)"
@@ -417,7 +417,7 @@
       - {fact: charitable_giving, eq: true}
   document: "Receipts and written acknowledgments"
   count_from: null
-  aliases: ["charitable receipts", "donation receipts", "charitable contribution receipts", "written acknowledgment", "contemporaneous written acknowledgment", "Form 8283"]
+  aliases: ["charitable receipts", "donation receipts", "charitable contribution receipts", "written acknowledgment", "contemporaneous written acknowledgment", "Form 8283", "charitable contributions", "charitable donations", "receipts and acknowledgments"]
   client_reason: "You gave to charity, so we need your receipts and the written acknowledgments from the charities."
   source_url: "https://www.irs.gov/taxtopics/tc506"
   source_title: "Topic no. 506, Charitable contributions"
@@ -434,7 +434,7 @@
       - {fact: tips_income, eq: true}
   document: "Tip records and how the employer reported them"
   count_from: null
-  aliases: ["tip records", "tip income records", "Form 4070", "tips reported to employer"]
+  aliases: ["tip records", "tip income records", "Form 4070", "tips reported to employer", "records of tips", "pay stubs showing tips"]
   client_reason: "You earned tips, so we need your tip records and how your employer reported them."
   source_url: "https://www.irs.gov/newsroom/treasury-irs-issue-final-regulations-listing-occupations-where-workers-customarily-and-regularly-receive-tips-under-the-one-big-beautiful-bill"
   source_title: "Treasury, IRS issue final regulations listing occupations where workers customarily and regularly receive tips under the One, Big, Beautiful Bill (IR-2026-49, April 10, 2026)"
@@ -451,7 +451,7 @@
       - {fact: overtime_pay, eq: true}
   document: "Overtime records and how the employer reported them"
   count_from: null
-  aliases: ["overtime records", "overtime pay records", "overtime pay statement"]
+  aliases: ["overtime records", "overtime pay records", "overtime pay statement", "overtime pay documentation", "overtime compensation records", "pay stubs showing overtime"]
   client_reason: "You were paid overtime, so we need your overtime records and how your employer reported them."
   source_url: "https://www.irs.gov/pub/taxpros/fs-2026-13.pdf"
   source_title: "Updates to questions and answers about the new deduction for qualified overtime compensation (FS-2026-13, August 2026; announced in IR-2026-88)"
@@ -520,7 +520,7 @@
       - {fact: clean_energy_install_year, eq: 2026}
   document: null
   count_from: null
-  aliases: ["Form 5695", "5695", "solar receipt", "solar invoice", "clean energy invoice", "residential clean energy credit"]
+  aliases: ["Form 5695", "5695", "solar receipt", "solar invoice", "clean energy invoice", "residential clean energy credit", "solar panel installation", "solar panel invoice", "solar panel receipt", "solar installation", "solar energy system"]
   client_reason: null
   source_url: "https://www.irs.gov/newsroom/faqs-for-modification-of-sections-25c-25d-25e-30c-30d-45l-45w-and-179d-under-public-law-119-21-139-stat-72-july-4-2025-commonly-known-as-the-one-big-beautiful-bill-obbb"
   source_title: "IRS FS-2025-05, FAQs for modification of sections 25C, 25D, 25E, 30C, 30D, 45L, 45W, and 179D under Public Law 119-21"
@@ -538,7 +538,7 @@
       - {fact: efficiency_improvements_year, eq: 2026}
   document: null
   count_from: null
-  aliases: ["Form 5695", "5695", "energy efficiency receipts", "home energy improvement receipts", "manufacturer certification statement", "energy efficient home improvement credit"]
+  aliases: ["Form 5695", "5695", "energy efficiency receipts", "home energy improvement receipts", "manufacturer certification statement", "energy efficient home improvement credit", "energy-efficient", "energy efficiency"]
   client_reason: null
   source_url: "https://www.irs.gov/newsroom/faqs-for-modification-of-sections-25c-25d-25e-30c-30d-45l-45w-and-179d-under-public-law-119-21-139-stat-72-july-4-2025-commonly-known-as-the-one-big-beautiful-bill-obbb"
   source_title: "IRS FS-2025-05, FAQs for modification of sections 25C, 25D, 25E, 30C, 30D, 45L, 45W, and 179D under Public Law 119-21"
