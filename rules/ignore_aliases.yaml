@@ -1,0 +1,14 @@
+# Requests the scorer ignores: things a preparer collects from every client,
+# which no rule asks for and which don't count as unnecessary.
+ignore:
+  - photo ID
+  - driver's license
+  - government-issued ID
+  - bank details
+  - bank account and routing number
+  - direct deposit information
+  - voided check
+  - last year's return
+  - prior year return
+  - prior-year tax return
+  - copy of last year's tax return

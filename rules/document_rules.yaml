@@ -1,0 +1,750 @@
+- id: R001
+  when:
+    all:
+    - fact: w2_employer_count
+      gte: 1
+  document: Form W-2 from each employer
+  count_from: w2_employer_count
+  aliases:
+  - W-2
+  - Form W-2
+  - W2
+  - wage and tax statement
+  client_reason: You were paid wages, so we need the year-end wage statement from each employer, including any job you left.
+  source_url: ''
+  source_title: ''
+  source_version: guidance
+  tax_years:
+  - 2026
+  trap: false
+  status: to_verify
+  verified_by: null
+  verified_on: null
+- id: R002
+  when:
+    all:
+    - fact: self_employment
+      eq: true
+  document: Business income and expense records, including any Forms 1099-NEC
+  count_from: null
+  aliases:
+  - 1099-NEC
+  - Form 1099-NEC
+  - business income records
+  - business expense records
+  - self-employment records
+  - Schedule C records
+  - nonemployee compensation
+  client_reason: You had freelance or business income, so we need your income and expense records and any year-end payment statements from clients.
+  source_url: ''
+  source_title: ''
+  source_version: guidance
+  tax_years:
+  - 2026
+  trap: false
+  status: to_verify
+  verified_by: null
+  verified_on: null
+- id: R003
+  when:
+    all:
+    - fact: business_app_payments
+      eq: true
+  document: Any Form 1099-K received
+  count_from: null
+  aliases:
+  - 1099-K
+  - Form 1099-K
+  - payment app statement
+  - payment card and third party network transactions
+  client_reason: Customers paid you through an app or online marketplace, so we need any year-end statement it sent you.
+  source_url: ''
+  source_title: ''
+  source_version: guidance
+  tax_years:
+  - 2026
+  trap: false
+  status: to_verify
+  verified_by: null
+  verified_on: null
+- id: R004
+  when:
+    all:
+    - fact: interest_income
+      eq: true
+  document: Form 1099-INT from each payer
+  count_from: null
+  aliases:
+  - 1099-INT
+  - Form 1099-INT
+  - interest income statement
+  - bank interest statement
+  client_reason: You earned interest, so we need the year-end interest statement from each bank or payer.
+  source_url: ''
+  source_title: ''
+  source_version: guidance
+  tax_years:
+  - 2026
+  trap: false
+  status: to_verify
+  verified_by: null
+  verified_on: null
+- id: R005
+  when:
+    all:
+    - fact: dividend_income
+      eq: true
+  document: Form 1099-DIV from each payer
+  count_from: null
+  aliases:
+  - 1099-DIV
+  - Form 1099-DIV
+  - dividend statement
+  - dividends and distributions
+  client_reason: You received dividends, so we need the year-end dividend statement from each payer.
+  source_url: ''
+  source_title: ''
+  source_version: guidance
+  tax_years:
+  - 2026
+  trap: false
+  status: to_verify
+  verified_by: null
+  verified_on: null
+- id: R006
+  when:
+    all:
+    - fact: sold_investments
+      eq: true
+  document: Form 1099-B or the consolidated brokerage statement
+  count_from: null
+  aliases:
+  - 1099-B
+  - Form 1099-B
+  - consolidated brokerage statement
+  - brokerage statement
+  - consolidated 1099
+  client_reason: You sold investments, so we need the year-end statement from your brokerage.
+  source_url: ''
+  source_title: ''
+  source_version: guidance
+  tax_years:
+  - 2026
+  trap: false
+  status: to_verify
+  verified_by: null
+  verified_on: null
+- id: R007
+  when:
+    all:
+    - fact: digital_asset_transactions
+      eq: true
+  document: Form 1099-DA if received, plus transaction records
+  count_from: null
+  aliases:
+  - 1099-DA
+  - Form 1099-DA
+  - digital asset transaction records
+  - crypto transaction records
+  - cryptocurrency records
+  - digital asset proceeds
+  client_reason: You sold or traded digital assets, so we need any year-end statement from the platform and your own transaction records.
+  source_url: ''
+  source_title: ''
+  source_version: guidance
+  tax_years:
+  - 2026
+  trap: false
+  status: to_verify
+  verified_by: null
+  verified_on: null
+- id: R008
+  when:
+    all:
+    - fact: retirement_distribution
+      eq: true
+  document: Form 1099-R
+  count_from: null
+  aliases:
+  - 1099-R
+  - Form 1099-R
+  - retirement distribution statement
+  - pension distribution statement
+  - rollover statement
+  client_reason: You took money out of a retirement account or rolled one over, so we need the year-end distribution statement.
+  source_url: ''
+  source_title: ''
+  source_version: guidance
+  tax_years:
+  - 2026
+  trap: false
+  status: to_verify
+  verified_by: null
+  verified_on: null
+- id: R009
+  when:
+    all:
+    - fact: social_security
+      eq: true
+  document: Form SSA-1099
+  count_from: null
+  aliases:
+  - SSA-1099
+  - Form SSA-1099
+  - Social Security benefit statement
+  client_reason: You received Social Security, so we need the yearly benefit statement.
+  source_url: ''
+  source_title: ''
+  source_version: guidance
+  tax_years:
+  - 2026
+  trap: false
+  status: to_verify
+  verified_by: null
+  verified_on: null
+- id: R010
+  when:
+    all:
+    - fact: unemployment
+      eq: true
+  document: Form 1099-G
+  count_from: null
+  aliases:
+  - 1099-G
+  - Form 1099-G
+  - unemployment compensation statement
+  - unemployment 1099-G
+  client_reason: You received unemployment benefits, so we need the year-end statement from the state.
+  source_url: ''
+  source_title: ''
+  source_version: guidance
+  tax_years:
+  - 2026
+  trap: false
+  status: to_verify
+  verified_by: null
+  verified_on: null
+- id: R011
+  when:
+    all:
+    - fact: state_refund_received
+      eq: true
+    - fact: itemized_last_year
+      eq: true
+  document: Form 1099-G for the refund
+  count_from: null
+  aliases:
+  - 1099-G
+  - Form 1099-G
+  - state refund 1099-G
+  - state tax refund statement
+  - 1099-G for state refund
+  client_reason: You got a state or local tax refund after itemizing last year, so we need the statement showing the refund.
+  source_url: ''
+  source_title: ''
+  source_version: guidance
+  tax_years:
+  - 2026
+  trap: false
+  status: to_verify
+  verified_by: null
+  verified_on: null
+- id: R012
+  when:
+    all:
+    - fact: marketplace_coverage
+      eq: true
+  document: Form 1095-A, Health Insurance Marketplace Statement
+  count_from: null
+  aliases:
+  - 1095-A
+  - Form 1095-A
+  - marketplace statement
+  - Health Insurance Marketplace Statement
+  client_reason: You had a Marketplace plan, so we need the statement the Marketplace sends.
+  source_url: https://www.irs.gov/individuals/reconciling-your-advance-payments-of-the-premium-tax-credit
+  source_title: Reconciling your advance payments of the Premium Tax Credit
+  source_version: guidance
+  tax_years:
+  - 2026
+  trap: false
+  status: to_verify
+  verified_by: null
+  verified_on: null
+- id: R013
+  when:
+    all:
+    - fact: hsa_withdrawal
+      eq: true
+  document: Form 1099-SA
+  count_from: null
+  aliases:
+  - 1099-SA
+  - Form 1099-SA
+  - HSA distribution statement
+  client_reason: You took money out of your health savings account, so we need the year-end distribution statement.
+  source_url: ''
+  source_title: ''
+  source_version: guidance
+  tax_years:
+  - 2026
+  trap: false
+  status: to_verify
+  verified_by: null
+  verified_on: null
+- id: R014
+  when:
+    all:
+    - fact: has_mortgage
+      eq: true
+  document: Form 1098
+  count_from: null
+  aliases:
+  - '1098'
+  - Form 1098
+  - mortgage interest statement
+  client_reason: You have a mortgage, so we need the year-end mortgage interest statement from your lender.
+  source_url: ''
+  source_title: ''
+  source_version: guidance
+  tax_years:
+  - 2026
+  trap: false
+  status: to_verify
+  verified_by: null
+  verified_on: null
+- id: R015
+  when:
+    all:
+    - fact: bought_home
+      eq: true
+  document: Closing statement
+  count_from: null
+  aliases:
+  - closing statement
+  - Closing Disclosure
+  - settlement statement
+  - purchase closing statement
+  - HUD-1
+  client_reason: You bought a home, so we need the closing statement from the purchase.
+  source_url: ''
+  source_title: ''
+  source_version: guidance
+  tax_years:
+  - 2026
+  trap: false
+  status: to_verify
+  verified_by: null
+  verified_on: null
+- id: R016
+  when:
+    all:
+    - fact: student_loan_interest
+      eq: true
+  document: Form 1098-E
+  count_from: null
+  aliases:
+  - 1098-E
+  - Form 1098-E
+  - student loan interest statement
+  client_reason: You paid student loan interest, so we need the year-end interest statement from your loan servicer.
+  source_url: ''
+  source_title: ''
+  source_version: guidance
+  tax_years:
+  - 2026
+  trap: false
+  status: to_verify
+  verified_by: null
+  verified_on: null
+- id: R017
+  when:
+    all:
+    - fact: tuition_paid
+      eq: true
+  document: Form 1098-T
+  count_from: null
+  aliases:
+  - 1098-T
+  - Form 1098-T
+  - tuition statement
+  client_reason: You paid college tuition, so we need the tuition statement from the school.
+  source_url: ''
+  source_title: ''
+  source_version: guidance
+  tax_years:
+  - 2026
+  trap: false
+  status: to_verify
+  verified_by: null
+  verified_on: null
+- id: R018
+  when:
+    all:
+    - fact: dependent_care_paid
+      eq: true
+  document: Provider name, address, taxpayer ID, and amount paid
+  count_from: null
+  aliases:
+  - dependent care provider information
+  - care provider information
+  - child care provider information
+  - provider taxpayer ID
+  - Form W-10
+  - child care receipts
+  - dependent care receipts
+  client_reason: You paid for care, so we need each provider's name, address, taxpayer ID number, and how much you paid.
+  source_url: ''
+  source_title: ''
+  source_version: guidance
+  tax_years:
+  - 2026
+  trap: false
+  status: to_verify
+  verified_by: null
+  verified_on: null
+- id: R019
+  when:
+    all:
+    - fact: new_dependent
+      eq: true
+  document: The dependent's Social Security number and date of birth
+  count_from: null
+  aliases:
+  - dependent Social Security number
+  - dependent SSN
+  - dependent date of birth
+  - Social Security card for dependent
+  - new dependent information
+  client_reason: You have a new dependent, so we need their Social Security number and date of birth.
+  source_url: ''
+  source_title: ''
+  source_version: guidance
+  tax_years:
+  - 2026
+  trap: false
+  status: to_verify
+  verified_by: null
+  verified_on: null
+- id: R020
+  when:
+    all:
+    - fact: k1_count
+      gte: 1
+  document: Schedule K-1 from each
+  count_from: k1_count
+  aliases:
+  - K-1
+  - Schedule K-1
+  - Form K-1
+  client_reason: You have a share in a partnership, company, estate, or trust, so we need the year-end statement from each one.
+  source_url: ''
+  source_title: ''
+  source_version: guidance
+  tax_years:
+  - 2026
+  trap: false
+  status: to_verify
+  verified_by: null
+  verified_on: null
+- id: R021
+  when:
+    all:
+    - fact: rental_property
+      eq: true
+  document: Rental income and expense records
+  count_from: null
+  aliases:
+  - rental income records
+  - rental expense records
+  - rental property records
+  - Schedule E records
+  client_reason: You rented out property, so we need your rental income and expense records.
+  source_url: ''
+  source_title: ''
+  source_version: guidance
+  tax_years:
+  - 2026
+  trap: false
+  status: to_verify
+  verified_by: null
+  verified_on: null
+- id: R022
+  when:
+    all:
+    - fact: estimated_payments_made
+      eq: true
+  document: Dates and amounts paid
+  count_from: null
+  aliases:
+  - estimated tax payments
+  - estimated payment records
+  - 1040-ES
+  - Form 1040-ES
+  - estimated payment dates and amounts
+  client_reason: You made estimated tax payments, so we need the date and amount of each payment.
+  source_url: ''
+  source_title: ''
+  source_version: guidance
+  tax_years:
+  - 2026
+  trap: false
+  status: to_verify
+  verified_by: null
+  verified_on: null
+- id: R023
+  when:
+    all:
+    - fact: gambling_winnings
+      eq: true
+  document: Form W-2G if received
+  count_from: null
+  aliases:
+  - W-2G
+  - Form W-2G
+  - gambling winnings statement
+  client_reason: You had gambling winnings, so we need any winnings statement the payer gave you.
+  source_url: ''
+  source_title: ''
+  source_version: guidance
+  tax_years:
+  - 2026
+  trap: false
+  status: to_verify
+  verified_by: null
+  verified_on: null
+- id: R024
+  when:
+    all:
+    - fact: ip_pin_enrolled
+      eq: true
+  document: This year's IP PIN
+  count_from: null
+  aliases:
+  - IP PIN
+  - Identity Protection PIN
+  - CP01A
+  client_reason: You're in the IRS identity protection program, so we need this year's six-digit PIN.
+  source_url: ''
+  source_title: ''
+  source_version: guidance
+  tax_years:
+  - 2026
+  trap: false
+  status: to_verify
+  verified_by: null
+  verified_on: null
+- id: R025
+  when:
+    all:
+    - fact: charitable_giving
+      eq: true
+  document: Receipts and written acknowledgments
+  count_from: null
+  aliases:
+  - charitable receipts
+  - donation receipts
+  - charitable contribution receipts
+  - written acknowledgment
+  - contemporaneous written acknowledgment
+  - Form 8283
+  client_reason: You gave to charity, so we need your receipts and the written acknowledgments from the charities.
+  source_url: ''
+  source_title: ''
+  source_version: guidance
+  tax_years:
+  - 2026
+  trap: false
+  status: to_verify
+  verified_by: null
+  verified_on: null
+- id: R026
+  when:
+    all:
+    - fact: tips_income
+      eq: true
+  document: Tip records and how the employer reported them
+  count_from: null
+  aliases:
+  - tip records
+  - tip income records
+  - Form 4070
+  - tips reported to employer
+  client_reason: You earned tips, so we need your tip records and how your employer reported them.
+  source_url: ''
+  source_title: ''
+  source_version: guidance
+  tax_years:
+  - 2026
+  trap: false
+  status: to_verify
+  verified_by: null
+  verified_on: null
+- id: R027
+  when:
+    all:
+    - fact: overtime_pay
+      eq: true
+  document: Overtime records and how the employer reported them
+  count_from: null
+  aliases:
+  - overtime records
+  - overtime pay records
+  - overtime pay statement
+  client_reason: You were paid overtime, so we need your overtime records and how your employer reported them.
+  source_url: ''
+  source_title: ''
+  source_version: guidance
+  tax_years:
+  - 2026
+  trap: false
+  status: to_verify
+  verified_by: null
+  verified_on: null
+- id: R028
+  when:
+    all:
+    - fact: new_vehicle_loan
+      eq: true
+  document: Lender's interest statement
+  count_from: null
+  aliases:
+  - vehicle loan interest statement
+  - auto loan interest statement
+  - car loan interest statement
+  - lender interest statement
+  client_reason: You paid interest on a loan for a new vehicle, so we need the lender's statement of interest paid.
+  source_url: ''
+  source_title: ''
+  source_version: guidance
+  tax_years:
+  - 2026
+  trap: false
+  status: to_verify
+  verified_by: null
+  verified_on: null
+- id: R029
+  when:
+    all:
+    - fact: hsa_direct_contribution
+      eq: true
+  document: Contribution records, plus Form 5498-SA if received
+  count_from: null
+  aliases:
+  - 5498-SA
+  - Form 5498-SA
+  - HSA contribution records
+  - HSA contribution statement
+  client_reason: You put money into your health savings account yourself, so we need your contribution records and any year-end contribution statement.
+  source_url: ''
+  source_title: ''
+  source_version: guidance
+  tax_years:
+  - 2026
+  trap: false
+  status: to_verify
+  verified_by: null
+  verified_on: null
+- id: R030
+  when:
+    all:
+    - fact: sold_home
+      eq: true
+  document: Closing statement, plus Form 1099-S if received
+  count_from: null
+  aliases:
+  - 1099-S
+  - Form 1099-S
+  - closing statement
+  - sale closing statement
+  - settlement statement
+  client_reason: You sold a home, so we need the closing statement and any sale statement you received.
+  source_url: ''
+  source_title: ''
+  source_version: guidance
+  tax_years:
+  - 2026
+  trap: false
+  status: to_verify
+  verified_by: null
+  verified_on: null
+- id: T001
+  when:
+    all:
+    - fact: clean_energy_installed
+      eq: true
+    - fact: clean_energy_install_year
+      eq: 2026
+  document: null
+  count_from: null
+  aliases:
+  - Form 5695
+  - '5695'
+  - solar receipt
+  - solar invoice
+  - clean energy invoice
+  - residential clean energy credit
+  client_reason: null
+  source_url: https://www.irs.gov/newsroom/faqs-for-modification-of-sections-25c-25d-25e-30c-30d-45l-45w-and-179d-under-public-law-119-21-139-stat-72-july-4-2025-commonly-known-as-the-one-big-beautiful-bill-act-obbb
+  source_title: IRS FS-2025-05
+  source_version: guidance
+  tax_years:
+  - 2026
+  trap: true
+  status: to_verify
+  verified_by: null
+  verified_on: null
+- id: T002
+  when:
+    all:
+    - fact: efficiency_improvements
+      eq: true
+    - fact: efficiency_improvements_year
+      eq: 2026
+  document: null
+  count_from: null
+  aliases:
+  - Form 5695
+  - '5695'
+  - energy efficiency receipts
+  - home energy improvement receipts
+  - manufacturer certification statement
+  - energy efficient home improvement credit
+  client_reason: null
+  source_url: https://www.irs.gov/newsroom/faqs-for-modification-of-sections-25c-25d-25e-30c-30d-45l-45w-and-179d-under-public-law-119-21-139-stat-72-july-4-2025-commonly-known-as-the-one-big-beautiful-bill-act-obbb
+  source_title: IRS FS-2025-05
+  source_version: guidance
+  tax_years:
+  - 2026
+  trap: true
+  status: to_verify
+  verified_by: null
+  verified_on: null
+- id: T003
+  when:
+    all:
+    - fact: ev_purchased
+      eq: true
+    - fact: ev_acquired_date
+      gte: '2026-01-01'
+    - fact: ev_acquired_date
+      lte: '2026-12-31'
+  document: null
+  count_from: null
+  aliases:
+  - Form 8936
+  - '8936'
+  - clean vehicle credit
+  - EV purchase agreement
+  - seller report
+  - time of sale report
+  client_reason: null
+  source_url: https://www.irs.gov/newsroom/faqs-for-modification-of-sections-25c-25d-25e-30c-30d-45l-45w-and-179d-under-public-law-119-21-139-stat-72-july-4-2025-commonly-known-as-the-one-big-beautiful-bill-act-obbb
+  source_title: IRS FS-2025-05
+  source_version: guidance
+  tax_years:
+  - 2026
+  trap: true
+  status: to_verify
+  verified_by: null
+  verified_on: null

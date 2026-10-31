@@ -1,0 +1,296 @@
+# Fact keys the intake agent can record: 36 top-level keys plus 3 follow-ups
+# (the year and date keys), which are asked only when their parent is yes.
+#
+# type: bool | int | enum | date (ISO YYYY-MM-DD)
+# determinable_from_prior_year: true when last year's summary has a field that
+#   answers it (evidence prior_year:<field>). Other facts can still be carried
+#   over as leads, but they can change, and scoring reports stale carryovers.
+# A fact that is never recorded counts as false for bool, 0 for int, and
+# unknown (null) for enum and date.
+
+- key: filing_status
+  type: enum
+  values: [single, married_joint, married_separate, head_of_household, qualifying_surviving_spouse]
+  topic: household
+  plain_question_hint: "Are you filing the same way as last year: single, married filing together, or something else?"
+  determinable_from_prior_year: true
+  prior_year_field: filing_status
+  asked_if: null
+
+- key: dependents_count
+  type: int
+  min: 0
+  max: 10
+  topic: household
+  plain_question_hint: "How many children or other people do you support who live with you?"
+  determinable_from_prior_year: true
+  prior_year_field: dependents_count
+  asked_if: null
+
+- key: new_dependent
+  type: bool
+  topic: household
+  plain_question_hint: "Did you have a baby, adopt, or start supporting anyone new this year?"
+  determinable_from_prior_year: false
+  asked_if: null
+
+- key: w2_employer_count
+  type: int
+  min: 0
+  max: 10
+  topic: income
+  plain_question_hint: "How many employers paid you wages this year, including any job you left?"
+  determinable_from_prior_year: false
+  asked_if: null
+
+- key: self_employment
+  type: bool
+  topic: income
+  plain_question_hint: "Did you do any freelance, contract, or gig work, or run a business of your own?"
+  determinable_from_prior_year: false
+  asked_if: null
+
+- key: business_app_payments
+  type: bool
+  topic: income
+  plain_question_hint: "Did customers pay you for that work through a payment app or an online marketplace?"
+  determinable_from_prior_year: false
+  asked_if: null
+
+- key: interest_income
+  type: bool
+  topic: investments
+  plain_question_hint: "Did you earn any interest from a bank, credit union, or bonds?"
+  determinable_from_prior_year: false
+  asked_if: null
+
+- key: dividend_income
+  type: bool
+  topic: investments
+  plain_question_hint: "Did you get any dividends from stocks or mutual funds?"
+  determinable_from_prior_year: false
+  asked_if: null
+
+- key: sold_investments
+  type: bool
+  topic: investments
+  plain_question_hint: "Did you sell any stocks, bonds, or mutual funds?"
+  determinable_from_prior_year: false
+  asked_if: null
+
+- key: digital_asset_transactions
+  type: bool
+  topic: investments
+  plain_question_hint: "Did you sell, trade, or get paid in cryptocurrency or any other digital asset?"
+  determinable_from_prior_year: false
+  asked_if: null
+
+- key: retirement_distribution
+  type: bool
+  topic: retirement
+  plain_question_hint: "Did you take money out of a retirement account or pension, or roll one over?"
+  determinable_from_prior_year: false
+  asked_if: null
+
+- key: social_security
+  type: bool
+  topic: retirement
+  plain_question_hint: "Did you receive Social Security benefits?"
+  determinable_from_prior_year: false
+  asked_if: null
+
+- key: unemployment
+  type: bool
+  topic: income
+  plain_question_hint: "Did you receive unemployment benefits?"
+  determinable_from_prior_year: false
+  asked_if: null
+
+- key: itemized_last_year
+  type: bool
+  topic: deductions
+  plain_question_hint: "Did you itemize deductions on last year's return instead of taking the standard deduction?"
+  determinable_from_prior_year: true
+  prior_year_field: itemized
+  asked_if: null
+
+- key: state_refund_received
+  type: bool
+  topic: deductions
+  plain_question_hint: "Did you get a state or local income tax refund this year?"
+  determinable_from_prior_year: false
+  asked_if: null
+
+- key: marketplace_coverage
+  type: bool
+  topic: health
+  plain_question_hint: "Did anyone in your household buy health insurance through HealthCare.gov or a state exchange?"
+  determinable_from_prior_year: false
+  asked_if: null
+
+- key: hsa_withdrawal
+  type: bool
+  topic: health
+  plain_question_hint: "Did you spend or withdraw money from a health savings account?"
+  determinable_from_prior_year: false
+  asked_if: null
+
+- key: hsa_direct_contribution
+  type: bool
+  topic: health
+  plain_question_hint: "Did you put money into a health savings account yourself, outside your paycheck?"
+  determinable_from_prior_year: false
+  asked_if: null
+
+- key: has_mortgage
+  type: bool
+  topic: home
+  plain_question_hint: "Do you have a mortgage on your home?"
+  determinable_from_prior_year: false
+  asked_if: null
+
+- key: bought_home
+  type: bool
+  topic: home
+  plain_question_hint: "Did you buy a home this year?"
+  determinable_from_prior_year: false
+  asked_if: null
+
+- key: sold_home
+  type: bool
+  topic: home
+  plain_question_hint: "Did you sell a home this year?"
+  determinable_from_prior_year: false
+  asked_if: null
+
+- key: student_loan_interest
+  type: bool
+  topic: education
+  plain_question_hint: "Did you pay interest on a student loan?"
+  determinable_from_prior_year: false
+  asked_if: null
+
+- key: tuition_paid
+  type: bool
+  topic: education
+  plain_question_hint: "Did you or anyone you support pay college tuition or fees?"
+  determinable_from_prior_year: false
+  asked_if: null
+
+- key: dependent_care_paid
+  type: bool
+  topic: household
+  plain_question_hint: "Did you pay for child care, or care for another dependent, so you could work?"
+  determinable_from_prior_year: false
+  asked_if: null
+
+- key: k1_count
+  type: int
+  min: 0
+  max: 10
+  topic: investments
+  plain_question_hint: "Do you own a share of a partnership or small company, or get income from an estate or trust? How many?"
+  determinable_from_prior_year: false
+  asked_if: null
+
+- key: rental_property
+  type: bool
+  topic: home
+  plain_question_hint: "Did you rent out a home, apartment, or other property?"
+  determinable_from_prior_year: false
+  asked_if: null
+
+- key: estimated_payments_made
+  type: bool
+  topic: payments
+  plain_question_hint: "Did you send the IRS any tax payments during the year, apart from what came out of your paycheck?"
+  determinable_from_prior_year: false
+  asked_if: null
+
+- key: gambling_winnings
+  type: bool
+  topic: income
+  plain_question_hint: "Did you win money gambling, at a casino, or in a lottery?"
+  determinable_from_prior_year: false
+  asked_if: null
+
+- key: ip_pin_enrolled
+  type: bool
+  topic: identity
+  plain_question_hint: "Has the IRS given you a six-digit Identity Protection PIN?"
+  determinable_from_prior_year: false
+  asked_if: null
+
+- key: charitable_giving
+  type: bool
+  topic: deductions
+  plain_question_hint: "Did you give money or goods to charity?"
+  determinable_from_prior_year: false
+  asked_if: null
+
+- key: tips_income
+  type: bool
+  topic: income
+  plain_question_hint: "Did you earn tips at work?"
+  determinable_from_prior_year: false
+  asked_if: null
+
+- key: overtime_pay
+  type: bool
+  topic: income
+  plain_question_hint: "Were you paid overtime at your job?"
+  determinable_from_prior_year: false
+  asked_if: null
+
+- key: new_vehicle_loan
+  type: bool
+  topic: deductions
+  plain_question_hint: "Did you pay interest on a loan for a new car, truck, or motorcycle you bought for personal use?"
+  determinable_from_prior_year: false
+  asked_if: null
+
+- key: clean_energy_installed
+  type: bool
+  topic: home
+  plain_question_hint: "Did you install solar panels, a solar water heater, a home battery, or similar clean energy equipment?"
+  determinable_from_prior_year: false
+  asked_if: null
+
+- key: clean_energy_install_year
+  type: int
+  min: 2020
+  max: 2026
+  topic: home
+  plain_question_hint: "What year was the installation finished?"
+  determinable_from_prior_year: false
+  asked_if: {fact: clean_energy_installed, eq: true}
+
+- key: efficiency_improvements
+  type: bool
+  topic: home
+  plain_question_hint: "Did you make energy-saving upgrades to your home, such as new windows, insulation, a heat pump, or a new furnace?"
+  determinable_from_prior_year: false
+  asked_if: null
+
+- key: efficiency_improvements_year
+  type: int
+  min: 2020
+  max: 2026
+  topic: home
+  plain_question_hint: "What year were those upgrades put in?"
+  determinable_from_prior_year: false
+  asked_if: {fact: efficiency_improvements, eq: true}
+
+- key: ev_purchased
+  type: bool
+  topic: vehicles
+  plain_question_hint: "Did you buy an electric or plug-in hybrid vehicle?"
+  determinable_from_prior_year: false
+  asked_if: null
+
+- key: ev_acquired_date
+  type: date
+  topic: vehicles
+  plain_question_hint: "When did you sign the purchase contract and make a payment on it?"
+  determinable_from_prior_year: false
+  asked_if: {fact: ev_purchased, eq: true}
