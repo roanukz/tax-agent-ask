@@ -1,0 +1,161 @@
+# A small rules file for the server tests, independent of rules/document_rules.yaml.
+# It mixes statuses on purpose: verified, to_verify, and excluded rules, a
+# counted rule of each status, a rule that needs two facts, and one trap of
+# each status. verified_by is "fixture" because nobody verified these.
+
+- id: R001
+  when:
+    all:
+    - {fact: w2_employer_count, gte: 1}
+  document: Form W-2 from each employer
+  count_from: w2_employer_count
+  aliases: [W-2, Form W-2]
+  client_reason: You were paid wages, so we need the year-end wage statement from each employer.
+  source_url: https://www.irs.gov/forms-pubs/about-form-w-2
+  source_title: About Form W-2, Wage and Tax Statement
+  source_version: guidance
+  tax_years: [2026]
+  trap: false
+  status: verified
+  verified_by: fixture
+  verified_on: '2026-10-30'
+
+- id: R004
+  when:
+    all:
+    - {fact: interest_income, eq: true}
+  document: Form 1099-INT from each payer
+  count_from: null
+  aliases: [1099-INT]
+  client_reason: You earned interest, so we need the year-end interest statement from each payer.
+  source_url: https://www.irs.gov/forms-pubs/about-form-1099-int
+  source_title: About Form 1099-INT, Interest Income
+  source_version: guidance
+  tax_years: [2026]
+  trap: false
+  status: verified
+  verified_by: fixture
+  verified_on: '2026-10-30'
+
+- id: R011
+  when:
+    all:
+    - {fact: state_refund_received, eq: true}
+    - {fact: itemized_last_year, eq: true}
+  document: Form 1099-G for the refund
+  count_from: null
+  aliases: [1099-G]
+  client_reason: You itemized last year and got a state refund, so we need the statement for the refund.
+  source_url: https://www.irs.gov/forms-pubs/about-form-1099-g
+  source_title: About Form 1099-G, Certain Government Payments
+  source_version: guidance
+  tax_years: [2026]
+  trap: false
+  status: verified
+  verified_by: fixture
+  verified_on: '2026-10-30'
+
+- id: R012
+  when:
+    all:
+    - {fact: marketplace_coverage, eq: true}
+  document: Form 1095-A, Health Insurance Marketplace Statement
+  count_from: null
+  aliases: [1095-A]
+  client_reason: You had a Marketplace plan, so we need the statement the Marketplace provides.
+  source_url: https://www.irs.gov/forms-pubs/about-form-1095-a
+  source_title: About Form 1095-A, Health Insurance Marketplace Statement
+  source_version: guidance
+  tax_years: [2026]
+  trap: false
+  status: to_verify
+  verified_by: null
+  verified_on: null
+
+- id: R014
+  when:
+    all:
+    - {fact: has_mortgage, eq: true}
+  document: Form 1098
+  count_from: null
+  aliases: [1098]
+  client_reason: You have a mortgage, so we need the lender's year-end interest statement.
+  source_url: https://www.irs.gov/forms-pubs/about-form-1098
+  source_title: About Form 1098, Mortgage Interest Statement
+  source_version: guidance
+  tax_years: [2026]
+  trap: false
+  status: verified
+  verified_by: fixture
+  verified_on: '2026-10-30'
+
+- id: R020
+  when:
+    all:
+    - {fact: k1_count, gte: 1}
+  document: Schedule K-1 from each
+  count_from: k1_count
+  aliases: [K-1]
+  client_reason: You have a share in a partnership, company, estate, or trust, so we need each Schedule K-1.
+  source_url: https://www.irs.gov/forms-pubs/about-schedule-k-1-form-1065
+  source_title: About Schedule K-1 (Form 1065)
+  source_version: guidance
+  tax_years: [2026]
+  trap: false
+  status: to_verify
+  verified_by: null
+  verified_on: null
+
+- id: R024
+  when:
+    all:
+    - {fact: ip_pin_enrolled, eq: true}
+  document: This year's IP PIN
+  count_from: null
+  aliases: [IP PIN]
+  client_reason: You are in the Identity Protection PIN program, so we need this year's PIN.
+  source_url: https://www.irs.gov/identity-theft-fraud-scams/get-an-identity-protection-pin
+  source_title: Get an identity protection PIN
+  source_version: guidance
+  tax_years: [2026]
+  trap: false
+  status: excluded
+  verified_by: null
+  verified_on: null
+
+- id: T001
+  when:
+    all:
+    - {fact: clean_energy_installed, eq: true}
+    - {fact: clean_energy_install_year, eq: 2026}
+  document: null
+  count_from: null
+  aliases: [Form 5695, solar receipt]
+  client_reason: null
+  source_url: https://www.irs.gov/newsroom/faqs-for-modification-of-sections-25c-25d-25e-30c-30d-45l-45w-and-179d-under-public-law-119-21-139-stat-72-july-4-2025-commonly-known-as-the-one-big-beautiful-bill-act-obbb
+  source_title: IRS FS-2025-05
+  source_version: guidance
+  tax_years: [2026]
+  trap: true
+  status: verified
+  verified_by: fixture
+  verified_on: '2026-10-30'
+
+- id: T003
+  when:
+    all:
+    - {fact: ev_purchased, eq: true}
+    - {fact: ev_acquired_date, gte: '2026-01-01'}
+    - {fact: ev_acquired_date, lte: '2026-12-31'}
+  document: null
+  count_from: null
+  aliases: [Form 8936, clean vehicle credit]
+  client_reason: null
+  source_url: https://www.irs.gov/newsroom/faqs-for-modification-of-sections-25c-25d-25e-30c-30d-45l-45w-and-179d-under-public-law-119-21-139-stat-72-july-4-2025-commonly-known-as-the-one-big-beautiful-bill-act-obbb
+  source_title: IRS FS-2025-05
+  source_version: guidance
+  tax_years: [2026]
+  trap: true
+  status: to_verify
+  verified_by: null
+  verified_on: null

@@ -1,0 +1,16 @@
+{
+  "household_id": "H002",
+  "client_name": "Robin and Sam Testcase",
+  "tax_year": 2026,
+  "prior_year_summary": {
+    "tax_year": 2025,
+    "filing_status": "married_joint",
+    "dependents_count": 1,
+    "itemized": true,
+    "documents_on_file": [
+      {"rule_id": "R001", "label": "Form W-2", "count": 2},
+      {"rule_id": "R004", "label": "Form 1099-INT", "count": 1},
+      {"rule_id": "R014", "label": "Form 1098", "count": 1}
+    ]
+  }
+}

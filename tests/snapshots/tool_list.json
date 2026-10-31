@@ -1,0 +1,233 @@
+[
+  {
+    "name": "start_intake",
+    "title": "Start intake",
+    "description": "Opens an intake for one household. Returns a new intake_id, which every other tool takes, and last year's summary. Last year's information is a lead to confirm, not a fact about this year.",
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "openWorldHint": false
+    },
+    "inputSchema": {
+      "properties": {
+        "household_id": {
+          "description": "The household ID: H followed by three digits, such as H017.",
+          "title": "Household Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "household_id"
+      ],
+      "title": "start_intakeArguments",
+      "type": "object"
+    }
+  },
+  {
+    "name": "list_fact_keys",
+    "title": "List fact keys",
+    "description": "Lists every fact key you can record: its type, allowed values or range, topic, a plain-language question hint, when a follow-up applies, and whether last year's summary can answer it. A fact you never record counts as no, or zero.",
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": false
+    },
+    "inputSchema": {
+      "properties": {},
+      "title": "list_fact_keysArguments",
+      "type": "object"
+    }
+  },
+  {
+    "name": "get_document_rules",
+    "title": "Get document rules",
+    "description": "Lists the rules that turn facts into documents, each with its official source. A rule for a credit that ended shows that no document is needed. Pass fact_key to see only the rules that read that fact.",
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": false
+    },
+    "inputSchema": {
+      "properties": {
+        "fact_key": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Only return rules whose condition reads this fact key.",
+          "title": "Fact Key"
+        }
+      },
+      "title": "get_document_rulesArguments",
+      "type": "object"
+    }
+  },
+  {
+    "name": "record_fact",
+    "title": "Record a fact",
+    "description": "Records one fact for this intake, checked against the key's type. Evidence must be the client's exact words from an answer, or prior_year:<field> naming a field in last year's summary. Recording a key again replaces its value and keeps the history.",
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "openWorldHint": false
+    },
+    "inputSchema": {
+      "properties": {
+        "intake_id": {
+          "description": "The intake_id that start_intake returned.",
+          "title": "Intake Id",
+          "type": "string"
+        },
+        "key": {
+          "description": "A fact key from list_fact_keys.",
+          "title": "Key",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "description": "The fact's value for its type: true or false, a whole number, one of the key's values, or a date as YYYY-MM-DD.",
+          "title": "Value"
+        },
+        "evidence": {
+          "description": "The client's exact words from an answer, or prior_year:<field> naming a field in last year's summary, such as prior_year:filing_status or prior_year:documents_on_file.R001.",
+          "title": "Evidence",
+          "type": "string"
+        }
+      },
+      "required": [
+        "intake_id",
+        "key",
+        "value",
+        "evidence"
+      ],
+      "title": "record_factArguments",
+      "type": "object"
+    }
+  },
+  {
+    "name": "build_request_list",
+    "title": "Build the request list",
+    "description": "Computes the document request list from the recorded facts and the rules, with each document's count, reason, and source. Also lists the facts never recorded and the credits that ended, which need no document. Code writes this list; use add_custom_request for anything no rule covers.",
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": false
+    },
+    "inputSchema": {
+      "properties": {
+        "intake_id": {
+          "description": "The intake_id that start_intake returned.",
+          "title": "Intake Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "intake_id"
+      ],
+      "title": "build_request_listArguments",
+      "type": "object"
+    }
+  },
+  {
+    "name": "add_custom_request",
+    "title": "Add a custom request",
+    "description": "Adds a request for something the client described that no rule covers, with the reason. Every custom request is flagged for the preparer to review.",
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "openWorldHint": false
+    },
+    "inputSchema": {
+      "properties": {
+        "intake_id": {
+          "description": "The intake_id that start_intake returned.",
+          "title": "Intake Id",
+          "type": "string"
+        },
+        "document": {
+          "description": "The document to ask the client for, in plain language.",
+          "title": "Document",
+          "type": "string"
+        },
+        "reason": {
+          "description": "Why this client needs it: what they described that no rule covers.",
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "intake_id",
+        "document",
+        "reason"
+      ],
+      "title": "add_custom_requestArguments",
+      "type": "object"
+    }
+  },
+  {
+    "name": "note_for_preparer",
+    "title": "Note for the preparer",
+    "description": "Leaves a note for the preparer, such as a tax question the client asked that the preparer should answer.",
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "openWorldHint": false
+    },
+    "inputSchema": {
+      "properties": {
+        "intake_id": {
+          "description": "The intake_id that start_intake returned.",
+          "title": "Intake Id",
+          "type": "string"
+        },
+        "text": {
+          "description": "The note, such as the client's tax question in their own words.",
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "intake_id",
+        "text"
+      ],
+      "title": "note_for_preparerArguments",
+      "type": "object"
+    }
+  },
+  {
+    "name": "submit_for_preparer_review",
+    "title": "Submit for preparer review",
+    "description": "Freezes the draft request list with status pending_review so the preparer can review it. After this the intake can't change.",
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "openWorldHint": false
+    },
+    "inputSchema": {
+      "properties": {
+        "intake_id": {
+          "description": "The intake_id that start_intake returned.",
+          "title": "Intake Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "intake_id"
+      ],
+      "title": "submit_for_preparer_reviewArguments",
+      "type": "object"
+    }
+  }
+]
