@@ -1,0 +1,18 @@
+{
+  "household_id": "H004",
+  "tax_year": 2026,
+  "client_name": "Example Household 004",
+  "prior_year_summary": {
+    "tax_year": 2025,
+    "filing_status": "married_joint",
+    "dependents_count": 0,
+    "itemized": false,
+    "documents_on_file": [
+      {
+        "rule_id": "R001",
+        "label": "Form W-2",
+        "count": 3
+      }
+    ]
+  }
+}

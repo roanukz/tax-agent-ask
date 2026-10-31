@@ -1,0 +1,38 @@
+{
+  "household_id": "H027",
+  "tax_year": 2026,
+  "client_name": "Example Household 027",
+  "prior_year_summary": {
+    "tax_year": 2025,
+    "filing_status": "single",
+    "dependents_count": 3,
+    "itemized": false,
+    "documents_on_file": [
+      {
+        "rule_id": "R001",
+        "label": "Form W-2",
+        "count": 1
+      },
+      {
+        "rule_id": "R014",
+        "label": "Form 1098",
+        "count": 1
+      },
+      {
+        "rule_id": "R018",
+        "label": "Dependent care provider information",
+        "count": 1
+      },
+      {
+        "rule_id": "R020",
+        "label": "Schedule K-1",
+        "count": 1
+      },
+      {
+        "rule_id": "R025",
+        "label": "Charitable contribution receipts",
+        "count": 1
+      }
+    ]
+  }
+}

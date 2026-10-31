@@ -1,0 +1,38 @@
+{
+  "household_id": "H092",
+  "tax_year": 2026,
+  "client_name": "Example Client 092",
+  "prior_year_summary": {
+    "tax_year": 2025,
+    "filing_status": "head_of_household",
+    "dependents_count": 1,
+    "itemized": false,
+    "documents_on_file": [
+      {
+        "rule_id": "R001",
+        "label": "Form W-2",
+        "count": 2
+      },
+      {
+        "rule_id": "R012",
+        "label": "Form 1095-A",
+        "count": 1
+      },
+      {
+        "rule_id": "R018",
+        "label": "Dependent care provider information",
+        "count": 1
+      },
+      {
+        "rule_id": "R020",
+        "label": "Schedule K-1",
+        "count": 3
+      },
+      {
+        "rule_id": "R024",
+        "label": "IP PIN",
+        "count": 1
+      }
+    ]
+  }
+}

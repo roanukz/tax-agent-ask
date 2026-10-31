@@ -1,0 +1,28 @@
+{
+  "household_id": "H083",
+  "tax_year": 2026,
+  "client_name": "Sample Client 083",
+  "prior_year_summary": {
+    "tax_year": 2025,
+    "filing_status": "married_joint",
+    "dependents_count": 3,
+    "itemized": false,
+    "documents_on_file": [
+      {
+        "rule_id": "R001",
+        "label": "Form W-2",
+        "count": 1
+      },
+      {
+        "rule_id": "R014",
+        "label": "Form 1098",
+        "count": 1
+      },
+      {
+        "rule_id": "R020",
+        "label": "Schedule K-1",
+        "count": 1
+      }
+    ]
+  }
+}

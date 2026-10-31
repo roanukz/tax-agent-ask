@@ -1,0 +1,28 @@
+{
+  "household_id": "H028",
+  "tax_year": 2026,
+  "client_name": "Sample Household 028",
+  "prior_year_summary": {
+    "tax_year": 2025,
+    "filing_status": "married_joint",
+    "dependents_count": 1,
+    "itemized": false,
+    "documents_on_file": [
+      {
+        "rule_id": "R001",
+        "label": "Form W-2",
+        "count": 1
+      },
+      {
+        "rule_id": "R002",
+        "label": "Business income and expense records",
+        "count": 1
+      },
+      {
+        "rule_id": "R003",
+        "label": "Form 1099-K",
+        "count": 1
+      }
+    ]
+  }
+}

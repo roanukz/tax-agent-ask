@@ -1,0 +1,38 @@
+{
+  "household_id": "H087",
+  "tax_year": 2026,
+  "client_name": "Testcase Client 087",
+  "prior_year_summary": {
+    "tax_year": 2025,
+    "filing_status": "married_separate",
+    "dependents_count": 0,
+    "itemized": true,
+    "documents_on_file": [
+      {
+        "rule_id": "R001",
+        "label": "Form W-2",
+        "count": 3
+      },
+      {
+        "rule_id": "R011",
+        "label": "Form 1099-G (state refund)",
+        "count": 1
+      },
+      {
+        "rule_id": "R014",
+        "label": "Form 1098",
+        "count": 1
+      },
+      {
+        "rule_id": "R021",
+        "label": "Rental income and expense records",
+        "count": 1
+      },
+      {
+        "rule_id": "R027",
+        "label": "Overtime records",
+        "count": 1
+      }
+    ]
+  }
+}

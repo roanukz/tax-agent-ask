@@ -1,0 +1,28 @@
+{
+  "household_id": "H097",
+  "tax_year": 2026,
+  "client_name": "Mock Household 097",
+  "prior_year_summary": {
+    "tax_year": 2025,
+    "filing_status": "head_of_household",
+    "dependents_count": 1,
+    "itemized": false,
+    "documents_on_file": [
+      {
+        "rule_id": "R001",
+        "label": "Form W-2",
+        "count": 1
+      },
+      {
+        "rule_id": "R013",
+        "label": "Form 1099-SA",
+        "count": 1
+      },
+      {
+        "rule_id": "R020",
+        "label": "Schedule K-1",
+        "count": 1
+      }
+    ]
+  }
+}

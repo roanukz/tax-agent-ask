@@ -1,0 +1,3146 @@
+{
+  "rules_fingerprint": "b6ba4e510ed26946242947f87c10347a3e203ec319e7c4e717b2090f298ab7a9",
+  "statuses": [
+    "verified",
+    "to_verify"
+  ],
+  "households": {
+    "H001": {
+      "split": "test",
+      "complexity": "complex",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 2
+        },
+        {
+          "rule_id": "R002",
+          "count": 1
+        },
+        {
+          "rule_id": "R003",
+          "count": 1
+        },
+        {
+          "rule_id": "R009",
+          "count": 1
+        },
+        {
+          "rule_id": "R014",
+          "count": 1
+        },
+        {
+          "rule_id": "R015",
+          "count": 1
+        },
+        {
+          "rule_id": "R020",
+          "count": 1
+        },
+        {
+          "rule_id": "R021",
+          "count": 1
+        },
+        {
+          "rule_id": "R022",
+          "count": 1
+        },
+        {
+          "rule_id": "R025",
+          "count": 1
+        },
+        {
+          "rule_id": "R026",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001",
+        "R002",
+        "R003",
+        "R009",
+        "R014",
+        "R015",
+        "R020",
+        "R021",
+        "R022",
+        "R025",
+        "R026"
+      ]
+    },
+    "H002": {
+      "split": "dev",
+      "complexity": "simple",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001"
+      ]
+    },
+    "H003": {
+      "split": "dev",
+      "complexity": "simple",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001"
+      ]
+    },
+    "H004": {
+      "split": "test",
+      "complexity": "medium",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 2
+        },
+        {
+          "rule_id": "R009",
+          "count": 1
+        },
+        {
+          "rule_id": "R014",
+          "count": 1
+        },
+        {
+          "rule_id": "R015",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001",
+        "R009",
+        "R014",
+        "R015"
+      ]
+    },
+    "H005": {
+      "split": "test",
+      "complexity": "medium",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 3
+        },
+        {
+          "rule_id": "R002",
+          "count": 1
+        },
+        {
+          "rule_id": "R030",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001",
+        "R002",
+        "R030"
+      ]
+    },
+    "H006": {
+      "split": "test",
+      "complexity": "simple",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001"
+      ]
+    },
+    "H007": {
+      "split": "test",
+      "complexity": "medium",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 2
+        },
+        {
+          "rule_id": "R017",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001",
+        "R017"
+      ]
+    },
+    "H008": {
+      "split": "test",
+      "complexity": "medium",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        },
+        {
+          "rule_id": "R002",
+          "count": 1
+        },
+        {
+          "rule_id": "R003",
+          "count": 1
+        },
+        {
+          "rule_id": "R007",
+          "count": 1
+        },
+        {
+          "rule_id": "R018",
+          "count": 1
+        },
+        {
+          "rule_id": "R025",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001",
+        "R002",
+        "R003",
+        "R007",
+        "R018",
+        "R025"
+      ]
+    },
+    "H009": {
+      "split": "test",
+      "complexity": "complex",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        },
+        {
+          "rule_id": "R004",
+          "count": 1
+        },
+        {
+          "rule_id": "R008",
+          "count": 1
+        },
+        {
+          "rule_id": "R010",
+          "count": 1
+        },
+        {
+          "rule_id": "R012",
+          "count": 1
+        },
+        {
+          "rule_id": "R014",
+          "count": 1
+        },
+        {
+          "rule_id": "R015",
+          "count": 1
+        },
+        {
+          "rule_id": "R018",
+          "count": 1
+        },
+        {
+          "rule_id": "R019",
+          "count": 1
+        },
+        {
+          "rule_id": "R021",
+          "count": 1
+        },
+        {
+          "rule_id": "R024",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001",
+        "R004",
+        "R008",
+        "R010",
+        "R012",
+        "R014",
+        "R015",
+        "R018",
+        "R019",
+        "R021",
+        "R024"
+      ]
+    },
+    "H010": {
+      "split": "train",
+      "complexity": "medium",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 2
+        },
+        {
+          "rule_id": "R019",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001",
+        "R019"
+      ]
+    },
+    "H011": {
+      "split": "dev",
+      "complexity": "complex",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        },
+        {
+          "rule_id": "R004",
+          "count": 1
+        },
+        {
+          "rule_id": "R005",
+          "count": 1
+        },
+        {
+          "rule_id": "R009",
+          "count": 1
+        },
+        {
+          "rule_id": "R014",
+          "count": 1
+        },
+        {
+          "rule_id": "R015",
+          "count": 1
+        },
+        {
+          "rule_id": "R019",
+          "count": 1
+        },
+        {
+          "rule_id": "R020",
+          "count": 2
+        }
+      ],
+      "traps": [
+        "T002"
+      ],
+      "unverified_rule_ids": [
+        "R001",
+        "R004",
+        "R005",
+        "R009",
+        "R014",
+        "R015",
+        "R019",
+        "R020",
+        "T002"
+      ]
+    },
+    "H012": {
+      "split": "dev",
+      "complexity": "simple",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001"
+      ]
+    },
+    "H013": {
+      "split": "train",
+      "complexity": "simple",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001"
+      ]
+    },
+    "H014": {
+      "split": "test",
+      "complexity": "complex",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        },
+        {
+          "rule_id": "R005",
+          "count": 1
+        },
+        {
+          "rule_id": "R006",
+          "count": 1
+        },
+        {
+          "rule_id": "R007",
+          "count": 1
+        },
+        {
+          "rule_id": "R011",
+          "count": 1
+        },
+        {
+          "rule_id": "R014",
+          "count": 1
+        },
+        {
+          "rule_id": "R015",
+          "count": 1
+        },
+        {
+          "rule_id": "R020",
+          "count": 1
+        },
+        {
+          "rule_id": "R021",
+          "count": 1
+        },
+        {
+          "rule_id": "R027",
+          "count": 1
+        }
+      ],
+      "traps": [
+        "T001",
+        "T002"
+      ],
+      "unverified_rule_ids": [
+        "R001",
+        "R005",
+        "R006",
+        "R007",
+        "R011",
+        "R014",
+        "R015",
+        "R020",
+        "R021",
+        "R027",
+        "T001",
+        "T002"
+      ]
+    },
+    "H015": {
+      "split": "dev",
+      "complexity": "medium",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        },
+        {
+          "rule_id": "R005",
+          "count": 1
+        },
+        {
+          "rule_id": "R011",
+          "count": 1
+        },
+        {
+          "rule_id": "R014",
+          "count": 1
+        },
+        {
+          "rule_id": "R026",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001",
+        "R005",
+        "R011",
+        "R014",
+        "R026"
+      ]
+    },
+    "H016": {
+      "split": "test",
+      "complexity": "medium",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        },
+        {
+          "rule_id": "R019",
+          "count": 1
+        },
+        {
+          "rule_id": "R025",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001",
+        "R019",
+        "R025"
+      ]
+    },
+    "H017": {
+      "split": "test",
+      "complexity": "complex",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 2
+        },
+        {
+          "rule_id": "R002",
+          "count": 1
+        },
+        {
+          "rule_id": "R006",
+          "count": 1
+        },
+        {
+          "rule_id": "R009",
+          "count": 1
+        },
+        {
+          "rule_id": "R012",
+          "count": 1
+        },
+        {
+          "rule_id": "R019",
+          "count": 1
+        },
+        {
+          "rule_id": "R020",
+          "count": 1
+        },
+        {
+          "rule_id": "R021",
+          "count": 1
+        },
+        {
+          "rule_id": "R025",
+          "count": 1
+        },
+        {
+          "rule_id": "R026",
+          "count": 1
+        },
+        {
+          "rule_id": "R027",
+          "count": 1
+        }
+      ],
+      "traps": [
+        "T003"
+      ],
+      "unverified_rule_ids": [
+        "R001",
+        "R002",
+        "R006",
+        "R009",
+        "R012",
+        "R019",
+        "R020",
+        "R021",
+        "R025",
+        "R026",
+        "R027",
+        "T003"
+      ]
+    },
+    "H018": {
+      "split": "train",
+      "complexity": "complex",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 3
+        },
+        {
+          "rule_id": "R004",
+          "count": 1
+        },
+        {
+          "rule_id": "R006",
+          "count": 1
+        },
+        {
+          "rule_id": "R011",
+          "count": 1
+        },
+        {
+          "rule_id": "R012",
+          "count": 1
+        },
+        {
+          "rule_id": "R014",
+          "count": 1
+        },
+        {
+          "rule_id": "R018",
+          "count": 1
+        },
+        {
+          "rule_id": "R020",
+          "count": 1
+        },
+        {
+          "rule_id": "R025",
+          "count": 1
+        }
+      ],
+      "traps": [
+        "T001",
+        "T002"
+      ],
+      "unverified_rule_ids": [
+        "R001",
+        "R004",
+        "R006",
+        "R011",
+        "R012",
+        "R014",
+        "R018",
+        "R020",
+        "R025",
+        "T001",
+        "T002"
+      ]
+    },
+    "H019": {
+      "split": "train",
+      "complexity": "complex",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        },
+        {
+          "rule_id": "R002",
+          "count": 1
+        },
+        {
+          "rule_id": "R004",
+          "count": 1
+        },
+        {
+          "rule_id": "R010",
+          "count": 1
+        },
+        {
+          "rule_id": "R012",
+          "count": 1
+        },
+        {
+          "rule_id": "R018",
+          "count": 1
+        },
+        {
+          "rule_id": "R020",
+          "count": 2
+        },
+        {
+          "rule_id": "R021",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001",
+        "R002",
+        "R004",
+        "R010",
+        "R012",
+        "R018",
+        "R020",
+        "R021"
+      ]
+    },
+    "H020": {
+      "split": "dev",
+      "complexity": "medium",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 2
+        },
+        {
+          "rule_id": "R007",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001",
+        "R007"
+      ]
+    },
+    "H021": {
+      "split": "dev",
+      "complexity": "simple",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001"
+      ]
+    },
+    "H022": {
+      "split": "train",
+      "complexity": "complex",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 3
+        },
+        {
+          "rule_id": "R004",
+          "count": 1
+        },
+        {
+          "rule_id": "R005",
+          "count": 1
+        },
+        {
+          "rule_id": "R008",
+          "count": 1
+        },
+        {
+          "rule_id": "R019",
+          "count": 1
+        },
+        {
+          "rule_id": "R020",
+          "count": 1
+        },
+        {
+          "rule_id": "R021",
+          "count": 1
+        },
+        {
+          "rule_id": "R023",
+          "count": 1
+        },
+        {
+          "rule_id": "R027",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001",
+        "R004",
+        "R005",
+        "R008",
+        "R019",
+        "R020",
+        "R021",
+        "R023",
+        "R027"
+      ]
+    },
+    "H023": {
+      "split": "test",
+      "complexity": "simple",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 2
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001"
+      ]
+    },
+    "H024": {
+      "split": "dev",
+      "complexity": "medium",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 2
+        },
+        {
+          "rule_id": "R010",
+          "count": 1
+        }
+      ],
+      "traps": [
+        "T003"
+      ],
+      "unverified_rule_ids": [
+        "R001",
+        "R010",
+        "T003"
+      ]
+    },
+    "H025": {
+      "split": "test",
+      "complexity": "medium",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        },
+        {
+          "rule_id": "R013",
+          "count": 1
+        },
+        {
+          "rule_id": "R018",
+          "count": 1
+        },
+        {
+          "rule_id": "R030",
+          "count": 1
+        }
+      ],
+      "traps": [
+        "T002"
+      ],
+      "unverified_rule_ids": [
+        "R001",
+        "R013",
+        "R018",
+        "R030",
+        "T002"
+      ]
+    },
+    "H026": {
+      "split": "test",
+      "complexity": "simple",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001"
+      ]
+    },
+    "H027": {
+      "split": "test",
+      "complexity": "complex",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 2
+        },
+        {
+          "rule_id": "R002",
+          "count": 1
+        },
+        {
+          "rule_id": "R003",
+          "count": 1
+        },
+        {
+          "rule_id": "R009",
+          "count": 1
+        },
+        {
+          "rule_id": "R014",
+          "count": 1
+        },
+        {
+          "rule_id": "R017",
+          "count": 1
+        },
+        {
+          "rule_id": "R018",
+          "count": 1
+        },
+        {
+          "rule_id": "R020",
+          "count": 1
+        },
+        {
+          "rule_id": "R023",
+          "count": 1
+        },
+        {
+          "rule_id": "R025",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001",
+        "R002",
+        "R003",
+        "R009",
+        "R014",
+        "R017",
+        "R018",
+        "R020",
+        "R023",
+        "R025"
+      ]
+    },
+    "H028": {
+      "split": "test",
+      "complexity": "medium",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        },
+        {
+          "rule_id": "R010",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001",
+        "R010"
+      ]
+    },
+    "H029": {
+      "split": "dev",
+      "complexity": "medium",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 2
+        },
+        {
+          "rule_id": "R013",
+          "count": 1
+        },
+        {
+          "rule_id": "R030",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001",
+        "R013",
+        "R030"
+      ]
+    },
+    "H030": {
+      "split": "dev",
+      "complexity": "medium",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 2
+        },
+        {
+          "rule_id": "R007",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001",
+        "R007"
+      ]
+    },
+    "H031": {
+      "split": "train",
+      "complexity": "medium",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        },
+        {
+          "rule_id": "R007",
+          "count": 1
+        },
+        {
+          "rule_id": "R008",
+          "count": 1
+        },
+        {
+          "rule_id": "R014",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001",
+        "R007",
+        "R008",
+        "R014"
+      ]
+    },
+    "H032": {
+      "split": "dev",
+      "complexity": "complex",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        },
+        {
+          "rule_id": "R002",
+          "count": 1
+        },
+        {
+          "rule_id": "R003",
+          "count": 1
+        },
+        {
+          "rule_id": "R008",
+          "count": 1
+        },
+        {
+          "rule_id": "R013",
+          "count": 1
+        },
+        {
+          "rule_id": "R021",
+          "count": 1
+        },
+        {
+          "rule_id": "R024",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001",
+        "R002",
+        "R003",
+        "R008",
+        "R013",
+        "R021",
+        "R024"
+      ]
+    },
+    "H033": {
+      "split": "test",
+      "complexity": "simple",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 2
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001"
+      ]
+    },
+    "H034": {
+      "split": "test",
+      "complexity": "medium",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        },
+        {
+          "rule_id": "R020",
+          "count": 2
+        },
+        {
+          "rule_id": "R021",
+          "count": 1
+        },
+        {
+          "rule_id": "R023",
+          "count": 1
+        },
+        {
+          "rule_id": "R028",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001",
+        "R020",
+        "R021",
+        "R023",
+        "R028"
+      ]
+    },
+    "H035": {
+      "split": "dev",
+      "complexity": "simple",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 2
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001"
+      ]
+    },
+    "H036": {
+      "split": "dev",
+      "complexity": "complex",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 2
+        },
+        {
+          "rule_id": "R002",
+          "count": 1
+        },
+        {
+          "rule_id": "R003",
+          "count": 1
+        },
+        {
+          "rule_id": "R004",
+          "count": 1
+        },
+        {
+          "rule_id": "R005",
+          "count": 1
+        },
+        {
+          "rule_id": "R014",
+          "count": 1
+        },
+        {
+          "rule_id": "R015",
+          "count": 1
+        },
+        {
+          "rule_id": "R016",
+          "count": 1
+        },
+        {
+          "rule_id": "R017",
+          "count": 1
+        },
+        {
+          "rule_id": "R021",
+          "count": 1
+        },
+        {
+          "rule_id": "R022",
+          "count": 1
+        },
+        {
+          "rule_id": "R023",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001",
+        "R002",
+        "R003",
+        "R004",
+        "R005",
+        "R014",
+        "R015",
+        "R016",
+        "R017",
+        "R021",
+        "R022",
+        "R023"
+      ]
+    },
+    "H037": {
+      "split": "test",
+      "complexity": "medium",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 2
+        },
+        {
+          "rule_id": "R002",
+          "count": 1
+        },
+        {
+          "rule_id": "R003",
+          "count": 1
+        },
+        {
+          "rule_id": "R009",
+          "count": 1
+        },
+        {
+          "rule_id": "R016",
+          "count": 1
+        },
+        {
+          "rule_id": "R028",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001",
+        "R002",
+        "R003",
+        "R009",
+        "R016",
+        "R028"
+      ]
+    },
+    "H038": {
+      "split": "train",
+      "complexity": "simple",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001"
+      ]
+    },
+    "H039": {
+      "split": "dev",
+      "complexity": "medium",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 2
+        },
+        {
+          "rule_id": "R019",
+          "count": 1
+        },
+        {
+          "rule_id": "R026",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001",
+        "R019",
+        "R026"
+      ]
+    },
+    "H040": {
+      "split": "test",
+      "complexity": "complex",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 3
+        },
+        {
+          "rule_id": "R005",
+          "count": 1
+        },
+        {
+          "rule_id": "R006",
+          "count": 1
+        },
+        {
+          "rule_id": "R009",
+          "count": 1
+        },
+        {
+          "rule_id": "R021",
+          "count": 1
+        }
+      ],
+      "traps": [
+        "T001",
+        "T002",
+        "T003"
+      ],
+      "unverified_rule_ids": [
+        "R001",
+        "R005",
+        "R006",
+        "R009",
+        "R021",
+        "T001",
+        "T002",
+        "T003"
+      ]
+    },
+    "H041": {
+      "split": "test",
+      "complexity": "medium",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        },
+        {
+          "rule_id": "R021",
+          "count": 1
+        },
+        {
+          "rule_id": "R030",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001",
+        "R021",
+        "R030"
+      ]
+    },
+    "H042": {
+      "split": "train",
+      "complexity": "simple",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001"
+      ]
+    },
+    "H043": {
+      "split": "dev",
+      "complexity": "simple",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 2
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001"
+      ]
+    },
+    "H044": {
+      "split": "train",
+      "complexity": "simple",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001"
+      ]
+    },
+    "H045": {
+      "split": "test",
+      "complexity": "simple",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 2
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001"
+      ]
+    },
+    "H046": {
+      "split": "train",
+      "complexity": "medium",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        },
+        {
+          "rule_id": "R002",
+          "count": 1
+        },
+        {
+          "rule_id": "R004",
+          "count": 1
+        },
+        {
+          "rule_id": "R010",
+          "count": 1
+        },
+        {
+          "rule_id": "R014",
+          "count": 1
+        },
+        {
+          "rule_id": "R015",
+          "count": 1
+        },
+        {
+          "rule_id": "R026",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001",
+        "R002",
+        "R004",
+        "R010",
+        "R014",
+        "R015",
+        "R026"
+      ]
+    },
+    "H047": {
+      "split": "test",
+      "complexity": "simple",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 2
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001"
+      ]
+    },
+    "H048": {
+      "split": "dev",
+      "complexity": "complex",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 2
+        },
+        {
+          "rule_id": "R002",
+          "count": 1
+        },
+        {
+          "rule_id": "R006",
+          "count": 1
+        },
+        {
+          "rule_id": "R011",
+          "count": 1
+        },
+        {
+          "rule_id": "R012",
+          "count": 1
+        },
+        {
+          "rule_id": "R014",
+          "count": 1
+        },
+        {
+          "rule_id": "R016",
+          "count": 1
+        },
+        {
+          "rule_id": "R020",
+          "count": 1
+        },
+        {
+          "rule_id": "R021",
+          "count": 1
+        },
+        {
+          "rule_id": "R023",
+          "count": 1
+        },
+        {
+          "rule_id": "R025",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001",
+        "R002",
+        "R006",
+        "R011",
+        "R012",
+        "R014",
+        "R016",
+        "R020",
+        "R021",
+        "R023",
+        "R025"
+      ]
+    },
+    "H049": {
+      "split": "dev",
+      "complexity": "simple",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001"
+      ]
+    },
+    "H050": {
+      "split": "dev",
+      "complexity": "complex",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 2
+        },
+        {
+          "rule_id": "R004",
+          "count": 1
+        },
+        {
+          "rule_id": "R005",
+          "count": 1
+        },
+        {
+          "rule_id": "R010",
+          "count": 1
+        },
+        {
+          "rule_id": "R012",
+          "count": 1
+        },
+        {
+          "rule_id": "R014",
+          "count": 1
+        },
+        {
+          "rule_id": "R016",
+          "count": 1
+        },
+        {
+          "rule_id": "R020",
+          "count": 2
+        },
+        {
+          "rule_id": "R021",
+          "count": 1
+        },
+        {
+          "rule_id": "R023",
+          "count": 1
+        },
+        {
+          "rule_id": "R025",
+          "count": 1
+        }
+      ],
+      "traps": [
+        "T003"
+      ],
+      "unverified_rule_ids": [
+        "R001",
+        "R004",
+        "R005",
+        "R010",
+        "R012",
+        "R014",
+        "R016",
+        "R020",
+        "R021",
+        "R023",
+        "R025",
+        "T003"
+      ]
+    },
+    "H051": {
+      "split": "train",
+      "complexity": "medium",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        },
+        {
+          "rule_id": "R002",
+          "count": 1
+        },
+        {
+          "rule_id": "R003",
+          "count": 1
+        },
+        {
+          "rule_id": "R005",
+          "count": 1
+        },
+        {
+          "rule_id": "R009",
+          "count": 1
+        },
+        {
+          "rule_id": "R022",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001",
+        "R002",
+        "R003",
+        "R005",
+        "R009",
+        "R022"
+      ]
+    },
+    "H052": {
+      "split": "train",
+      "complexity": "medium",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 2
+        },
+        {
+          "rule_id": "R002",
+          "count": 1
+        },
+        {
+          "rule_id": "R003",
+          "count": 1
+        },
+        {
+          "rule_id": "R021",
+          "count": 1
+        },
+        {
+          "rule_id": "R025",
+          "count": 1
+        },
+        {
+          "rule_id": "R028",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001",
+        "R002",
+        "R003",
+        "R021",
+        "R025",
+        "R028"
+      ]
+    },
+    "H053": {
+      "split": "dev",
+      "complexity": "complex",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 2
+        },
+        {
+          "rule_id": "R004",
+          "count": 1
+        },
+        {
+          "rule_id": "R005",
+          "count": 1
+        },
+        {
+          "rule_id": "R006",
+          "count": 1
+        },
+        {
+          "rule_id": "R012",
+          "count": 1
+        },
+        {
+          "rule_id": "R017",
+          "count": 1
+        },
+        {
+          "rule_id": "R018",
+          "count": 1
+        },
+        {
+          "rule_id": "R020",
+          "count": 2
+        },
+        {
+          "rule_id": "R021",
+          "count": 1
+        },
+        {
+          "rule_id": "R027",
+          "count": 1
+        }
+      ],
+      "traps": [
+        "T001"
+      ],
+      "unverified_rule_ids": [
+        "R001",
+        "R004",
+        "R005",
+        "R006",
+        "R012",
+        "R017",
+        "R018",
+        "R020",
+        "R021",
+        "R027",
+        "T001"
+      ]
+    },
+    "H054": {
+      "split": "dev",
+      "complexity": "medium",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 3
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001"
+      ]
+    },
+    "H055": {
+      "split": "test",
+      "complexity": "medium",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        },
+        {
+          "rule_id": "R013",
+          "count": 1
+        },
+        {
+          "rule_id": "R017",
+          "count": 1
+        }
+      ],
+      "traps": [
+        "T002"
+      ],
+      "unverified_rule_ids": [
+        "R001",
+        "R013",
+        "R017",
+        "T002"
+      ]
+    },
+    "H056": {
+      "split": "dev",
+      "complexity": "medium",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        },
+        {
+          "rule_id": "R002",
+          "count": 1
+        }
+      ],
+      "traps": [
+        "T002"
+      ],
+      "unverified_rule_ids": [
+        "R001",
+        "R002",
+        "T002"
+      ]
+    },
+    "H057": {
+      "split": "test",
+      "complexity": "simple",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 2
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001"
+      ]
+    },
+    "H058": {
+      "split": "dev",
+      "complexity": "medium",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 2
+        },
+        {
+          "rule_id": "R017",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001",
+        "R017"
+      ]
+    },
+    "H059": {
+      "split": "dev",
+      "complexity": "medium",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        },
+        {
+          "rule_id": "R014",
+          "count": 1
+        },
+        {
+          "rule_id": "R015",
+          "count": 1
+        },
+        {
+          "rule_id": "R021",
+          "count": 1
+        },
+        {
+          "rule_id": "R022",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001",
+        "R014",
+        "R015",
+        "R021",
+        "R022"
+      ]
+    },
+    "H060": {
+      "split": "test",
+      "complexity": "medium",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        },
+        {
+          "rule_id": "R002",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001",
+        "R002"
+      ]
+    },
+    "H061": {
+      "split": "test",
+      "complexity": "complex",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        },
+        {
+          "rule_id": "R004",
+          "count": 1
+        },
+        {
+          "rule_id": "R008",
+          "count": 1
+        },
+        {
+          "rule_id": "R011",
+          "count": 1
+        },
+        {
+          "rule_id": "R014",
+          "count": 1
+        },
+        {
+          "rule_id": "R015",
+          "count": 1
+        },
+        {
+          "rule_id": "R021",
+          "count": 1
+        },
+        {
+          "rule_id": "R029",
+          "count": 1
+        }
+      ],
+      "traps": [
+        "T001"
+      ],
+      "unverified_rule_ids": [
+        "R001",
+        "R004",
+        "R008",
+        "R011",
+        "R014",
+        "R015",
+        "R021",
+        "R029",
+        "T001"
+      ]
+    },
+    "H062": {
+      "split": "dev",
+      "complexity": "medium",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 2
+        },
+        {
+          "rule_id": "R002",
+          "count": 1
+        },
+        {
+          "rule_id": "R009",
+          "count": 1
+        },
+        {
+          "rule_id": "R014",
+          "count": 1
+        },
+        {
+          "rule_id": "R015",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001",
+        "R002",
+        "R009",
+        "R014",
+        "R015"
+      ]
+    },
+    "H063": {
+      "split": "dev",
+      "complexity": "simple",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001"
+      ]
+    },
+    "H064": {
+      "split": "test",
+      "complexity": "medium",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        },
+        {
+          "rule_id": "R005",
+          "count": 1
+        },
+        {
+          "rule_id": "R012",
+          "count": 1
+        },
+        {
+          "rule_id": "R025",
+          "count": 1
+        }
+      ],
+      "traps": [
+        "T003"
+      ],
+      "unverified_rule_ids": [
+        "R001",
+        "R005",
+        "R012",
+        "R025",
+        "T003"
+      ]
+    },
+    "H065": {
+      "split": "dev",
+      "complexity": "complex",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 2
+        },
+        {
+          "rule_id": "R004",
+          "count": 1
+        },
+        {
+          "rule_id": "R005",
+          "count": 1
+        },
+        {
+          "rule_id": "R006",
+          "count": 1
+        },
+        {
+          "rule_id": "R014",
+          "count": 1
+        },
+        {
+          "rule_id": "R015",
+          "count": 1
+        },
+        {
+          "rule_id": "R020",
+          "count": 1
+        },
+        {
+          "rule_id": "R023",
+          "count": 1
+        },
+        {
+          "rule_id": "R024",
+          "count": 1
+        },
+        {
+          "rule_id": "R025",
+          "count": 1
+        }
+      ],
+      "traps": [
+        "T001",
+        "T002"
+      ],
+      "unverified_rule_ids": [
+        "R001",
+        "R004",
+        "R005",
+        "R006",
+        "R014",
+        "R015",
+        "R020",
+        "R023",
+        "R024",
+        "R025",
+        "T001",
+        "T002"
+      ]
+    },
+    "H066": {
+      "split": "dev",
+      "complexity": "complex",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 2
+        },
+        {
+          "rule_id": "R005",
+          "count": 1
+        },
+        {
+          "rule_id": "R006",
+          "count": 1
+        },
+        {
+          "rule_id": "R008",
+          "count": 1
+        },
+        {
+          "rule_id": "R012",
+          "count": 1
+        },
+        {
+          "rule_id": "R014",
+          "count": 1
+        },
+        {
+          "rule_id": "R015",
+          "count": 1
+        },
+        {
+          "rule_id": "R016",
+          "count": 1
+        },
+        {
+          "rule_id": "R020",
+          "count": 1
+        },
+        {
+          "rule_id": "R022",
+          "count": 1
+        },
+        {
+          "rule_id": "R025",
+          "count": 1
+        }
+      ],
+      "traps": [
+        "T001"
+      ],
+      "unverified_rule_ids": [
+        "R001",
+        "R005",
+        "R006",
+        "R008",
+        "R012",
+        "R014",
+        "R015",
+        "R016",
+        "R020",
+        "R022",
+        "R025",
+        "T001"
+      ]
+    },
+    "H067": {
+      "split": "dev",
+      "complexity": "complex",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        },
+        {
+          "rule_id": "R002",
+          "count": 1
+        },
+        {
+          "rule_id": "R003",
+          "count": 1
+        },
+        {
+          "rule_id": "R007",
+          "count": 1
+        },
+        {
+          "rule_id": "R008",
+          "count": 1
+        },
+        {
+          "rule_id": "R014",
+          "count": 1
+        },
+        {
+          "rule_id": "R020",
+          "count": 1
+        },
+        {
+          "rule_id": "R021",
+          "count": 1
+        },
+        {
+          "rule_id": "R025",
+          "count": 1
+        },
+        {
+          "rule_id": "R028",
+          "count": 1
+        },
+        {
+          "rule_id": "R029",
+          "count": 1
+        }
+      ],
+      "traps": [
+        "T002"
+      ],
+      "unverified_rule_ids": [
+        "R001",
+        "R002",
+        "R003",
+        "R007",
+        "R008",
+        "R014",
+        "R020",
+        "R021",
+        "R025",
+        "R028",
+        "R029",
+        "T002"
+      ]
+    },
+    "H068": {
+      "split": "train",
+      "complexity": "simple",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 2
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001"
+      ]
+    },
+    "H069": {
+      "split": "test",
+      "complexity": "complex",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        },
+        {
+          "rule_id": "R004",
+          "count": 1
+        },
+        {
+          "rule_id": "R005",
+          "count": 1
+        },
+        {
+          "rule_id": "R008",
+          "count": 1
+        },
+        {
+          "rule_id": "R017",
+          "count": 1
+        },
+        {
+          "rule_id": "R020",
+          "count": 2
+        },
+        {
+          "rule_id": "R022",
+          "count": 1
+        }
+      ],
+      "traps": [
+        "T003"
+      ],
+      "unverified_rule_ids": [
+        "R001",
+        "R004",
+        "R005",
+        "R008",
+        "R017",
+        "R020",
+        "R022",
+        "T003"
+      ]
+    },
+    "H070": {
+      "split": "dev",
+      "complexity": "simple",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001"
+      ]
+    },
+    "H071": {
+      "split": "train",
+      "complexity": "simple",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001"
+      ]
+    },
+    "H072": {
+      "split": "test",
+      "complexity": "complex",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 2
+        },
+        {
+          "rule_id": "R005",
+          "count": 1
+        },
+        {
+          "rule_id": "R008",
+          "count": 1
+        },
+        {
+          "rule_id": "R012",
+          "count": 1
+        },
+        {
+          "rule_id": "R013",
+          "count": 1
+        },
+        {
+          "rule_id": "R016",
+          "count": 1
+        },
+        {
+          "rule_id": "R019",
+          "count": 1
+        },
+        {
+          "rule_id": "R020",
+          "count": 2
+        },
+        {
+          "rule_id": "R021",
+          "count": 1
+        },
+        {
+          "rule_id": "R027",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001",
+        "R005",
+        "R008",
+        "R012",
+        "R013",
+        "R016",
+        "R019",
+        "R020",
+        "R021",
+        "R027"
+      ]
+    },
+    "H073": {
+      "split": "dev",
+      "complexity": "medium",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        },
+        {
+          "rule_id": "R014",
+          "count": 1
+        },
+        {
+          "rule_id": "R030",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001",
+        "R014",
+        "R030"
+      ]
+    },
+    "H074": {
+      "split": "test",
+      "complexity": "medium",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 3
+        },
+        {
+          "rule_id": "R007",
+          "count": 1
+        }
+      ],
+      "traps": [
+        "T001"
+      ],
+      "unverified_rule_ids": [
+        "R001",
+        "R007",
+        "T001"
+      ]
+    },
+    "H075": {
+      "split": "test",
+      "complexity": "medium",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 3
+        },
+        {
+          "rule_id": "R004",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001",
+        "R004"
+      ]
+    },
+    "H076": {
+      "split": "dev",
+      "complexity": "complex",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 2
+        },
+        {
+          "rule_id": "R005",
+          "count": 1
+        },
+        {
+          "rule_id": "R007",
+          "count": 1
+        },
+        {
+          "rule_id": "R010",
+          "count": 1
+        },
+        {
+          "rule_id": "R014",
+          "count": 1
+        },
+        {
+          "rule_id": "R015",
+          "count": 1
+        },
+        {
+          "rule_id": "R021",
+          "count": 1
+        },
+        {
+          "rule_id": "R028",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001",
+        "R005",
+        "R007",
+        "R010",
+        "R014",
+        "R015",
+        "R021",
+        "R028"
+      ]
+    },
+    "H077": {
+      "split": "dev",
+      "complexity": "medium",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 2
+        },
+        {
+          "rule_id": "R002",
+          "count": 1
+        },
+        {
+          "rule_id": "R003",
+          "count": 1
+        },
+        {
+          "rule_id": "R023",
+          "count": 1
+        },
+        {
+          "rule_id": "R024",
+          "count": 1
+        },
+        {
+          "rule_id": "R030",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001",
+        "R002",
+        "R003",
+        "R023",
+        "R024",
+        "R030"
+      ]
+    },
+    "H078": {
+      "split": "test",
+      "complexity": "simple",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001"
+      ]
+    },
+    "H079": {
+      "split": "dev",
+      "complexity": "medium",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 2
+        },
+        {
+          "rule_id": "R002",
+          "count": 1
+        },
+        {
+          "rule_id": "R009",
+          "count": 1
+        },
+        {
+          "rule_id": "R016",
+          "count": 1
+        },
+        {
+          "rule_id": "R020",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001",
+        "R002",
+        "R009",
+        "R016",
+        "R020"
+      ]
+    },
+    "H080": {
+      "split": "train",
+      "complexity": "medium",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        },
+        {
+          "rule_id": "R016",
+          "count": 1
+        },
+        {
+          "rule_id": "R024",
+          "count": 1
+        }
+      ],
+      "traps": [
+        "T002"
+      ],
+      "unverified_rule_ids": [
+        "R001",
+        "R016",
+        "R024",
+        "T002"
+      ]
+    },
+    "H081": {
+      "split": "dev",
+      "complexity": "simple",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001"
+      ]
+    },
+    "H082": {
+      "split": "dev",
+      "complexity": "simple",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 2
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001"
+      ]
+    },
+    "H083": {
+      "split": "test",
+      "complexity": "medium",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        },
+        {
+          "rule_id": "R008",
+          "count": 1
+        },
+        {
+          "rule_id": "R009",
+          "count": 1
+        },
+        {
+          "rule_id": "R014",
+          "count": 1
+        },
+        {
+          "rule_id": "R020",
+          "count": 1
+        }
+      ],
+      "traps": [
+        "T002"
+      ],
+      "unverified_rule_ids": [
+        "R001",
+        "R008",
+        "R009",
+        "R014",
+        "R020",
+        "T002"
+      ]
+    },
+    "H084": {
+      "split": "dev",
+      "complexity": "medium",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 2
+        },
+        {
+          "rule_id": "R014",
+          "count": 1
+        },
+        {
+          "rule_id": "R015",
+          "count": 1
+        },
+        {
+          "rule_id": "R024",
+          "count": 1
+        }
+      ],
+      "traps": [
+        "T003"
+      ],
+      "unverified_rule_ids": [
+        "R001",
+        "R014",
+        "R015",
+        "R024",
+        "T003"
+      ]
+    },
+    "H085": {
+      "split": "train",
+      "complexity": "medium",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 2
+        },
+        {
+          "rule_id": "R006",
+          "count": 1
+        },
+        {
+          "rule_id": "R008",
+          "count": 1
+        },
+        {
+          "rule_id": "R029",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001",
+        "R006",
+        "R008",
+        "R029"
+      ]
+    },
+    "H086": {
+      "split": "dev",
+      "complexity": "medium",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 2
+        },
+        {
+          "rule_id": "R002",
+          "count": 1
+        },
+        {
+          "rule_id": "R003",
+          "count": 1
+        },
+        {
+          "rule_id": "R006",
+          "count": 1
+        },
+        {
+          "rule_id": "R020",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001",
+        "R002",
+        "R003",
+        "R006",
+        "R020"
+      ]
+    },
+    "H087": {
+      "split": "train",
+      "complexity": "complex",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 3
+        },
+        {
+          "rule_id": "R002",
+          "count": 1
+        },
+        {
+          "rule_id": "R003",
+          "count": 1
+        },
+        {
+          "rule_id": "R007",
+          "count": 1
+        },
+        {
+          "rule_id": "R011",
+          "count": 1
+        },
+        {
+          "rule_id": "R014",
+          "count": 1
+        },
+        {
+          "rule_id": "R017",
+          "count": 1
+        },
+        {
+          "rule_id": "R021",
+          "count": 1
+        },
+        {
+          "rule_id": "R027",
+          "count": 1
+        },
+        {
+          "rule_id": "R030",
+          "count": 1
+        }
+      ],
+      "traps": [
+        "T003"
+      ],
+      "unverified_rule_ids": [
+        "R001",
+        "R002",
+        "R003",
+        "R007",
+        "R011",
+        "R014",
+        "R017",
+        "R021",
+        "R027",
+        "R030",
+        "T003"
+      ]
+    },
+    "H088": {
+      "split": "dev",
+      "complexity": "simple",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001"
+      ]
+    },
+    "H089": {
+      "split": "train",
+      "complexity": "medium",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 3
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001"
+      ]
+    },
+    "H090": {
+      "split": "test",
+      "complexity": "simple",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001"
+      ]
+    },
+    "H091": {
+      "split": "train",
+      "complexity": "complex",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        },
+        {
+          "rule_id": "R002",
+          "count": 1
+        },
+        {
+          "rule_id": "R004",
+          "count": 1
+        },
+        {
+          "rule_id": "R005",
+          "count": 1
+        },
+        {
+          "rule_id": "R006",
+          "count": 1
+        },
+        {
+          "rule_id": "R008",
+          "count": 1
+        },
+        {
+          "rule_id": "R018",
+          "count": 1
+        },
+        {
+          "rule_id": "R020",
+          "count": 1
+        },
+        {
+          "rule_id": "R025",
+          "count": 1
+        }
+      ],
+      "traps": [
+        "T002"
+      ],
+      "unverified_rule_ids": [
+        "R001",
+        "R002",
+        "R004",
+        "R005",
+        "R006",
+        "R008",
+        "R018",
+        "R020",
+        "R025",
+        "T002"
+      ]
+    },
+    "H092": {
+      "split": "test",
+      "complexity": "complex",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 2
+        },
+        {
+          "rule_id": "R002",
+          "count": 1
+        },
+        {
+          "rule_id": "R003",
+          "count": 1
+        },
+        {
+          "rule_id": "R008",
+          "count": 1
+        },
+        {
+          "rule_id": "R010",
+          "count": 1
+        },
+        {
+          "rule_id": "R018",
+          "count": 1
+        },
+        {
+          "rule_id": "R020",
+          "count": 3
+        },
+        {
+          "rule_id": "R023",
+          "count": 1
+        },
+        {
+          "rule_id": "R024",
+          "count": 1
+        }
+      ],
+      "traps": [
+        "T001"
+      ],
+      "unverified_rule_ids": [
+        "R001",
+        "R002",
+        "R003",
+        "R008",
+        "R010",
+        "R018",
+        "R020",
+        "R023",
+        "R024",
+        "T001"
+      ]
+    },
+    "H093": {
+      "split": "dev",
+      "complexity": "medium",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 3
+        },
+        {
+          "rule_id": "R008",
+          "count": 1
+        },
+        {
+          "rule_id": "R019",
+          "count": 1
+        },
+        {
+          "rule_id": "R023",
+          "count": 1
+        },
+        {
+          "rule_id": "R027",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001",
+        "R008",
+        "R019",
+        "R023",
+        "R027"
+      ]
+    },
+    "H094": {
+      "split": "test",
+      "complexity": "simple",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001"
+      ]
+    },
+    "H095": {
+      "split": "dev",
+      "complexity": "medium",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        },
+        {
+          "rule_id": "R006",
+          "count": 1
+        },
+        {
+          "rule_id": "R008",
+          "count": 1
+        },
+        {
+          "rule_id": "R010",
+          "count": 1
+        },
+        {
+          "rule_id": "R024",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001",
+        "R006",
+        "R008",
+        "R010",
+        "R024"
+      ]
+    },
+    "H096": {
+      "split": "test",
+      "complexity": "simple",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 2
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001"
+      ]
+    },
+    "H097": {
+      "split": "train",
+      "complexity": "medium",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 2
+        },
+        {
+          "rule_id": "R013",
+          "count": 1
+        },
+        {
+          "rule_id": "R020",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001",
+        "R013",
+        "R020"
+      ]
+    },
+    "H098": {
+      "split": "test",
+      "complexity": "medium",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 3
+        },
+        {
+          "rule_id": "R014",
+          "count": 1
+        },
+        {
+          "rule_id": "R015",
+          "count": 1
+        },
+        {
+          "rule_id": "R022",
+          "count": 1
+        },
+        {
+          "rule_id": "R023",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001",
+        "R014",
+        "R015",
+        "R022",
+        "R023"
+      ]
+    },
+    "H099": {
+      "split": "test",
+      "complexity": "medium",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        },
+        {
+          "rule_id": "R010",
+          "count": 1
+        },
+        {
+          "rule_id": "R019",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001",
+        "R010",
+        "R019"
+      ]
+    },
+    "H100": {
+      "split": "test",
+      "complexity": "simple",
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        }
+      ],
+      "traps": [],
+      "unverified_rule_ids": [
+        "R001"
+      ]
+    }
+  }
+}

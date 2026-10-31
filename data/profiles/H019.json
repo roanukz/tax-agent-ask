@@ -1,0 +1,38 @@
+{
+  "household_id": "H019",
+  "tax_year": 2026,
+  "client_name": "Sample Household 019",
+  "prior_year_summary": {
+    "tax_year": 2025,
+    "filing_status": "married_joint",
+    "dependents_count": 1,
+    "itemized": false,
+    "documents_on_file": [
+      {
+        "rule_id": "R001",
+        "label": "Form W-2",
+        "count": 2
+      },
+      {
+        "rule_id": "R004",
+        "label": "Form 1099-INT",
+        "count": 1
+      },
+      {
+        "rule_id": "R018",
+        "label": "Dependent care provider information",
+        "count": 1
+      },
+      {
+        "rule_id": "R020",
+        "label": "Schedule K-1",
+        "count": 2
+      },
+      {
+        "rule_id": "R021",
+        "label": "Rental income and expense records",
+        "count": 1
+      }
+    ]
+  }
+}

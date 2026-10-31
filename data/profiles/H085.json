@@ -1,0 +1,33 @@
+{
+  "household_id": "H085",
+  "tax_year": 2026,
+  "client_name": "Sample Household 085",
+  "prior_year_summary": {
+    "tax_year": 2025,
+    "filing_status": "head_of_household",
+    "dependents_count": 1,
+    "itemized": false,
+    "documents_on_file": [
+      {
+        "rule_id": "R001",
+        "label": "Form W-2",
+        "count": 2
+      },
+      {
+        "rule_id": "R006",
+        "label": "Form 1099-B",
+        "count": 1
+      },
+      {
+        "rule_id": "R012",
+        "label": "Form 1095-A",
+        "count": 1
+      },
+      {
+        "rule_id": "R029",
+        "label": "HSA contribution records",
+        "count": 1
+      }
+    ]
+  }
+}

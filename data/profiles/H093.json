@@ -1,0 +1,23 @@
+{
+  "household_id": "H093",
+  "tax_year": 2026,
+  "client_name": "Placeholder Filer 093",
+  "prior_year_summary": {
+    "tax_year": 2025,
+    "filing_status": "married_joint",
+    "dependents_count": 2,
+    "itemized": false,
+    "documents_on_file": [
+      {
+        "rule_id": "R001",
+        "label": "Form W-2",
+        "count": 3
+      },
+      {
+        "rule_id": "R027",
+        "label": "Overtime records",
+        "count": 1
+      }
+    ]
+  }
+}

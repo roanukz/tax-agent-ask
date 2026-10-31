@@ -1,0 +1,58 @@
+{
+  "household_id": "H022",
+  "tax_year": 2026,
+  "client_name": "Sample Filer 022",
+  "prior_year_summary": {
+    "tax_year": 2025,
+    "filing_status": "single",
+    "dependents_count": 0,
+    "itemized": false,
+    "documents_on_file": [
+      {
+        "rule_id": "R001",
+        "label": "Form W-2",
+        "count": 2
+      },
+      {
+        "rule_id": "R002",
+        "label": "Business income and expense records",
+        "count": 1
+      },
+      {
+        "rule_id": "R003",
+        "label": "Form 1099-K",
+        "count": 1
+      },
+      {
+        "rule_id": "R004",
+        "label": "Form 1099-INT",
+        "count": 1
+      },
+      {
+        "rule_id": "R005",
+        "label": "Form 1099-DIV",
+        "count": 1
+      },
+      {
+        "rule_id": "R017",
+        "label": "Form 1098-T",
+        "count": 1
+      },
+      {
+        "rule_id": "R020",
+        "label": "Schedule K-1",
+        "count": 1
+      },
+      {
+        "rule_id": "R021",
+        "label": "Rental income and expense records",
+        "count": 1
+      },
+      {
+        "rule_id": "R027",
+        "label": "Overtime records",
+        "count": 1
+      }
+    ]
+  }
+}

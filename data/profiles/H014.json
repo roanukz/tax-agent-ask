@@ -1,0 +1,53 @@
+{
+  "household_id": "H014",
+  "tax_year": 2026,
+  "client_name": "Placeholder Client 014",
+  "prior_year_summary": {
+    "tax_year": 2025,
+    "filing_status": "married_joint",
+    "dependents_count": 1,
+    "itemized": true,
+    "documents_on_file": [
+      {
+        "rule_id": "R001",
+        "label": "Form W-2",
+        "count": 1
+      },
+      {
+        "rule_id": "R005",
+        "label": "Form 1099-DIV",
+        "count": 1
+      },
+      {
+        "rule_id": "R006",
+        "label": "Form 1099-B",
+        "count": 1
+      },
+      {
+        "rule_id": "R011",
+        "label": "Form 1099-G (state refund)",
+        "count": 1
+      },
+      {
+        "rule_id": "R014",
+        "label": "Form 1098",
+        "count": 1
+      },
+      {
+        "rule_id": "R020",
+        "label": "Schedule K-1",
+        "count": 1
+      },
+      {
+        "rule_id": "R021",
+        "label": "Rental income and expense records",
+        "count": 1
+      },
+      {
+        "rule_id": "R027",
+        "label": "Overtime records",
+        "count": 1
+      }
+    ]
+  }
+}

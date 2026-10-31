@@ -1,0 +1,18 @@
+{
+  "household_id": "H045",
+  "tax_year": 2026,
+  "client_name": "Example Filer 045",
+  "prior_year_summary": {
+    "tax_year": 2025,
+    "filing_status": "head_of_household",
+    "dependents_count": 1,
+    "itemized": false,
+    "documents_on_file": [
+      {
+        "rule_id": "R001",
+        "label": "Form W-2",
+        "count": 2
+      }
+    ]
+  }
+}

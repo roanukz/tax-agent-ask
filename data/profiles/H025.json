@@ -1,0 +1,33 @@
+{
+  "household_id": "H025",
+  "tax_year": 2026,
+  "client_name": "Testcase Household 025",
+  "prior_year_summary": {
+    "tax_year": 2025,
+    "filing_status": "single",
+    "dependents_count": 1,
+    "itemized": false,
+    "documents_on_file": [
+      {
+        "rule_id": "R001",
+        "label": "Form W-2",
+        "count": 1
+      },
+      {
+        "rule_id": "R012",
+        "label": "Form 1095-A",
+        "count": 1
+      },
+      {
+        "rule_id": "R013",
+        "label": "Form 1099-SA",
+        "count": 1
+      },
+      {
+        "rule_id": "R018",
+        "label": "Dependent care provider information",
+        "count": 1
+      }
+    ]
+  }
+}

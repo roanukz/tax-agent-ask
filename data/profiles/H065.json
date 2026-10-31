@@ -1,0 +1,53 @@
+{
+  "household_id": "H065",
+  "tax_year": 2026,
+  "client_name": "Example Household 065",
+  "prior_year_summary": {
+    "tax_year": 2025,
+    "filing_status": "married_joint",
+    "dependents_count": 2,
+    "itemized": false,
+    "documents_on_file": [
+      {
+        "rule_id": "R001",
+        "label": "Form W-2",
+        "count": 1
+      },
+      {
+        "rule_id": "R004",
+        "label": "Form 1099-INT",
+        "count": 1
+      },
+      {
+        "rule_id": "R005",
+        "label": "Form 1099-DIV",
+        "count": 1
+      },
+      {
+        "rule_id": "R006",
+        "label": "Form 1099-B",
+        "count": 1
+      },
+      {
+        "rule_id": "R012",
+        "label": "Form 1095-A",
+        "count": 1
+      },
+      {
+        "rule_id": "R020",
+        "label": "Schedule K-1",
+        "count": 1
+      },
+      {
+        "rule_id": "R024",
+        "label": "IP PIN",
+        "count": 1
+      },
+      {
+        "rule_id": "R025",
+        "label": "Charitable contribution receipts",
+        "count": 1
+      }
+    ]
+  }
+}

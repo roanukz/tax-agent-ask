@@ -1,0 +1,18 @@
+{
+  "household_id": "H082",
+  "tax_year": 2026,
+  "client_name": "Mock Client 082",
+  "prior_year_summary": {
+    "tax_year": 2025,
+    "filing_status": "single",
+    "dependents_count": 2,
+    "itemized": false,
+    "documents_on_file": [
+      {
+        "rule_id": "R001",
+        "label": "Form W-2",
+        "count": 2
+      }
+    ]
+  }
+}

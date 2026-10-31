@@ -1,0 +1,33 @@
+{
+  "household_id": "H052",
+  "tax_year": 2026,
+  "client_name": "Placeholder Household 052",
+  "prior_year_summary": {
+    "tax_year": 2025,
+    "filing_status": "head_of_household",
+    "dependents_count": 1,
+    "itemized": false,
+    "documents_on_file": [
+      {
+        "rule_id": "R001",
+        "label": "Form W-2",
+        "count": 2
+      },
+      {
+        "rule_id": "R021",
+        "label": "Rental income and expense records",
+        "count": 1
+      },
+      {
+        "rule_id": "R025",
+        "label": "Charitable contribution receipts",
+        "count": 1
+      },
+      {
+        "rule_id": "R028",
+        "label": "Vehicle loan interest statement",
+        "count": 1
+      }
+    ]
+  }
+}

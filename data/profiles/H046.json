@@ -1,0 +1,28 @@
+{
+  "household_id": "H046",
+  "tax_year": 2026,
+  "client_name": "Example Household 046",
+  "prior_year_summary": {
+    "tax_year": 2025,
+    "filing_status": "married_joint",
+    "dependents_count": 0,
+    "itemized": false,
+    "documents_on_file": [
+      {
+        "rule_id": "R001",
+        "label": "Form W-2",
+        "count": 1
+      },
+      {
+        "rule_id": "R004",
+        "label": "Form 1099-INT",
+        "count": 1
+      },
+      {
+        "rule_id": "R026",
+        "label": "Tip records",
+        "count": 1
+      }
+    ]
+  }
+}
