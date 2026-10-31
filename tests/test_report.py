@@ -1,4 +1,4 @@
-"""The results report and the rules table in docs/index.md (PRD 6.8), offline."""
+"""The results report and the rules table in docs/rules.md (PRD 6.8), offline."""
 
 import csv
 import dataclasses
@@ -722,7 +722,7 @@ async def test_fidelity_section_reads_a_dry_run(tmp_path):
     assert "The live simulator fidelity check has not run." in text
 
 
-# ---- the rules table in docs/index.md -----------------------------------------------
+# ---- the rules table in docs/rules.md -----------------------------------------------
 
 
 def test_rules_table_has_every_rule_with_its_source_and_status():
@@ -763,18 +763,12 @@ def test_update_index_replaces_only_the_marked_table(tmp_path):
         update_index(page, RULES)
 
 
-def test_docs_index_rules_table_is_current_and_page_follows_the_prd():
-    text = (REPO / "docs" / "index.md").read_text()
+def test_docs_rules_table_is_current_and_names_the_edge_cases():
+    """The teardown is docs/index.html (tests/test_teardown.py); docs/rules.md holds the generated rules table."""
+    text = (REPO / "docs" / "rules.md").read_text()
     assert rules_table(RULES) in text, "run uv run python -m eval.report index"
-    order = ["## Why measure the questions", "## Facts, rules, and the list", "## The rules and their sources",
-             "## Results against the baselines", "## One model or one per step", "## Findings I did not want",
-             "## What was deliberately not built", "## Related work", "## Limitations", "## How to run it",
-             "## Disclaimer"]
-    positions = [text.index(h) for h in order]
-    assert positions == sorted(positions)
-    assert "https://accountants.intuit.com/taxprocenter/practice-management/putting-the-ai-into-tax-organizers/" in text
-    assert "https://daplab.cs.columbia.edu/benchmarks/taxbench/" in text
     assert "Form 5695" in text and "September 30, 2025" in text and "June 30, 2026" in text
+    assert "(index.html)" in text and "(results.md)" in text
 
 
 def test_docs_results_follows_the_prd_order():

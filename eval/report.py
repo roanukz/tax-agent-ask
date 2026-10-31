@@ -1,4 +1,4 @@
-"""Writes docs/results.md (PRD 6.8) from the run files, and keeps the rules table in docs/index.md current.
+"""Writes docs/results.md (PRD 6.8) from the run files, and keeps the rules table in docs/rules.md current.
 
     uv run python -m eval.report
         Writes docs/results.md from eval/runs/*.summary.json and *.score.json,
@@ -6,7 +6,7 @@
         statuses in rules/document_rules.yaml, data/labels/, and
         docs/fidelity/ when it exists. Makes no model call.
     uv run python -m eval.report index
-        Regenerates the rules table in docs/index.md from rules/document_rules.yaml.
+        Regenerates the rules table in docs/rules.md from rules/document_rules.yaml.
 
 The report follows PRD 6.8: Executive summary; Data (generator, splits,
 rule verification, label agreement, simulator fidelity); Experiments;
@@ -83,7 +83,7 @@ from rules.engine import FactSpec, Rule, load_facts, load_rules
 REPO = Path(__file__).resolve().parent.parent
 RUNS_DIR = REPO / "eval" / "runs"
 RESULTS_PATH = REPO / "docs" / "results.md"
-INDEX_PATH = REPO / "docs" / "index.md"
+INDEX_PATH = REPO / "docs" / "rules.md"
 PREREG_PATH = REPO / "eval" / "prereg.yaml"
 LEDGER_PATH = REPO / "ledger" / "spend.jsonl"
 DATA_DIR = REPO / "data"
@@ -1360,7 +1360,7 @@ def write_report(
     return out
 
 
-# ---- the rules table in docs/index.md -------------------------------------------
+# ---- the rules table in docs/rules.md -------------------------------------------
 
 
 def condition_text(cond: Mapping[str, Any]) -> str:

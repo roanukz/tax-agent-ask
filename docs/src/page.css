@@ -1,0 +1,20 @@
+/* What this teardown needs beyond the shared stylesheet: a block of commands
+   a reader can copy. Role tokens only, so dark mode follows the shared file. */
+
+pre {
+  overflow-x: auto;
+  margin: var(--space-16) 0;
+  padding: var(--space-16);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  font-family: var(--font-mono);
+  font-size: var(--size-13);
+  line-height: var(--lh-16);
+}
+
+pre code {
+  padding: 0;
+  background: none;
+  font-size: inherit;
+}
