@@ -15,6 +15,7 @@ import dataclasses
 import json
 import subprocess
 import sys
+import uuid
 from contextlib import AsyncExitStack
 from pathlib import Path
 from typing import Any, Callable
@@ -55,7 +56,7 @@ from agent.summary import build_summary
 from eval.run import PreregError
 from ledger.spend import Ledger, SpendCapExceeded, cost_usd, load_prices
 from server.tax_server import build_server
-from sim.budget import BudgetExceeded
+from sim.budget import BudgetExceeded, call_bound_usd
 from sim.fakes import FakeUsage, ScriptedClient
 from sim.simulator import ClientSimulator
 
@@ -107,18 +108,49 @@ class Truncated:
     text: str
 
 
+@dataclasses.dataclass
+class CutOff:
+    """A text step whose stream ends with no message_delta (an error event mid-response, say).
+
+    Like the real CLI, the FakeCLI then sends message_stop, a resume message,
+    and the next step's call, with no hook first.
+    """
+
+    text: str
+
+
+@dataclasses.dataclass
+class NoAnswer:
+    """The next call's first request fails, and the CLI says api_retry and sends it again.
+
+    status None is a request that got no HTTP answer (a timeout or a lost
+    connection); otherwise the API answered with that error status.
+    """
+
+    status: int | None = None
+
+
+# What the real CLI sends after the API refused a request: its own message, with no API call behind it.
+SYNTHETIC_USAGE = {"input_tokens": 0, "output_tokens": 0, "cache_creation_input_tokens": 0,
+                   "cache_read_input_tokens": 0, "server_tool_use": {"web_search_requests": 0}, "service_tier": None}
+
+
 class FakeCLI:
     """Plays the CLI for one session from scripted steps: text, or (tool name, input).
 
     Like the real CLI, it streams each call's API events when the options ask
     for them: message_start carries the prompt and output_tokens 1, each
     AssistantMessage carries that same opening usage, and only message_delta
-    (and the ResultMessage) carries the real output. Tools run while the call
-    streams; PostToolBatch runs after message_delta and before the next call,
-    and a hook that returns continue false ends the session there.
-    message_usage is each call's final usage: a dict, or a function of the
-    call's number. With price_calls, total_cost_usd is the list price of the
-    calls it sent.
+    (and the ResultMessage) carries the real output; message_stop ends each
+    stream, and a system status message comes before each request. Tools run
+    while the call streams; PostToolBatch runs after message_delta and before
+    the next call, and a hook that returns continue false ends the session
+    there. message_usage is each call's final usage: a dict, or a function of
+    the call's number. With price_calls, total_cost_usd is the list price of
+    the calls it sent. refused plays the API refusing the first request (a
+    429, with refused "rate_limit"): the CLI's own message, with model
+    <synthetic>, a UUID id, zero usage, and no stream events, then a result
+    with api_error_status.
     """
 
     def __init__(
@@ -139,8 +171,10 @@ class FakeCLI:
         price_calls: dict[str, Any] | None = None,
         result_subtype: str | None = None,
         terminal_reason: str | None = None,
+        refused: str | None = None,
     ) -> None:
         self.steps = steps
+        self.refused = refused
         self.first_message_error = first_message_error
         self.servers = servers or [{"name": "tax", "status": "connected"}, {"name": "harness", "status": "connected"}]
         self.cost_per_message = cost_per_message
@@ -163,6 +197,7 @@ class FakeCLI:
         self.executed: list[str] = []
         self.results: list[tuple[str, bool]] = []
         self.sent: list[dict[str, int]] = []
+        self.unanswered = 0
         self.intake_id: str | None = None
         self.ledger_at_query: list[dict[str, Any]] | None = None
         self.ledger_at_call: list[float] = []
@@ -260,29 +295,66 @@ class FakeCLI:
             "id": f"msg_{n}", "type": "message", "role": "assistant", "model": self.model, "content": [],
             "usage": opening}})
 
-    def delta(self, n: int, usage: dict[str, int], stop_reason: str) -> StreamEvent | None:
-        return self.stream(n, {"type": "message_delta", "delta": {"stop_reason": stop_reason},
-                               "usage": {"output_tokens": usage.get("output_tokens", 0)}})
+    def delta(self, n: int, usage: dict[str, int], stop_reason: str) -> list[StreamEvent]:
+        """message_delta with the real output, then message_stop."""
+        events = [self.stream(n, {"type": "message_delta", "delta": {"stop_reason": stop_reason},
+                                  "usage": {"output_tokens": usage.get("output_tokens", 0)}}),
+                  self.stream(n, {"type": "message_stop"})]
+        return [e for e in events if e is not None]
+
+    @staticmethod
+    def requesting() -> SystemMessage:
+        return SystemMessage(subtype="status", data={"type": "system", "subtype": "status", "status": "requesting"})
+
+    async def refuse(self):
+        yield self.requesting()
+        text = f"API Error: Request rejected ({self.api_error_status}) \u00b7 fake"
+        yield AssistantMessage(content=[TextBlock(text)], model="<synthetic>", message_id=str(uuid.uuid4()),
+                               usage=dict(SYNTHETIC_USAGE), error=self.refused, stop_reason="stop_sequence")
+        yield ResultMessage(
+            subtype="success", duration_ms=60, duration_api_ms=0, is_error=True, num_turns=1, session_id="fake",
+            total_cost_usd=0, usage={k: 0 for k in PROMPT_FIELDS} | {"output_tokens": 0},
+            api_error_status=self.api_error_status, result=text, terminal_reason="api_error",
+        )
 
     async def receive_response(self):
         yield SystemMessage(subtype="init", data={
             "type": "system", "subtype": "init", "tools": self.tools, "apiKeySource": self.api_key_source,
             "mcp_servers": self.servers, "model": self.model, "claude_code_version": "fake",
         })
+        if self.refused:
+            async for message in self.refuse():
+                yield message
+            return
         n = 0
         for step in self.steps:
             if self.stopped() or self.hook_stopped:
                 break
+            yield self.requesting()
+            if isinstance(step, NoAnswer):
+                self.unanswered += 1
+                yield SystemMessage(subtype="api_retry", data={
+                    "type": "system", "subtype": "api_retry", "attempt": 1, "max_retries": 10,
+                    "retry_delay_ms": 600, "error_status": step.status,
+                    "error": "unknown" if step.status is None else "rate_limit"})
+                continue
             n += 1
             usage = self.call_usage(n)
             opening, event = self.start(n, usage)
             if event:
                 yield event
+            if isinstance(step, CutOff):
+                yield AssistantMessage(content=[TextBlock(step.text)], model=self.model, message_id=f"msg_{n}",
+                                       usage=opening)
+                if stop := self.stream(n, {"type": "message_stop"}):
+                    yield stop
+                yield UserMessage(content=[TextBlock("Your response above was cut off mid-stream. Resume directly.")])
+                continue
             if isinstance(step, (str, Truncated)):
                 text = step if isinstance(step, str) else step.text
                 yield AssistantMessage(content=[TextBlock(text)], model=self.model, message_id=f"msg_{n}",
                                        usage=opening, error=self.first_message_error if n == 1 else None)
-                if event := self.delta(n, usage, "end_turn" if isinstance(step, str) else "max_tokens"):
+                for event in self.delta(n, usage, "end_turn" if isinstance(step, str) else "max_tokens"):
                     yield event
                 continue
             name, tool_input = step
@@ -297,7 +369,7 @@ class FakeCLI:
             yield UserMessage(content=[ToolResultBlock(call_id, [{"type": "text", "text": text}], is_error)])
             if self.stopped():
                 break
-            if event := self.delta(n, usage, "tool_use"):
+            for event in self.delta(n, usage, "tool_use"):
                 yield event
             if not self.hook_stopped:
                 await self.hooks("PostToolBatch", None, {"tool_calls": [{
@@ -869,6 +941,124 @@ async def test_a_call_the_cli_sends_with_no_hook_first_is_checked_as_soon_as_the
 
 
 @pytest.mark.anyio
+async def test_a_stream_cut_off_mid_response_holds_the_clis_resume_and_stops_before_it_when_it_cannot_fit(tmp_path):
+    # The second call's stream ends with no message_delta, and the CLI resumes with a call of its own, with no hook
+    # first. The cut call counts at its bound, so the resume's bound no longer fits: the harness stops and interrupts.
+    usage = lambda n: {"input_tokens": 60000, "output_tokens": 8000}  # noqa: E731
+    steps = [call("start_intake", household_id="H002"), CutOff("Let me look at"), "never reached"]
+    cli = FakeCLI(steps, message_usage=usage, price_calls=PRICES, model=SONNET)
+    ledger = ledger_at(tmp_path)
+    summary = await run(tmp_path, "H002", "A-sonnet", cli, sim(), ledger=ledger)
+    assert cli.interrupted and len(cli.sent) == 2, "the resume was never sent"
+    assert [e["kind"] for e in summary["harness_errors"]] == ["run_cap"]
+    assert "after a cut-off stream, which no hook precedes" in summary["harness_errors"][0]["message"]
+    streamed = trace_events(tmp_path, summary["run_id"], "stream_usage")
+    assert [e["outcome"] for e in streamed] == ["finished", "cut_off"]
+    reserved, settled = settled_lines(ledger, summary["run_id"])
+    assert cli.billed_usd(PRICES) <= settled == reserved <= 0.50, "the cut call's output is unknown"
+
+
+@pytest.mark.anyio
+async def test_the_clis_resume_after_a_cut_off_stream_is_held_before_it_is_sent(tmp_path):
+    steps = [call("start_intake", household_id="H002"), CutOff("Draft list"), "Draft list for the preparer."]
+    cli = FakeCLI(steps, message_usage=lambda n: {"input_tokens": 3000 + 500 * n, "output_tokens": 200})
+    ledger = ledger_at(tmp_path)
+    summary = await run(tmp_path, "H002", "A-haiku", cli, sim(), ledger=ledger)
+    assert summary["harness_errors"] == [] and len(cli.sent) == 3
+    streamed = trace_events(tmp_path, summary["run_id"], "stream_usage")
+    assert [e["outcome"] for e in streamed] == ["finished", "cut_off", "finished"]
+    assert streamed[2]["held_prompt_tokens"] >= streamed[2]["usage"]["input_tokens"] + 200, \
+        "the resume was held at no less than its prompt"
+    reserved, settled = settled_lines(ledger, summary["run_id"])
+    assert settled == reserved, "the cut call's output is unknown, so the run settles at its reservation"
+
+
+@pytest.mark.anyio
+async def test_a_request_that_got_no_answer_counts_at_its_bound_and_the_clis_retry_is_checked_first(tmp_path):
+    # The second call's first request gets no HTTP answer, so it may have been billed. Counted at its bound, it leaves
+    # no room for the CLI's retry under the run cap, so the harness stops before the retry is sent.
+    usage = lambda n: {"input_tokens": 60000, "output_tokens": 8000}  # noqa: E731
+    steps = [call("start_intake", household_id="H002"), NoAnswer(), "never reached"]
+    cli = FakeCLI(steps, message_usage=usage, price_calls=PRICES, model=SONNET)
+    ledger = ledger_at(tmp_path)
+    summary = await run(tmp_path, "H002", "A-sonnet", cli, sim(), ledger=ledger)
+    assert cli.interrupted and cli.unanswered == 1 and len(cli.sent) == 1, "the retry was never sent"
+    assert [e["kind"] for e in summary["harness_errors"]] == ["run_cap"]
+    assert "got no answer" in summary["harness_errors"][0]["message"]
+    lost = [e for e in trace_events(tmp_path, summary["run_id"], "stream_usage") if e["outcome"] == "no_answer_pending"]
+    assert len(lost) == 1 and lost[0]["cost_usd"] > 0.25
+    reserved, settled = settled_lines(ledger, summary["run_id"])
+    assert settled == reserved <= 0.50 and cli.billed_usd(PRICES) + lost[0]["cost_usd"] == pytest.approx(settled)
+
+
+@pytest.mark.anyio
+async def test_a_retried_request_that_fits_is_paid_for_twice_and_the_cost_is_unknown(tmp_path):
+    steps = [call("start_intake", household_id="H002"), NoAnswer(), "Draft list for the preparer."]
+    cli = FakeCLI(steps, message_usage={"input_tokens": 3000, "output_tokens": 200}, price_calls=PRICES)
+    ledger = ledger_at(tmp_path)
+    summary = await run(tmp_path, "H002", "A-haiku", cli, sim(), ledger=ledger)
+    assert summary["harness_errors"] == [] and len(cli.sent) == 2
+    streamed = trace_events(tmp_path, summary["run_id"], "stream_usage")
+    assert [e["outcome"] for e in streamed] == ["finished", "no_answer_pending", "finished"]
+    assert summary["cost_breakdown"]["agent"] == pytest.approx(cli.billed_usd(PRICES) + streamed[1]["cost_usd"])
+    reserved, settled = settled_lines(ledger, summary["run_id"])
+    assert settled == reserved and trace_events(tmp_path, summary["run_id"], "costs")[0]["agent_cost_known"] is False
+
+
+@pytest.mark.anyio
+async def test_the_clis_own_retry_after_an_error_status_costs_nothing_more(tmp_path):
+    steps = [call("start_intake", household_id="H002"), NoAnswer(status=429), "Draft list for the preparer."]
+    cli = FakeCLI(steps, message_usage={"input_tokens": 3000, "output_tokens": 200}, price_calls=PRICES)
+    ledger = ledger_at(tmp_path)
+    summary = await run(tmp_path, "H002", "A-haiku", cli, sim(), ledger=ledger)
+    assert summary["harness_errors"] == [] and len(cli.sent) == 2
+    assert [e["outcome"] for e in trace_events(tmp_path, summary["run_id"], "stream_usage")] == ["finished"] * 2
+    assert summary["cost_breakdown"]["agent"] == cli.billed_usd(PRICES), "the API bills nothing for a 429"
+    assert settled_lines(ledger, summary["run_id"])[1] == summary["cost_usd"]
+
+
+def test_a_request_with_no_answer_is_counted_once_whether_or_not_it_had_started_streaming(tmp_path):
+    budget = budget_at(ledger_at(tmp_path), 0.15)
+    budget.start_attempt(20000)
+    budget.request_sent()
+    which, lost = budget.no_answer()
+    assert (which, lost, budget.next_prompt) == ("pending", budget.call_bound(20000), 20000), "held again for the retry"
+    # The retry starts streaming, then its connection drops: message_stop with no message_delta, then api_retry.
+    budget.call_started("msg_1", {"input_tokens": 20000, "output_tokens": 1})
+    budget.cut_off()
+    assert budget.no_answer() == ("streaming", 0.0), "the dropped call already counts at its bound"
+    assert budget.committed() == pytest.approx(lost + budget.call_bound(20000) + budget.hold())
+    assert budget.next_prompt >= 20000, "its retry, which sends the same prompt, is held"
+
+
+@pytest.mark.anyio
+async def test_the_anthropic_clients_own_retry_tops_up_the_reservation_before_it_is_sent(tmp_path, monkeypatch):
+    # A planner request times out after it was sent, so it may have been billed, and the anthropic client retries it
+    # itself. The retry is checked and reserved like a new call before it goes out.
+    monkeypatch.setattr(anthropic.AsyncAnthropic, "_calculate_retry_timeout", lambda self, *args, **kwargs: 0.0)
+    ledger = ledger_at(tmp_path)
+    seen: list[list[str]] = []
+
+    def handler(request: httpx2.Request) -> httpx2.Response:
+        seen.append([e["run_id"] for e in ledger.entries() if e["kind"] == "reserve"])
+        if len(seen) == 1:
+            raise httpx2.ReadTimeout("fake: sent, and no answer in time", request=request)
+        return httpx2.Response(200, json={
+            "id": "msg_fake", "type": "message", "role": "assistant", "model": SONNET, "stop_reason": "end_turn",
+            "stop_sequence": None, "content": [{"type": "text", "text": "ok"}],
+            "usage": {"input_tokens": 1000, "output_tokens": 50}})
+
+    inner = anthropic.AsyncAnthropic(api_key=KEY, base_url=API_BASE_URL, max_retries=2,
+                                     http_client=httpx2.AsyncClient(transport=httpx2.MockTransport(handler)))
+    guard = budget_at(ledger, 0.03, model=None).client("planner", inner, SONNET)
+    request = {"model": SONNET, "max_tokens": 1024, "messages": [{"role": "user", "content": "x" * 4000}]}
+    await guard.messages.create(**request)
+    assert seen == [["run-a"], ["run-a", "run-a.top2"]], "the retry was reserved before it was sent"
+    assert guard.unknown_usd == pytest.approx(call_bound_usd(request, SONNET, PRICES), abs=1e-6)
+    assert guard.known_usd == cost_usd(SONNET, {"input_tokens": 1000, "output_tokens": 50}, PRICES)
+
+
+@pytest.mark.anyio
 async def test_without_stream_events_each_call_counts_at_its_bound_and_settles_at_the_reservation(tmp_path):
     def no_stream(options: Any) -> Any:
         return dataclasses.replace(options, include_partial_messages=False)
@@ -1061,6 +1251,38 @@ async def test_a_simulator_429_stops_the_session_and_retries(tmp_path):
     assert first.interrupted and slept == [30.0]
     assert summary["attempts"] == 2 and summary["status"] == "pending_review"
     assert summary["questions"][0]["n"] == 1 and len(summary["questions"]) == 1
+
+
+@pytest.mark.anyio
+async def test_a_429_the_cli_reports_in_its_own_message_costs_nothing_and_the_run_retries(tmp_path):
+    # Three attempts end on the real CLI's own message for a refused request: model <synthetic>, a UUID id, zero
+    # usage, and no stream events. They cost nothing, so an A-opus run still has room for its fourth attempt.
+    limited = [FakeCLI([], refused="rate_limit", api_error_status=429, model=OPUS) for _ in range(3)]
+    clean = FakeCLI(h002_steps(), message_usage={"input_tokens": 4000, "output_tokens": 300}, price_calls=PRICES,
+                    model=OPUS)
+    ledger = ledger_at(tmp_path)
+    slept: list[float] = []
+
+    async def sleep(seconds: float) -> None:
+        slept.append(seconds)
+
+    summary = await run(tmp_path, "H002", "A-opus", Sessions(*limited, clean, ledger=ledger),
+                        sim(reply("Still the one job.")), ledger=ledger, sleep=sleep)
+    assert summary["attempts"] == 4 and slept == [30.0, 60.0, 120.0]
+    assert summary["harness_errors"] == [] and summary["status"] == "pending_review"
+    assert summary["cost_breakdown"]["agent"] == clean.billed_usd(PRICES), "the refused attempts cost nothing"
+    reserved, settled = settled_lines(ledger, summary["run_id"])
+    assert settled == summary["cost_usd"] <= reserved, "the cost is known, so the run settles at what it spent"
+
+
+def test_only_a_message_the_cli_wrote_itself_is_synthetic():
+    def message(model: str, error: str | None, usage: dict[str, Any] | None) -> AssistantMessage:
+        return AssistantMessage(content=[TextBlock("x")], model=model, error=error, usage=usage, message_id="m")
+
+    assert harness.synthetic(message("<synthetic>", "rate_limit", SYNTHETIC_USAGE))
+    assert harness.synthetic(message(OPUS, "rate_limit", {"input_tokens": 0, "output_tokens": 0}))
+    assert not harness.synthetic(message(OPUS, None, {"input_tokens": 0, "output_tokens": 0}))
+    assert not harness.synthetic(message(OPUS, "rate_limit", {"input_tokens": 9000, "output_tokens": 1}))
 
 
 @pytest.mark.anyio

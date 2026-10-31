@@ -3,10 +3,10 @@
     uv run python -m agent.wiring_check
 
 Not run by pytest, since it starts the bundled Claude Code CLI and the tax
-server, and stage 3 serves a fake API over TCP on 127.0.0.1, which pytest
-blocks. Like agent.ping --dry-run, it passes a placeholder key, and it
+server, and stages 3 and 4 serve a fake API over TCP on 127.0.0.1, which
+pytest blocks. Like agent.ping --dry-run, it passes a placeholder key, and it
 points ANTHROPIC_BASE_URL at a closed local port (stages 1 and 2) or at
-agent.fake_api on 127.0.0.1 (stage 3), so no request can leave the
+agent.fake_api on 127.0.0.1 (stages 3 and 4), so no request can leave the
 machine. It spends nothing: every ledger and run file goes to a temp
 folder, and the client simulator is a stand-in (one that fails if anything
 calls it, in stages 1 and 2).
@@ -36,8 +36,21 @@ interrupts before the first model request can be retried (stages 1 and 2).
    near the month cap never push month to date past it, while the second,
    whose calls grow until the month has no headroom left, stops with
    month_cap, raises SpendCapExceeded, and writes no summary.
+4. Agent calls the API answers badly, against agent.fake_api's faults: an
+   A-opus run whose first three sessions end on a 429 (the CLI's own retries
+   off) reaches its fourth attempt at a known cost, since the CLI's own
+   message for a refused request costs nothing; a stream cut off
+   mid-response, after which the CLI resumes with a call no hook precedes,
+   counts at its bound and the resume is held before it is sent; and a
+   request that gets no answer at all, which the CLI sends again, counts at
+   its bound and the retry is held too. Each run settles at no less than
+   the fake API could have billed and no more than it reserved. Last, the
+   same cut on A-opus, where the resume's bound no longer fits under the
+   run cap, must stop with run_cap at the cut; whether the CLI's resume
+   reached the API before the interrupt landed is printed, since that is
+   best effort.
 
-Exit code 0 when all three come out as expected.
+Exit code 0 when all four come out as expected.
 """
 
 from __future__ import annotations
@@ -56,7 +69,17 @@ from claude_agent_sdk import ClaudeAgentOptions, ClaudeSDKClient, SystemMessage
 from agent.ask_client import ASK_CLIENT_TOOL, MONTH_CAP, RUN_CAP
 from agent.configs import get_config
 from agent.env import HarnessSettings
-from agent.fake_api import TEXT, TOOL_USE, Block, FakeMessagesAPI, first_user_text, intake_id_in
+from agent.fake_api import (
+    CUT,
+    DROPPED,
+    REFUSED,
+    TEXT,
+    TOOL_USE,
+    Block,
+    FakeMessagesAPI,
+    first_user_text,
+    intake_id_in,
+)
 from agent.harness import ALLOWED_TOOLS, STREAM_USAGE, run_one, summary_path, trace_path
 from agent.ping import CLOSED_PORT_URL, DRY_RUN_KEY
 from ledger.spend import Ledger, SpendCapExceeded, load_prices
@@ -391,6 +414,136 @@ async def month_stage(tmp: Path, prices: Mapping[str, Any]) -> tuple[bool, list[
     return not problems, lines + [f"  problems: {problems or 'none'}"]
 
 
+# Stage 4: agent calls the API answers badly.
+
+FAULT_HOUSEHOLD = "H002"
+
+
+def short_turns(intake: str) -> list[list[Block]]:
+    """A short run whose prompts stay small, so an A-opus run fits well inside its run cap."""
+    return [
+        [tool("start_intake", household_id=FAULT_HOUSEHOLD)],
+        [tool("build_request_list", intake_id=intake)],
+        [tool("submit_for_preparer_review", intake_id=intake)],
+        [(TEXT, "Submitted for preparer review.", None)],
+    ]
+
+
+def cut_turns(intake: str) -> list[list[Block]]:
+    """A short run whose reply at step 1 is text, so when its stream is cut off the CLI resumes it."""
+    turns = short_turns(intake)
+    return [turns[0], [(TEXT, "Let me build the request list next.", None)], *turns[1:]]
+
+
+@dataclasses.dataclass
+class FaultRun:
+    """What one run against the fake API's faults came to."""
+
+    name: str
+    summary: dict[str, Any]
+    events: list[dict[str, Any]]
+    faults: list[str]
+    billed: float
+    reserved: float
+    settled: float
+    problems: list[str]
+
+    @property
+    def calls(self) -> list[dict[str, Any]]:
+        return [e for e in self.events if e.get("type") == STREAM_USAGE]
+
+    @property
+    def errors(self) -> list[str]:
+        return [e["kind"] for e in self.summary["harness_errors"]]
+
+    def lines(self) -> list[str]:
+        costs = ([e for e in self.events if e.get("type") == "costs"] or [{}])[-1]
+        return [
+            f"  {self.name}: agent requests {len(self.faults)} ({self.faults}); attempts {self.summary['attempts']}; "
+            f"status {self.summary['status']}; harness errors "
+            f"{[(e['kind'], e['message'][:120]) for e in self.summary['harness_errors']] or 'none'}",
+            f"    calls the harness counted (outcome, prompt held before it, cost): "
+            f"{[(e.get('outcome'), e.get('held_prompt_tokens'), round(e['cost_usd'], 6)) for e in self.calls]}",
+            f"    agent cost ${self.summary['cost_breakdown']['agent']} (known: {costs.get('agent_cost_known')}); "
+            f"the fake API could have billed ${self.billed}; reserved ${self.reserved}; settled ${self.settled}",
+        ]
+
+
+async def fault_run(tmp: Path, prices: Mapping[str, Any], name: str, config: str, fault: str, at: Sequence[int],
+                    turns: Callable[[str], list[list[Block]]], env: Mapping[str, str] | None = None) -> FaultRun:
+    """One run against the fake API, with fault on the agent requests numbered in at."""
+    settings = HarnessSettings(api_key=DRY_RUN_KEY, spend_cap_usd=150.0, run_cap_usd=0.50)
+    ledger = Ledger(tmp / f"{name}-spend.jsonl", cap_usd=settings.spend_cap_usd, run_cap_usd=settings.run_cap_usd)
+    runs = tmp / f"{name}-runs"
+
+    def adjust(api: FakeMessagesAPI) -> Callable[[ClaudeAgentOptions], ClaudeAgentOptions]:
+        return lambda options: dataclasses.replace(
+            options, env={**options.env, "ANTHROPIC_BASE_URL": api.base_url, **(env or {})})
+
+    faults = lambda n, body: fault if n in at else None  # noqa: E731
+    with FakeMessagesAPI(scripted(lambda body: turns(intake_id_in(body))), lambda body: 400, faults=faults) as api:
+        summary = await run_one(FAULT_HOUSEHOLD, config, 1, "dev", settings=settings, ledger=ledger,
+                                sim_client=answers(), runs_dir=runs, adjust_options=adjust(api), backoff_s=0.01,
+                                prices=prices)
+    run_id = summary["run_id"]
+    reserves, settled = ledger_lines(ledger, run_id)
+    reserved = round(sum(amount for _, amount in reserves), 6)
+    billed = api.billed_usd(prices, where=lambda r: r["main"])
+    problems = request_problems(api.requests, get_config(config).max_output_tokens, [run_id, config, "-t1"])
+    if not billed <= summary["cost_breakdown"]["agent"] + 1e-9:
+        problems.append(f"{name}: agent cost ${summary['cost_breakdown']['agent']} is under the ${billed} billed")
+    if not settled <= reserved <= settings.run_cap_usd + 1e-9:
+        problems.append(f"{name}: settled ${settled} <= reserved ${reserved} <= run cap does not hold")
+    if any(e.get("held_prompt_tokens") is None for e in trace_of(runs, run_id) if e.get("type") == STREAM_USAGE):
+        problems.append(f"{name}: an agent call was sent with nothing held for it")
+    return FaultRun(name, summary, trace_of(runs, run_id), [r["fault"] or "ok" for r in api.requests if r["main"]],
+                    billed, reserved, settled, problems)
+
+
+def finished(run: FaultRun) -> list[str]:
+    if run.errors or run.summary["status"] != "pending_review":
+        return [f"{run.name}: expected a finished intake, got {run.summary['status']} and {run.errors}"]
+    return []
+
+
+async def fault_stage(tmp: Path, prices: Mapping[str, Any]) -> tuple[bool, list[str]]:
+    lines = ["4. Agent calls the fake API answers badly"]
+    problems: list[str] = []
+
+    run = await fault_run(tmp, prices, "refused", OPUS_CONFIG, REFUSED, (1, 2, 3), short_turns,
+                          env={"CLAUDE_CODE_MAX_RETRIES": "0"})
+    retries = [e for e in run.events if e.get("type") == "retry"]
+    known = ([e for e in run.events if e.get("type") == "costs"] or [{}])[-1].get("agent_cost_known")
+    problems += run.problems + finished(run)
+    if len(retries) != 3 or run.summary["attempts"] != 4 or not known:
+        problems.append(f"refused: expected four attempts at a known cost, got {run.summary['attempts']}, known {known}")
+    lines += [f"  {OPUS_CONFIG}: the first three agent requests answered 429, with CLAUDE_CODE_MAX_RETRIES=0",
+              *run.lines()]
+
+    run = await fault_run(tmp, prices, "cut", CONFIG, CUT, (2,), cut_turns)
+    problems += run.problems + finished(run)
+    if [e.get("outcome") for e in run.calls].count("cut_off") != 1:
+        problems.append(f"cut: expected one cut_off call, got {[e.get('outcome') for e in run.calls]}")
+    lines += [f"  {CONFIG}: agent request 2 cut off mid-stream by an error event, then the CLI's resume",
+              *run.lines()]
+
+    run = await fault_run(tmp, prices, "dropped", CONFIG, DROPPED, (2,), short_turns)
+    problems += run.problems + finished(run)
+    if not any(str(e.get("outcome")).startswith("no_answer") for e in run.calls):
+        problems.append(f"dropped: the request with no answer was not counted ({[e.get('outcome') for e in run.calls]})")
+    lines += [f"  {CONFIG}: agent request 2 dropped with no answer, then the CLI's retry", *run.lines()]
+
+    # The CLI sends its resume within milliseconds and no hook comes first, so stopping it is best effort.
+    run = await fault_run(tmp, prices, "cut-tight", OPUS_CONFIG, CUT, (2,), cut_turns)
+    problems += run.problems
+    if run.errors != [RUN_CAP] or "cut-off stream" not in run.summary["harness_errors"][0]["message"]:
+        problems.append(f"cut-tight: expected a run_cap stop at the cut-off stream, got {run.errors}")
+    resumed = len(run.faults) > 2
+    lines += [f"  {OPUS_CONFIG}: the same cut, where the resume's bound no longer fits under the run cap",
+              *run.lines(), f"    the resume reached the API before the interrupt landed: {'yes' if resumed else 'no'}"]
+    return not problems, lines + [f"  problems: {problems or 'none'}"]
+
+
 async def main_async() -> int:
     ok = True
     with tempfile.TemporaryDirectory(prefix="wiring-") as tmp:
@@ -421,7 +574,7 @@ async def main_async() -> int:
         ok = ok and aborted and not planted["tool_calls"]
 
         prices = load_prices()
-        for stage in (opus_stage, month_stage):
+        for stage in (opus_stage, month_stage, fault_stage):
             passed, lines = await stage(tmp_path, prices)
             print("\n".join(lines))
             ok = ok and passed

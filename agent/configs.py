@@ -8,10 +8,17 @@ max_output_tokens is an agent config's CLAUDE_CODE_MAX_OUTPUT_TOKENS: the CLI
 sends it as max_tokens on every agent call, so it bounds each call's output,
 and the harness holds that much output for the agent's next call before it
 is sent. It must leave room for adaptive thinking, which counts toward it.
-Every agent config uses 8192, so no model gets more room than another: at
-Opus prices the hold for one call is then about $0.16 of output plus its
-prompt, which leaves a typical A-opus run room under a RUN_CAP_USD of
-$0.50, where 16384 would stop it after a few calls.
+Every agent config uses 8192, so every model gets the same room per call.
+
+The hold is a strict bound, the next prompt at the cache write rate plus the
+whole output cap, and it is far above what a cached call costs. With a
+20,000 to 40,000 token prompt it is about $0.26 to $0.36 on Opus, $0.13 to
+$0.18 on Sonnet, and under a cent on Haiku. A run stops with run_cap once
+its spend plus that hold would pass RUN_CAP_USD, so at $0.50 an A-opus run
+can spend about $0.14 to $0.24, A-sonnet about $0.32 to $0.37, and A-haiku
+nearly all of it: the PRD's $0.12 estimate for an Opus run fits, and one
+twice that long may not. The effective run cap therefore differs by model.
+16384 would add another $0.16 to every Opus hold.
 """
 
 from __future__ import annotations

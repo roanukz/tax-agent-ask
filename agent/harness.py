@@ -40,8 +40,9 @@ Spend. A run may spend only what it has reserved in the ledger, so runs
 going at once never count on the same headroom. When the run needs more, it
 tops its reservation up first (Reservation.cover), against the month cap
 and under the ledger's lock, up to RUN_CAP_USD in all. The simulator and
-planner guards top up before each of their calls, by that call's upper
-bound, and refuse the call when the ledger won't allow it.
+planner guards top up before each of their HTTP attempts, the anthropic
+client's own retries included, by that attempt's upper bound, and refuse it
+when the ledger won't allow it (see sim.budget).
 
 The agent's calls go through the CLI, so the harness bounds them itself.
 Every agent call asks for at most the config's max_output_tokens
@@ -49,33 +50,46 @@ Every agent call asks for at most the config's max_output_tokens
 since its AssistantMessage usage shows only the stream's opening count (1
 output token). A call counts at its prompt (from message_start) and that
 output cap, with no cache discount, until its message_delta gives the real
-output, and from then on at its list price; each finished call adds a
-stream_usage event to the trace. Before the agent's next call is sent, the
-run holds that call's upper bound as committed spend: a prompt of the last
-call's prompt and output, the tool results going back, and framing (or,
-for an attempt's first call, the system prompt, the first message, and
-CLI_PROMPT_TOKENS for the CLI's own part), at one token per byte and no
-cache discount, plus the output cap. While a call streams, what is held is
-that call's own bound. The simulator's and planner's guards can't spend
-what is held. The hold is checked, with a top-up if needed, at the start of
-every attempt and in the PostToolBatch hook, which the CLI awaits after a
-turn's tool calls and before it sends their results back to the model.
-When it can't be covered, the attempt never starts, or the hook tells the
-CLI to stop (continue false), so the call is never sent; agent.wiring_check
-shows the bundled CLI honoring both the output cap and the stop. So no
-agent call that starts an attempt or follows a tool call can take a run
-past what it reserved or past RUN_CAP_USD, or, with runs going at once,
-take the month past SPEND_CAP_USD.
+output, and from then on at its list price; each call adds a stream_usage
+event to the trace. A message the CLI writes itself (model <synthetic>,
+such as its "API Error" text after a 429) is no API call and costs nothing.
+Before the agent's next call is sent, the run holds that call's upper bound
+as committed spend: a prompt of the last call's prompt and output, the tool
+results going back, and framing (or, for an attempt's first call, the
+system prompt, the first message, and CLI_PROMPT_TOKENS for the CLI's own
+part), at one token per byte and no cache discount, plus the output cap.
+While a call streams, what is held is that call's own bound. The
+simulator's and planner's guards can't spend what is held. The hold is
+checked, with a top-up if needed, at the start of every attempt and in the
+PostToolBatch hook, which the CLI awaits after a turn's tool calls and
+before it sends their results back to the model. When it can't be covered,
+the attempt never starts, or the hook tells the CLI to stop (continue
+false), so the call is never sent; agent.wiring_check shows the bundled CLI
+honoring both the output cap and the stop. So no agent call that starts an
+attempt or follows a tool call can take a run past what it reserved or past
+RUN_CAP_USD, or, with runs going at once, take the month past
+SPEND_CAP_USD. Holding a whole call's bound costs room: on Opus it is about
+$0.16 of output plus $0.05 per 10,000 prompt tokens, so an A-opus run stops
+with run_cap once it has spent RUN_CAP_USD less that (see agent.configs).
 
-The one agent call no hook precedes is the CLI's own follow-up to a
-response that ended without a tool call and without ending the turn (it
-hit the output cap, for one). The harness checks the hold as soon as the
-stream shows such an ending, and stops and interrupts when it can't be
-covered; if the CLI has already sent the follow-up, that call can overshoot
-by what it costs before the interrupt lands, and it counts at its bound. A
-call still streaming when the session ends, or an interrupt that may have
-cut a call short, makes the agent's cost unknown, and the run settles at no
-less than its reservation.
+Three kinds of agent call have no hook before them, so the harness checks
+them as early as the stream shows they are coming: the CLI's own follow-up
+to a response that ended without a tool call and without ending the turn
+(it hit the output cap, for one; message_delta shows it), its resume or
+retry after a stream that ended with no message_delta (message_stop shows
+it), and its retry of a request that got no HTTP answer (a system api_retry
+message with no error status shows it, and that request counts at the
+bound held for it, since it may have been billed). In each case the harness
+holds the next call's bound at once, and stops and interrupts when it
+can't be covered. The CLI sends a follow-up or resume within milliseconds,
+and a retry after about half a second, so the call may already be on the
+wire; then it can overshoot by what it costs before the interrupt lands,
+and it counts at its bound. A retry after an error status (a 429, say)
+needs no new hold, since the API bills nothing for the refused request. A
+call still streaming when the session ends, a call cut off mid-stream, a
+request that got no answer, or an interrupt that may have cut a call short
+makes the agent's cost unknown, and the run settles at no less than its
+reservation.
 
 The month cap and the run cap stop a run differently. A run-cap stop is a
 run_cap harness error, and the run is scored. A stop because the month's
@@ -145,7 +159,7 @@ from ledger.spend import Ledger, RunCapExceeded, SpendCapExceeded, cost_usd, loa
 from rules import engine
 from server.intake import fact_view, rule_view
 from server.tax_server import TOOL_NAMES
-from sim.budget import BudgetedClient, BudgetExceeded, call_bound_usd
+from sim.budget import BudgetedClient, BudgetExceeded
 from sim.simulator import ClientSimulator, reply_text
 
 REPO = Path(__file__).resolve().parent.parent
@@ -171,11 +185,15 @@ SLACK_USD = 1e-9  # float slack, a billionth of a dollar, so an exactly covered 
 CLI_PROMPT_TOKENS = 12_000
 TURN_TOKENS = 256
 RESULT_TOKENS = 256
+# The CLI's own message asking the model to resume a response it cut short, under 400 bytes on CLI 2.1.314.
+RESUME_TOKENS = 512
 # Stop reasons after which the CLI sends no further call on its own; after tool_use the PostToolBatch hook comes first.
 ENDS_TURN = ("end_turn", "stop_sequence")
 TOOL_USE = "tool_use"
 FINAL_USAGE_WAIT_S = 5.0
 STREAM_USAGE = "stream_usage"
+# The model name on a message the CLI writes itself, such as its "API Error" text after a refused request.
+SYNTHETIC_MODEL = "<synthetic>"
 
 INIT_CHECK = "init_check"
 API_ERROR = "api_error"
@@ -354,25 +372,25 @@ class Reservation:
 
 
 class ReservedClient(BudgetedClient):
-    """A BudgetedClient whose limit, before each call, is its share of the run's reservation, topped up for that call.
+    """A BudgetedClient whose limit, before each attempt, is its share of the run's reservation, topped up for it.
 
-    When the month's spend cap is what kept the reservation from covering the
-    call, it raises SpendCapExceeded instead of BudgetExceeded.
+    The anthropic client's own retries are attempts too, so each one tops up
+    before it is sent. When the month's spend cap is what kept the
+    reservation from covering an attempt, it raises SpendCapExceeded instead
+    of BudgetExceeded.
     """
 
     def __init__(self, client: Any, *, model: str, prices: Mapping[str, Any],
                  room: Callable[[BudgetedClient, float], tuple[float, str | None]]) -> None:
         super().__init__(client, model=model, prices=prices, limit_usd=0.0)
         self.room = room
-        self.call_prices = dict(prices)
 
-    async def create(self, kwargs: Mapping[str, Any]) -> Any:
-        bound = call_bound_usd(kwargs, self.model, self.call_prices)
+    def _admit(self, bound: float) -> None:
         self.limit_usd, refused = self.room(self, bound)
         if refused == MONTH_CAP and committed_usd(self) + bound > self.limit_usd:
             raise SpendCapExceeded(
                 f"the next call could cost ${bound:.6f}, and the month's spend cap leaves no room to reserve it")
-        return await super().create(kwargs)
+        super()._admit(bound)
 
 
 def first_prompt_tokens(system_prompt: str, prompt: str) -> int:
@@ -385,9 +403,24 @@ def result_tokens(response: Any) -> int:
     return len(json.dumps(response, default=str).encode()) + RESULT_TOKENS
 
 
+def synthetic(message: AssistantMessage) -> bool:
+    """A message the CLI wrote itself, with no API call behind it: its "API Error" text after a 429, for one.
+
+    The CLI names its model SYNTHETIC_MODEL; an error message with no usage
+    at all is taken as one too.
+    """
+    if message.model == SYNTHETIC_MODEL:
+        return True
+    return message.error is not None and not any(normalize_usage(message.usage).values())
+
+
 @dataclasses.dataclass
 class AgentCall:
-    """One agent API call as the CLI streams it: message_start gives its prompt, message_delta its output."""
+    """One agent API call as the CLI streams it: message_start gives its prompt, message_delta its output.
+
+    cut is a call whose stream ended (message_stop) with no message_delta,
+    so its output is unknown and it counts at its bound.
+    """
 
     message_id: str
     raw: dict[str, Any]
@@ -395,6 +428,7 @@ class AgentCall:
     usage: dict[str, int] = dataclasses.field(default_factory=dict)
     streamed: bool = True
     done: bool = False
+    cut: bool = False
     stop_reason: str | None = None
     final: anyio.Event | None = None
 
@@ -425,6 +459,8 @@ class Budget:
         self.last: AgentCall | None = None
         self.next_prompt: int | None = None
         self.pending_results = 0
+        self.sent = False
+        self.lost_usd = 0.0
 
     def client(self, name: str, inner: Any, model: str) -> ReservedClient:
         """A guard on inner whose calls spend from this run's reservation."""
@@ -469,6 +505,7 @@ class Budget:
         self.calls = {}
         self.last = None
         self.pending_results = 0
+        self.sent = False
         self.next_prompt = first_prompt
 
     def call_started(self, message_id: str, usage: Mapping[str, Any] | None, *, streamed: bool = True) -> AgentCall:
@@ -480,7 +517,44 @@ class Budget:
         self.last = call
         self.next_prompt = None
         self.pending_results = 0
+        self.sent = False
         return call
+
+    def resume_pending(self) -> None:
+        """The CLI follows a response it cut short with a call of its own, and no hook precedes it: hold that call."""
+        self.next_prompt = self.follow_up_prompt() + RESUME_TOKENS
+
+    def cut_off(self) -> AgentCall | None:
+        """message_stop with no message_delta: the stream ended early, so the call's output is unknown, at its bound."""
+        call = self.last
+        if call is None or not call.streamed or call.done or call.cut:
+            return None
+        call.cut = True
+        self.resume_pending()
+        return call
+
+    def no_answer(self) -> tuple[str, float]:
+        """The CLI will send an agent request again (system api_retry) after the last one got no answer.
+
+        A request that got no answer may have been billed. One that never
+        started streaming counts at the bound held for it, and that bound
+        stays held for the retry; one that had started streaming already
+        counts at its bound, and its retry sends the same prompt.
+        Returns which of the two it was (or "none", when no agent request
+        was open) and what was added.
+        """
+        last = self.last
+        if self.next_prompt is not None and (self.sent or last is None or last.done):
+            lost = self.call_bound(self.next_prompt)
+            self.lost_usd += lost
+            self.sent = True
+            return "pending", lost
+        if last is not None and not last.done:
+            last.cut = True
+            self.next_prompt = max(self.next_prompt or 0, last.prompt)
+            self.sent = True
+            return "streaming", 0.0
+        return "none", 0.0
 
     def call_finished(self, usage: Mapping[str, Any] | None, stop_reason: str | None) -> AgentCall | None:
         """message_delta: the streaming call's final usage, which also sizes the hold for any call after it."""
@@ -499,7 +573,7 @@ class Budget:
     async def wait_final(self, timeout_s: float) -> None:
         """Lets the message reader catch up with the last call's message_delta, which the CLI sent before its hook."""
         call = self.last
-        if call is not None and call.streamed and not call.done:
+        if call is not None and call.streamed and not call.done and not call.cut:
             call.final = call.final or anyio.Event()
             with anyio.move_on_after(timeout_s):
                 await call.final.wait()
@@ -515,6 +589,11 @@ class Budget:
         self.pending_results = max(self.pending_results, tokens)
         self.next_prompt = self.follow_up_prompt()
 
+    def request_sent(self) -> None:
+        """The CLI says it is sending a request (system status requesting): the pending call is on the wire."""
+        if self.next_prompt is not None:
+            self.sent = True
+
     def request_open(self) -> bool:
         """Whether an agent request may be on the wire: one pending or one still streaming."""
         return self.next_prompt is not None or any(not c.done for c in self.calls.values())
@@ -522,7 +601,7 @@ class Budget:
     # Totals.
 
     def agent_running(self) -> float:
-        return self.agent_done_usd + sum(self.call_cost(c) for c in self.calls.values())
+        return self.agent_done_usd + self.lost_usd + sum(self.call_cost(c) for c in self.calls.values())
 
     def committed(self) -> float:
         return self.agent_running() + self.hold() + sum(committed_usd(c) for c in self.clients.values())
@@ -543,11 +622,12 @@ class Budget:
     def end_attempt(self, result: ResultMessage | None, *, queried: bool, cut_short: bool = False) -> None:
         """Adds the attempt's agent cost: the larger of the CLI's figure and the streamed calls (open ones at their bound).
 
-        The cost is unknown when there was no result, when a call never
-        finished streaming, or when cut_short says an interrupt may have cut
-        off a request the stream never showed.
+        Requests that got no answer count at their bounds on top. The cost is
+        unknown when there was no result, when a call never finished
+        streaming, when a request got no answer, or when cut_short says an
+        interrupt may have cut off a request the stream never showed.
         """
-        streamed_cost = sum(self.call_cost(c) for c in self.calls.values())
+        streamed_cost = self.lost_usd + sum(self.call_cost(c) for c in self.calls.values())
         streamed_usage = normalize_usage({})
         for call in self.calls.values():
             for name, value in call.usage.items():
@@ -559,7 +639,7 @@ class Budget:
         else:
             cost = streamed_cost
             self.unknown = self.unknown or queried
-        if any(not c.done for c in self.calls.values()) or cut_short:
+        if any(not c.done for c in self.calls.values()) or self.lost_usd or cut_short:
             self.unknown = True
         usage = normalize_usage(result.usage) if result is not None and result.usage else streamed_usage
         self.agent_done_usd = round(self.agent_done_usd + cost, 6)
@@ -569,6 +649,8 @@ class Budget:
         self.last = None
         self.next_prompt = None
         self.pending_results = 0
+        self.sent = False
+        self.lost_usd = 0.0
 
 
 def over_budget(budget: Budget, refused: str, what: str, bound_usd: float) -> str:
@@ -728,8 +810,20 @@ class Session:
             return
         self.init_ok = True
 
+    def usage_event(self, call: AgentCall, outcome: str) -> dict[str, Any]:
+        """A stream_usage trace event: one agent call's usage, cost, and the prompt held for it before it was sent."""
+        return {
+            "type": STREAM_USAGE,
+            "message_id": call.message_id,
+            "usage": dict(call.usage),
+            "stop_reason": call.stop_reason,
+            "cost_usd": self.budget.call_cost(call),
+            "held_prompt_tokens": call.held_prompt,
+            "outcome": outcome,
+        }
+
     def on_stream(self, message: StreamEvent) -> None:
-        """Each agent call's message_start and message_delta, where the real usage is."""
+        """Each agent call's message_start, message_delta, and message_stop, where the real usage is."""
         event = message.event or {}
         kind = event.get("type")
         if kind == "message_start":
@@ -741,16 +835,33 @@ class Session:
             call = self.budget.call_finished(event.get("usage"), stop_reason)
             if call is None:
                 return
-            self.events.append({
-                "type": STREAM_USAGE,
-                "message_id": call.message_id,
-                "usage": dict(call.usage),
-                "stop_reason": call.stop_reason,
-                "cost_usd": self.budget.call_cost(call),
-                "held_prompt_tokens": call.held_prompt,
-            })
+            self.events.append(self.usage_event(call, "finished"))
             if stop_reason not in ENDS_TURN and stop_reason != TOOL_USE:
+                # The CLI follows this response with a call of its own, which no hook precedes.
+                self.budget.resume_pending()
                 self.check("the CLI's next call, which no hook precedes,")
+        elif kind == "message_stop":
+            call = self.budget.cut_off()
+            if call is None:
+                return
+            # The stream ended with no message_delta: the CLI resumes or retries the call, and no hook precedes it.
+            self.events.append(self.usage_event(call, "cut_off"))
+            self.check("the CLI's call after a cut-off stream, which no hook precedes,")
+
+    def on_system(self, message: SystemMessage) -> None:
+        """The CLI's status and api_retry messages, which say when an agent request goes out and when one is sent again."""
+        data = message.data or {}
+        if message.subtype == "status" and data.get("status") == "requesting":
+            self.budget.request_sent()
+        elif message.subtype == "api_retry" and data.get("error_status") is None:
+            # No HTTP answer (a timeout or a lost connection), so it may have been billed; an error status bills nothing.
+            held = self.budget.next_prompt
+            which, lost = self.budget.no_answer()
+            self.events.append({
+                "type": STREAM_USAGE, "message_id": None, "usage": normalize_usage({}), "stop_reason": None,
+                "cost_usd": lost, "held_prompt_tokens": held, "outcome": f"no_answer_{which}",
+            })
+            self.check("the CLI's retry of an agent call that got no answer, which no hook precedes,")
 
     def on_assistant(self, message: AssistantMessage) -> None:
         self._messages += 1
@@ -762,8 +873,9 @@ class Session:
                 self.events.append({"type": "tool_call", "id": block.id, "name": block.name, "input": block.input})
         if message.error == "rate_limit":
             self.rate_limited = True
-        if message.message_id and message.message_id not in self.budget.calls:
-            # No message_start came for this call, so count it from here, at its bound.
+        if message.message_id and message.message_id not in self.budget.calls and not synthetic(message):
+            # No message_start came for this call, so count it from here, at its bound. A message the CLI wrote
+            # itself (its "API Error" text after a 429, say) is no API call and costs nothing.
             call = self.budget.call_started(message.message_id, message.usage, streamed=False)
             self.check("an agent call the CLI started", self.budget.call_cost(call))
 
@@ -806,6 +918,8 @@ class Session:
                 self.on_stream(message)
         elif isinstance(message, SystemMessage) and message.subtype == "init":
             self.on_init(message.data)
+        elif isinstance(message, SystemMessage):
+            self.on_system(message)
         elif isinstance(message, AssistantMessage):
             self.on_assistant(message)
         elif isinstance(message, UserMessage):

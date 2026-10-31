@@ -103,6 +103,12 @@ def test_messages_client_is_pinned_to_the_api_host_whatever_the_parent_shell_say
     assert str(request.url) == "https://api.anthropic.com/v1/messages" and client.max_retries == 4
     assert "x-route-to" not in request.headers and "x-other" not in request.headers
     assert messages_client(FAKE_KEY, max_retries=0).max_retries == 0
+    # sim.budget.BudgetedClient sends each call through a copy with its middleware, which keeps the same pins.
+    async def passthrough(request, call_next):
+        return await call_next(request)
+
+    guarded = built_request(client.with_middleware(passthrough))
+    assert str(guarded.url) == "https://api.anthropic.com/v1/messages" and "x-route-to" not in guarded.headers
 
 
 def test_isolated_options_remove_everything_but_allowed(tmp_path):

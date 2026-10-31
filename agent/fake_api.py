@@ -13,15 +13,23 @@ The prompt counts one input token per byte of the request's system,
 messages, and tools, with no cache, which is more than a real tokenizer
 would count, so a run's calls grow the way its tool results do.
 
+faults(n, body), when given, can make the nth agent request fail the way
+a real one can: REFUSED answers 429 with a rate_limit_error (billed
+nothing), CUT streams the first content block and then an error event, with
+no message_delta (as an overloaded stream can end), and DROPPED closes the
+connection with no answer at all.
+
 Every request body is kept in .requests, with the usage the fake reported
 for it, so a check can see what the CLI sent and what the API would have
-billed; request headers, which hold the key, are never kept. pytest blocks
-TCP sockets, so no test starts it.
+billed; a cut or dropped request is kept at its prompt and full output,
+the most it could have been billed. Request headers, which hold the key,
+are never kept. pytest blocks TCP sockets, so no test starts it.
 """
 
 from __future__ import annotations
 
 import json
+import socket
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any, Callable, Mapping, Sequence
@@ -31,9 +39,13 @@ from ledger.spend import cost_usd
 HOST = "127.0.0.1"
 TEXT = "text"
 TOOL_USE = "tool_use"
+REFUSED = "refused"
+CUT = "cut"
+DROPPED = "dropped"
 
 Block = tuple[str, str, Any]  # (TEXT, text, None) or (TOOL_USE, tool name, input)
 Script = Callable[[int, Mapping[str, Any]], Sequence[Block]]
+Faults = Callable[[int, Mapping[str, Any]], str | None]
 
 
 def prompt_tokens(body: Mapping[str, Any]) -> int:
@@ -99,9 +111,12 @@ def sse_events(blocks: Sequence[Block], model: str, message_id: str, prompt: int
 class FakeMessagesAPI:
     """The fake server, started and stopped by the with block."""
 
-    def __init__(self, script: Script, output_tokens: Callable[[Mapping[str, Any]], int]) -> None:
+    def __init__(self, script: Script, output_tokens: Callable[[Mapping[str, Any]], int], *,
+                 faults: Faults | None = None) -> None:
         self.script = script
         self.output_tokens = output_tokens
+        self.faults = faults
+        self.agent_requests = 0
         self.requests: list[dict[str, Any]] = []
         self._lock = threading.Lock()
         self._server: ThreadingHTTPServer | None = None
@@ -129,8 +144,12 @@ class FakeMessagesAPI:
                     body = json.loads(raw or b"{}")
                 except ValueError:
                     body = {}
-                status, out, kind = api.answer(self.path, body)
-                self.reply(status, out, kind)
+                answer = api.answer(self.path, body)
+                if answer is None:  # DROPPED: no answer at all
+                    self.close_connection = True
+                    self.connection.shutdown(socket.SHUT_RDWR)
+                    return
+                self.reply(*answer)
 
             def reply(self, status: int, out: bytes, kind: str) -> None:
                 self.send_response(status)
@@ -148,8 +167,8 @@ class FakeMessagesAPI:
             self._server.shutdown()
             self._server.server_close()
 
-    def answer(self, path: str, body: Mapping[str, Any]) -> tuple[int, bytes, str]:
-        """(status, body, content type) for one request."""
+    def answer(self, path: str, body: Mapping[str, Any]) -> tuple[int, bytes, str] | None:
+        """(status, body, content type) for one request, or None for a request that gets no answer."""
         if "count_tokens" in path:
             return 200, json.dumps({"input_tokens": prompt_tokens(body)}).encode(), "application/json"
         if not path.startswith("/v1/messages"):
@@ -161,11 +180,23 @@ class FakeMessagesAPI:
         output = min(int(self.output_tokens(body)) if main else 1, int(body.get("max_tokens") or 1))
         model = str(body.get("model") or "")
         with self._lock:
+            if main:
+                self.agent_requests += 1
+            fault = self.faults(self.agent_requests, body) if main and self.faults else None
             message_id = f"msg_fake_{len(self.requests) + 1:03d}"
+            billed = {"input_tokens": 0, "output_tokens": 0} if fault == REFUSED else {
+                "input_tokens": prompt, "output_tokens": output}
             self.requests.append({"path": path, "main": main, "step": step, "model": model, "body": dict(body),
-                                  "usage": {"input_tokens": prompt, "output_tokens": output}})
+                                  "usage": billed, "fault": fault})
+        if fault == REFUSED:
+            error = {"type": "error", "error": {"type": "rate_limit_error", "message": "fake rate limit"}}
+            return 429, json.dumps(error).encode(), "application/json"
+        if fault == DROPPED:
+            return None
         if body.get("stream"):
             events = sse_events(blocks, model, message_id, prompt, output)
+            if fault == CUT:
+                events = events[:4] + [{"type": "error", "error": {"type": "overloaded_error", "message": "fake"}}]
             out = "".join(f"event: {e['type']}\ndata: {json.dumps(e)}\n\n" for e in events).encode()
             return 200, out, "text/event-stream"
         content = [{"type": "text", "text": b[1]} if b[0] == TEXT else {

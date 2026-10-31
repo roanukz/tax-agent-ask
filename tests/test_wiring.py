@@ -8,13 +8,14 @@ CLI client in place of ClaudeSDKClient.
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import Any
 
 import pytest
 from claude_agent_sdk import ResultMessage, SystemMessage
 
-from agent import wiring_check
+from agent import fake_api, wiring_check
 from agent.env import API_BASE_URL, HarnessSettings
 from agent.harness import ALLOWED_TOOLS
 from agent.options import isolated_options
@@ -155,3 +156,27 @@ def test_held_problems_flag_a_call_held_below_its_prompt_or_one_the_harness_miss
         [events[0], stream_usage("m2", 12000, 11000)], sent=2)[0]
     assert "but None were held" in wiring_check.held_problems([stream_usage("m1", 9000, None)], sent=1)[0]
     assert "the API saw 3 agent calls" in wiring_check.held_problems(events, sent=3)[0]
+
+
+def sse_types(out: bytes) -> list[str]:
+    return [json.loads(line[len("data: "):])["type"] for line in out.decode().splitlines() if line.startswith("data: ")]
+
+
+def test_the_fake_api_refuses_cuts_and_drops_the_agent_requests_it_is_told_to():
+    # answer() needs no socket, so the fake API's replies are checked here; the check itself serves them over TCP.
+    faults = {1: fake_api.REFUSED, 2: fake_api.CUT, 3: fake_api.DROPPED}
+    api = fake_api.FakeMessagesAPI(lambda step, body: [(fake_api.TOOL_USE, "mcp__tax__list_fact_keys", {})],
+                                   lambda body: 400, faults=lambda n, body: faults.get(n))
+    body = {"model": "claude-haiku-5-5", "max_tokens": 8192, "stream": True, "tools": [{"name": "x"}],
+            "messages": [{"role": "user", "content": "Start intake for household H002."}]}
+    status, out, _ = api.answer("/v1/messages", body)
+    assert status == 429 and json.loads(out)["error"]["type"] == "rate_limit_error"
+    status, out, _ = api.answer("/v1/messages", body)
+    assert status == 200 and sse_types(out)[0] == "message_start" and sse_types(out)[-1] == "error"
+    assert "message_delta" not in sse_types(out), "a cut stream never gives the real output"
+    assert api.answer("/v1/messages", body) is None, "a dropped request gets no answer"
+    status, out, _ = api.answer("/v1/messages", body)
+    assert status == 200 and sse_types(out)[-2:] == ["message_delta", "message_stop"]
+    assert [r["fault"] for r in api.requests] == ["refused", "cut", "dropped", None]
+    assert [r["usage"]["output_tokens"] for r in api.requests] == [0, 400, 400, 400], \
+        "a refused request bills nothing; a cut or dropped one is kept at the most it could have billed"
