@@ -827,6 +827,10 @@ async def test_the_agent_sees_only_the_answer_kept_and_the_run_pays_for_both_cal
     [answer] = [e for e in trace["events"] if e["type"] == "client_answer"]
     assert answer["corrected"] == [{"key": "new_dependent", "first": True, "final": False},
                                    {"key": "dependents_count", "first": 1}]
+    # The summary keeps what the simulator sent back, by question number, beside the questions it numbers.
+    assert summary["questions"][0]["n"] == 1
+    assert summary["client_contradictions"] == [
+        {"n": 1, "tool_use_id": answer["tool_use_id"], "corrected": answer["corrected"], "unresolved": []}]
     for text in (json.dumps(summary), json.dumps(trace)):
         assert "new baby" not in text and "Your last answer" not in text
     # Each simulator call costs 500 input and 30 output tokens at Haiku's list price, and there were two.

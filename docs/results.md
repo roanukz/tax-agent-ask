@@ -364,7 +364,7 @@ Spend ledger: empty. No model call has been made through the harness, so every c
 ## Next steps
 
 1. Roanuk verifies or excludes the 33 rules still marked to_verify (Block 1).
-2. Run the live simulator fidelity check and read 30 answers for leaks (Block 4).
+2. Run the live simulator fidelity check (28 households, about $0.27), read 30 answers for leaks and the Facts that ended table (Block 4).
 3. Smoke test: 10 dev households on Haiku and Sonnet, 1 trial, under $2 (Block 6).
 4. Error analysis on dev, and judge labels for 60 dev runs, with weakened-prompt transcripts where FAIL cases are scarce (Block 7).
 5. Run A-split against the single-model configs on dev and propose a primary config (Block 8).

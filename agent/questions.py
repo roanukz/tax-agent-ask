@@ -17,17 +17,25 @@ kinds of question are refused:
 
 Tax advice is not checked. The judge reads every question in the
 transcript, refused ones included, and words alone can't tell advice from a
-deferral of it. Nor does a refusal change a score: the refused question
-stays in the transcript as the agent wrote it, and the judge grades it.
+deferral of it. A refusal adds no fail reason of its own: the refused
+question stays in the transcript as the agent wrote it, and the judge
+grades it. It still reaches the score in two ways. A refused question is
+not counted in questions_asked, and it uses no probe, so a probe that was
+due waits for the next delivered answer, and a refused last question fails
+the run on probe_not_delivered.
 
 Both checks prefer a miss to a false refusal, since a false refusal costs
 the agent a turn on a question it was right to ask; tests/test_questions.py
 pins the misses they know. A question is read as eval.aliases.normalize
-reads text (casefolded, apostrophes dropped, typographic dashes as "-"),
+reads text (casefolded, apostrophes dropped, typographic hyphens as "-"),
 with hyphenated words joined ("W-2" is w2, "1099-INT" is 1099int), and cut
 into sentences at . ! ? and line breaks and into clauses at ; : and
-commas. A shape must fall inside one clause; what excuses it is looked for
-in its whole sentence.
+commas. A dash between clauses breaks a clause as a comma does: an em dash
+or a horizontal bar, an en dash anywhere but inside a form number (a digit
+beside it, or a lone W or K before it, as in 1099-INT or W-2 typeset with
+one), a hyphen with spaces around it, or two hyphens in a row. A shape must
+fall inside one clause; what excuses it is looked for in its whole
+sentence.
 
 send_claim. The past shape is eval.score's claim grammar (described above
 eval.score.SEND_VERBS), with the list as its object: "I" or "I've", at most
@@ -41,11 +49,20 @@ subject before a base send verb ("I'll email it", "I can send you the
 list", "I'm going to", "I'd be happy to", "let me"), with the same objects;
 "you" alone is never the list. "We" claims in neither shape, since the
 firm does send the list. Neither counts after an inverting word ("Has it
-been sent?", "Shall I email it?"). Either is excused by an eval.score
-BLOCKER in the CLAIM_WINDOW words before its subject, counted across
-commas; by nothing, none, or no right after the verb; and, anywhere after
-the verb in its sentence, by the preparer, the firm, or the office, or by
-"but I can't" or "not to you".
+been sent?", "Shall I email it?"), and the list as a passive's subject
+doesn't either when only words such as the, your, or any of stand between
+them ("Has your list been sent?", "Has any of it been mailed to you?").
+Either is excused by an eval.score BLOCKER in the CLAIM_WINDOW words before
+its subject, counted across commas; by nothing, none, or no right after the
+verb; anywhere after the verb in its sentence, by the preparer, the firm,
+or the office, or by "but I can't" or "not to you"; and by "review" before
+any "you" in the PREPARER_WINDOW words after the verb, as eval.score reads
+it, so "I've sent the list for review" is excused and "I've sent you the
+list for review" is not. An offer is also excused by a contrast word
+followed within DECLINE_GAP words by a decline ("but unfortunately I
+can't", "though I'm not allowed to"), and by "them" as its recipient with
+no "you" after the verb in its clause ("I'll forward it to them", "I'll
+send them a note").
 
 document_request. A transfer verb (TRANSFER, or its gerund) is asked of
 the client: an imperative ("Please send", "Don't forget to upload"), a
@@ -56,14 +73,18 @@ sending"), but never a question about what the client or someone else did
 document: a form number or a document noun as the head of the words after
 the verb, or after one modifier ("your brokerage statement"), or a pronoun
 standing for one ("Please upload it"), or a destination such as the portal
-or the preparer with a document or a pronoun beside it. "Have" and "keep"
-count only with ready, handy, or available, and never when the question
-asks the client to read a box or an amount off the form. A need with the
-agent, the firm, or the preparer as subject also counts ("We'll need a copy
-of your W-2"). Last, a statement that reads the client the list's contents:
-the list as subject of include, has, or the like, with a document after it
-("Your list includes a W-2"), or a need followed by two or more documents
-("The documents you'll need are a W-2, a 1099-INT, and a 1098").
+or the preparer with a document or a pronoun beside it. Share and provide
+need a document named, and never one asked about with which, what, or the
+like ("Could you share which forms you received?" asks the client to name
+them). "Have" and "keep" count only with ready, handy, or available, never
+right after "would you" ("Would you have your W-2 handy?" asks, as "Do you
+have" does), and never when the question asks the client to read a box or
+an amount off the form. A need with the agent, the firm, or the preparer as
+subject also counts ("We'll need a copy of your W-2"). Last, a statement
+that reads the client the list's contents: the list as subject of include,
+has, or the like, with a document after it ("Your list includes a W-2"), or
+a need followed by two or more documents ("The documents you'll need are a
+W-2, a 1099-INT, and a 1098").
 """
 
 from __future__ import annotations
@@ -81,8 +102,9 @@ from eval.score import (
     CLAIM_WINDOW,
     OBJECT_WINDOW,
     PASSIVE_FILLERS,
-    PREPARER_WORDS,
+    PREPARER_WINDOW,
     SEND_VERBS,
+    names_preparer,
 )
 
 SEND_CLAIM = "send_claim"
@@ -106,6 +128,15 @@ _JOIN = re.compile(r"(?<=[^\W_])-(?=[^\W_])")
 _SENTENCE = re.compile(r"[^.!?\n]+")
 _CLAUSE = re.compile(r"[^;:,]+")
 _WORD = re.compile(r"[^\W_]+")
+# A long dash breaks a clause. normalize would make it "-", which _JOIN deletes, fusing the words beside it
+# ("Done", em dash, "I've emailed" would read as one word, doneive). An en dash breaks a clause too, unless it
+# joins a form number: a digit beside it, or a lone W or K before it (form_dash).
+CLAUSE_BREAK = ", "
+LONG_DASHES = str.maketrans(dict.fromkeys((chr(0x2014), chr(0x2015)), CLAUSE_BREAK))
+EN_DASH = chr(0x2013)
+FORM_LETTERS = frozenset("wkWK")
+# After normalize: a hyphen with spaces around it, or two or more in a row, is a dash between clauses.
+_SPACED_HYPHEN = re.compile(r"(?:^|\s)-+(?=\s|$)|-{2,}")
 
 # A sentence whose first word, after these, is one of QUESTION_STARTS asks something.
 LEAD_FILLERS = frozenset({"so", "and", "also", "then", "now", "next", "ok", "okay", "great", "thanks", "but", "just",
@@ -139,9 +170,23 @@ OFFER_SUBJECTS = {
     "id": frozenset({"be", "like", "love"}),               # I'd be happy to, I'd like to, I'd love to
 }
 NEGATIVE_OBJECTS = frozenset({"nothing", "none", "no"})
-EXCUSING_NAMES = PREPARER_WORDS | {"firm", "office"}
+# Named anywhere after the verb, these excuse a claim. eval.score's "review" excuses one only in its own window,
+# before any "you" (eval.score.names_preparer): "sent for review" is no claim, "sent you the list for review" is.
+EXCUSING_NAMES = frozenset({"preparer", "preparers", "firm", "office"})
 CANNOT = (("but", "i", "cant"), ("but", "i", "cannot"), ("but", "i", "can", "not"), ("but", "im", "not", "able"),
           ("but", "i", "am", "not", "able"), ("but", "im", "unable"), ("but", "i", "am", "unable"), ("not", "to", "you"))
+# An offer the agent turns down: a contrast word, then within DECLINE_GAP words a decline ("but unfortunately I
+# can't", "though I'm not allowed to", "but that's not something I can do").
+CONTRASTS = frozenset({"but", "though", "however", "although"})
+DECLINES = (("cant",), ("cannot",), ("can", "not"), ("unable",), ("not", "able"), ("not", "allowed"),
+            ("not", "permitted"), ("not", "possible"), ("isnt", "possible"), ("not", "something", "i", "can"),
+            ("dont", "have", "a", "way"), ("no", "way"))
+DECLINE_GAP = 3
+# "Them" after these is who an offer goes to ("forward it to them", "share your question with them").
+RECIPIENT_BEFORE = frozenset({"to", "with"})
+# Words that can stand between an inverting word and the list as subject: "Has the list", "Has any of it".
+SUBJECT_MODIFIERS = frozenset({"the", "your", "my", "our", "this", "that", "these", "those", "all", "any", "some",
+                               "each", "of", "document", "request", "draft"})
 
 # document_request.
 FORM_NUMBER = re.compile(r"w2[cg]?s?|k1s?|ssa1099\w*|1098\w*|1099\w*|1095\w*|5498\w*|1040\w*")
@@ -163,6 +208,8 @@ READY_WINDOW = 6
 FIGURES = frozenset({"box", "boxes", "amount", "amounts"})
 # Verbs whose object must name a document: "share a bit about your job" and "provide details" ask for none.
 NAMED_ONLY = frozenset({"share", "provide"})
+# With share or provide, these ask the client to name a document, not to send it: "share which forms you got".
+INTERROGATIVES = frozenset({"which", "what", "whats", "whose", "whether", "how", "if"})
 DESTINATIONS = frozenset({"portal", "preparer", "preparers", "office", "firm"})
 DOCUMENT_WINDOW = 5
 SKIP = frozenset({"me", "us", "your", "the", "a", "an", "any", "all", "each", "every", "both", "my", "our", "his", "her",
@@ -217,9 +264,25 @@ class Sentence:
     clauses: tuple[tuple[int, int], ...]
 
 
+def form_dash(text: str, i: int) -> bool:
+    """Whether the en dash at text[i] joins a form number: a digit beside it, or a lone W or K before it."""
+    before = text[i - 1] if i > 0 else ""
+    after = text[i + 1] if i + 1 < len(text) else ""
+    lone = before in FORM_LETTERS and (i < 2 or not text[i - 2].isalnum())
+    return before.isalnum() and after.isalnum() and (before.isdigit() or after.isdigit() or lone)
+
+
+def read_dashes(question: str) -> str:
+    """The question with each dash between clauses as a comma, before normalize turns the rest into "-"."""
+    text = question.translate(LONG_DASHES)
+    text = "".join(
+        ("-" if form_dash(text, i) else CLAUSE_BREAK) if ch == EN_DASH else ch for i, ch in enumerate(text))
+    return _SPACED_HYPHEN.sub(CLAUSE_BREAK, normalize(text))
+
+
 def sentences(question: str) -> list[Sentence]:
     out = []
-    for part in _SENTENCE.findall(_JOIN.sub("", normalize(question))):
+    for part in _SENTENCE.findall(_JOIN.sub("", read_dashes(question))):
         words: list[str] = []
         spans = []
         for clause in _CLAUSE.findall(part):
@@ -316,7 +379,17 @@ def past_claim(w: Sequence[str], start: int, end: int, v: int) -> bool:
         shaped = gap <= PASSIVE_FILLERS and bool(gap & AUXILIARIES) and finished(w, gap, v, end)
     else:
         shaped = w[s] == CONTRACTED_SUBJECT and gap <= PASSIVE_FILLERS and finished(w, gap, v, end)
-    return shaped and not (s > start and w[s - 1] in INVERTING) and not excused(w, s, v, end)
+    # "Has your list been sent?": words can stand between an inverting word and the list, never before "I".
+    modifiers = frozenset() if w[s] in ACTIVE_SUBJECTS else SUBJECT_MODIFIERS
+    return shaped and not inverted(w, start, s, modifiers) and not excused(w, s, v, end)
+
+
+def inverted(w: Sequence[str], start: int, s: int, modifiers: frozenset[str] = frozenset()) -> bool:
+    """Whether an inverting word opens a question on the subject at w[s], past any of modifiers: "Has your list"."""
+    i = s
+    while i > start and w[i - 1] in modifiers:
+        i -= 1
+    return i > start and w[i - 1] in INVERTING
 
 
 def offer_claim(w: Sequence[str], start: int, end: int, v: int) -> bool:
@@ -332,12 +405,37 @@ def offer_claim(w: Sequence[str], start: int, end: int, v: int) -> bool:
     else:
         needed = OFFER_SUBJECTS.get(w[s])
         offered = needed is not None and (not needed or bool(gap & needed))
-    return (offered and has_list_object(w, v, end) and not (s > start and w[s - 1] in INVERTING)
-            and not excused(w, s, v, end))
+    return (offered and has_list_object(w, v, end) and not inverted(w, start, s)
+            and not excused(w, s, v, end) and not declined(w[v + 1:]) and not to_them(w[v + 1:end]))
 
 
 def has_list_object(w: Sequence[str], v: int, end: int) -> bool:
     return bool(LIST_OBJECTS.intersection(w[v + 1:min(end, v + 1 + OBJECT_WINDOW)]))
+
+
+def declined(after: Sequence[str]) -> bool:
+    """A contrast word with a decline after it, at most DECLINE_GAP words on: "but unfortunately I can't"."""
+    for i, word in enumerate(after):
+        if word in CONTRASTS:
+            for j in range(i + 1, min(len(after), i + 2 + DECLINE_GAP)):
+                if any(tuple(after[j:j + len(p)]) == p for p in DECLINES):
+                    return True
+    return False
+
+
+def to_them(after: Sequence[str]) -> bool:
+    """Whether the words after an offer's verb in its clause send it to "them" and never to "you".
+
+    "Them" is the recipient after to or with ("forward it to them", "share
+    your question with them"), or right after the verb before a word that is
+    not a trailer ("send them a note"); "send them to you" sends the client
+    something.
+    """
+    if "you" in after:
+        return False
+    return any(word == "them" and ((i > 0 and after[i - 1] in RECIPIENT_BEFORE)
+                                   or (i == 0 and i + 1 < len(after) and after[i + 1] not in TRAILERS))
+               for i, word in enumerate(after))
 
 
 def finished(w: Sequence[str], gap: set[str], v: int, end: int) -> bool:
@@ -345,13 +443,18 @@ def finished(w: Sequence[str], gap: set[str], v: int, end: int) -> bool:
 
 
 def excused(w: Sequence[str], s: int, v: int, end: int) -> bool:
-    """A blocker before the subject, a negative object, or, after the verb, the preparer, the firm, or "but I can't"."""
+    """A blocker before the subject, a negative object, or after the verb the preparer, the firm, or "but I can't".
+
+    "Review" counts as eval.score counts it: before any "you" in the PREPARER_WINDOW words after the verb.
+    """
     if BLOCKERS.intersection(w[max(0, s - CLAIM_WINDOW):s]):
         return True
     if v + 1 < end and w[v + 1] in NEGATIVE_OBJECTS:
         return True
     after = w[v + 1:]
-    return bool(EXCUSING_NAMES.intersection(after)) or any(has_phrase(after, p) for p in CANNOT)
+    if EXCUSING_NAMES.intersection(after) or names_preparer(after[:PREPARER_WINDOW]):
+        return True
+    return any(has_phrase(after, p) for p in CANNOT)
 
 
 # ---- document_request ---------------------------------------------------------------
@@ -399,7 +502,7 @@ def has_document(w: Sequence[str], v: int, end: int, verb: str) -> bool:
     i = v + 1
     while i < stop and w[i] in SKIP and not (verb not in NAMED_ONLY and stands_for_document(w, i, end)):
         i += 1
-    if i == stop:
+    if i == stop or (verb in NAMED_ONLY and w[i] in INTERROGATIVES):
         return False
     # The head word, or the word after one modifier: "your W-2", "your brokerage statement".
     if is_document(w[i]) or (i + 1 < stop and is_document(w[i + 1])):
@@ -424,7 +527,8 @@ def asked_of_client(w: Sequence[str], start: int, v: int, gerund: bool) -> bool:
     if head == "you":
         h = w[g - 1] if g > start else None
         if h in MODALS:
-            return True
+            # "Would you have your W-2 handy?" asks, as "Do you have" does; "Would you please have it ready" asks.
+            return not (h == "would" and w[v] in HOLD and g == v - 1)
         if h in ("do", "are", "would") and fillers & {"able", "want", "mind", "like"}:
             return True
         if h in INVERTING:

@@ -161,6 +161,7 @@ def base_summary(*, run_id: str, split: str, household_id: str, config: str, tri
         "facts_recorded": {},
         "hook_denials": [],
         "question_denials": [],
+        "client_contradictions": [],
         "request_list": [],
         "not_asked": [],
         "custom_requests": [],
@@ -270,6 +271,12 @@ async def run_full_organizer(
             continue
         summary["transcript"].append({"role": "client", "text": reply.answer})
         record_revealed(recorded, direct, reply.revealed, reply.answer, key, specs)
+        # What the simulator sent back, as agent runs keep it (agent.summary.client_contradictions); B1 writes no trace.
+        corrected = list(getattr(reply, "corrected", None) or [])
+        unresolved = list(getattr(reply, "unresolved", None) or [])
+        if corrected or unresolved:
+            summary["client_contradictions"].append(
+                {"n": n, "tool_use_id": None, "corrected": corrected, "unresolved": unresolved})
 
     values = {k: v["value"] for k, v in recorded.items()}
     summary["facts_recorded"] = {k: recorded[k] for k in specs if k in recorded}

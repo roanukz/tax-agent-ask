@@ -419,6 +419,7 @@
         "reason": "Not delivered: you cannot send the list or say it was sent. The preparer reviews the list and sends it."
       }
     ],
+    "client_contradictions": [],
     "request_list": [
       {
         "rule_id": "R001",

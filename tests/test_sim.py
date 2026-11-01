@@ -632,8 +632,8 @@ async def test_a_contradiction_goes_back_once_and_the_corrected_answer_replaces_
     assert retry[:2] == [{"role": "user", "content": TIPS_AND_SHARE}, {"role": "assistant", "content": first}]
     assert retry[2] == {"role": "user", "content": (
         "Your last answer said tips_income is true and k1_count is 1, but Your facts say tips_income is false and "
-        "k1_count is 0. Answer the same question again, truthfully, using only Your facts. Reply with only the "
-        "JSON object, as before.")}
+        "k1_count is 0. Answer the same question again, truthfully, using only Your facts. Your recall_gap still "
+        "applies. Reply with only the JSON object, as before.")}
     assert len(retry) == 3 and client.calls[1]["system"] == client.calls[0]["system"]
     # Both calls count, and only the corrected answer stays in the conversation.
     assert result.usage == Usage(input_tokens=200, output_tokens=40) and sim.calls == 2
@@ -699,6 +699,52 @@ async def test_a_fact_the_recall_gap_hides_is_never_sent_back():
                                                                   "business_app_payments": False})])
     result = await ClientSimulator(side_gig, client, specs=SPECS).answer("Any side work?")
     assert len(client.calls) == 1 and result.corrected == result.unresolved == []
+
+
+# H082 forgets one of its two jobs. Its live q01 answer, in the first fidelity check, said 1 employer with the
+# gap in force and overtime it never had, so the guard sends it back for the overtime alone.
+H082_Q01 = next(q for q in QUESTIONS if q.id == "q01").text
+H082_FIRST = reply("Just one employer paid me wages this year, I think. No tips, no unemployment, but I did get some "
+                   "overtime pay.", {"overtime_pay": True, "tips_income": False, "unemployment": False,
+                                     "w2_employer_count": 1})
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("again,changed", [
+    (reply("Two employers paid me wages this year. No tips, no overtime, and no unemployment.",
+           {"overtime_pay": False, "tips_income": False, "unemployment": False, "w2_employer_count": 2}),
+     "the retry remembers the forgotten job"),
+    (reply("No tips, no overtime, and no unemployment.",
+           {"overtime_pay": False, "tips_income": False, "unemployment": False}),
+     "the retry drops the job count the gap set"),
+])
+async def test_a_retry_that_changes_a_fact_the_recall_gap_hides_is_dropped_for_the_first_answer(again, changed):
+    t = ALL_TRUTHS["H082"]
+    assert simulator.hidden_facts(t["persona"]["recall_gap"]) == ("w2_employer_count",)
+    assert (t["true_facts"]["w2_employer_count"], t["true_facts"]["overtime_pay"]) == (2, False)
+    client = ScriptedClient([H082_FIRST, again])
+    sim = ClientSimulator(t, client, specs=SPECS)
+    result = await sim.answer(H082_Q01)
+    note = client.calls[1]["messages"][-1]["content"]
+    assert note.startswith("Your last answer said overtime_pay is true, but Your facts say overtime_pay is false.")
+    assert "Your recall_gap still applies." in note and "w2_employer_count" not in note
+    # The retry would hand the agent the forgotten job, or take away the count the gap set, so it is not kept.
+    assert result.answer == json.loads(H082_FIRST)["answer"] and result.raw_text == H082_FIRST, changed
+    assert result.revealed == json.loads(H082_FIRST)["revealed"] and result.corrected == []
+    assert result.unresolved == [{"key": "overtime_pay", "first": True, "final": True,
+                                  "retry_changed_recall_gap": ["w2_employer_count"]}]
+    assert sim.history == [{"role": "user", "content": H082_Q01}, {"role": "assistant", "content": H082_FIRST}]
+    assert sim.calls == 2 and result.retried is False
+
+
+@pytest.mark.anyio
+async def test_a_retry_that_keeps_the_recall_gap_as_it_was_replaces_the_first_answer():
+    keeps = reply("Just one employer paid me wages this year. No tips, no overtime, and no unemployment.",
+                  {"overtime_pay": False, "tips_income": False, "unemployment": False, "w2_employer_count": 1})
+    result = await ClientSimulator(ALL_TRUTHS["H082"], ScriptedClient([H082_FIRST, keeps]), specs=SPECS).answer(
+        H082_Q01)
+    assert result.answer == json.loads(keeps)["answer"] and result.revealed["w2_employer_count"] == 1
+    assert result.corrected == [{"key": "overtime_pay", "first": True, "final": False}] and result.unresolved == []
 
 
 @pytest.mark.anyio
@@ -1024,11 +1070,13 @@ def test_report_shows_the_facts_that_ended(tmp_path, monkeypatch, capsys):
     records = tuition_ended_records(q10_answer="No, nothing else.\nThe tuition | ended last year.")
     outcome = ended_outcome(records, truths, tmp_path)
     report = fidelity.render_report(outcome, truths, SPECS, model="fake")
-    assert ("- Facts that ended, which the client's change list shows as \"Last year only\" lines, in 1 household: "
-            "revealed values that match the truth: 3 of 4 (75.0%). **Revealed as true this year: 1.** Other values "
-            "that differ (null, or not a yes or no): 0. Asked about and revealed: 2 of 2. Control, the same facts "
-            "where they are true this year: none revealed. These values count in the match rate too, but at 4 of 13 "
-            "compared the bar can't see a misread on its own") in report
+    assert ("- Facts that ended, which the client's change list shows as \"Last year only\" lines, in 1 household, "
+            "read in the answers kept after the contradiction retry: revealed values that match the truth: 3 of 4 "
+            "(75.0%). **Revealed as true this year: 1.** Revealed as true in a first reply the simulator sent back: "
+            "0. Other values that differ (null, or not a yes or no): 0. Asked about and revealed: 2 of 2. Control, "
+            "the same facts where they are true this year: none revealed. These values count in the match rate too, "
+            "but at 4 of 13 compared the bar can't see a misread on its own, so read the Facts that ended table; a "
+            "misread the simulator sent back shows only in the Contradictions sent back table.") in report
     assert "Matching the truth in the 1 household drawn by complexity (the PRD 6.4 sample): 12 of 13 (92.3%)" in report
     assert 'plus every household whose client prompt has a "Last year only" line (H011), which adds 0.' in report
     assert report.index("## What changed since last year") < report.index("## Facts that ended") < report.index(
@@ -1040,7 +1088,8 @@ def test_report_shows_the_facts_that_ended(tmp_path, monkeypatch, capsys):
         f"| H011 | q07 | tuition_paid | tuition_paid true, truth false | {MISREAD} |",
         "| H011 | q10 | tuition_paid | tuition_paid false | No, nothing else. The tuition \\| ended last year. |",
     ]
-    assert "Block 4 is done only when every fact that ended and was revealed as true this year is fixed" in report
+    assert ("Block 4 is done only when every fact that ended and was revealed as true this year, in a first reply "
+            "or in the answer kept, is fixed or accepted.") in report
     # The other cells: a fact left out, an uncoercible value, and an answer that failed twice.
     for q07, anomalies, cell in [
         ({"student_loan_interest": False}, [], "tuition_paid not revealed"),
@@ -1066,8 +1115,8 @@ def test_report_shows_the_facts_that_ended(tmp_path, monkeypatch, capsys):
     monkeypatch.setattr(fidelity, "run_check", checked)
     assert fidelity.main(["--dry-run"]) == 1
     printed = capsys.readouterr().out
-    assert ("facts that ended (the bar can't see a misread on its own): 1 revealed true this year, 3/4 revealed "
-            "values match, 2/2 asked and revealed, in 1 household") in printed
+    assert ("facts that ended (the bar can't see a misread on its own): 1 revealed true this year, 0 in first "
+            "replies sent back, 3/4 revealed values match, 2/2 asked and revealed, in 1 household") in printed
     assert "control, the same facts where true this year: 0/0 revealed values match, in 0 households" in printed
     assert "match_rate on the 1 household drawn by complexity: 92.3% (12/13)" in printed
 
@@ -1142,7 +1191,70 @@ def test_the_report_counts_and_lists_the_contradictions_sent_back(tmp_path, monk
 
     monkeypatch.setattr(fidelity, "run_check", checked)
     assert fidelity.main(["--dry-run"]) == 1
-    assert "contradictions sent back: 2/2 answers, facts corrected: 2, unresolved: 1" in capsys.readouterr().out
+    assert ("contradictions sent back: 2/2 answers, facts corrected: 2, unresolved: 1, first answers kept for the "
+            "recall gap: 0") in capsys.readouterr().out
+
+
+def test_the_report_counts_and_lists_the_first_answers_kept_for_the_recall_gap(tmp_path, monkeypatch, capsys):
+    t = ALL_TRUTHS["H082"]
+    q01 = next(q for q in QUESTIONS if q.id == "q01")
+    remembers = reply("Two employers paid me wages. No tips, no overtime, and no unemployment.",
+                      {"overtime_pay": False, "tips_income": False, "unemployment": False, "w2_employer_count": 2})
+    sim = ClientSimulator(t, ScriptedClient([H082_FIRST, remembers]), specs=SPECS)
+    records = asyncio.run(fidelity.ask_all(sim, [q01]))
+    s = score({"H082": t}, records, SPECS)
+    kept = {"key": "overtime_pay", "first": True, "final": True, "retry_changed_recall_gap": ["w2_employer_count"]}
+    assert s.unresolved == [{"household_id": "H082", "question_id": "q01", **kept}] and s.corrected == []
+    assert (s.contradicted_answers, s.gap_kept_answers) == (1, 1)
+    # The answer kept is the first, so its overtime is a mismatch and its job count the gap at work.
+    assert sorted(m["key"] for m in s.mismatches) == ["overtime_pay", "w2_employer_count"]
+    outcome = ended_outcome(records, {"H082": t}, tmp_path)
+    report = fidelity.render_report(outcome, {"H082": t}, SPECS, model="fake")
+    assert ("Facts the answers kept still get wrong, counted as mismatches: 1. Answers whose retry changed a fact the "
+            "recall gap hides, so the first answer was kept: 1.") in report
+    section = report.split("## Contradictions sent back")[1].split("## Mismatches")[0]
+    assert 'as is one marked "unresolved, recall gap kept".' in section
+    assert [x for x in section.splitlines() if x.startswith("| H082")] == [
+        "| H082 | q01 | overtime_pay | true | true (the retry changed w2_employer_count, which the recall gap hides, so "
+        "the first answer was kept) | false | unresolved, recall gap kept |"]
+
+    async def checked(**kwargs):
+        return outcome
+
+    monkeypatch.setattr(fidelity, "run_check", checked)
+    assert fidelity.main(["--dry-run"]) == 1
+    assert "facts corrected: 0, unresolved: 1, first answers kept for the recall gap: 1" in capsys.readouterr().out
+
+
+def test_a_misread_the_simulator_sent_back_counts_as_revealed_true_in_a_first_reply(monkeypatch, capsys):
+    t = ALL_TRUTHS["H011"]
+    q07 = next(q for q in QUESTIONS if q.id == "q07")
+    misread = reply(MISREAD, {"tuition_paid": True, "student_loan_interest": False, "dependent_care_paid": False})
+    fixed = reply("No, the tuition was last year.", {"tuition_paid": False, "student_loan_interest": False,
+                                                     "dependent_care_paid": False})
+    records = asyncio.run(fidelity.ask_all(ClientSimulator(t, ScriptedClient([misread, fixed]), specs=SPECS), [q07]))
+    assert records[0].corrected == [{"key": "tuition_paid", "first": True, "final": False}]
+    s = score({"H011": t}, records, SPECS)
+    # The answer kept says no, so only the first-reply count shows the misread.
+    assert (s.ended_true, s.ended_true_first, s.ended_matched, s.ended_compared) == (0, 1, 1, 1)
+    outcome = ended_outcome(records, {"H011": t})
+    report = fidelity.render_report(outcome, {"H011": t}, SPECS, model="fake")
+    assert ("Revealed as true this year: 0. **Revealed as true in a first reply the simulator sent back: 1.**"
+            in report)
+    assert "| H011 | q07 | tuition_paid | true | false | false | corrected |" in report
+    # A value wrong only in the retry, and a first reply that said no, are no misread by a first reply.
+    others = [rec("q07", {"tuition_paid": False}, hid="H011", unresolved=[{"key": "tuition_paid", "final": True}]),
+              rec("q10", {"tuition_paid": False}, hid="H011",
+                  corrected=[{"key": "tuition_paid", "first": None, "final": False}])]
+    assert score({"H011": t}, others, SPECS).ended_true_first == 0
+
+    async def checked(**kwargs):
+        return outcome
+
+    monkeypatch.setattr(fidelity, "run_check", checked)
+    fidelity.main(["--dry-run"])
+    assert "0 revealed true this year, 1 in first replies sent back, 1/1 revealed values match" in (
+        capsys.readouterr().out)
 
 
 @pytest.mark.parametrize(
@@ -1526,7 +1638,10 @@ async def test_the_check_takes_every_train_and_dev_household_with_a_last_year_on
     assert len([x for x in section.splitlines() if x.startswith("| H0")]) == 20
     assert ("| H022 | q00 | self_employment, business_app_payments, tuition_paid | self_employment false; "
             "business_app_payments false; tuition_paid false |") in section
-    assert "in 9 households: revealed values that match the truth: 26 of 26 (100.0%)" in report
+    assert ("in 9 households, read in the answers kept after the contradiction retry: revealed values that match "
+            "the truth: 26 of 26 (100.0%). Revealed as true this year: 0. Revealed as true in a first reply the "
+            "simulator sent back: 0.") in report
+    assert s.ended_true_first == 0 and s.gap_kept_answers == 0
     assert "Matching the truth in the 20 households drawn by complexity (the PRD 6.4 sample): 747 of 747" in report
     # The review sample keeps its rule: 30 answers, 2 or 3 per question.
     assert review.count("\n## ") == 30 and "at least 2 per question" in review

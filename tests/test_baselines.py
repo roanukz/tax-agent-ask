@@ -218,6 +218,8 @@ async def test_b1_summary_shape_usage_and_cost():
     roles = [t["role"] for t in summary["transcript"]]
     assert roles == ["agent", "client"] * n
     assert summary["final_message"].startswith("Full organizer baseline:")
+    # The harness lists a baseline keeps empty, so a baseline summary has the agent run's shape.
+    assert summary["hook_denials"] == summary["question_denials"] == summary["client_contradictions"] == []
 
 
 @pytest.mark.anyio
@@ -277,6 +279,10 @@ async def test_b1_records_the_answer_the_contradiction_retry_kept_and_pays_for_b
     summary = await run_full_organizer(truth, load("profiles", "H002"), sim, statuses=DEV,
                                        run_id=run_id_for("dev", "H002", "B1", 1), split="dev", trial=1)
     assert summary["facts_recorded"]["tips_income"] == {"value": False, "evidence": "No, I didn't get tips."}
+    # The summary keeps what the simulator sent back, by question, as an agent run's summary does.
+    n = next(q["n"] for q in summary["questions"] if q["fact_keys"] == ["tips_income"])
+    assert summary["client_contradictions"] == [{"n": n, "tool_use_id": None, "corrected": [
+        {"key": "tips_income", "first": True, "final": False}], "unresolved": []}]
     client_lines = [t["text"] for t in summary["transcript"] if t["role"] == "client"]
     assert "No, I didn't get tips." in client_lines
     assert not any("got tips at work" in line or "Your last answer" in line for line in client_lines)
@@ -300,6 +306,7 @@ def test_b2_is_the_profile_documents_on_file(hid):
     assert summary["request_list"] == [{"rule_id": d["rule_id"], "count": d["count"]} for d in on_file]
     assert summary["questions"] == [] and summary["facts_recorded"] == {}
     assert summary["config"] == "B2" and summary["status"] == "pending_review" and summary["tool_calls"] is None
+    assert summary["hook_denials"] == summary["question_denials"] == summary["client_contradictions"] == []
     assert summary["not_asked"] == [k for k, s in SPECS.items() if not s.is_follow_up]
     assert summary["cost_usd"] == 0.0 and summary["run_id"] == f"dev-{hid}-B2-t1"
 
@@ -445,6 +452,7 @@ async def test_b3_one_call_no_tools_and_raw_items_kept():
     assert summary["model_list_items"] == [{"document": "W-2", "count": 2}, {"document": "Form 5695", "count": 1}]
     assert summary["config"] == "B3-sonnet" and summary["status"] == "pending_review"
     assert summary["request_list"] == summary["model_list_items"] and summary["tool_calls"] is None
+    assert summary["hook_denials"] == summary["question_denials"] == summary["client_contradictions"] == []
     assert summary["usage"] == {"input_tokens": 1000, "output_tokens": 200, "cache_read_tokens": 0,
                                 "cache_write_tokens": 0}
     assert summary["cost_usd"] == cost_usd("claude-sonnet-5-5", summary["usage"], PRICES, prompt_tokens=1000)

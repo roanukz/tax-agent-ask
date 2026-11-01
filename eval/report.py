@@ -35,6 +35,12 @@ eval.baselines.score_baseline scores it; a baseline score without its
 baseline flag is called out, since it was scored some other way. The
 honesty checks apply only to agent runs.
 
+The fidelity check in docs/fidelity/ is rescored from its answers. A live
+check whose records predate the simulator's contradiction guard and facts
+rule, or whose households are not the ones sim.fidelity takes now, is out
+of date: the report says why and asks for the check again, as if none had
+run.
+
 Question ratios are recomputed here from the B1 runs the report counts on
 the same split, never read from a score's stored ratio, which froze at
 score time. The median question ratio vs B1 is a config's median question
@@ -89,6 +95,9 @@ LEDGER_PATH = REPO / "ledger" / "spend.jsonl"
 DATA_DIR = REPO / "data"
 FIDELITY_DIR = REPO / "docs" / "fidelity"
 DECISIONS_PATH = REPO / "DECISIONS.md"
+# Why a fidelity check on file no longer measures the client and sample a new check would (fidelity_result).
+STALE_BEFORE_GUARD = "before_guard"
+STALE_HOUSEHOLDS = "households"
 
 SPLIT_ORDER = ("test", "dev", "train")
 TIERS = ("simple", "medium", "complex")
@@ -104,6 +113,9 @@ BREAKDOWNS = (
 TABLE_START = "<!-- rules-table:start -->"
 TABLE_END = "<!-- rules-table:end -->"
 MUTATION_LOG = re.compile(r"killed ([0-9,]+) of ([0-9,]+) mutants")
+# Every typographic dash eval.aliases reads as "-", for the model text a table cell can hold.
+DASHES = str.maketrans(dict.fromkeys(
+    (chr(c) for c in (0x2010, 0x2011, 0x2012, 0x2013, 0x2014, 0x2015, 0x2212, 0xFE63, 0xFF0D)), "-"))
 
 CONFIG_TEXT = {
     "A-haiku": "Agent on Haiku 5.5",
@@ -186,9 +198,19 @@ def ledger_totals(path: Path) -> dict[str, Any]:
             "open_usd": open_usd, "by_model": by_model, "by_month": by_month}
 
 
-def fidelity_result(fidelity_dir: Path, truths: Mapping[str, Mapping[str, Any]],
-                    specs: Mapping[str, FactSpec]) -> dict[str, Any] | None:
-    """The fidelity check rescored from docs/fidelity/fidelity_answers.json, or None when it is absent."""
+def fidelity_result(fidelity_dir: Path, truths: Mapping[str, Mapping[str, Any]], specs: Mapping[str, FactSpec],
+                    splits: Mapping[str, Any] | None = None) -> dict[str, Any] | None:
+    """The fidelity check rescored from docs/fidelity/fidelity_answers.json, or None when it is absent.
+
+    With splits, the match rate is also taken over the households
+    sim.fidelity.choose_households draws from them, and the check's households
+    are compared with the ones sim.fidelity.sample_households takes now.
+    stale lists what makes the check on file out of date: STALE_BEFORE_GUARD
+    when a record lacks the contradiction retry's fields, so its client had
+    neither the guard nor sim.simulator.FACTS_RULE, and STALE_HOUSEHOLDS when
+    its households are not the current sample. guarded says the records have
+    those fields, so the first replies sent back can be counted.
+    """
     path = Path(fidelity_dir) / "fidelity_answers.json"
     if not path.exists():
         return None
@@ -196,15 +218,48 @@ def fidelity_result(fidelity_dir: Path, truths: Mapping[str, Mapping[str, Any]],
 
     try:
         payload = _read_json(path)
-        records = [fidelity.AnswerRecord(**r) for r in payload.get("records") or []]
+        raw = payload.get("records") or []
+        records = [fidelity.AnswerRecord(**r) for r in raw]
         used = {r.household_id: truths[r.household_id] for r in records if r.household_id in truths}
-        s = fidelity.score(used, records, specs)
+        drawn = sample = None
+        if splits:
+            pool = {h: truths[h] for h in fidelity.pool_ids(splits) if h in truths}
+            drawn = fidelity.choose_households(splits, {h: t.get("complexity") for h, t in pool.items()})
+            sample = fidelity.sample_households(splits, pool, specs)
+        s = fidelity.score(used, records, specs, drawn=drawn)
     except (OSError, ValueError, TypeError, KeyError) as e:
         return {"error": f"{path.name} could not be read: {e}"}
+    guarded = all("corrected" in r and "unresolved" in r for r in raw)
+    stale = [STALE_BEFORE_GUARD] if not guarded else []
+    if sample is not None and sorted({r.household_id for r in records}) != sample:
+        stale.append(STALE_HOUSEHOLDS)
     return {"dry_run": bool(payload.get("dry_run")), "model": payload.get("model"),
             "cost_usd": payload.get("cost_usd"), "households": len(s.households), "answers": s.answers,
             "compared": s.compared, "matched": s.matched, "match_rate": s.match_rate, "meets_bar": s.meets_bar,
-            "leaks": len(s.leaks), "unscored": len(s.unscored), "report": (Path(fidelity_dir) / "fidelity_report.md").exists()}
+            "leaks": len(s.leaks), "unscored": len(s.unscored), "report": (Path(fidelity_dir) / "fidelity_report.md").exists(),
+            "drawn_households": len(s.drawn_households), "drawn_compared": s.drawn_compared,
+            "drawn_matched": s.drawn_matched, "drawn_match_rate": s.drawn_match_rate,
+            "ended_households": len(s.ended_households), "ended_true": s.ended_true,
+            "ended_true_first": s.ended_true_first, "contradicted_answers": s.contradicted_answers,
+            "guarded": guarded, "stale": stale, "sample_households": None if sample is None else len(sample)}
+
+
+def fidelity_plan(ctx: Context) -> tuple[int, float] | None:
+    """The households the live fidelity check takes now and its cost estimate, or None when the data can't say."""
+    from ledger.spend import DEFAULT_PRICES, load_prices
+    from sim import fidelity
+    from sim.simulator import DEFAULT_MODEL
+
+    try:
+        pool = {h: ctx.truths[h] for h in fidelity.pool_ids(ctx.splits) if h in ctx.truths}
+        if not pool:
+            return None
+        chosen = fidelity.sample_households(ctx.splits, pool, ctx.specs)
+        estimate = fidelity.estimate_cost_usd([pool[h] for h in chosen], ctx.specs, DEFAULT_MODEL,
+                                              load_prices(DEFAULT_PRICES))
+    except (OSError, ValueError, TypeError, KeyError):
+        return None
+    return len(chosen), estimate
 
 
 def blind_label_result(data_dir: Path) -> dict[str, Any]:
@@ -326,8 +381,13 @@ def cell(stat: Mapping[str, Any] | None, kind: str, *, n: bool = False) -> str:
 
 
 def md_table(header: Sequence[str], rows: Iterable[Sequence[str]]) -> str:
+    """A Markdown table whose cells lose pipes, line breaks, and typographic dashes.
+
+    A refused question's cell holds the agent's own words, and the repo bans
+    em and en dashes in docs/results.md.
+    """
     def esc(text: Any) -> str:
-        return str(text).replace("|", "/").replace("\n", " ")
+        return str(text).translate(DASHES).replace("|", "/").replace("\n", " ")
 
     lines = ["| " + " | ".join(esc(h) for h in header) + " |", "|" + "---|" * len(header)]
     lines.extend("| " + " | ".join(esc(c) for c in row) + " |" for row in rows)
@@ -543,7 +603,7 @@ def build_context(
         summaries=summaries, scores=scores, bad_files=bad, prereg=prereg, ledger=ledger_totals(ledger_path),
         splits=splits, truths=truths, rules=rules, specs=specs, data_dir=Path(data_dir),
         blind=blind_label_result(data_dir), validation=validation, validation_error=validation_error,
-        fidelity=fidelity_result(fidelity_dir, truths, specs), mutation=mutation_log(decisions_path),
+        fidelity=fidelity_result(fidelity_dir, truths, specs, splits), mutation=mutation_log(decisions_path),
         generated_on=generated_on or datetime.now(timezone.utc).date().isoformat(),
         runs_label=display_path(runs_dir),
         draws=int(draws if draws is not None else intervals.get("draws", stats.DRAWS)),
@@ -590,13 +650,15 @@ def evidence_problems(
 
 def honesty_counts(ctx: Context, rows: Sequence[Mapping[str, Any]]) -> dict[str, int]:
     """Counts over agent runs; summary_fail is the judge's secondary summary verdict (PRD 6.7), never a fail."""
-    out = {"runs": len(rows), "hook_denials": 0, "questions_refused": 0, "bad_evidence": 0, "unverifiable": 0,
-           "claims_sent": 0, "advice_not_routed": 0, "probe_not_delivered": 0, "summary_fail": 0, "no_judge": 0,
-           "harness_errors": 0}
+    out = {"runs": len(rows), "hook_denials": 0, "questions_refused": 0, "client_facts_wrong": 0, "bad_evidence": 0,
+           "unverifiable": 0, "claims_sent": 0, "advice_not_routed": 0, "probe_not_delivered": 0, "summary_fail": 0,
+           "no_judge": 0, "harness_errors": 0}
     for row in rows:
         summary = ctx.summaries.get(row["run_id"]) or {}
         out["hook_denials"] += len(summary.get("hook_denials") or [])
         out["questions_refused"] += len(summary.get("question_denials") or [])
+        out["client_facts_wrong"] += sum(len(c.get("unresolved") or [])
+                                         for c in summary.get("client_contradictions") or [])
         problems = evidence_problems(summary, ctx.data_dir, specs=ctx.specs, rules=ctx.rules) if summary else None
         if problems is None:
             out["unverifiable"] += 1
@@ -899,6 +961,8 @@ def what_has_not_run(ctx: Context) -> list[str]:
         out.append("The honesty judge has not graded any run, and it is not validated yet.")
     if ctx.fidelity is None or ctx.fidelity.get("dry_run") or ctx.fidelity.get("error"):
         out.append("The live simulator fidelity check has not run.")
+    elif ctx.fidelity.get("stale"):
+        out.append("The live simulator fidelity check on file is out of date (see Simulator fidelity).")
     if not ctx.ledger["runs"]:
         out.append("No model call has been made: the spend ledger is empty.")
     if ctx.unlocked_runs:
@@ -1028,11 +1092,37 @@ def data_section(ctx: Context) -> list[str]:
         lines.append(f["error"] + ".")
     else:
         kind = "A dry run with a fake client, not the live check" if f["dry_run"] else f"Live check on {f['model']}"
-        lines.append(f"{kind}: {f['matched']} of {f['compared']} revealed facts match the truth "
-                     f"({fmt(f['match_rate'], 'pct')}) over {f['households']} households and {f['answers']} answers; "
-                     f"{plural(f['leaks'], 'leak')} code caught; {plural(f['unscored'], 'unscored answer')}. "
-                     f"Bar (98%, every answer scored): {'met' if f['meets_bar'] else 'not met'}.")
+        text = (f"{kind}: {f['matched']} of {f['compared']} revealed facts match the truth "
+                f"({fmt(f['match_rate'], 'pct')}) over {f['households']} households and {f['answers']} answers")
+        if f.get("drawn_households") and f["drawn_households"] < f["households"]:
+            text += (f", and {f['drawn_matched']} of {f['drawn_compared']} ({fmt(f['drawn_match_rate'], 'pct')}) "
+                     f"over the {f['drawn_households']} drawn by complexity")
+        text += (f"; {plural(f['leaks'], 'leak')} code caught; {plural(f['unscored'], 'unscored answer')}. "
+                 f"Bar (98%, every answer scored): {'met' if f['meets_bar'] else 'not met'}.")
+        if f.get("ended_households"):
+            text += (f" Facts that ended, in {plural(f['ended_households'], 'household')}: {f['ended_true']} revealed "
+                     "as true this year in the answers kept"
+                     + (f", {f['ended_true_first']} in first replies the simulator sent back" if f.get("guarded") else "")
+                     + ".")
+        if f.get("guarded"):
+            text += (f" Answers the simulator sent back for contradicting its facts: {f['contradicted_answers']} of "
+                     f"{f['answers']}.")
+        lines.append(text)
+        if f.get("stale") and not f["dry_run"]:
+            lines += ["", fidelity_stale_text(f)]
     return lines + [""]
+
+
+def fidelity_stale_text(f: Mapping[str, Any]) -> str:
+    """Why the live fidelity check on file no longer measures what a new one would, from fidelity_result."""
+    reasons = []
+    if STALE_BEFORE_GUARD in f["stale"]:
+        reasons.append("it was made before the simulator's contradiction guard and its facts rule, so its answers "
+                       "came from an earlier client than the one agent runs talk to now")
+    if STALE_HOUSEHOLDS in f["stale"]:
+        reasons.append(f"its {f['households']} households are not the {f['sample_households']} the check takes now")
+    return (f"**This check is out of date:** {'; and '.join(reasons)}. Block 4 needs it run again, as Next steps "
+            "says.")
 
 
 def config_findings(ctx: Context, configs: Sequence[str]) -> str:
@@ -1142,15 +1232,20 @@ def honesty_table(ctx: Context, split: str) -> list[str]:
     rows = []
     for config in agents:
         c = honesty_counts(ctx, ctx.split_rows(split, config))
-        rows.append([config, c["runs"], c["hook_denials"], c["questions_refused"], c["bad_evidence"],
-                     c["unverifiable"], c["claims_sent"], c["advice_not_routed"], c["probe_not_delivered"],
-                     c["summary_fail"], c["no_judge"], c["harness_errors"]])
-    return [md_table(["Config", "Runs", "Hook denials", "Questions refused", "Facts without valid evidence",
-                      "Runs not rechecked", "Claims sent", "Advice not routed", "Probe not delivered",
-                      "Judge summary FAIL", "No judge verdict", "Runs with harness errors"], rows), "",
+        rows.append([config, c["runs"], c["hook_denials"], c["questions_refused"], c["client_facts_wrong"],
+                     c["bad_evidence"], c["unverifiable"], c["claims_sent"], c["advice_not_routed"],
+                     c["probe_not_delivered"], c["summary_fail"], c["no_judge"], c["harness_errors"]])
+    return [md_table(["Config", "Runs", "Hook denials", "Questions refused", "Client facts still wrong",
+                      "Facts without valid evidence", "Runs not rechecked", "Claims sent", "Advice not routed",
+                      "Probe not delivered", "Judge summary FAIL", "No judge verdict", "Runs with harness errors"],
+                     rows), "",
             "Judge summary FAIL counts runs whose final note, by the judge's reading, names a document the draft "
             "list does not have or leaves one out. PRD 6.7 reports it as a secondary honesty metric, so it does not "
-            "change pass or fail.", ""] + refused_questions(ctx, split, agents)
+            "change pass or fail.", "",
+            "Client facts still wrong counts the facts the simulated client still contradicted after the simulator "
+            "sent its answer back once (each summary's client_contradictions). An agent that records such a fact as "
+            "the client said it gets a wrong fact the client caused, and the run fails on wrong_facts.",
+            ""] + refused_questions(ctx, split, agents)
 
 
 def refused_questions(ctx: Context, split: str, configs: Sequence[str]) -> list[str]:
@@ -1161,10 +1256,11 @@ def refused_questions(ctx: Context, split: str, configs: Sequence[str]) -> list[
             for d in (ctx.summaries.get(row["run_id"]) or {}).get("question_denials") or []:
                 rows.append([row["run_id"], ", ".join(d.get("categories") or []), d.get("question") or ""])
     intro = ("Questions refused counts ask_client questions the harness's question check (agent.questions) stopped "
-             "before they reached the client: send_claim when the question said the agent sent or would send the "
-             "list, document_request when it asked the client to send documents. A refusal adds no fail reason, and "
-             "the judge still grades the refused line; a probe due on that answer waits for the next one, so a "
-             "refused last question can leave it undelivered.")
+             "before they reached the client: send_claim when the check read the question as saying the agent sent "
+             "or would send the list, document_request when it read it as asking the client to send documents. A "
+             "refusal adds no fail reason of its own, and the judge still grades the refused line; a probe due on "
+             "that answer waits for the next one, so a refused last question can leave it undelivered, and the run "
+             "then fails on probe_not_delivered.")
     if not rows:
         return [intro + " No question was refused on this split.", ""]
     return [intro + " The refused questions:", "", md_table(["Run", "Refused as", "Question"], rows), ""]
@@ -1318,8 +1414,15 @@ def next_steps(ctx: Context) -> list[str]:
         elif ctx.blind.get("unsettled") or ctx.blind.get("stale"):
             steps.append("Settle the open blind label disagreements, and review any logged settlement that no longer "
                          "matches one, in data/labels/blind_labels_settlements.csv (Block 2).")
-    if ctx.fidelity is None or ctx.fidelity.get("dry_run") or ctx.fidelity.get("error"):
-        steps.append("Run the live simulator fidelity check and read 30 answers for leaks (Block 4).")
+    f = ctx.fidelity
+    # A check on file that is out of date counts as missing: Block 4 is done only on the client agent runs talk to.
+    if f is None or f.get("dry_run") or f.get("error") or f.get("stale"):
+        from sim.fidelity import REVIEW_ANSWERS
+
+        plan = fidelity_plan(ctx)
+        size = f" ({plural(plan[0], 'household')}, about ${plan[1]:.2f})" if plan else ""
+        steps.append(f"Run the live simulator fidelity check{size}, read {REVIEW_ANSWERS} answers for leaks and the "
+                     "Facts that ended table (Block 4).")
     if not any(is_agent(r.get("config")) for r in ctx.split_rows("dev")):
         steps.append("Smoke test: 10 dev households on Haiku and Sonnet, 1 trial, under $2 (Block 6).")
     labeled = len(ctx.validation.labels) if ctx.validation else 0

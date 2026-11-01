@@ -36,14 +36,19 @@ didn't stop. Code coerces each revealed value with its fact's spec, as the
 fidelity scorer does, and compares it with the true value. It skips the facts
 the recall gap hides, which are meant to be wrong until the gap breaks, and
 unknown keys and uncoercible values, which stay anomalies. The retry tells
-the model, in this conversation only, which facts it got wrong and asks the
-same question again. The answer it gives replaces the first, in the history
-and in what is returned, even when it still contradicts. The agent never sees
-the first answer or the correction, and the answer kept carries the facts
-the retry corrected and any still wrong, so the raw error rate stays visible.
-That makes the client more truthful than a real person, on purpose: the runs
-measure the agent's questions, and the recall gap stays the designed source
-of the client's errors.
+the model, in this conversation only, which facts it got wrong, that its
+recall gap still applies, and to answer the same question again. The answer
+it gives replaces the first, in the history and in what is returned, even
+when it still contradicts, with one exception: a retry that reveals a fact
+the recall gap hides differently from the first answer (revealing it, at
+another value, or not at all) would break the gap or undo it, so the first
+answer stands and its contradictions stay unresolved. The guard therefore
+never changes what an answer says about a fact the gap hides. The agent
+never sees the first answer or the correction, and the answer kept carries
+the facts the retry corrected and any still wrong, so the raw error rate
+stays visible. That makes the client more truthful than a real person, on
+purpose: the runs measure the agent's questions, and the recall gap stays
+the designed source of the client's errors.
 """
 
 from __future__ import annotations
@@ -204,8 +209,11 @@ CORRECTION = (
 # and B1 6, each as the client told it.
 CONTRADICTION = (
     "Your last answer said {said}, but Your facts say {truth}. Answer the same question again, truthfully, "
-    "using only Your facts. Reply with only the JSON object, as before."
+    "using only Your facts. Your recall_gap still applies. Reply with only the JSON object, as before."
 )
+# The reason an answer kept is the first one although its retry was usable: the retry changed what the answer
+# said about a fact the recall gap hides, which would break the gap or undo it.
+RETRY_CHANGED_GAP = "retry_changed_recall_gap"
 
 FENCE = re.compile(r"^```[A-Za-z0-9_-]*[ \t]*\n?(.*?)\n?[ \t]*```$", re.DOTALL)
 
@@ -279,8 +287,10 @@ class SimAnswer:
     "final"}, the fact's value in the first answer and in the answer kept,
     each left out when that answer gave none. corrected holds the facts the
     first answer contradicted and the answer kept doesn't; unresolved holds
-    every fact the answer kept still contradicts, plus "retry_error" when the
-    retry's reply couldn't be used and the first answer was kept.
+    every fact the answer kept still contradicts. When the first answer was
+    kept after all, each unresolved entry also says why: "retry_error" when
+    the retry's reply couldn't be used, or "retry_changed_recall_gap", the
+    facts the recall gap hides that the retry revealed differently.
     """
 
     answer: str
@@ -525,6 +535,10 @@ def true_values(true_facts: Mapping[str, Any], specs: Mapping[str, FactSpec]) ->
     return complete_facts({k: None if v is None else coerce(specs[k], v) for k, v in true_facts.items()}, specs)
 
 
+def _same(a: Any, b: Any) -> bool:
+    return type(a) is type(b) and a == b
+
+
 def contradictions(
     revealed: Mapping[str, Any], values: Mapping[str, Any], hidden: Iterable[str] = ()
 ) -> dict[str, Any]:
@@ -535,10 +549,13 @@ def contradictions(
     contradicts a fact that is true, false, or 0.
     """
     skip = set(hidden)
-    return {
-        key: value for key, value in revealed.items()
-        if key not in skip and not (type(value) is type(values[key]) and value == values[key])
-    }
+    return {key: value for key, value in revealed.items() if key not in skip and not _same(value, values[key])}
+
+
+def gap_changes(first: Mapping[str, Any], again: Mapping[str, Any], hidden: Iterable[str]) -> list[str]:
+    """The facts the recall gap hides that two answers reveal differently, by value or by one leaving it out."""
+    return [key for key in hidden
+            if (key in first) != (key in again) or (key in first and not _same(first[key], again[key]))]
 
 
 def _fact(key: str, value: Any) -> str:
@@ -715,10 +732,16 @@ class ClientSimulator:
                 # Not retried again: the first answer stands, with everything it contradicted.
                 unresolved = [{**_outcome(k, kept.revealed, kept.revealed), "retry_error": str(e)} for k in wrong]
             else:
-                still = contradictions(again.revealed, self._true_values, self._hidden)
-                corrected = [_outcome(k, kept.revealed, again.revealed) for k in wrong if k not in still]
-                unresolved = [_outcome(k, kept.revealed, again.revealed) for k in still]
-                kept = again
+                changed = gap_changes(kept.revealed, again.revealed, self._hidden)
+                if changed:
+                    # The retry would break the recall gap or undo it, so the first answer stands, as above.
+                    unresolved = [{**_outcome(k, kept.revealed, kept.revealed), RETRY_CHANGED_GAP: changed}
+                                  for k in wrong]
+                else:
+                    still = contradictions(again.revealed, self._true_values, self._hidden)
+                    corrected = [_outcome(k, kept.revealed, again.revealed) for k in wrong if k not in still]
+                    unresolved = [_outcome(k, kept.revealed, again.revealed) for k in still]
+                    kept = again
         # The assistant turn is the clean JSON, so later turns see the format kept.
         self._history.extend([asked, {"role": "assistant", "content": kept.clean}])
         return SimAnswer(

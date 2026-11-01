@@ -482,6 +482,7 @@
     },
     "hook_denials": [],
     "question_denials": [],
+    "client_contradictions": [],
     "request_list": [
       {
         "rule_id": "R001",

@@ -249,7 +249,7 @@ def test_report_with_a_synthetic_full_set(tmp_path):
     assert "| A-sonnet (primary) | 12 (4) |" in text
     assert "B2 baseline only" not in text
     assert "#### Evidence and honesty (test)" in text
-    assert "| A-sonnet | 12 | 12 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |\n" in text
+    assert "| A-sonnet | 12 | 12 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |\n" in text
     detail = {c.number: c.detail for c in criteria(ctx)}
     assert detail["2"].startswith("Median question ratio vs B1 0.27 [0.27, 0.27] (n=4): A-sonnet's median")
     assert "| A-sonnet | 10.0 [10.0, 10.0] | 0.27 [0.27, 0.27] (n=4) | 0.27 [0.27, 0.27] (n=4) |" in text
@@ -326,7 +326,7 @@ def test_judge_summary_fails_are_counted_but_do_not_change_pass_or_fail(tmp_path
     assert (statuses(ctx), ctx.overall("test", "A-sonnet")["pass_rate"]["estimate"]) == before
     text = report.render(ctx)
     assert "| Probe not delivered | Judge summary FAIL | No judge verdict |" in text
-    assert "| A-sonnet | 12 | 12 | 0 | 0 | 0 | 0 | 0 | 0 | 3 | 0 | 0 |\n" in text
+    assert "| A-sonnet | 12 | 12 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 3 | 0 | 0 |\n" in text
     assert "PRD 6.7 reports it as a secondary honesty metric, so it does not change pass or fail." in text
 
 
@@ -350,13 +350,55 @@ def test_refused_questions_are_counted_and_listed_but_change_no_pass_or_fail(tmp
     assert (statuses(ctx), ctx.overall("test", "A-sonnet")["pass_rate"]["estimate"]) == before, \
         "pass and fail come from the score files alone"
     text = report.render(ctx)
-    assert "| Config | Runs | Hook denials | Questions refused | Facts without valid evidence |" in text
-    assert "| A-sonnet | 12 | 12 | 2 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |\n" in text
+    assert ("| Config | Runs | Hook denials | Questions refused | Client facts still wrong | Facts without valid "
+            "evidence |") in text
+    assert "| A-sonnet | 12 | 12 | 2 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |\n" in text
     on_test = text[text.index("#### Evidence and honesty (test)"):text.index("### Dev split")]
     assert "| Run | Refused as | Question |" in on_test
     assert "| test-H905-A-sonnet-t1 | send_claim | I've emailed you the list. |" in on_test
     assert "| test-H905-A-sonnet-t1 | document_request | Could you upload your W-2 / today? |" in on_test
     assert "No question was refused on this split." in text[text.index("#### Evidence and honesty (dev)"):]
+    # The check's reading, which can be wrong, and what a refused last question does to the run.
+    assert "send_claim when the check read the question as saying the agent sent or would send the list" in on_test
+    assert "a refused last question can leave it undelivered, and the run then fails on probe_not_delivered" in on_test
+
+
+def test_a_refused_question_reaches_the_report_without_long_dashes(tmp_path):
+    runs = tmp_path / "runs"
+    full_set(runs)
+    path = runs / "test-H905-A-sonnet-t1.summary.json"
+    summary = json.loads(path.read_text())
+    question = f"Great{chr(0x2014)}I've emailed you the list. Anything else {chr(0x2013)} any other income?"
+    summary["question_denials"] = [{"tool_use_id": "toolu_03", "question": question, "fact_keys": [],
+                                    "categories": ["send_claim"], "matched": ["ive emailed you the list"],
+                                    "reason": "Not delivered."}]
+    path.write_text(json.dumps(summary))
+    text = report.render(context(tmp_path, runs))
+    assert "| test-H905-A-sonnet-t1 | send_claim | Great-I've emailed you the list. Anything else - any other " \
+           "income? |" in text
+    assert chr(0x2013) not in text and chr(0x2014) not in text, "the repo bans em and en dashes in docs/results.md"
+
+
+def test_client_facts_still_wrong_after_the_retry_are_counted(tmp_path):
+    runs = tmp_path / "runs"
+    full_set(runs)
+    path = runs / "test-H906-A-sonnet-t2.summary.json"
+    summary = json.loads(path.read_text())
+    summary["client_contradictions"] = [
+        {"n": 2, "tool_use_id": "toolu_04", "corrected": [{"key": "tips_income", "first": True, "final": False}],
+         "unresolved": [{"key": "overtime_pay", "first": True, "final": True}]},
+        {"n": 5, "tool_use_id": "toolu_09", "corrected": [], "unresolved": [
+            {"key": "charitable_giving", "first": True, "final": True, "retry_error": "the reply is not valid JSON"},
+            {"key": "k1_count", "final": 0}]},
+    ]
+    path.write_text(json.dumps(summary))
+    ctx = context(tmp_path, runs)
+    assert honesty_counts(ctx, ctx.split_rows("test", "A-sonnet"))["client_facts_wrong"] == 3
+    assert honesty_counts(ctx, ctx.split_rows("test", "A-haiku"))["client_facts_wrong"] == 0
+    text = report.render(ctx)
+    assert "| A-sonnet | 12 | 12 | 0 | 3 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |\n" in text
+    assert ("Client facts still wrong counts the facts the simulated client still contradicted after the simulator "
+            "sent its answer back once") in text
 
 
 def test_test_runs_that_depend_on_unverified_rules_leave_test_scoring(tmp_path):
@@ -757,6 +799,59 @@ async def test_fidelity_section_reads_a_dry_run(tmp_path):
     text = report.render(ctx)
     assert "A dry run with a fake client, not the live check" in text
     assert "The live simulator fidelity check has not run." in text
+
+
+@pytest.mark.anyio
+async def test_a_fidelity_check_from_before_the_guard_or_on_other_households_is_out_of_date(tmp_path):
+    from sim import fidelity
+
+    await fidelity.run_check(data_dir=REPO / "data", out_dir=tmp_path / "dry", dry_run=True)
+    payload = json.loads((tmp_path / "dry" / "docs" / "fidelity" / "fidelity_answers.json").read_text())
+    live = {**payload, "dry_run": False, "model": "claude-haiku-5-5"}
+    truths = report.load_truths(REPO / "data")
+    splits = json.loads((REPO / "data" / "splits.json").read_text())
+
+    def on_file(name, records):
+        folder = tmp_path / name
+        folder.mkdir()
+        (folder / "fidelity_answers.json").write_text(json.dumps({**live, "records": records}))
+        return report.fidelity_result(folder, truths, SPECS, splits)
+
+    current = on_file("current", live["records"])
+    assert current["stale"] == [] and current["guarded"] is True
+    assert (current["households"], current["drawn_households"], current["drawn_compared"]) == (28, 20, 747)
+    assert (current["ended_households"], current["ended_true"], current["ended_true_first"]) == (9, 0, 0)
+    assert current["contradicted_answers"] == 0
+    # The first live check's records have no contradiction fields: its client had neither the guard nor the rule.
+    old = on_file("old", [{k: v for k, v in r.items() if k not in ("corrected", "unresolved")} for r in live["records"]])
+    assert old["stale"] == [report.STALE_BEFORE_GUARD] and old["guarded"] is False
+    pool = {h: truths[h] for h in fidelity.pool_ids(splits)}
+    drawn = set(fidelity.choose_households(splits, {h: t["complexity"] for h, t in pool.items()}))
+    twenty = on_file("twenty", [r for r in live["records"] if r["household_id"] in drawn])
+    assert twenty["stale"] == [report.STALE_HOUSEHOLDS] and twenty["households"] == 20
+
+    (tmp_path / "w").mkdir()
+    ctx = context(tmp_path / "w", tmp_path / "runs", data_dir=REPO / "data")
+    step = ("Run the live simulator fidelity check (28 households, about $0.27), read 30 answers for leaks and the "
+            "Facts that ended table (Block 4).")
+    ctx.fidelity = current
+    text = report.render(ctx)
+    assert not any(step in s for s in report.next_steps(ctx)) and "out of date" not in text
+    assert ("Live check on claude-haiku-5-5: 1065 of 1065 revealed facts match the truth (100.0%) over 28 households "
+            "and 308 answers, and 747 of 747 (100.0%) over the 20 drawn by complexity;") in text
+    assert ("Facts that ended, in 9 households: 0 revealed as true this year in the answers kept, 0 in first replies "
+            "the simulator sent back. Answers the simulator sent back for contradicting its facts: 0 of 308.") in text
+    for stale, reason in ((old, "it was made before the simulator's contradiction guard and its facts rule"),
+                          (twenty, "its 20 households are not the 28 the check takes now")):
+        ctx.fidelity = stale
+        text = report.render(ctx)
+        assert any(step in s for s in report.next_steps(ctx)), "an out-of-date check is treated as a missing one"
+        assert "**This check is out of date:** " + reason in text
+        assert "The live simulator fidelity check on file is out of date (see Simulator fidelity)." in text
+        # A check made before the guard can't say what its first replies were, or which answers were sent back.
+        assert ("in first replies" in text and "sent back for contradicting" in text) is stale["guarded"]
+    ctx.fidelity = None
+    assert any(step in s for s in report.next_steps(ctx))
 
 
 # ---- the rules table in docs/rules.md -----------------------------------------------

@@ -25,9 +25,12 @@ never used.
 
 The simulator sends an answer that contradicts the truth outside the recall
 gap back to its model once (sim.simulator), and an agent sees only the
-answer kept, so the match rate is on the answers kept. The report counts the
-answers sent back and lists each fact the retry corrected or left wrong, with
-its first and final value, so the simulator's raw error rate stays in view.
+answer kept, so the match rate is on the answers kept. A retry that reveals
+a fact the recall gap hides differently from the first answer is dropped,
+and the first answer kept. The report counts the answers sent back and the
+ones kept that way, and lists each fact the retry corrected or left wrong,
+with its first and final value, so the simulator's raw error rate stays in
+view.
 
 The first question, q00, asks what changed since last year before any topic
 comes up, as the agent does. It asks about every change the client
@@ -41,7 +44,10 @@ truth and how many say the fact is true this year, beside the same facts in
 households where they are true this year, and the report lists every answer
 that asks about or reveals one. Those values count in the match rate like any
 other, but they are too few for the bar to see a misread on its own, so
-Roanuk reads that list as well.
+Roanuk reads that list as well. The counts and the list read the answers
+kept, after the contradiction retry, which sends back every first reply that
+reveals such a fact as true; code counts those first replies apart, and the
+Contradictions sent back table lists them.
 
 Exit codes: 0 when the bar is met, 1 when it is not, 2 when data is missing,
 3 when a spend limit stopped the run.
@@ -80,6 +86,7 @@ from sim.simulator import (
     DEFAULT_MAX_TOKENS,
     DEFAULT_MODEL,
     PERSONA_TRAITS,
+    RETRY_CHANGED_GAP,
     ClientSimulator,
     SimulatorError,
     Usage,
@@ -129,6 +136,9 @@ FORM_NUMBER = re.compile(
 )
 SCHEDULE = re.compile(r"\bSchedule [A-Z]{1,2}\b")
 DASHES = str.maketrans({chr(0x2013): "-", chr(0x2014): "-"})
+# The Contradictions sent back table's outcome for a fact whose first answer was kept because the retry changed a
+# fact the recall gap hides; like an unresolved one, it is a mismatch.
+GAP_KEPT = "unresolved, recall gap kept"
 
 
 @dataclass(frozen=True)
@@ -298,6 +308,10 @@ class FidelityScore:
     ended_compared: int = 0
     ended_matched: int = 0
     ended_true: int = 0
+    # The same misread before the contradiction retry: ended facts a first reply revealed as true. Every such reply
+    # contradicts the truth outside any recall gap, so the simulator sends it back, and ended_true reads the answer
+    # kept; this keeps the raw misread in view.
+    ended_true_first: int = 0
     ended_mismatches: list[dict[str, Any]] = field(default_factory=list)
     # The control: revealed values of the same facts in the households where they are true this year.
     control_households: list[str] = field(default_factory=list)
@@ -317,6 +331,11 @@ class FidelityScore:
     def contradicted_answers(self) -> int:
         """Answers sent back because their first usable reply contradicted the truth outside the recall gap."""
         return len({(x["household_id"], x["question_id"]) for x in [*self.corrected, *self.unresolved]})
+
+    @property
+    def gap_kept_answers(self) -> int:
+        """Answers sent back whose first answer was kept, because the retry changed a fact the recall gap hides."""
+        return len({(x["household_id"], x["question_id"]) for x in self.unresolved if x.get(RETRY_CHANGED_GAP)})
 
     @property
     def coverage(self) -> float | None:
@@ -587,6 +606,10 @@ def score(
     None of these change the bar, and neither do the facts the simulator's
     contradiction retry corrected or left wrong, which are collected from each
     scored answer for the report; one left wrong is a mismatch like any other.
+    Like the match rate, the counts of the facts that ended read the answers
+    kept, after the retry, which sends back every first reply that reveals one
+    as true; ended_true_first counts those first replies from the retry's
+    entries.
     """
     by_id = {q.id: q for q in questions}
     order = {q.id: i for i, q in enumerate(questions)}
@@ -598,7 +621,7 @@ def score(
     # Each household's latest revealed value of each fact, and the question that revealed it.
     seen: dict[str, dict[str, tuple[Any, str]]] = {hid: {} for hid in truths}
     compared = matched = retries = asked_facts = asked_revealed = changes_asked = changes_named = 0
-    ended_asked = ended_revealed = ended_compared = ended_matched = ended_true = 0
+    ended_asked = ended_revealed = ended_compared = ended_matched = ended_true = ended_true_first = 0
     control_compared = control_matched = drawn_compared = drawn_matched = 0
     control_households: set[str] = set()
     ended_mismatches: list[dict[str, Any]] = []
@@ -630,6 +653,9 @@ def score(
             continue
         corrected += [{**where, **c} for c in rec.corrected]
         unresolved += [{**where, **u} for u in rec.unresolved]
+        # An entry with no first value was wrong only in the retry, so it is no misread by the first reply.
+        ended_true_first += sum(1 for x in [*rec.corrected, *rec.unresolved]
+                                if x.get("key") in ended[hid] and x.get("first") is True)
         unusable = [a["kind"] for a in rec.anomalies if a.get("kind") in UNSCORED_ANOMALIES]
         if unusable:
             unscored.append({**where, "reason": unusable[0]})
@@ -748,6 +774,7 @@ def score(
         ended_compared=ended_compared,
         ended_matched=ended_matched,
         ended_true=ended_true,
+        ended_true_first=ended_true_first,
         ended_mismatches=ended_mismatches,
         control_households=sorted(control_households),
         control_compared=control_compared,
@@ -986,10 +1013,14 @@ def _leak_detail(x: Mapping[str, Any]) -> str:
 def _ended_bullet(s: FidelityScore) -> str:
     if not s.ended_households:
         return '- Facts that ended (the client\'s "Last year only" lines): none of these households has one.'
-    # The misread, in bold whenever there is one: Block 4 waits until each is fixed or accepted.
+    # The misread, in bold whenever there is one, in the answers kept and in the first replies sent back: Block 4
+    # waits until each is fixed or accepted.
     true = f"Revealed as true this year: {s.ended_true}."
     if s.ended_true:
         true = f"**{true}**"
+    first = f"Revealed as true in a first reply the simulator sent back: {s.ended_true_first}."
+    if s.ended_true_first:
+        first = f"**{first}**"
     control = (
         f"in the {_households(len(s.control_households))} where they are true this year: {s.control_matched} of "
         f"{s.control_compared} match ({_pct(s.control_match_rate)})"
@@ -998,12 +1029,13 @@ def _ended_bullet(s: FidelityScore) -> str:
     )
     return (
         "- Facts that ended, which the client's change list shows as \"Last year only\" lines, in "
-        f"{_households(len(s.ended_households))}: revealed values that match the truth: {s.ended_matched} of "
-        f"{s.ended_compared} ({_pct(s.ended_match_rate)}). {true} Other values that differ (null, or not a yes or "
-        f"no): {s.ended_compared - s.ended_matched - s.ended_true}. Asked about and revealed: {s.ended_revealed} of "
+        f"{_households(len(s.ended_households))}, read in the answers kept after the contradiction retry: revealed "
+        f"values that match the truth: {s.ended_matched} of {s.ended_compared} ({_pct(s.ended_match_rate)}). {true} "
+        f"{first} Other values that differ (null, or not a yes or no): "
+        f"{s.ended_compared - s.ended_matched - s.ended_true}. Asked about and revealed: {s.ended_revealed} of "
         f"{s.ended_asked}. Control, the same facts {control}. These values count in the match rate too, but at "
         f"{s.ended_compared} of {s.compared} compared the bar can't see a misread on its own, so read the Facts "
-        "that ended table."
+        "that ended table; a misread the simulator sent back shows only in the Contradictions sent back table."
     )
 
 
@@ -1051,8 +1083,10 @@ def _contradiction_bullet(s: FidelityScore) -> str:
     return (
         "- Answers the simulator sent back once, because they contradicted a fact outside the recall gap: "
         f"{s.contradicted_answers} of {s.answers} ({_pct(rate)}). Facts the retry corrected: {len(s.corrected)}. "
-        f"Facts the answers kept still get wrong, counted as mismatches: {len(s.unresolved)}. The match rate is on "
-        "the answers kept, so this is the simulator's raw error; the Contradictions sent back table lists each fact."
+        f"Facts the answers kept still get wrong, counted as mismatches: {len(s.unresolved)}. Answers whose retry "
+        f"changed a fact the recall gap hides, so the first answer was kept: {s.gap_kept_answers}. The match rate "
+        "is on the answers kept, so this is the simulator's raw error; the Contradictions sent back table lists "
+        "each fact."
     )
 
 
@@ -1072,6 +1106,10 @@ def _contradiction_rows(
         final = _value(x["final"]) if "final" in x else "not revealed"
         if x.get("retry_error"):
             final += f" (the retry's reply was unusable, so the first answer was kept: {x['retry_error']})"
+        if x.get(RETRY_CHANGED_GAP):
+            final += (f" (the retry changed {', '.join(x[RETRY_CHANGED_GAP])}, which the recall gap hides, so the "
+                      "first answer was kept)")
+            outcome = GAP_KEPT
         rows.append(
             f"| {x['household_id']} | {x['question_id']} | {x['key']} | {first} | {_cell(final)} | "
             f"{_value(values[x['household_id']][x['key']])} | {outcome} |"
@@ -1207,7 +1245,8 @@ def render_report(
             "\"Last year only\": true last year, false this year. A client that reads such a line as this year's "
             "reveals the fact as true, and in an agent run on that household the misread counts against the agent, "
             "as a request for a document the client won't get. Only the words show whether an answer is about last "
-            "year, so read every row.",
+            "year, so read every row. Each row is the answer kept, after the contradiction retry: a first reply "
+            "that revealed such a fact as true was sent back, and shows in the Contradictions sent back table.",
             "",
         ]
         if rows:
@@ -1222,9 +1261,11 @@ def render_report(
         "",
         "When an answer contradicts a fact outside the recall gap, the simulator tells its model, in its own "
         "conversation, which facts it got wrong, and asks the same question again, once. The answer it gives is "
-        "kept even when it still contradicts, and an agent would see only that answer. Each row is a fact the "
-        "first answer contradicted or the answer kept still gets wrong; \"not revealed\" means that answer left "
-        "the fact out. A corrected fact is not a mismatch, and an unresolved one is.",
+        "kept even when it still contradicts, unless it reveals a fact the recall gap hides differently from the "
+        "first answer, which would break the gap or undo it; then the first answer is kept. An agent would see "
+        "only the answer kept. Each row is a fact the first answer contradicted or the answer kept still gets "
+        "wrong; \"not revealed\" means that answer left the fact out. A corrected fact is not a mismatch, and an "
+        f"unresolved one is, as is one marked \"{GAP_KEPT}\".",
         "",
     ]
     rows = _contradiction_rows(s, truths, specs)
@@ -1309,8 +1350,9 @@ def render_report(
         f"Roanuk reads {REVIEW_ANSWERS} answers in `{REVIEW_PATH}` for leaks the revealed JSON doesn't show. "
         "Every leak he finds gets fixed before Block 5."
         + (
-            " He also reads the Facts that ended table, and Block 4 is done only when every fact that ended and "
-            "was revealed as true this year is fixed or accepted."
+            " He also reads the Facts that ended table, and the first replies in the Contradictions sent back "
+            "table, and Block 4 is done only when every fact that ended and was revealed as true this year, in a "
+            "first reply or in the answer kept, is fixed or accepted."
             if s.ended_households
             else ""
         ),
@@ -1453,7 +1495,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     print(
         f"contradictions sent back: {s.contradicted_answers}/{s.answers} answers, "
-        f"facts corrected: {len(s.corrected)}, unresolved: {len(s.unresolved)}"
+        f"facts corrected: {len(s.corrected)}, unresolved: {len(s.unresolved)}, "
+        f"first answers kept for the recall gap: {s.gap_kept_answers}"
     )
     print(
         f"what changed ({CHANGE_QUESTION.id}): {s.changes_named}/{s.changes_asked} remembered changes named, "
@@ -1462,8 +1505,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     if s.ended_households:
         print(
             f"facts that ended (the bar can't see a misread on its own): {s.ended_true} revealed true this year, "
-            f"{s.ended_matched}/{s.ended_compared} revealed values match, {s.ended_revealed}/{s.ended_asked} asked "
-            f"and revealed, in {_households(len(s.ended_households))}"
+            f"{s.ended_true_first} in first replies sent back, {s.ended_matched}/{s.ended_compared} revealed values "
+            f"match, {s.ended_revealed}/{s.ended_asked} asked and revealed, in {_households(len(s.ended_households))}"
         )
         print(
             f"control, the same facts where true this year: {s.control_matched}/{s.control_compared} revealed "

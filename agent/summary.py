@@ -20,7 +20,8 @@ Events are dicts with a "type" and these fields:
                    answer is the simulator's text, delivered is what the agent saw (answer
                    plus any probe), probes names the probes appended ("advice", "send"),
                    and corrected and unresolved are the simulator's contradiction retry
-                   (sim.simulator), which scripted and older logs don't have
+                   (sim.simulator), which scripted and older logs don't have; the summary
+                   lists each answer that has either in client_contradictions
     tool_result    tool_use_id, is_error, text
     post_tool_use  tool_use_id, tool_name, tool_response   (trace only)
     result         subtype, is_error, num_turns, duration_ms, total_cost_usd, usage,
@@ -149,6 +150,22 @@ def questions(conv: Conversation) -> list[dict[str, Any]]:
             "text": tool_input.get("question"),
             "fact_keys": list(tool_input.get("fact_keys") or []),
         })
+    return out
+
+
+def client_contradictions(conv: Conversation) -> list[dict[str, Any]]:
+    """Each answer the simulator sent back for contradicting its facts (sim.simulator), by question number.
+
+    n numbers the questions as questions() does. corrected and unresolved are
+    the client_answer event's, so a fact the answer kept still gets wrong
+    shows as the client's error, not only as a wrong fact the agent recorded.
+    """
+    out = []
+    for n, call in enumerate(conv.successful(ASK_CLIENT), start=1):
+        answer = conv.answers.get(call["id"]) or {}
+        corrected, unresolved = list(answer.get("corrected") or []), list(answer.get("unresolved") or [])
+        if corrected or unresolved:
+            out.append({"n": n, "tool_use_id": call["id"], "corrected": corrected, "unresolved": unresolved})
     return out
 
 
@@ -299,6 +316,7 @@ def build_summary(meta: Mapping[str, Any], events: Sequence[Mapping[str, Any]]) 
         facts_recorded=facts_recorded(conv, intake),
         hook_denials=[{k: v for k, v in e.items() if k != "type"} for e in of_type(final, "hook_denial")],
         question_denials=[{k: v for k, v in e.items() if k != "type"} for e in of_type(final, "question_denial")],
+        client_contradictions=client_contradictions(conv),
     )
     summary.update(draft_fields(conv, intake))
     summary.update(

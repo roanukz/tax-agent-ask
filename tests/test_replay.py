@@ -218,6 +218,52 @@ def test_a_finished_run_becomes_a_fixture(tmp_path):
     assert check(made) == []
 
 
+def write_run(runs, f, summary=None):
+    runs.mkdir(exist_ok=True)
+    run_id = f["meta"]["run_id"]
+    (runs / f"{run_id}.trace.json").write_text(json.dumps({"meta": f["meta"], "events": f["events"]}))
+    (runs / f"{run_id}.summary.json").write_text(json.dumps(summary or f["expected_summary"]))
+    (runs / f"{run_id}.score.json").write_text(json.dumps(f["expected_score"]))
+    return run_id
+
+
+LATER = ("question_denials", "client_contradictions")
+
+
+def test_a_run_recorded_before_the_later_summary_fields_becomes_a_fixture_that_replays(tmp_path):
+    f = fixture("scripted-advice-probe")
+    old = {k: v for k, v in f["expected_summary"].items() if k not in LATER}
+    run_id = write_run(tmp_path / "runs", f, old)
+    made = fixture_from_run(run_id, name="live-old", runs_dir=tmp_path / "runs")
+    # Its trace has no refusal and no contradiction, so the run could only have had empty lists.
+    assert made["expected_summary"] == f["expected_summary"] and check(made) == []
+    keys = list(made["expected_summary"])
+    assert keys[keys.index("hook_denials"):keys.index("hook_denials") + 3] == ["hook_denials", *LATER]
+
+
+def test_a_run_whose_trace_has_a_refusal_or_a_contradiction_gets_no_empty_list(tmp_path):
+    f = copy.deepcopy(fixture("scripted-refused-send-claim"))
+    answer = next(e for e in f["events"] if e["type"] == "client_answer")
+    answer["corrected"] = [{"key": "tips_income", "first": True, "final": False}]
+    old = {k: v for k, v in f["expected_summary"].items() if k not in LATER}
+    made = fixture_from_run(write_run(tmp_path / "runs", f, old), name="live-old", runs_dir=tmp_path / "runs")
+    assert not set(LATER) & set(made["expected_summary"])
+    assert {p.split(":")[0] for p in check(made)} == {"summary.client_contradictions", "summary.question_denials"}
+
+
+def test_from_run_writes_a_fixture_only_when_replay_reproduces_it(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(replay, "FIXTURES_DIR", tmp_path / "fixtures")
+    f = copy.deepcopy(fixture("scripted-advice-probe"))
+    runs = tmp_path / "runs"
+    run_id = write_run(runs, f, {**f["expected_summary"], "questions": []})
+    assert replay.main(["from-run", run_id, "--name", "live-bad", "--runs-dir", str(runs)]) == 1
+    assert "not written" in capsys.readouterr().out and not (tmp_path / "fixtures").exists()
+    write_run(runs, f)
+    assert replay.main(["from-run", run_id, "--name", "live-good", "--runs-dir", str(runs)]) == 0
+    assert "reproduces it" in capsys.readouterr().out
+    assert load_fixture(tmp_path / "fixtures" / "live-good.json")["expected_summary"] == f["expected_summary"]
+
+
 def test_check_command_passes_on_the_fixtures(capsys):
     assert replay.main(["check", *map(str, FIXTURES)]) == 0
     out = capsys.readouterr().out

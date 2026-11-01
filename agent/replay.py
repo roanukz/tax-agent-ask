@@ -3,7 +3,8 @@
     uv run python -m agent.replay check [fixtures/*.json]
         Replays each fixture and reports any difference from its expected summary and score.
     uv run python -m agent.replay from-run dev-H009-A-sonnet-t1 --name live-dev-H009-sonnet
-        Turns a finished run in eval/runs (trace, summary, score) into fixtures/<name>.json.
+        Turns a finished run in eval/runs (trace, summary, score) into fixtures/<name>.json,
+        only when replay reproduces it; otherwise it lists the differences and writes nothing.
     uv run python -m agent.replay rebuild fixtures/scripted-*.json
         Rewrites the expected summary and score of scripted fixtures after an intended change.
 
@@ -444,6 +445,38 @@ def build_fixture(
     return fixture
 
 
+def _no_denial(events: Sequence[Mapping[str, Any]]) -> bool:
+    return not any(e.get("type") == QUESTION_DENIAL for e in events)
+
+
+def _no_contradiction(events: Sequence[Mapping[str, Any]]) -> bool:
+    return not any(e.get("type") == "client_answer" and (e.get("corrected") or e.get("unresolved")) for e in events)
+
+
+# Summary lists agent.summary added after live runs were first recorded, each with the test that its trace holds
+# nothing the list would. A summary written before the field existed lacks it, so replay, which always writes it,
+# would differ from every such run on the schema alone.
+LATER_FIELDS = {"question_denials": _no_denial, "client_contradictions": _no_contradiction}
+
+
+def backfilled(summary: Mapping[str, Any], events: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    """A recorded summary with each later field it lacks as an empty list, where its trace shows nothing for it.
+
+    The lists go after hook_denials, where build_summary puts them. A trace
+    with a question denial or a contradiction gets nothing filled in, so a
+    replay that finds one still shows as a difference.
+    """
+    missing = [key for key, empty in LATER_FIELDS.items() if key not in summary and empty(events)]
+    out: dict[str, Any] = {}
+    for key, value in summary.items():
+        out[key] = value
+        if key == "hook_denials":
+            out.update((k, []) for k in missing)
+    for key in missing:
+        out.setdefault(key, [])
+    return out
+
+
 def fixture_from_run(
     run_id: str,
     *,
@@ -451,7 +484,11 @@ def fixture_from_run(
     description: str = "",
     runs_dir: Path = RUNS_DIR,
 ) -> dict[str, Any]:
-    """A fixture from a finished live run: its trace, and the summary and score it wrote, as expected."""
+    """A fixture from a finished live run: its trace, and the summary and score it wrote, as expected.
+
+    A summary written before a LATER_FIELDS list existed gets it as an empty
+    list when the trace shows nothing for it (backfilled).
+    """
     trace = json.loads(trace_path(runs_dir, run_id).read_text())
     summary = json.loads(summary_path(runs_dir, run_id).read_text())
     score = json.loads((Path(runs_dir) / f"{run_id}.score.json").read_text())
@@ -463,7 +500,7 @@ def fixture_from_run(
         "judge": score.get("judge"),
         "b1_median_questions": score.get("full_organizer_questions"),
         "events": trace["events"],
-        "expected_summary": summary,
+        "expected_summary": backfilled(summary, trace["events"]),
         "expected_score": score,
     }
 
@@ -602,12 +639,16 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     if args.command == "from-run":
         fixture = fixture_from_run(args.run_id, name=args.name, description=args.description, runs_dir=args.runs_dir)
-        path = write_fixture(FIXTURES_DIR / f"{args.name}.json", fixture)
+        # Checked before it is written: a fixture that differs would fail every replay test that globs fixtures/.
         problems = check(fixture)
-        print(f"wrote {path}; replay {'reproduces it' if not problems else 'differs:'}")
-        for p in problems:
-            print("  " + p)
-        return 1 if problems else 0
+        if problems:
+            print(f"not written: replay of {args.run_id} differs:")
+            for p in problems:
+                print("  " + p)
+            return 1
+        path = write_fixture(FIXTURES_DIR / f"{args.name}.json", fixture)
+        print(f"wrote {path}; replay reproduces it")
+        return 0
     if args.command == "rebuild":
         for path in fixture_paths(args.paths):
             fixture = load_fixture(path)
