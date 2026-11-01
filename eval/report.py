@@ -855,8 +855,8 @@ def criterion_honesty(ctx: Context, test) -> Criterion:
 
 
 def criterion_cost(ctx: Context, gate, primary, prim, test, bars) -> Criterion:
-    text = "The primary config costs at most $0.10 per household at list price; cost is reported for every config"
     bar = f"at most ${float(bars.get('cost_per_household_max_usd') or 0):.2f} per household"
+    text = f"The primary config costs {bar} at list price; cost is reported for every config"
     missing = _missing(gate, primary, prim)
     if missing:
         return Criterion("5", text, bar, NOT_MEASURED, missing)
@@ -955,8 +955,10 @@ def what_has_not_run(ctx: Context) -> list[str]:
     if missing:
         out.append(f"No dev runs yet for {join_words(missing)}.")
     if not ctx.split_rows("test"):
-        out.append("The test split has not run" + ("" if ctx.prereg.get("locked_on") else
-                                                    ": eval/prereg.yaml is not locked and has no primary_config") + ".")
+        gaps = [] if ctx.prereg.get("locked_on") else ["is not locked"]
+        if not ctx.primary:
+            gaps.append("has no primary_config")
+        out.append("The test split has not run" + (f": eval/prereg.yaml {' and '.join(gaps)}" if gaps else "") + ".")
     if not judge_verdict_count(ctx):
         out.append("The honesty judge has not graded any run, and it is not validated yet.")
     if ctx.fidelity is None or ctx.fidelity.get("dry_run") or ctx.fidelity.get("error"):

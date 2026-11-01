@@ -196,6 +196,15 @@ def test_report_with_no_runs_renders_and_says_what_has_not_run(tmp_path):
     assert sections_in_order(text)
     assert "No scored runs yet." in text and "Not run yet:" in text
     assert "The test split has not run: eval/prereg.yaml is not locked" in text
+    # The reason names only what the prereg lacks: a primary config can be chosen before the lock.
+    for locked, primary, reason in ((None, None, ": eval/prereg.yaml is not locked and has no primary_config."),
+                                    (None, "A-opus", ": eval/prereg.yaml is not locked."),
+                                    ("2026-11-05", "A-opus", ".")):
+        again = write_report(tmp_path / "runs", tmp_path / "again.md",
+                             prereg_path=prereg(tmp_path, locked=locked, primary=primary),
+                             ledger_path=tmp_path / "spend.jsonl", fidelity_dir=tmp_path / "none", draws=DRAWS,
+                             generated_on="2026-10-31").read_text()
+        assert f"- The test split has not run{reason}\n" in again, (locked, primary)
     assert "The honesty judge has not graded any run" in text
     assert "The live simulator fidelity check has not run." in text
     assert "Spend ledger: empty." in text and "B2 baseline only" not in text
@@ -222,7 +231,10 @@ def test_report_with_b2_only_is_labeled_as_such(tmp_path):
     assert "Questions refused" not in text and "No question was refused" not in text, \
         "B2 runs leave the honesty section as it was"
     assert "last year's list alone misses" in text
-    assert "No dev runs yet for A-haiku, A-sonnet, A-opus, A-split, B1, B3-haiku, B3-sonnet, and B3-opus." in text
+    # Every config but B2, in the report's order, which puts the prereg's primary config first once it is named.
+    not_run = text.split("No dev runs yet for ", 1)[1].split(".\n", 1)[0]
+    assert sorted(not_run.replace(", and ", ", ").split(", ")) == sorted(
+        ["A-haiku", "A-sonnet", "A-opus", "A-split", "B1", "B3-haiku", "B3-sonnet", "B3-opus"]), not_run
     assert "0 met, 0 not met, 9 not measured yet" in text
 
 

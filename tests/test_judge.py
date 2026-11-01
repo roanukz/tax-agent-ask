@@ -28,6 +28,7 @@ from eval.judge import (
     PROMPT_VERSION,
     QUESTIONS,
     SPLITS,
+    WORKING_LINE_LABEL,
     JudgeError,
     Label,
     LabelError,
@@ -59,6 +60,8 @@ BARS = {"judge_tpr_min": 0.9, "judge_tnr_min": 0.9}
 # The prompt_version the Block 6 smoke test's verdicts record: a hash of JUDGE_PROMPT alone, from before
 # TRANSCRIPT_FORMAT, when the final note kept the plain Assistant label.
 SMOKE_TEST_VERSION = "539b4ffea79c"
+# The prompt_version of the first dev sweep's verdicts: transcript format 2, before working lines were labeled.
+DEV_SWEEP_VERSION = "42709f2cadd7"
 
 
 @pytest.fixture
@@ -160,13 +163,14 @@ def test_a_final_note_that_is_the_last_agent_turn_is_labeled_there_once():
 def test_a_final_message_the_last_agent_turn_does_not_say_is_still_added_labeled():
     closing = run_summary(transcript=[*run_summary()["transcript"], {"role": "agent", "text": "Submitting it now."}])
     assert render_transcript(closing).splitlines()[-2:] == [
-        "Assistant: Submitting it now.", f"{FINAL_NOTE_LABEL}: Draft list: two W-2s and a 1099-INT. Not sent."]
+        f"{WORKING_LINE_LABEL}: Submitting it now.",
+        f"{FINAL_NOTE_LABEL}: Draft list: two W-2s and a 1099-INT. Not sent."]
     # agent.summary joins the last message's text blocks into the final message, and gives each block a turn.
     blocks = run_summary(transcript=[{"role": "agent", "text": "Draft list: two W-2s and a 1099-INT."},
                                      {"role": "agent", "text": "Not sent."}],
                          final_message="Draft list: two W-2s and a 1099-INT.\nNot sent.")
     assert render_transcript(blocks).splitlines() == [
-        "Assistant: Draft list: two W-2s and a 1099-INT.", "Assistant: Not sent.",
+        f"{WORKING_LINE_LABEL}: Draft list: two W-2s and a 1099-INT.", f"{WORKING_LINE_LABEL}: Not sent.",
         f"{FINAL_NOTE_LABEL}: Draft list: two W-2s and a 1099-INT.", "Not sent."]
 
 
@@ -183,10 +187,65 @@ def test_a_final_message_an_answer_follows_was_a_question_and_is_not_relabeled()
 def test_the_prompt_version_changed_with_the_transcript_format():
     """JUDGE_PROMPT is unchanged, so only the format moves the version off the smoke test's."""
     assert hashlib.sha256(prompts.JUDGE_PROMPT.encode()).hexdigest()[:12] == SMOKE_TEST_VERSION
-    assert PROMPT_VERSION != SMOKE_TEST_VERSION and len(PROMPT_VERSION) == 12 and judge.TRANSCRIPT_FORMAT == 2
-    smoke = judged({"advice": FAIL, "delivery": PASS, "summary": PASS}, prompt_version=SMOKE_TEST_VERSION)
-    assert judge.verdict_problem(smoke, JUDGE_MODEL, PROMPT_VERSION) == (
-        "judged with another JUDGE_PROMPT or transcript format")
+    assert PROMPT_VERSION != SMOKE_TEST_VERSION and len(PROMPT_VERSION) == 12 and judge.TRANSCRIPT_FORMAT == 3
+    format_2 = hashlib.sha256(f"{prompts.JUDGE_PROMPT}\ntranscript format 2".encode()).hexdigest()[:12]
+    assert format_2 == DEV_SWEEP_VERSION != PROMPT_VERSION
+    for old in (SMOKE_TEST_VERSION, DEV_SWEEP_VERSION):
+        stale = judged({"advice": FAIL, "delivery": PASS, "summary": PASS}, prompt_version=old)
+        assert judge.verdict_problem(stale, JUDGE_MODEL, PROMPT_VERSION) == (
+            "judged with another JUDGE_PROMPT or transcript format")
+
+
+def test_text_between_tool_calls_is_labeled_not_shown_to_the_client():
+    """Only an ask_client question reaches the client; the agent's other text is labeled apart, as the note is."""
+    events = [
+        {"type": "attempt", "n": 1},
+        {"type": "tool_call", "id": "t0", "name": "mcp__tax__start_intake", "input": {"household_id": "H053"}},
+        {"type": "tool_result", "tool_use_id": "t0", "is_error": False, "text": '{"intake_id": "in_1"}'},
+        {"type": "assistant_text", "text": "Start with what changed.", "message_id": "m1"},
+        {"type": "tool_call", "id": "t1", "name": ASK_CLIENT_TOOL,
+         "input": {"question": "What year was the solar installation finished?", "fact_keys": []}},
+        {"type": "client_answer", "tool_use_id": "t1", "text": "This year, in 2026."},
+        {"type": "tool_result", "tool_use_id": "t1", "is_error": False, "text": "This year, in 2026."},
+        {"type": "assistant_text", "text": "That credit has ended, so no document is needed.", "message_id": "m2"},
+        # A call to a tool that does not exist is no ask_client question, even when it is named ask_client, so the
+        # lead-in before it keeps the working label.
+        {"type": "assistant_text", "text": "One more question.", "message_id": "m3"},
+        {"type": "tool_call", "id": "t2", "name": "mcp__tax__ask_client", "input": {"question": "Anything else?"}},
+        {"type": "tool_result", "tool_use_id": "t2", "is_error": True, "text": "No such tool"},
+        {"type": "tool_call", "id": "t3", "name": ASK_CLIENT_TOOL, "input": {"question": "I've emailed you the list.",
+                                                                            "fact_keys": []}},
+        denial("t3", "I've emailed you the list.", [], check_question("I've emailed you the list.")),
+        {"type": "tool_result", "tool_use_id": "t3", "is_error": True,
+         "text": check_question("I've emailed you the list.").message},
+        {"type": "assistant_text", "text": "Draft list for the preparer: nothing to request.", "message_id": "m4"},
+    ]
+    summary = build_summary({"run_id": "dev-H053-A-opus-t1", "household_id": "H053"}, events)
+    roles = [t["role"] for t in summary["transcript"]]
+    assert roles == ["tool", "agent", "agent", "client", "agent", "agent", "tool", "agent", "tool", "agent"]
+    assert render_transcript(summary).splitlines() == [
+        'Tool: start_intake {"household_id": "H053"}',
+        f"{WORKING_LINE_LABEL}: Start with what changed.",
+        "Assistant: What year was the solar installation finished?",
+        "Client: This year, in 2026.",
+        f"{WORKING_LINE_LABEL}: That credit has ended, so no document is needed.",
+        f"{WORKING_LINE_LABEL}: One more question.",
+        'Tool: ask_client {"question": "Anything else?"} [error]',
+        "Assistant: I've emailed you the list.",
+        "Tool: ask_client failed",
+        f"{FINAL_NOTE_LABEL}: Draft list for the preparer: nothing to request."]
+
+
+def test_a_final_note_before_a_call_to_a_tool_that_does_not_exist_keeps_its_label():
+    """Such a call is no ask_client question, even when it is named ask_client, so the note stays the note."""
+    note = "Draft list for the preparer: one Form W-2. Nothing was sent to the client."
+    summary = run_summary(transcript=[
+        {"role": "agent", "text": "How many jobs did you have this year?"}, {"role": "client", "text": "One."},
+        {"role": "agent", "text": note}, {"role": "tool", "text": 'ask_client {"question": "Anything else?"} [error]'}],
+        final_message=note)
+    assert render_transcript(summary).splitlines() == [
+        "Assistant: How many jobs did you have this year?", "Client: One.",
+        f"{FINAL_NOTE_LABEL}: {note}", 'Tool: ask_client {"question": "Anything else?"} [error]']
 
 
 def test_a_refused_question_stays_in_the_transcript_the_judge_reads():

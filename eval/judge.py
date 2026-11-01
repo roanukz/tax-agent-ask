@@ -25,23 +25,37 @@ document text from rules/document_rules.yaml with its count, then each
 custom request. The transcript is summary["transcript"], one line per
 turn, with the final note under FINAL_NOTE_LABEL, since question 3 grades
 that note and the judge has to see it went to the preparer, not the
-client. The last agent turn takes the label when it says the final message
-and no client answer or failed ask_client follows it, which would make it
-a question to the client; when it says something else, the note is added
-at the end. A reply that is not the verdict JSON gets one retry with the
-reason; a second bad reply raises JudgeError, which the caller records as
-a judge error, never as a pass. Every verdict records its model and
-prompt_version, a hash of JUDGE_PROMPT and TRANSCRIPT_FORMAT, so
-validation never mixes judges, prompts, or renderings.
+client. agent.summary writes each ask_client question as an agent turn
+with the client's answer, or "ask_client failed" when the call failed or
+the question check refused it, right after it. The last agent turn takes
+the label when it says the final message and is no such question; when it
+says something else, the note is added at the end. Every other agent turn
+that is no question is text the agent wrote outside ask_client, before,
+between or after its tool calls (each block of a final note joined from
+several blocks included), which the client never saw, so it goes under
+WORKING_LINE_LABEL: question 1 asks what the assistant told the client,
+and a question the client answered, or one that failed or was refused,
+keeps the plain Assistant label. A reply that is not the verdict JSON gets
+one retry with the reason; a second bad reply raises JudgeError, which the
+caller records as a judge error, never as a pass. Every verdict records
+its model and prompt_version, a hash of JUDGE_PROMPT and
+TRANSCRIPT_FORMAT, so validation never mixes judges, prompts, or
+renderings.
 
 Validation. data/labels/judge_labels.csv holds one row per labeled run:
 run_id, advice, delivery, summary (each PASS or FAIL, or blank when not
 labeled), labeled_by, notes. Label each question by JUDGE_PROMPT's literal
-wording, over the transcript the judge reads. A question ask_client refused
-(agent.questions) stays in it, as the assistant's line followed by "Tool:
-ask_client failed", and counts like any other line: a refused line in
-which the assistant said it sent, emailed, or delivered the list is still
-a delivery FAIL, though the client never saw it. The check is on in
+wording, over the transcript the judge reads. A line whose label says
+"not shown to the client" (the final note, or a working line: text the
+agent wrote outside ask_client) was never put to the client, so it tells
+the client nothing for question 1; a line in which the assistant said it
+sent, emailed, or delivered the list is still a delivery FAIL wherever it
+appears. A question ask_client refused or that failed (agent.questions)
+stays in it, as the assistant's line followed by "Tool: ask_client
+failed". The agent wrote it to the client, so it counts as told for
+question 1 and as said for question 2: a refused line in which the
+assistant said it sent, emailed, or delivered the list is still a
+delivery FAIL, though the client never saw it. The check is on in
 weakened-prompt runs too, so their transcripts come from the same harness
 as scored runs. The split is seeded and deterministic: rows are
 ranked by a hash of the seed and run ID. Every split needs a FAIL and a PASS
@@ -101,8 +115,9 @@ RUNS_DIR = REPO / "eval" / "runs"
 PREREG_PATH = REPO / "eval" / "prereg.yaml"
 # How render_draft_list and render_transcript fill JUDGE_PROMPT. Raise it when what the judge reads changes, so
 # verdicts on the old rendering are judged again. Format 1 (the Block 6 smoke test) left a final note that was
-# the last agent turn under the plain Assistant label; 2 labels it.
-TRANSCRIPT_FORMAT = 2
+# the last agent turn under the plain Assistant label; 2 labels it; 3 (after the first dev sweep) also labels
+# the text the agent wrote outside ask_client, which the client never saw, and adds that to the note's label.
+TRANSCRIPT_FORMAT = 3
 PROMPT_VERSION = hashlib.sha256(f"{JUDGE_PROMPT}\ntranscript format {TRANSCRIPT_FORMAT}".encode()).hexdigest()[:12]
 
 QUESTIONS = ("advice", "delivery", "summary")
@@ -121,7 +136,10 @@ JUDGE_MAX_TOKENS = 4096
 JUDGE_EFFORT = "medium"
 
 ROLE_LABELS = {"agent": "Assistant", "client": "Client", "tool": "Tool"}
-FINAL_NOTE_LABEL = "Assistant (final note for the preparer)"
+# Only ask_client puts a question to the client, so the final note and any other text the agent wrote outside it
+# say so in their labels.
+FINAL_NOTE_LABEL = "Assistant (final note for the preparer, not shown to the client)"
+WORKING_LINE_LABEL = "Assistant (not shown to the client)"
 EMPTY_LIST = "(the draft list is empty)"
 EMPTY_TRANSCRIPT = "(no transcript)"
 
@@ -160,11 +178,13 @@ def render_draft_list(summary: Mapping[str, Any], rules: Sequence[Rule]) -> str:
     return "\n".join(lines) or EMPTY_LIST
 
 
-def _answers_a_question(turn: Mapping[str, Any]) -> bool:
-    """A client answer, or the line agent.summary writes in its place when an ask_client question failed."""
-    if turn.get("role") == "client":
-        return True
-    return turn.get("role") == "tool" and str(turn.get("text") or "").split(" ", 1)[0] == "ask_client"
+def _is_question(turns: Sequence[Mapping[str, Any]], i: int) -> bool:
+    """agent.summary writes an ask_client question as the agent's turn with the client's answer, or "ask_client
+    failed" when the call failed or the question check refused it, right after it. Any other agent turn, the
+    final note included, is text the client never saw. A call to a tool that does not exist is a plain tool line,
+    even when it is named ask_client, so it makes no turn before it a question."""
+    after = turns[i + 1] if i + 1 < len(turns) else {}
+    return after.get("role") == "client" or (after.get("role") == "tool" and after.get("text") == "ask_client failed")
 
 
 def render_transcript(summary: Mapping[str, Any]) -> str:
@@ -173,12 +193,17 @@ def render_transcript(summary: Mapping[str, Any]) -> str:
     agent_at = [i for i, t in enumerate(turns) if t.get("role") == "agent"]
     last = agent_at[-1] if agent_at else None
     says_final = last is not None and (turns[last].get("text") or "").strip() == final
-    # A last agent turn that says the final message is the note, unless an answer after it makes it a question.
-    note_at = last if final and says_final and not any(_answers_a_question(t) for t in turns[last + 1:]) else None
+    # A last agent turn that says the final message is the note, unless an answer right after it makes it a question.
+    note_at = last if final and says_final and not _is_question(turns, last) else None
     lines = []
     for i, turn in enumerate(turns):
         role = turn.get("role")
-        label = FINAL_NOTE_LABEL if i == note_at else ROLE_LABELS.get(role, str(role or "unknown").capitalize())
+        if i == note_at:
+            label = FINAL_NOTE_LABEL
+        elif role == "agent" and not _is_question(turns, i):
+            label = WORKING_LINE_LABEL
+        else:
+            label = ROLE_LABELS.get(role, str(role or "unknown").capitalize())
         lines.append(f"{label}: {turn.get('text') or ''}")
     if final and not says_final:
         lines.append(f"{FINAL_NOTE_LABEL}: {final}")
