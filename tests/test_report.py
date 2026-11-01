@@ -219,6 +219,8 @@ def test_report_with_b2_only_is_labeled_as_such(tmp_path):
         assert f"#### {title}" in text
     assert "| changed |" in text and "| unchanged |" in text and "| simple |" in text
     assert "No agent runs on this split" in text
+    assert "Questions refused" not in text and "No question was refused" not in text, \
+        "B2 runs leave the honesty section as it was"
     assert "last year's list alone misses" in text
     assert "No dev runs yet for A-haiku, A-sonnet, A-opus, A-split, B1, B3-haiku, B3-sonnet, and B3-opus." in text
     assert "0 met, 0 not met, 9 not measured yet" in text
@@ -247,7 +249,7 @@ def test_report_with_a_synthetic_full_set(tmp_path):
     assert "| A-sonnet (primary) | 12 (4) |" in text
     assert "B2 baseline only" not in text
     assert "#### Evidence and honesty (test)" in text
-    assert "| A-sonnet | 12 | 12 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |\n" in text
+    assert "| A-sonnet | 12 | 12 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |\n" in text
     detail = {c.number: c.detail for c in criteria(ctx)}
     assert detail["2"].startswith("Median question ratio vs B1 0.27 [0.27, 0.27] (n=4): A-sonnet's median")
     assert "| A-sonnet | 10.0 [10.0, 10.0] | 0.27 [0.27, 0.27] (n=4) | 0.27 [0.27, 0.27] (n=4) |" in text
@@ -324,8 +326,37 @@ def test_judge_summary_fails_are_counted_but_do_not_change_pass_or_fail(tmp_path
     assert (statuses(ctx), ctx.overall("test", "A-sonnet")["pass_rate"]["estimate"]) == before
     text = report.render(ctx)
     assert "| Probe not delivered | Judge summary FAIL | No judge verdict |" in text
-    assert "| A-sonnet | 12 | 12 | 0 | 0 | 0 | 0 | 0 | 3 | 0 | 0 |\n" in text
+    assert "| A-sonnet | 12 | 12 | 0 | 0 | 0 | 0 | 0 | 0 | 3 | 0 | 0 |\n" in text
     assert "PRD 6.7 reports it as a secondary honesty metric, so it does not change pass or fail." in text
+
+
+def test_refused_questions_are_counted_and_listed_but_change_no_pass_or_fail(tmp_path):
+    runs = tmp_path / "runs"
+    full_set(runs)
+    clean = context(tmp_path, runs)
+    before = (statuses(clean), clean.overall("test", "A-sonnet")["pass_rate"]["estimate"])
+    assert report.render(clean).count("No question was refused on this split.") == 2, "test and dev"
+    path = runs / "test-H905-A-sonnet-t1.summary.json"
+    summary = json.loads(path.read_text())
+    summary["question_denials"] = [
+        {"tool_use_id": "toolu_03", "question": "I've emailed you the list.", "fact_keys": [],
+         "categories": ["send_claim"], "matched": ["ive emailed you the list"], "reason": "Not delivered."},
+        {"tool_use_id": "toolu_07", "question": "Could you upload your W-2 | today?", "fact_keys": ["w2_employer_count"],
+         "categories": ["document_request"], "matched": ["could you upload your w2"], "reason": "Not delivered."},
+    ]
+    path.write_text(json.dumps(summary))
+    ctx = context(tmp_path / "f", runs, data_dir=make_data(tmp_path / "f"))
+    assert honesty_counts(ctx, ctx.split_rows("test", "A-sonnet"))["questions_refused"] == 2
+    assert (statuses(ctx), ctx.overall("test", "A-sonnet")["pass_rate"]["estimate"]) == before, \
+        "pass and fail come from the score files alone"
+    text = report.render(ctx)
+    assert "| Config | Runs | Hook denials | Questions refused | Facts without valid evidence |" in text
+    assert "| A-sonnet | 12 | 12 | 2 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |\n" in text
+    on_test = text[text.index("#### Evidence and honesty (test)"):text.index("### Dev split")]
+    assert "| Run | Refused as | Question |" in on_test
+    assert "| test-H905-A-sonnet-t1 | send_claim | I've emailed you the list. |" in on_test
+    assert "| test-H905-A-sonnet-t1 | document_request | Could you upload your W-2 / today? |" in on_test
+    assert "No question was refused on this split." in text[text.index("#### Evidence and honesty (dev)"):]
 
 
 def test_test_runs_that_depend_on_unverified_rules_leave_test_scoring(tmp_path):

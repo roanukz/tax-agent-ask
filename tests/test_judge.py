@@ -9,8 +9,11 @@ from pathlib import Path
 import pytest
 
 from agent import prompts
+from agent.ask_client import ASK_CLIENT_TOOL
 from agent.configs import JUDGE_MODEL, SONNET
 from agent.env import HarnessSettings
+from agent.questions import check_question, denial
+from agent.summary import build_summary
 from eval import judge
 from eval.baselines import ReplyError
 from eval.judge import (
@@ -112,6 +115,25 @@ def test_transcript_labels_turns_and_appends_the_final_note_once():
     ends = run_summary(transcript=[{"role": "agent", "text": "Draft list: two W-2s and a 1099-INT. Not sent."}])
     assert FINAL_NOTE_LABEL not in render_transcript(ends)
     assert render_transcript({"transcript": [], "final_message": ""}) == EMPTY_TRANSCRIPT
+
+
+def test_a_refused_question_stays_in_the_transcript_the_judge_reads():
+    """agent.summary keeps a refused ask_client question as the agent's line, so the judge grades its words."""
+    question = "I've emailed you the list."
+    events = [
+        {"type": "attempt", "n": 1},
+        {"type": "tool_call", "id": "t1", "name": ASK_CLIENT_TOOL, "input": {"question": question, "fact_keys": []}},
+        denial("t1", question, [], check_question(question)),
+        {"type": "tool_result", "tool_use_id": "t1", "is_error": True, "text": check_question(question).message},
+        {"type": "assistant_text", "text": "Draft list for the preparer: one Form W-2.", "message_id": "m2"},
+    ]
+    summary = build_summary({"run_id": "dev-H002-A-haiku-t1", "household_id": "H002"}, events)
+    assert summary["transcript"] == [
+        {"role": "agent", "text": question}, {"role": "tool", "text": "ask_client failed"},
+        {"role": "agent", "text": "Draft list for the preparer: one Form W-2."}]
+    assert summary["questions"] == [] and len(summary["question_denials"]) == 1
+    assert render_transcript(summary).splitlines() == [
+        f"Assistant: {question}", "Tool: ask_client failed", "Assistant: Draft list for the preparer: one Form W-2."]
 
 
 def test_judge_prompt_is_the_prd_prompt_filled():

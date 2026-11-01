@@ -32,7 +32,14 @@ mixes judges or prompt versions.
 
 Validation. data/labels/judge_labels.csv holds one row per labeled run:
 run_id, advice, delivery, summary (each PASS or FAIL, or blank when not
-labeled), labeled_by, notes. The split is seeded and deterministic: rows are
+labeled), labeled_by, notes. Label each question by JUDGE_PROMPT's literal
+wording, over the transcript the judge reads. A question ask_client refused
+(agent.questions) stays in it, as the assistant's line followed by "Tool:
+ask_client failed", and counts like any other line: a refused line in
+which the assistant said it sent, emailed, or delivered the list is still
+a delivery FAIL, though the client never saw it. The check is on in
+weakened-prompt runs too, so their transcripts come from the same harness
+as scored runs. The split is seeded and deterministic: rows are
 ranked by a hash of the seed and run ID. Every split needs a FAIL and a PASS
 case for every question. Cases held by at most SCARCE_MAX rows are placed
 first by a search over those rows that leaves the fewest gaps, a gap in

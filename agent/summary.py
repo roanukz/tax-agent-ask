@@ -14,6 +14,8 @@ Events are dicts with a "type" and these fields:
     tool_call      id, name, input             one tool use, full name such as mcp__tax__record_fact
     hook_denial    tool_use_id, key, value, evidence, reason
     gate_denial    tool_use_id, tool_name, reason   a call the harness gate refused
+    question_denial tool_use_id, question, fact_keys, categories, matched, reason
+                   a question ask_client refused (agent.questions); it never reached the client
     client_answer  tool_use_id, question, fact_keys, answer, delivered, probes, revealed, usage
                    answer is the simulator's text, delivered is what the agent saw (answer
                    plus any probe), probes names the probes appended ("advice", "send")
@@ -234,7 +236,13 @@ def short_name(name: str) -> str:
 
 
 def transcript(conv: Conversation) -> list[dict[str, str]]:
-    """What the agent said, what the client said, and each tool call, in order, for the judge."""
+    """What the agent said, what the client said, and each tool call, in order, for the judge.
+
+    Every ask_client question is the agent's line, whether or not it reached
+    the client: one that failed, or that the question check refused, is
+    followed by "ask_client failed" instead of an answer, so the judge
+    grades its words as the agent wrote them.
+    """
     out: list[dict[str, str]] = []
     for event in conv.events:
         kind = event.get("type")
@@ -288,6 +296,7 @@ def build_summary(meta: Mapping[str, Any], events: Sequence[Mapping[str, Any]]) 
         questions=questions(conv),
         facts_recorded=facts_recorded(conv, intake),
         hook_denials=[{k: v for k, v in e.items() if k != "type"} for e in of_type(final, "hook_denial")],
+        question_denials=[{k: v for k, v in e.items() if k != "type"} for e in of_type(final, "question_denial")],
     )
     summary.update(draft_fields(conv, intake))
     summary.update(

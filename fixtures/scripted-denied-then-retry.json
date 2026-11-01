@@ -371,6 +371,7 @@
         "reason": "evidence must be the client's exact words from an answer, or prior_year:<field>"
       }
     ],
+    "question_denials": [],
     "request_list": [
       {
         "rule_id": "R001",

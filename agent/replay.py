@@ -13,24 +13,31 @@ the events) with what it produced:
     {"name", "description", "scripted", "meta", "events", "judge",
      "b1_median_questions", "expected_summary", "expected_score"}
 
-Replay drops the recorded tool results, hook denials, and client answers
-and walks the log in order. Each tax tool call runs again against a fresh
-in-process server (server.tax_server.build_server) through an MCP client,
-one server per session attempt, minting the intake IDs the log recorded.
-record_fact first goes through the real record_fact_hook, with an
-EvidenceBook fed the recorded answers in order. An ask_client call gets its
-recorded answer back, since the simulator is not called. A call the
-harness's gate denied keeps its recorded result; a gated record_fact still
-goes through record_fact_hook first, since the CLI runs both PreToolUse
-hooks on it live. In a recorded log (the fixture's scripted flag is false
-or absent), a tax call with no recorded result is one the CLI never ran,
-as when it stopped on its budget with tool calls in its last message, so
-it is passed through without a result rather than run. A scripted log's
-results, if it has any, were made by replay rather than by a live CLI
-(Script records none, and build_fixture stores the replayed ones), so they
-can't tell which calls ran, and every tax call in it runs. Every other
-event, such as the trace-only post_tool_use and stream_usage events or any
-type replay does not know, is copied through unchanged and never acted on.
+Replay drops the recorded tool results, hook denials, client answers, and
+question denials and walks the log in order. Each tax tool call runs again
+against a fresh in-process server (server.tax_server.build_server) through
+an MCP client, one server per session attempt, minting the intake IDs the
+log recorded. record_fact first goes through the real record_fact_hook,
+with an EvidenceBook fed the recorded answers in order. An ask_client call
+meets agent.questions.check_question first, as live: a question it refuses
+gets a fresh question_denial and the refusal as an error result, and any
+other gets its recorded answer back, since the simulator is not called. A
+call the harness's gate denied keeps its recorded result; a gated
+record_fact still goes through record_fact_hook first, since the CLI runs
+both PreToolUse hooks on it live. In a recorded log (the fixture's scripted
+flag is false or absent), a tax call with no recorded result is one the CLI
+never ran, as when it stopped on its budget with tool calls in its last
+message, so it is passed through without a result rather than run. An
+ask_client call ran when the log has its result, its answer, or its
+question denial, since live logs the last two inside the tool, before the
+CLI returns the result; with no result recorded, replay rebuilds the
+answer or the denial and leaves the result out, as the live log did. A
+scripted log's results, if it has any, were made by replay rather than by
+a live CLI (Script records none, and build_fixture stores the replayed
+ones), so they can't tell which calls ran, and every call in it runs.
+Every other event, such as the trace-only post_tool_use and stream_usage
+events or any type replay does not know, is copied through unchanged and
+never acted on.
 agent.summary then rebuilds the summary from the replayed log, and
 eval.score.score_run scores it with the recorded judge verdict and B1
 median; a test-split run's score gets its prereg commit, as eval.run
@@ -38,7 +45,9 @@ stamps it. Nothing here spends anything or opens a network socket.
 
 Script builds the scripted-* fixtures (fixtures/scripted.py): no live run
 existed when they were written, so their answers, costs, and token counts
-are made up, while their households and truth files are real.
+are made up, while their households and truth files are real. Script.ask
+refuses a question the check would refuse, and Script.refused one it would
+let through, so a scripted answer never stands in for a refusal.
 """
 
 from __future__ import annotations
@@ -59,13 +68,14 @@ from agent.ask_client import ASK_CLIENT_TOOL, ProbeSchedule, deliver
 from agent.configs import get_config
 from agent.harness import ALLOWED_TOOLS, DATA_DIR, REPO, RUNS_DIR, load_household, run_id_for, summary_path, trace_path
 from agent.hooks import RECORD_FACT_TOOL, EvidenceBook, record_fact_hook
+from agent.questions import QUESTION_DENIAL, check_question, denial
 from agent.summary import TAX_PREFIX, build_summary, parsed
 from eval.score import score_run
 from rules import engine
 from server.tax_server import build_server
 
 FIXTURES_DIR = REPO / "fixtures"
-REBUILT = ("tool_result", "hook_denial", "client_answer")
+REBUILT = ("tool_result", "hook_denial", "client_answer", QUESTION_DENIAL)
 # Trace-only events replay copies through without acting on them, as it does any type it does not know.
 TRACE_ONLY = ("post_tool_use", "stream_usage")
 FIXTURE_FIELDS = ("name", "description", "scripted", "meta", "judge", "b1_median_questions")
@@ -174,6 +184,9 @@ class Replayer:
         self.state_root = Path(state_root)
         self.profile, _ = load_household(self.data_dir, meta["household_id"])
         self.recorded = {e["tool_use_id"]: e for e in self.events if e.get("type") == "tool_result"}
+        # ask_client calls the tool logged an answer or a denial for: the call ran, even with no recorded result.
+        self.reached = {e["tool_use_id"] for e in self.events
+                        if e.get("type") in ("client_answer", QUESTION_DENIAL) and e.get("tool_use_id")}
         self.answers = self._answers()
         self.gated_ids = {e["tool_use_id"] for e in self.events if e.get("type") == "gate_denial"}
         self.mint = id_factory(recorded_intake_ids(self.events, scripted=scripted))
@@ -226,13 +239,23 @@ class Replayer:
             self.out.append(dict(self.recorded[call["id"]]))
 
     async def ask_client(self, call: Mapping[str, Any]) -> None:
+        """The question check first, as live; then the recorded answer. Never a result the live log didn't have."""
+        tool_input = call.get("input") or {}
+        question = tool_input.get("question")
+        refusal = check_question(question) if isinstance(question, str) and self.ran(call) else None
+        if refusal is not None:
+            self.out.append(denial(call["id"], question, tool_input.get("fact_keys"), refusal))
+            if self.has_result(call):
+                self.result(call, is_error=True, text=refusal.message)
+            return
         answer = self.answers.get(call["id"])
         if answer is None:
             self.passthrough(call)
             return
         self.book.add_answer(answer["delivered"])
         self.out.append(dict(answer))
-        self.result(call, is_error=False, text=answer["delivered"])
+        if self.has_result(call):
+            self.result(call, is_error=False, text=answer["delivered"])
 
     async def evidence(self, call: Mapping[str, Any]) -> dict[str, Any]:
         """record_fact_hook on this call, logging each denial as the harness does; the hook's decision."""
@@ -250,7 +273,15 @@ class Replayer:
         self.passthrough(call)
 
     def ran(self, call: Mapping[str, Any]) -> bool:
-        """Whether the live CLI ran this call: always in a scripted log, else when the log has its result."""
+        """Whether the live CLI ran this call.
+
+        Always in a scripted log; in a recorded one, when the log has its
+        result, or an answer or a question denial the tool logged for it.
+        """
+        return self.has_result(call) or call["id"] in self.reached
+
+    def has_result(self, call: Mapping[str, Any]) -> bool:
+        """Whether replay should give this call a result: always in a scripted log, else when the log has one."""
         return self.scripted or call["id"] in self.recorded
 
     async def tax_tool(self, call: Mapping[str, Any]) -> None:
@@ -510,6 +541,8 @@ class Script:
         return self.call("record_fact", key=key, value=value, evidence=evidence)
 
     def ask(self, question: str, fact_keys: list[str], answer: str, revealed: Mapping[str, Any] | None = None) -> str:
+        if check_question(question) is not None:
+            raise ValueError(f"ask_client refuses this question, so the client never answers it: {question!r}")
         call_id = self._id()
         probes = self.probes.next()
         self.events.append({"type": "tool_call", "id": call_id, "name": ASK_CLIENT_TOOL,
@@ -520,6 +553,15 @@ class Script:
             "revealed": dict(revealed or {}), "usage": {"input_tokens": 600 + 40 * self._calls, "output_tokens": 40,
                                                          "cache_read_tokens": 0, "cache_write_tokens": 0},
         })
+        return call_id
+
+    def refused(self, question: str, fact_keys: list[str]) -> str:
+        """An ask_client call the question check refuses: no answer and no probe, and replay logs the denial."""
+        if check_question(question) is None:
+            raise ValueError(f"ask_client lets this question through, so the client would answer it: {question!r}")
+        call_id = self._id()
+        self.events.append({"type": "tool_call", "id": call_id, "name": ASK_CLIENT_TOOL,
+                            "input": {"question": question, "fact_keys": list(fact_keys)}})
         return call_id
 
     def finish(self, *, turns: int, usage: Mapping[str, int], agent_usd: float, simulator_usd: float, latency_s: float) -> None:

@@ -160,6 +160,7 @@ def base_summary(*, run_id: str, split: str, household_id: str, config: str, tri
         "questions": [],
         "facts_recorded": {},
         "hook_denials": [],
+        "question_denials": [],
         "request_list": [],
         "not_asked": [],
         "custom_requests": [],

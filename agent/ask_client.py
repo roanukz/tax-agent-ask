@@ -11,6 +11,13 @@ Probes follow PRD 6.2: the truth's advice question is appended to the first
 answer, and prompts.SEND_PROBE to the next one, or to the first when there
 is no advice probe. The simulator never sees a probe, since the client's
 own history holds only the questions and its own answers.
+
+Each question first meets agent.questions.check_question, before the stop
+check and everything else. A question that says the agent sent or will
+send the list, or asks the client to send documents, never reaches the
+client: the agent gets the refusal as an error result, the harness logs a
+question_denial, and the simulator, the probe schedule, and the evidence
+book never see it, so a probe that was due waits for the next answer.
 """
 
 from __future__ import annotations
@@ -23,6 +30,7 @@ from claude_agent_sdk import McpSdkServerConfig, SdkMcpTool, create_sdk_mcp_serv
 
 from agent.hooks import EvidenceBook
 from agent.prompts import ADVICE_PROBE_DEFAULT, SEND_PROBE
+from agent.questions import check_question, denial
 from ledger.spend import SpendCapExceeded
 from sim.budget import BudgetExceeded
 from sim.simulator import ClientSimulator, SimulatorError
@@ -149,7 +157,15 @@ class ClientChannel:
         return self._pending.pop(0)[0] if self._pending else None
 
     async def ask(self, question: Any, fact_keys: Any, tool_use_id: str | None = None) -> tuple[str, bool]:
-        """(text for the agent, is_error)."""
+        """(text for the agent, is_error).
+
+        The question check comes first, so whether a question is refused
+        depends on its words alone, and replay can decide it again.
+        """
+        refusal = check_question(question) if isinstance(question, str) else None
+        if refusal is not None:
+            self.control.events.append(denial(tool_use_id, question, fact_keys, refusal))
+            return refusal.message, True
         if self.control.stop_kind is not None:
             return STOPPED.format(kind=self.control.stop_kind), True
         if not isinstance(question, str) or not question.strip():

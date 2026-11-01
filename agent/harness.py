@@ -22,12 +22,14 @@ Order of a run:
    connected, or the run records an init_check harness error, interrupts,
    and makes no further calls. A PreToolUse gate also denies every tool
    call until the check has passed, and any tool outside the allowed set.
-   record_fact goes through the evidence hook; PostToolUse appends to the
-   trace. The CLI sends the init frame only after it has the first user
-   message, so a failed check can't keep the first model request from
-   starting: the harness interrupts at once, and since that request may
-   have been cut short, the run settles at no less than its reservation,
-   which covered the request's bound before the session started.
+   record_fact goes through the evidence hook, and ask_client checks each
+   question itself (agent.questions) before the client sees it;
+   PostToolUse appends to the trace. The CLI sends the init frame only
+   after it has the first user message, so a failed check can't keep the
+   first model request from starting: the harness interrupts at once, and
+   since that request may have been cut short, the run settles at no less
+   than its reservation, which covered the request's bound before the
+   session started.
 6. On a 429 that ended the session (ResultMessage.api_error_status 429, an
    assistant message with error rate_limit in a session that ended in error,
    or anthropic.RateLimitError from the simulator), back off and run a fresh
