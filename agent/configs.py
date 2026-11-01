@@ -14,13 +14,13 @@ The hold is a strict bound, the next prompt at the cache write rate plus the
 whole output cap, and it is far above what a cached call costs. With a
 20,000 to 40,000 token prompt it is about $0.26 to $0.36 on Opus, $0.13 to
 $0.18 on Sonnet, and under a cent on Haiku. A run stops with run_cap once
-its spend plus that hold would pass RUN_CAP_USD, so at the default $2.00 an
-A-opus run can spend about $1.64 to $1.74, A-sonnet about $1.82 to $1.87,
-and A-haiku nearly all of it. That is about seven times the PRD's doubled
+its spend plus that hold would pass RUN_CAP_USD, so at the default $5.00 an
+A-opus run can spend about $4.64 to $4.74, A-sonnet about $4.82 to $4.87,
+and A-haiku nearly all of it. That is about nineteen times the PRD's doubled
 Opus estimate ($0.24), so run_cap marks a runaway rather than a long
-conversation; at $0.50 an A-opus run kept only $0.14 to $0.24. The
-effective run cap still differs by model. 16384 would add another $0.16 to
-every Opus hold.
+conversation; at $0.50 an A-opus run kept only $0.14 to $0.24, and at $2.00
+about $1.64 to $1.74. The effective run cap still differs by model. 16384
+would add another $0.16 to every Opus hold.
 """
 
 from __future__ import annotations

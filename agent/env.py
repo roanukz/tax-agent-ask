@@ -117,7 +117,7 @@ def load_settings(path: Path = DEFAULT_DOTENV, *, require_key: bool = True) -> H
     return HarnessSettings(
         api_key=key,
         spend_cap_usd=float(values.get("SPEND_CAP_USD", "150")),
-        run_cap_usd=float(values.get("RUN_CAP_USD", "2.00")),
+        run_cap_usd=float(values.get("RUN_CAP_USD", "5.00")),
     )
 
 

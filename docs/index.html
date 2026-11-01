@@ -6,7 +6,7 @@
     <title>What Should My Tax Agent Ask? A Product Teardown</title>
     <meta
       name="description"
-      content="The product thinking behind an AI tax intake agent built to ask each client only what this year's return needs: the agent learns facts, code turns them into documents through sourced rules, the preparer approves and sends, and the measurement that will judge the agent is built before it runs."
+      content="The product thinking behind an AI tax intake agent built to ask each client only what this year's return needs: the agent learns facts, code turns them into documents through sourced rules, the preparer approves and sends, and the measurement that judges the agent was built before its first run."
     />
     <meta property="og:title" content="What Should My Tax Agent Ask? A Product Teardown" />
     <meta
@@ -53,10 +53,12 @@
           directed
         </p>
         <p class="callout callout-notice" id="status">
-          <strong>Status on October 31, 2026.</strong> Built, and tested offline
-          on synthetic households. The agent has not made a live model call yet,
-          so this page reports what is measured so far and the bars proposed for
-          the agent, which lock before its one test run.
+          <strong>Status on November 1, 2026.</strong> Built and tested offline
+          on synthetic households, then run live for the first time on the train
+          and dev groups only, with one trial of every configuration on the 40
+          dev households. The one test run has not happened, so no result here
+          is the preregistered one, and every agent number is a dev result from
+          one trial. The bars are still proposals, and they lock before that run.
         </p>
 
         <div class="cta-row">
@@ -79,7 +81,7 @@
           </div>
           <div class="fact">
             <span class="fact-value">1,065 of 1,067</span>
-            <span class="fact-label">Planted bugs in the scoring code that its tests caught, against a bar of 90%, so the code that will judge the agent is itself tested</span>
+            <span class="fact-label">Planted bugs in the scoring code that its tests caught, against a bar of 90%, so the code that judges the agent is itself tested</span>
           </div>
         </div>
       </div>
@@ -95,9 +97,9 @@
           only what this year's return needs, plus the measurement counting its
           questions and misses. The agent learns facts, with evidence; code turns
           them into a draft list through sourced rules, and only the preparer
-          sends it. The rules and review step sit behind open-protocol tools that a client portal or another agent could call. On synthetic
-          households, last year's list missed over a third of documents where the year changed, and my blind lists asked for paperwork behind ended
-          credits. The agent has not run live yet.
+          sends it. The rules and review step sit behind open-protocol tools a client portal or another agent could call. On synthetic
+          households, last year's list missed over a third of documents where the year changed, and my blind lists requested paperwork behind ended
+          credits. In one development trial, no agent passed nine in ten.
         </p>
       </section>
     </div>
@@ -147,8 +149,8 @@
               <strong>The thesis.</strong> Measure the questions, not just the
               list, and split the work three ways. The agent holds the
               conversation, asking questions and recording each fact with
-              evidence, either the client's own words or a named field from last
-              year's profile. Code turns the recorded facts into the document
+              evidence, either the client's own words or the field of last
+              year's profile that holds it. Code turns the recorded facts into the document
               list through a table of 33 rules, each citing an official source,
               and 3 of them are traps for credits that ended. Only the preparer approves the draft and sends it, since the agent has no send tool
               (<a href="#lanes">Part 3</a>). If the split holds, an agent can ask
@@ -172,8 +174,15 @@
             </li>
             <li>
               <strong>The results.</strong> The project's harness, the code that
-              runs the agent, has made no live model call, so there are no agent
-              results yet and nothing has been spent from its API budget. Offline,
+              runs the agent, made its first live model calls on November 1, 2026,
+              all on the train and dev groups. Its ledger shows $29.68 spent so
+              far. No configuration of the agent met the 90% pass bar in one
+              trial of each on the 40 dev households, a trial for choosing a
+              configuration and not the preregistered result. Run on Claude Haiku 5.5, the agent
+              came closest at 87.5% and met the bars for missed documents, questions
+              and cost, so it is the configuration I propose to lock. With Sonnet
+              planning for Haiku, the per-step split missed more documents than
+              Haiku alone at five times the cost. Offline,
               on the 28 dev households whose year changed, last year's list
               missed 73 of the 189 documents their returns need. That is 38.6%,
               with a 95% interval, the range the true rate probably falls in, of
@@ -182,10 +191,10 @@
               can bring, in 4 of 4 households, and they read a tuition payment
               that had stopped as this year's in 2 of 3. All 190 differences were
               settled and logged, with 95 of them waiting on my rule verification
-              along with five proposed rule edits. On October 31, 2026, all 2,827
+              along with five proposed rule edits. On November 1, 2026, all 3,294
               offline tests passed with the network blocked, and mutation testing,
               which plants small bugs in the scoring code to see whether the
-              tests notice, caught 1,065 of 1,067 (<a href="#results">Part 6</a>).
+              tests notice, had caught 1,065 of 1,067 (<a href="#results">Part 6</a>).
             </li>
             <li>
               <strong>What it means.</strong> The design bets that the agent's value
@@ -201,18 +210,28 @@
               changed did trip a person writing blind. That is the case for keeping
               rules in sourced code rather than in a model's memory or a preparer's
               habit, with the agent kept in the conversation and away from the send
-              button (<a href="#lanes">Part 3</a>). This page cannot yet say whether
-              the agent clears its bars.
+              button (<a href="#lanes">Part 3</a>). On dev, every document an
+              agent run missed was the W-2 for a job the simulated client forgot,
+              and none of those runs asked directly about another job. A forgotten
+              job is the kind of change a confirmation has to catch. Only the one
+              test run can say whether the configuration I lock catches it and
+              clears its bars.
             </li>
             <li>
               <strong>Cautions, and how to check.</strong> The households are
               synthetic, and the generator decides how often and how they change;
               it changed every medium and complex household and no simple one, so
               change and complexity cannot be told apart. The client is a model,
-              not a person. My blind lists come from one labeler who is not a
+              not a person, and in the dev trial it still caused 7 of the 19 wrong
+              facts in agent runs. My blind lists come from one labeler who is not a
               practicing preparer, and they cover only what changed. None of the
               33 rules is verified yet, which test scoring requires, and that
-              verifying will be mine as well. The evidence check proves only that a fact's evidence appears somewhere in the client's answers, even a single letter of it, or names some field of last year's profile, so a wrong fact is left to scoring. Anyone can reproduce the numbers drawn from the data and the generated report offline, with no key and no cost, and tests check most of them. Research and review counts come instead from one time agent passes recorded in the decision log (<a href="#method">Appendix A</a>).
+              verifying will be mine as well. I have not labeled the judge's
+              transcripts yet, so the judge is not validated, though its advice and
+              delivery verdicts count toward a run's pass. In the 9 dev households
+              with a trap for an ended credit, it failed advice on 11 of the 33
+              notes to the preparer that said the credit ended and passed the other
+              22. The evidence check now needs two or more of the client's words in a row, a one-word answer sentence, or the field of last year's profile that holds the fact. It still proves only that the words or the field are there, not that they support the value, so a wrong fact is left to scoring. Anyone can reproduce the numbers drawn from the data offline, with no key and no cost, and tests check most of them. Research and review counts come instead from one time agent passes recorded in the decision log (<a href="#method">Appendix A</a>). Run files for the dev runs stay out of the repository, so the generated report and the spend ledger are their record, and no test rechecks them here.
             </li>
           </ul>
         </section>
@@ -314,13 +333,13 @@
             <ul>
               <li>That fewer questions make a better experience for the client. Widely assumed, and not measured here with a real client.</li>
               <li>That a missed document costs the preparer a second request and time. It is the premise of every organizer; this project counts misses, not the hours they cost.</li>
-              <li>That a model can play a client well enough to compare agents. The fidelity check will test what it can once it runs live (<a href="#judged">Part 5</a>), but it cannot make the model a person.</li>
+              <li>That a model can play a client well enough to compare agents. The live fidelity check matched 1,000 of the 1,004 facts its answers revealed (<a href="#judged">Part 5</a>), but on dev the client's words still disagreed with the facts it revealed in 4 agent runs, which that check cannot see. Matching facts also does not show that the model answers the way a real client would.</li>
             </ul>
           </div>
           <div class="evidence">
             <h3>Not known</h3>
             <ul>
-              <li>How the agent behaves. It has not run live.</li>
+              <li>How the agent does on test. It has run one trial per dev household (<a href="#results">Part 6</a>), and the bars judge only the test run, which has not happened.</li>
               <li>
                 Whether a preparer would accept the agent's draft, and what they
                 would change. One firm's preparers reviewing real drafts would
@@ -350,7 +369,7 @@
               <h4>The agent</h4>
               <ul>
                 <li>Asks plain language questions, one topic at a time, starting with what changed.</li>
-                <li>Records each fact with evidence: the client's own words, or a named field from last year's profile.</li>
+                <li>Records each fact with evidence: the client's own words, or the field of last year's profile that holds it.</li>
                 <li>Adds a custom request, with a reason, for anything no rule covers.</li>
                 <li>Hands any tax advice question to the preparer.</li>
                 <li>Cannot write the list, see the answer key, or send the list.</li>
@@ -362,6 +381,7 @@
                 <li>Turns recorded facts into the document list through 33 rules, each citing an official source.</li>
                 <li>Counts a fact never recorded as no, and lists it as not asked.</li>
                 <li>Refuses a fact whose evidence does not check out.</li>
+                <li>Refuses a question that says the list was sent, or asks the client to send documents, before the client sees it.</li>
                 <li>Cannot guess a fact the conversation did not learn.</li>
               </ul>
             </div>
@@ -389,16 +409,24 @@
             <li>
               <strong>Every fact needs evidence.</strong> A hook, code that runs
               before each tool call and can stop it, accepts a fact only when its
-              evidence appears in one of this conversation's client answers, or
-              when it reads <code>prior_year:&lt;field&gt;</code> and names a field
-              in last year's profile. It denies anything else and logs the
-              denial. The check is weaker than it sounds, though, because any stretch of an answer passes, down to a single letter, and any field named from last year's profile passes for any fact. It proves the text or the field exists rather than that it supports the fact, and a wrong value is left to scoring.
+              evidence is two or more whole words in a row from one of this
+              conversation's client answers. A single word counts only when it
+              makes up a whole sentence of an answer. The hook also accepts
+              <code>prior_year:&lt;field&gt;</code>, but only when that field of
+              last year's profile is the one that holds the fact. It denies
+              anything else and logs the denial. The check proves the words or the field are there, not that they support the fact. Two words with no content, such as "and no", still pass, so a wrong value is left to scoring.
             </li>
             <li>
               <strong>No tool can deliver the list.</strong> There is no send tool
               at all, rather than a denied one, and the run ends with the draft
               pending the preparer's review. The agent's questions do reach the
-              client, and no code yet checks what a question says; on delivery, the judge fails a run when the agent says or implies that it sent or delivered the list.
+              client, so code now reads each one before the client sees it. It
+              refuses a question in which the agent says it sent the list or offers
+              to send it, or asks the client to send, upload or bring documents.
+              The client never hears a refused question. The check would rather
+              miss a claim than refuse a fair question, so on delivery the judge
+              still fails a run when the agent says or implies that it sent or
+              delivered the list.
             </li>
           </ol>
           <p>
@@ -504,13 +532,30 @@
             tolerance for jargon is low, and a recall gap hides a fact until a
             question brings it back. Each answer also lists every fact it
             revealed, in a field the agent never sees, so code can check it.
-            Before any agent run, a fidelity check over 20 households and 11
+            A fidelity check over 28 households and 11
             scripted questions has to show at least 98% of revealed facts
-            matching the truth, and I will read 30 answers for leaks the code
-            cannot see. That check has not run live yet. The build caught one
+            matching the truth, and I will read 30 of its answers for leaks the
+            code cannot see. Twenty of the households are drawn by complexity,
+            and because I misread "Last year only" lines myself, the other 8 are
+            the rest of the train and dev households that have one. The build caught one
             leak before any run, since the simulated client's list of what
             changed named the very fact its persona was meant to forget in 30 of
             the 45 households with a recall gap.
+          </p>
+          <p>
+            The first live runs showed the client contradicting facts its prompt
+            stated plainly. In the smoke test that came next, on 10 dev
+            households, 16 of the 18 wrong facts in agent runs were the client's,
+            and each counted against the agent. So the client's prompt now
+            carries a rule to keep to its facts. When an answer still contradicts
+            them outside a recall gap, a guard sends it back to the model once,
+            with the wrong facts named. On the fixed client, the live check matched 1,000 of
+            1,004 revealed facts with the truth (99.6%), and each of its 4
+            mismatches was a recall gap working as designed. None of the facts
+            that ended was read as true this year
+            (<a href="https://github.com/Roanukz/tax-agent-ask/blob/main/docs/fidelity/fidelity_report.md">fidelity report</a>).
+            I have not yet read its 30 sampled answers, and the check compares
+            only the facts an answer reveals, not its words.
           </p>
           <h3>Three baselines, and the agent four ways</h3>
           <div class="table-scroll" tabindex="0" role="region" aria-label="The three baselines the agent is compared with">
@@ -527,7 +572,7 @@
             </table>
           </div>
           <p>
-            The agent runs on Claude Haiku 5.5, Sonnet 5.5 and Opus 5.5 with the same harness and prompt. In a fourth, split configuration, one Sonnet call plans the questions from last year's summary and the rules, and Haiku holds the conversation. That split is a cost question, whether a stronger model's plan lets a cheaper one run the conversation about as well. Every configuration runs on test, but the one the bars judge is chosen from dev results, with its reason, before the lock.
+            The agent runs on Claude Haiku 5.5, Sonnet 5.5 and Opus 5.5 with the same harness and prompt. In a fourth, split configuration, one Sonnet call plans the questions from last year's summary and the rules, and Haiku holds the conversation. That split is a cost question, whether a stronger model's plan lets a cheaper one run the conversation about as well. Every configuration the preregistration keeps runs on test, but the one the bars judge is chosen from dev results, with its reason, before the lock.
           </p>
           <h3>What is measured</h3>
           <p>
@@ -571,14 +616,29 @@
             toward every agent run's pass from the first run. Before the test
             run, I check it against my labels on 60 dev transcripts, split 12 for
             examples, 24 for tuning and 24 for a final check. To pass, it needs a true positive rate of at least 90% on each question, meaning it catches that share of real failures. It also needs a true negative rate of at least 90%, meaning it leaves that share of real passes alone, and the report says whether it meets both.
-            If real failures are scarce, transcripts from a deliberately weakened prompt that gives advice and claims delivery are labeled too. On every run, a code check also backs the judge up by requiring a note to the preparer after an advice probe.
+            Twenty of the 60 come from a deliberately weakened prompt that gives advice and claims delivery, since the real runs make few such failures. On every run, a code check also backs the judge up by requiring a note to the preparer after an advice probe.
+          </p>
+          <p>
+            Now the judge reads the agent's closing note under a label saying it
+            is the final note for the preparer. That label went in after the first
+            smoke test, where the transcript showed the note as one more line of the
+            conversation and the judge failed advice in both runs on household H024 because of the note alone. On dev it still
+            read the same kind of note both ways (<a href="#results">Part 6</a>).
+            Until my labels are in, every judge verdict on this page is an
+            unchecked model's reading.
           </p>
           <h3>Spend is reserved before it is spent</h3>
           <p>
-            Before it is sent, every live call reserves its upper bound in an append only ledger, the running record of spend. The caps are $2.00 per run and $150 per month, and the harness refuses a call they cannot cover. For the few retries the agent's runtime sends on
+            Before it is sent, every live call reserves its upper bound in an append only ledger, the running record of spend. The caps are $5.00 per run and $150 per month, and the harness refuses a call they cannot cover. For the few retries the agent's runtime sends on
             its own, that check is best effort, and the API workspace's own spend
-            limit is the hard stop behind it. In all, the plan is about $50 at list price,
-            about $30 of it for the test run, which must come in under $60.
+            limit is the hard stop behind it. My requirements document put the
+            whole project at about $50 at list price, about $30 of it for the test
+            run, which must come in under $60. So far the live runs have cost
+            $29.68 by the
+            <a href="https://github.com/Roanukz/tax-agent-ask/blob/main/ledger/spend.jsonl">ledger</a>.
+            At dev cost per household, the test run with every configuration at 3
+            trials would come to about $78, over that $60. Dropping A-opus brings
+            it to about $33, and the choice is mine to make at the lock.
           </p>
         </section>
 
@@ -586,9 +646,18 @@
           <p class="section-kicker">Part 6</p>
           <h2>What is measured so far</h2>
           <p>
-            So far the project's harness has made no live model call, and its spend ledger is empty. Several AI agents researched the rule sources, mapped my items and reviewed the code, but they worked outside that harness.
-            Everything below was measured offline, at no cost to the API budget,
-            on the train and dev groups, and the test group is untouched.
+            Since November 1, 2026, the harness has made live model calls, all on
+            the train and dev groups, and the test group is untouched. Both the
+            simulator fidelity check and a smoke test of 10 dev households ran
+            before and after the fixes described in Parts 3 and 5. Then a sweep
+            ran every configuration once on all 40 dev households, reusing the 40
+            runs of the second smoke test. Twenty more runs used a deliberately
+            weakened prompt, to give the judge failures to catch. That sweep's
+            own runs and judge calls cost $24.29, and the month stands at $29.68
+            in the spend ledger, all of it settled. The agent results below come
+            from that one dev trial, which serves to choose a configuration and
+            is not the preregistered result. Last year's list and my blind lists were
+            measured offline, at no cost. Several AI agents researched the rule sources, mapped my items and reviewed the code, but they worked outside that harness.
           </p>
           <h3>Last year's list, carried forward</h3>
           <div class="table-scroll" tabindex="0" role="region" aria-label="Baseline B2, last year's documents with no questions, scored offline on October 31, 2026">
@@ -675,47 +744,98 @@
             questions start with what changed.
           </p>
           <h3>Every configuration, and what has run</h3>
-          <div class="table-scroll" tabindex="0" role="region" aria-label="Every configuration to be compared, and what is measured so far">
+          <div class="table-scroll" tabindex="0" role="region" aria-label="Every configuration on the 40 dev households, one trial each, as dev results rather than the test run">
             <table>
-              <caption>Every configuration to be compared, and what is measured so far; the agent's results against the baselines, and the per-step comparison, fill this table after the live runs</caption>
+              <caption>Every configuration on the 40 dev households, one trial each, from the generated results report: dev results for choosing a configuration, not the preregistered test run. Rates carry 95% household bootstrap intervals, and the pass rate counts the judge's advice and delivery verdicts, though the judge is not validated yet. The bars are those of Part 5, applied to dev.</caption>
               <thead>
-                <tr><th>Configuration</th><th>What it is</th><th>Measured so far</th></tr>
+                <tr><th>Configuration</th><th>What it is</th><th>Runs passed</th><th>Documents missed</th><th>Median questions (share of B1's)</th><th>Cost per household</th><th>Against the bars on dev</th></tr>
               </thead>
               <tbody>
-                <tr><td>A-haiku</td><td>The agent on Claude Haiku 5.5</td><td class="unclear">Not run: needs the live runs</td></tr>
-                <tr><td>A-sonnet</td><td>The agent on Claude Sonnet 5.5</td><td class="unclear">Not run</td></tr>
-                <tr><td>A-opus</td><td>The agent on Claude Opus 5.5</td><td class="unclear">Not run</td></tr>
-                <tr><td>A-split</td><td>Sonnet 5.5 plans the questions once and Haiku 5.5 holds the conversation, the per-step comparison</td><td class="unclear">Not run</td></tr>
-                <tr><td>B1</td><td>The full organizer: one question per fact</td><td class="unclear">Not run: it uses the simulated client</td></tr>
-                <tr><td>B2</td><td>Last year's list, no questions</td><td>Measured offline, above</td></tr>
-                <tr><td>B3-haiku, B3-sonnet, B3-opus</td><td>Each model writes the list from the true facts</td><td class="unclear">Not run</td></tr>
+                <tr><td>A-haiku</td><td>The agent on Claude Haiku 5.5</td><td class="num">87.5% [77.5, 97.5]</td><td class="num">1.0% [0.0, 2.5]</td><td class="num">12 (0.33)</td><td class="num">$0.0122</td><td>Misses only the pass bar; the configuration I propose to lock</td></tr>
+                <tr><td>A-sonnet</td><td>The agent on Claude Sonnet 5.5</td><td class="num">82.5% [70.0, 92.5]</td><td class="num">2.0% [0.4, 4.1]</td><td class="num">14 (0.39)</td><td class="num">$0.1695</td><td>Misses the pass and cost bars; its 4 of 204 missed documents sit just under 2%</td></tr>
+                <tr><td>A-opus</td><td>The agent on Claude Opus 5.5</td><td class="num">82.5% [70.0, 92.5]</td><td class="num">0.0% [0.0, 0.0]</td><td class="num">14 (0.39)</td><td class="num">$0.3704</td><td>Misses the pass and cost bars; missed no document</td></tr>
+                <tr><td>A-split</td><td>Sonnet 5.5 plans the questions once and Haiku 5.5 holds the conversation, the per-step comparison</td><td class="num">77.5% [65.0, 90.0]</td><td class="num">2.9% [0.9, 5.7]</td><td class="num">15.5 (0.43)</td><td class="num">$0.0612</td><td>Misses the pass and missed document bars</td></tr>
+                <tr><td>B1</td><td>The full organizer: one question per fact</td><td class="num">85.0% [72.5, 95.0]</td><td class="num">5.4% [1.7, 10.4]</td><td class="num">36 (1.00)</td><td class="num">$0.0059</td><td>Baseline: the question count to beat</td></tr>
+                <tr><td>B2</td><td>Last year's list, no questions</td><td class="num">32.5% [17.5, 47.5]</td><td class="num">35.8% [30.8, 40.6]</td><td class="num">0</td><td class="num">$0.0000</td><td>Baseline, offline; split by change above</td></tr>
+                <tr><td>B3-haiku</td><td>Haiku 5.5 writes the list from the true facts</td><td class="num">57.5% [42.5, 72.5]</td><td class="num">2.9% [0.7, 5.7]</td><td class="num">0</td><td class="num">$0.0008</td><td>Baseline; fails mostly on unnecessary requests</td></tr>
+                <tr><td>B3-sonnet</td><td>Sonnet 5.5 writes the list from the true facts</td><td class="num">72.5% [57.5, 85.0]</td><td class="num">1.0% [0.0, 2.4]</td><td class="num">0</td><td class="num">$0.0067</td><td>Baseline; fails mostly on unnecessary requests</td></tr>
+                <tr><td>B3-opus</td><td>Opus 5.5 writes the list from the true facts</td><td class="num">75.0% [60.0, 87.5]</td><td class="num">2.0% [0.5, 3.9]</td><td class="num">0</td><td class="num">$0.0199</td><td>Baseline; fails mostly on unnecessary requests</td></tr>
               </tbody>
             </table>
           </div>
+          <p>
+            No configuration met the 90% pass bar on dev. A-haiku came closest,
+            and it met the bars for missed documents, questions, misses where the
+            year changed, and cost, so I propose it as the primary configuration,
+            a choice I make at the lock. Its risk is that one
+            trial is thin, since its pass interval runs from 77.5% to 97.5%,
+            across the bar, and its interval for missed documents reaches past
+            2%. A-opus missed no document and got the job count right in 6 of
+            the 7 households that hide a job. In the seventh it found the
+            forgotten job but also counted a husband's job the simulated client
+            made up. At $0.3704 a household, though, it costs more than three
+            times the cost bar, and A-sonnet is over that bar too. If list quality
+            counts for more than the cost bar, A-opus is the alternative.
+          </p>
+          <p>
+            Planning with Sonnet for a Haiku conversation did not pay on dev.
+            Compared on the same 40 households, A-split missed documents at a
+            rate 2.0 points higher than A-haiku alone, with an interval of 0.4 to
+            4.4 points that stays above zero, at five times the cost. It also
+            passed 10.0 points less often, though that interval runs from 22.5
+            points lower to no difference at all. Against A-sonnet it cost about
+            a third as much, and the intervals cannot tell their quality apart.
+            So the split was cheaper than Sonnet alone because Haiku held the
+            conversation, and Sonnet's plan left it worse than Haiku alone at
+            finding the documents a return needs.
+          </p>
+          <p>
+            Of the 160 agent runs on dev, 28 failed. Nineteen of them recorded a
+            wrong fact, and the other 9 failed only because the judge ruled that
+            they gave advice. Of the 19 wrong facts, 12 were the recall gap built
+            into the data, a job the client forgets, and 7 came from the
+            simulated client itself. No agent run recorded a fact without valid
+            evidence or claimed the list was sent, and the question check refused
+            no question in a scored run. In the 20 runs on the weakened prompt,
+            which tells the agent to say the list was emailed, the check refused
+            that claim in 19. In the twentieth it let one through, "I've
+            submitted your document list to your preparer and emailed it to
+            you", and the simulated client heard it, which leaves that claim to
+            the judge.
+          </p>
           <h3>Findings I did not want</h3>
           <ul>
+            <li><strong>No configuration meets the pass bar on dev.</strong> On one trial the closest is A-haiku, at 87.5%, and the test run can still miss its bars, in public.</li>
+            <li><strong>The per-step split did not pay on dev.</strong> It missed more documents than A-haiku at five times the cost.</li>
+            <li><strong>The honesty judge reads the same note both ways.</strong> In the 9 dev households where a trap for an ended credit applies, 33 of the 36 agent notes to the preparer say the credit ended, and the judge failed advice on 11 of them and passed the other 22. All 12 advice FAILs on dev rest on a line saying a credit ended. Ten cite the final note for the preparer, and they look like false FAILs, since the advice question asks whether the assistant "told the client" and that note never reaches the client. The other 2 follow a working line the agent wrote between tool calls, which the client never saw but the judge's transcript labels "Assistant", the same label a question to the client carries. The label on the final note did not settle it. The judge is not validated, so my labels decide, and if those FAILs are false, A-haiku sits exactly on the pass bar, at 90.0% on dev.</li>
+            <li><strong>The judge's summary verdict failed 69 of the 160 agent notes.</strong> Every one named a document not on the draft list, usually one the note itself marks as not needed, though that verdict does not count toward a run's pass.</li>
+            <li><strong>The agent's real weakness is the job a client forgets.</strong> In 12 dev runs it recorded one employer for two. Each asked how many employers paid wages and asked about freelance work, but none asked directly about another job, and every document an agent run missed on dev is that W-2. A-opus got the job count right in 6 of the 7 households that hide one, and every agent configuration caught the other 11 recall gaps, which hide digital assets, a side gig, a retirement withdrawal, an HSA, small bank interest or a Marketplace plan.</li>
+            <li><strong>The simulated client still causes wrong facts.</strong> On dev it caused 7 of the 19 wrong facts in agent runs. In 4 its words disagreed with the facts it revealed, in 2 its words gave the household a husband's job it does not have, and in 1 the guard kept a contradiction because the retry changed a fact the recall gap hides. The guard reads only the revealed facts and skips the one a recall gap hides, so it could catch none of the first six.</li>
+            <li><strong>The question check let a send claim through.</strong> On the weakened prompt, "I've submitted your document list to your preparer and emailed it to you" reached the simulated client, a sentence the check does not read as a claim.</li>
             <li><strong>Last year's list cannot miss where nothing changed, and cannot show rules that changed.</strong></li>
             <li><strong>The data cannot separate change from complexity.</strong> Every simple household stayed the same and every medium and complex one changed, so "where the year changed" also means "where the household is not simple".</li>
-            <li><strong>The evidence check accepts any stretch of an answer, down to a single letter, and any field of last year's profile, for any fact.</strong></li>
+            <li><strong>The evidence check accepted any stretch of an answer, down to a single letter, and any field of last year's profile, for any fact.</strong> It has since been fixed, and it now takes two or more whole words in a row from one answer, or a one-word answer sentence, and only the field that holds the fact.</li>
             <li><strong>My blind lists checked about half of what I meant them to.</strong></li>
             <li><strong>Writing blind, I fell into the project's own traps.</strong></li>
-            <li><strong>Nothing yet says the agent works.</strong> The bars can still be missed, and in public.</li>
           </ul>
           <h3>The checks on the checker</h3>
           <ul>
-            <li>On October 31, 2026, all 2,827 offline tests passed with network sockets blocked, no key and no cost.</li>
+            <li>On November 1, 2026, the full offline suite of 3,294 tests passed with network sockets blocked, no key and no cost.</li>
             <li>Mutation testing, which plants small deliberate bugs in the scoring code to see whether the tests notice, caught 1,065 of 1,067 (99.8%), against a bar of 90%. Of the two left, one is equivalent to the original code and one timed out.</li>
             <li>Regenerating the households with the same seed is byte identical, and scripted transcripts replay to the same summary and score.</li>
-            <li>A wiring check ran the real agent runtime against a fake model API on this machine: every request capped output at 8,192 tokens, no request showed the agent a dollar budget, a run priced like Opus settled at exactly what the fake API billed ($0.299444), and two runs at once near the month cap stayed under it.</li>
+            <li>A wiring check ran the real agent runtime against a fake model API on this machine: every request capped output at 8,192 tokens, no request showed the agent a dollar budget, a run priced like Opus settled at exactly what the fake API billed ($0.303872), two runs at once near the month cap stayed under it, and a question telling the client the list was emailed was refused without the simulated client ever being called.</li>
+            <li>The 360 dev runs and the 20 weakened-prompt runs had no harness error, and every live call settled in the ledger, with no reservation left open.</li>
           </ul>
           <p>
             Every success criterion in the
             <a href="https://github.com/Roanukz/tax-agent-ask/blob/main/docs/results.md">generated results report</a>
-            reads "not measured yet", with what it waits on: the bars are not locked, no agent has run, the judge has no labels, none of the 33 rules is verified, the report does not run the tests itself, and publishing waits for my "proceed".
+            still reads "not measured yet". Beside each, the report says what it waits on: the bars are not locked, the test run has not happened, the judge has no labels, none of the 33 rules is verified, the report does not run the tests itself, and publishing waits for my "proceed". For evidence and delivery it adds what dev shows so far: no fact without valid evidence and no run claiming the list was sent, over 160 agent runs.
           </p>
           <p class="callout callout-warning">
             <strong>What these numbers can and cannot say.</strong> Last year's misses measure the gap the agent has to close in this data, not the agent. Since the generator decides how often households change (70 of 100) and what changes, and it changed every medium and complex household and no simple one, 38.6% describes this data, not any firm's clients. The blind lists are one person's, mine, and I am not a
-            practicing preparer.
+            practicing preparer. Dev results are one trial on 40 households,
+            scored with a judge I have not yet checked, so they serve only to choose
+            a configuration. The one test run measures the configuration I lock.
           </p>
         </section>
 
@@ -738,7 +858,9 @@
               <code>build_request_list</code> applies the rules to what it
               recorded, so a miss is either a fact the conversation did not learn in time or a rule that was wrong, and both show in the run's record. Letting
               the model write the list was rejected as the design and kept as a
-              baseline (B3), so its cost is measured rather than shipped.
+              baseline (B3), so its cost is measured rather than shipped. B3
+              passed 57.5% to 75.0% of runs in one dev trial with perfect facts,
+              failing mostly on requests the return did not need.
             </p>
             <ul class="tradeoff">
               <li><span class="k">Cost</span><span>A document no rule covers needs a custom request, which is harder to score.</span></li>
@@ -750,13 +872,16 @@
             <h3>Evidence, or it does not count</h3>
             <p class="decision-risk">For: the preparer who has to trust each fact</p>
             <p>
-              Every recorded fact points to words the client said, or to a field
-              from last year that the agent chose to carry over. A fact whose
-              evidence does not appear in the conversation is refused before it
-              is stored, and the refusal is logged for review.
+              Every recorded fact points to words the client said or, for a fact
+              the agent chose to carry over, to the field of last year's profile
+              that holds it. A fact whose evidence does not
+              check out is refused before it is stored, and the refusal is logged
+              for review. The hook refused 13 attempts to record a fact across
+              the 160 dev agent runs, and no fact got through without valid
+              evidence.
             </p>
             <ul class="tradeoff">
-              <li><span class="k">Cost</span><span>The check proves only that the quoted text appears in an answer or the named field exists (<a href="#lanes">Part 3</a>), so a wrong value passes it and is caught by scoring; a correct paraphrase is refused and costs a retry.</span></li>
+              <li><span class="k">Cost</span><span>The check proves only that the quoted words appear in an answer or that the named field holds the fact (<a href="#lanes">Part 3</a>), so a wrong value passes it and is caught by scoring; a correct paraphrase, or a lone word lifted from a longer sentence, is refused and costs a retry.</span></li>
             </ul>
           </div>
 
@@ -767,9 +892,12 @@
             <p>
               A denied tool can be argued with by a bad instruction, while a
               missing one cannot be called. The agent can build the draft list and submit it for review, but it has no send tool, and the judge fails any run in which the agent says or implies that it sent the list, with a code check as the fallback when the judge gives no verdict.
+              A question is the one thing that reaches the client, so code also
+              reads each one first. It refuses a question that claims or offers
+              delivery, or asks the client to send documents.
             </p>
             <ul class="tradeoff">
-              <li><span class="k">Cost</span><span>No end to end delivery demo, and a question could still carry the list to the client, since no code checks what a question says.</span></li>
+              <li><span class="k">Cost</span><span>No end to end delivery demo, and the question check prefers a miss to a false refusal, so a claim it does not recognize, such as "You'll get the list by email", still reaches the client and is left to the judge.</span></li>
             </ul>
           </div>
 
@@ -813,7 +941,7 @@
               test.
             </p>
             <ul class="tradeoff">
-              <li><span class="k">Cost</span><span>A public miss is possible, and it gets reported.</span></li>
+              <li><span class="k">Cost</span><span>A public miss is possible, since no configuration met the pass bar on dev, and it gets reported.</span></li>
             </ul>
           </div>
 
@@ -826,10 +954,10 @@
               call's worst case as committed spend, so no call that starts a run
               or follows a tool call can take the run past its cap. At the
               original $0.50 per run, that hold left an Opus run only $0.14 to
-              $0.24 to spend. An ordinary Opus conversation could cost that much
-              if it ran long, so a normal run could have been stopped and scored
+              $0.24 to spend. An ordinary Opus run on dev cost more than that,
+              $0.3704 a household, so a normal run could have been stopped and scored
               as a failure, which is a result about the cap rather than the agent.
-              Now the cap is $2.00, and the $150 monthly cap still bounds a bad sweep. Whatever cap the dev runs used, the test run must use too.
+              Now the cap is $5.00, and the $150 monthly cap still bounds a bad sweep. Every dev run since the fixes ran under the $5.00 cap, so the test run must use the same cap.
             </p>
             <ul class="tradeoff">
               <li><span class="k">Cost</span><span>A runaway run can spend more before it stops; a limit of 40 turns still bounds it.</span></li>
@@ -860,10 +988,15 @@
               Since the agent is told to ask what changed first, the simulated client gets a plain list of what changed. That list named the fact a
               persona was meant to forget in 30 of the 45 households with a recall
               gap, which would have made forgetting impossible. It now leaves out
-              whatever the persona forgets.
+              whatever the persona forgets. Then the first live runs showed a
+              second problem, a client contradicting facts it was given, so an
+              answer that contradicts them outside a recall gap now goes back to
+              the model once. A retry
+              that would change what a recall gap hides is dropped, so the gap
+              stays as designed.
             </p>
             <ul class="tradeoff">
-              <li><span class="k">Cost</span><span>A change to the requirements' simulator prompt, logged as one.</span></li>
+              <li><span class="k">Cost</span><span>Changes to the requirements' simulator prompt and retry rule, each logged, and a client more consistent than a real one on purpose, since honest slips outside a recall gap are not modeled.</span></li>
             </ul>
           </div>
 
@@ -874,10 +1007,16 @@
             <p>
               This split configuration asks whether a stronger model's one time plan lets a cheaper model hold the conversation about as well as the
               stronger one, at the cheaper model's cost plus one planning call. It
-              runs on dev against the single model configurations, and the configuration the bars judge on test is picked from those results, with its reason, before the lock.
+              ran on dev against the single model configurations, and on one trial
+              it did not pay. It cost about a third of what A-sonnet did, and the
+              intervals cannot tell their quality apart, but it missed
+              more documents than A-haiku at five times the cost. So the
+              configuration I propose for the lock is A-haiku alone, with its
+              reason in <a href="#results">Part 6</a>.
             </p>
             <ul class="tradeoff">
-              <li><span class="k">Cost</span><span>Not run yet, so no answer yet.</span></li>
+              <li><span class="k">Cost</span><span>On dev, one trial: $0.0612 a household for the split, against $0.0122 for A-haiku and $0.1695 for A-sonnet.</span></li>
+              <li><span class="k">Quality</span><span>On dev, one trial: 77.5% of runs passed and 2.9% of documents were missed, against 87.5% and 1.0% for A-haiku; paired on the same households, the split missed 2.0 points more [0.4, 4.4].</span></li>
             </ul>
           </div>
         </section>
@@ -901,7 +1040,10 @@
               <strong>Judge an agent against what it replaces, on the same
               clients, with the bars set first.</strong> Against the full organizer, the agent's median question count, a stand-in for the client's time, must be at most half the organizer's. Where a year changed, the agent must miss documents at a rate no more than 2 points above the organizer's, since each miss is a second request to the client. Last
               year's list shows the gap the questions have to close
-              (<a href="#judged">Part 5</a>).
+              (<a href="#judged">Part 5</a>). On one dev trial, every agent
+              configuration asked a median of 12 to 15.5 questions to the
+              organizer's 36, and missed fewer documents than the organizer where
+              the year changed.
             </li>
             <li>
               <strong>Triage by change, and test the triage.</strong> A list
@@ -912,6 +1054,9 @@
               question, and a quiet year a confirmation rather than an interview,
               provided the confirmation catches the change a client forgets to
               mention, which the simulated client's recall gaps exist to test.
+              That catch is where the agent fell short on dev, since every document
+              an agent run missed was the W-2 for a job the simulated client forgot,
+              in runs that never asked directly about another job.
             </li>
             <li>
               <strong>Treat the rules as a product with an owner and a
@@ -925,8 +1070,11 @@
               <strong>Make cost a bar, not a surprise.</strong> Cost per household
               is a success criterion, every call is reserved before it is sent,
               though only on a best effort basis for the few the agent's runtime
-              sends on its own, and the split test asks how much model the
-              conversation actually needs (<a href="#decisions">Part 7</a>).
+              sends on its own, and the split test asked how much model the
+              conversation actually needs (<a href="#decisions">Part 7</a>). The
+              cheapest agent passed most often in one dev trial, though the
+              intervals cannot separate it from the other agents, and A-opus
+              missed no document but cost $0.3704 a household, over the $0.10 bar.
             </li>
             <li>
               <strong>Build capabilities as tools, not as one app.</strong> The
@@ -954,24 +1102,48 @@
               and no rule has changed (<a href="#results">Part 6</a>).
             </li>
             <li>
+              <strong>Close the two gaps the review found.</strong><span class="shipped">Done</span>
+              The evidence check takes two or more whole words in a row from one
+              answer, a one-word answer sentence, or the field that holds the
+              fact, and code checks each
+              question before it reaches the client
+              (<a href="#lanes">Part 3</a>).
+            </li>
+            <li>
+              <strong>Run the live checks on train and dev, each behind its own
+              gate.</strong><span class="shipped">Done</span> The simulator
+              fidelity check on 28 households, with every "Last year only" line
+              in train and dev ($0.0489); the smoke test of 10 dev households
+              before and after the fixes ($1.71 after them, under its $2 bar); and
+              a sweep of every configuration over the 40 dev households, the split
+              comparison included, which reused the second smoke test and cost
+              $24.29 more (<a href="#results">Part 6</a>).
+            </li>
+            <li>
               <strong>Verify the 33 rules against their sources</strong>, my
               step, about 45 minutes by the plan's estimate, and decide the five
-              proposed edits. Until then no rule counts in test scoring.
+              proposed edits. Every test household depends on the W-2 rule, R001,
+              and the run drops any test household whose list depends on a rule I
+              have not verified, so with none verified the test run would score
+              no household.
             </li>
             <li>
-              <strong>Close the two gaps the review found:</strong> make the
-              evidence check require a real quote rather than any stretch of
-              text, and check what the agent's questions say before they reach
-              the client.
+              <strong>Read and label what only I can judge.</strong> The 30
+              sampled simulator answers, with the table of facts that ended and the
+              two answers the guard sent back; the 60 judge transcripts, 40 from
+              real dev runs and 20 from the weakened prompt, whose labels decide
+              whether the advice FAILs on the final note are false; and a note on each of the
+              28 failing dev agent runs, the error analysis the plan calls for. A
+              fix found there is tested on dev only, and it makes the dev results
+              stale until dev runs again.
             </li>
             <li>
-              <strong>Run the live checks in order, each behind its own
-              gate.</strong> First the simulator fidelity check (about $0.19),
-              with more "Last year only" lines among its households, then a smoke
-              test of 10 dev households on Haiku and Sonnet (under $2). After
-              that comes error analysis on dev, where I read 30 failing runs and
-              write a note on each and fixes are tested on dev only, then the
-              split comparison, and last the lock and the one test run.
+              <strong>Lock the preregistration, then run the test once.</strong>
+              The lock names the primary configuration, where I propose A-haiku,
+              sets the run cap to $5.00, and fixes the configurations and trials
+              the budget allows. At dev cost, every configuration at 3 trials
+              would cost about $78, over the plan's $60 for the test run, and
+              dropping A-opus brings it to about $33.
             </li>
             <li>
               <strong>Publish the results whichever way they come out</strong>,
@@ -1009,7 +1181,7 @@
             The requirements document ruled these out before the build started, so none of them was cut to save time.
           </p>
           <ul>
-            <li><strong>Sending, e-signing, payments and delivery.</strong> The agent has no send tool, though its questions still reach the client and no code yet checks what they say.</li>
+            <li><strong>Sending, e-signing, payments and delivery.</strong> The agent has no send tool, and code checks each of its questions before the client sees it, since a question is the one channel that reaches the client.</li>
             <li><strong>Reading or extracting uploaded documents.</strong> Next on the list (<a href="#next">Part 9</a>).</li>
             <li><strong>State and business returns.</strong> Federal individual returns (Form 1040 households) for tax year 2026 only.</li>
             <li><strong>Tax advice.</strong> The agent is told to hand every advice question to the preparer, and a run that gives advice fails.</li>
@@ -1030,10 +1202,11 @@
             code. It set out a one page problem, a thesis and eight testable
             success criteria, then a build plan in 11 blocks with a done check
             for each, a spend plan and a cut order. Claude Code has built the
-            first six blocks against that document, under rules written into the
+            first six blocks against that document and run the live checks on
+            train and dev, under rules written into the
             repository. Under those rules the API key lives only in a local file it never reads or prints, every model call reserves its cost first, the test group
             stays locked until the preregistration is committed, and nothing
-            goes public without my typed "proceed". Steps that need my judgment, verifying rules, writing blind lists and locking bars, were left to me. Every decision made during the build is dated in the decision log, and the repository's history keeps each earlier version of it.
+            goes public without my typed "proceed". Steps that need my judgment, verifying rules, writing blind lists, labeling the judge's transcripts and locking bars, were left to me. Every decision made during the build is dated in the decision log, and the repository's history keeps each earlier version of it.
           </p>
 
           <h3>Reviews and gates</h3>
@@ -1043,6 +1216,7 @@
             <li>The blind label page went through two review passes, which found 27 problems and then 11 more, all fixed; among them, autosave could overwrite text being typed, and the comparison command could skip the blind step.</li>
             <li>The label settlement used two independent mappers and six checks told to refute the rules from official sources, and a final review confirmed 11 more findings, all fixed, none of which changed a settlement.</li>
             <li>This page went through the same: three fact-checking agents, one reading for product judgment and one for rigor and format, each followed by a skeptic, confirmed 87 findings in the first draft, some of them the same problem caught by more than one agent. A second pass checked every fix and confirmed 39 more, mostly wording that still claimed too much, which were fixed in turn.</li>
+            <li>The first live fidelity check and smoke test found two problems the offline tests could not: the simulated client contradicting facts its prompt stated, and a transcript that showed the judge the agent's final note with no label. Each got a logged fix, and both runs were made again before the dev sweep. On dev the client still caused 7 of the 19 wrong facts, and with the label the judge still read the same kind of note both ways (<a href="#results">Part 6</a>).</li>
             <li>Gates: the comparison could not show the rules' answers until my lists were on record, code locks the test group, every live call is reserved against the caps first, best effort for the few the agent's runtime sends on its own, and publishing waits for my "proceed".</li>
           </ul>
 
@@ -1060,29 +1234,35 @@ uv run mutmut run &amp;&amp; uv run mutmut results</code></pre>
           <p>
             The tests run with network sockets blocked. Here the baseline command rescores last year's list, the report command regenerates the results
             report from the run files, and the compare command lists any blind
-            label difference still open. Next, the rules check confirms that every rule has a source and a status. The two after it score the simulated client with a stand-in and run the real agent runtime against a fake model API on the same machine. Last comes the mutation testing, which takes a while. None of these needs a key or spends anything. Only the live runs need an API key in a local file.
+            label difference still open. Since the dev runs' files stay out of
+            the repository, a fresh copy's report has no agent results, only the
+            baseline runs you rescore. It still shows the live fidelity check and
+            the spend ledger, which the repository keeps. Next, the rules check confirms that every rule has a source and a status. The two after it score the simulated client with a stand-in and run the real agent runtime against a fake model API on the same machine. Last comes the mutation testing, which takes a while. None of these needs a key or spends anything. Only the live runs need an API key in a local file.
           </p>
 
           <h3>What I got wrong</h3>
           <ul>
             <li><strong>My blind lists asked for paperwork behind ended credits in 10 of 11 households,</strong> on a project built on those credits having ended, though for 6 of them that paperwork could still serve a purpose the rules do not model.</li>
             <li><strong>My blind lists covered only what changed,</strong> so they checked about half the rules I meant them to check.</li>
-            <li><strong>I misread the label sheet's "Last year only" line twice.</strong> The simulated client reads the same lines, but only 1 of the fidelity check's 20 households has one, so that check can say little about whether a model misreads them too.</li>
-            <li><strong>The requirements' $0.50 run cap would have measured the cap rather than the agent</strong> on long Opus runs; review caught it before any live run.</li>
+            <li><strong>I misread the label sheet's "Last year only" line twice.</strong> The simulated client reads the same lines, so the fidelity check now holds all 9 train and dev households that have one, 11 lines in all, and in its live run the client read none of them as this year's.</li>
+            <li><strong>The requirements' $0.50 run cap would have measured the cap rather than the agent</strong> on ordinary Opus runs, which cost $0.3704 a household on dev; review caught it before any live run.</li>
             <li><strong>The first draft of this page, which Claude Code wrote, claimed more than the code does.</strong> It presented the zero misses where nothing changed as a finding, called the evidence check word for word, and said nothing could reach the client; the review caught all three.</li>
+            <li><strong>The simulated client did not keep to its facts at first.</strong> In the first smoke test, 16 of the 18 wrong facts in agent runs were the client contradicting facts it was given, and each counted against the agent. A facts rule and a guard now catch most of them, though the guard reads only the facts an answer reveals, so it misses a client whose words say otherwise.</li>
+            <li><strong>The judge first saw the agent's final note with no label,</strong> as one more line of the conversation, and it failed advice in both runs on household H024 because of the note alone. The label went in before the dev sweep, and the judge still read the same kind of note both ways there (<a href="#results">Part 6</a>).</li>
+            <li><strong>The plan's cost estimates were low.</strong> It put a Sonnet run at about $0.06 and an Opus run at about $0.12, and on dev they cost $0.1695 and $0.3704 a household, so the test run at dev cost would be about $78 with every configuration, over the plan's $60.</li>
           </ul>
 
           <h3>Honest limits of this write up</h3>
           <ul>
-            <li>No live model call has been made through the harness, so there are no agent results.</li>
+            <li>The agent results are dev results from one trial per household, not the preregistered test result, and the judge's verdicts in them are an unvalidated model's reading.</li>
             <li>Every household is synthetic, from one generator whose mix of situations is a design choice, not a sample of any practice.</li>
-            <li>The client is a model, not a person. Real clients misremember, contradict themselves and volunteer things no persona captures.</li>
+            <li>The client is a model, not a person. Real clients misremember, contradict themselves and volunteer things no persona captures. When the simulated client's answer contradicts its own facts outside a recall gap, the answer goes back to the model once, so this client is more consistent than a real one on purpose. Its words can still disagree with the facts it reveals.</li>
             <li>The blind lists, the rule verification and the judge's labels are all mine: one person, not a practicing preparer, and the blind lists cover only what changed.</li>
             <li>None of the 33 rules is verified yet, and some sources are 2026 drafts or 2025 editions.</li>
             <li>Two cases near the traps are never generated, a client with a Form 5695 carryforward would be scored wrong, and a request for paperwork that a rental, a home office or an itemizer could still use counts as a trap (<a href="#rules">Part 4</a>).</li>
             <li>Every simple household stayed the same and every other one changed, so change and complexity are tangled in every comparison between them. Last year's list is complete by construction where nothing changed, and its misses come from changed facts, never from changed rules.</li>
-            <li>The evidence check lives in the test harness, not in the tool server, and it accepts any stretch of an answer, or any field of last year's profile, as evidence.</li>
-            <li>Claude Code drafted this page from the repository, and I reviewed it. Its numbers come from the data, the generated report, the requirements document, the decision log and the build's own test runs and reviews, and tests check most of the ones drawn from the data and the report.</li>
+            <li>The evidence and question checks live in the test harness, not in the tool server. The evidence check finds two or more of the client's words in a row, a one-word answer sentence, or the field that holds the fact, but cannot tell whether they support the value. The question check misses some claims, one of them in a live run, and leaves them to the judge.</li>
+            <li>Claude Code drafted this page from the repository, and I reviewed it. Its numbers come from the data, the generated report, the fidelity report, the spend ledger, the requirements document, the decision log and the build's own test runs and reviews. Tests check most of the ones drawn from the data, and last year's list from the report, but none of the live results.</li>
           </ul>
         </section>
 
@@ -1096,14 +1276,17 @@ uv run mutmut run &amp;&amp; uv run mutmut results</code></pre>
             <li><strong>MCP:</strong> the Model Context Protocol, an open standard that lets an AI agent or assistant call outside tools; here, the eight intake tools.</li>
             <li><strong>Harness:</strong> the code that runs the agent, connects its tools, enforces the caps and records everything it does.</li>
             <li><strong>Hook:</strong> code that runs before or after a tool call and can stop it; here, the evidence check.</li>
-            <li><strong>Evidence:</strong> the client's words, or a named field from last year's profile, recorded with a fact.</li>
+            <li><strong>Question check:</strong> code that reads each of the agent's questions before the client sees it, and refuses one that claims or offers to send the list or asks the client to send documents.</li>
+            <li><strong>Evidence:</strong> two or more of the client's words in a row from one answer, a one-word answer sentence, or the field of last year's profile that holds the fact, recorded with it.</li>
             <li><strong>Rules table:</strong> the 33 rules that turn facts into documents, each with an official source.</li>
             <li><strong>Trap:</strong> a rule for a credit that ended; asking for its documents counts against the list.</li>
             <li><strong>Baseline:</strong> a simpler method run on the same households for comparison: B1, the full organizer; B2, last year's list; B3, a model writing the list.</li>
-            <li><strong>Simulated client:</strong> a model that answers as a client from a fact sheet and a persona.</li>
+            <li><strong>Simulated client:</strong> a model that answers as a client from a fact sheet and a persona; a guard sends an answer back once when it contradicts that sheet outside a recall gap.</li>
             <li><strong>Recall gap:</strong> a fact a persona forgets until a question brings it back.</li>
             <li><strong>Probe:</strong> a request the harness slips into a client's answer to test the agent, such as a request for tax advice.</li>
             <li><strong>Train, dev and test:</strong> fixed groups of households for examples, for iteration, and for the one final test.</li>
+            <li><strong>Smoke test and sweep:</strong> a small first live run, here 10 dev households, to catch harness problems; then a run of every configuration over a whole group.</li>
+            <li><strong>Weakened prompt:</strong> a version of the agent's prompt that tells it to give advice and claim delivery, used only to give the judge failures to label, and never scored.</li>
             <li><strong>Preregistration:</strong> a file that fixes the bars, the configurations to run and the one they judge, before any test result exists.</li>
             <li><strong>Pass:</strong> a run that builds and submits its draft, misses no document, adds at most one unnecessary request, records no wrong fact, never claims it sent the list, hands advice to the preparer, and receives every probe planned for it.</li>
             <li><strong>95% interval:</strong> the range a true rate probably falls in, given how few households were tested.</li>

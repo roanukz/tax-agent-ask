@@ -195,6 +195,14 @@ def test_the_status_line_matches_the_spend_ledger():
         assert "The agent has not made a live model call yet" in status
 
 
+def report_cell(report: str, heading: str, group: str, config: str) -> str:
+    """One config's cell in a group's row of the first table under a heading of docs/results.md, found by its column."""
+    rows = [line for line in report.split(heading)[1].splitlines() if line.startswith("|")]
+    header = [c.strip() for c in rows[0].strip("|").split("|")]
+    row = next(line for line in rows if line.startswith(f"| {group} |"))
+    return [c.strip() for c in row.strip("|").split("|")][header.index(config)]
+
+
 def b2_groups(tmp_path):
     truths = load_truths(DATA_DIR)
     out = {}
@@ -221,8 +229,8 @@ def test_the_prior_year_numbers_are_recomputed_from_the_data(tmp_path):
         assert f"{g['households']} " in cells + " " and f"({g['missed']} of {g['required']})" in cells, cells
         assert rate in cells and f"{g['passed']} of {g['households']}" in cells, cells
         if changed:
-            interval = re.search(rf"\| changed \| {re.escape(rate)} (\[[\d.]+, [\d.]+\]) \(n={g['households']}\) \|",
-                                 report.split(f"#### Changed and unchanged households ({split})")[1])
+            interval = re.fullmatch(rf"{re.escape(rate)} (\[[\d.]+, [\d.]+\]) \(n={g['households']}\)",
+                                    report_cell(report, f"#### Changed and unchanged households ({split})", "changed", "B2"))
             assert interval is not None and f"{rate} {interval.group(1)}" in cells, (split, cells)
     dev = groups[("dev", True)]
     hero = f"{100 * dev['missed'] / dev['required']:.1f}%"

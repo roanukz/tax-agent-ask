@@ -50,12 +50,12 @@ def test_settings_defaults_and_values(tmp_path):
     assert s.api_key == FAKE_KEY
     assert s.spend_cap_usd == 150.0
     assert s.run_cap_usd == 0.25
-    assert load_settings(write(tmp_path, f"TAX_AGENT_API_KEY={FAKE_KEY}\n")).run_cap_usd == 2.0
+    assert load_settings(write(tmp_path, f"TAX_AGENT_API_KEY={FAKE_KEY}\n")).run_cap_usd == 5.0
 
 
 def test_env_example_matches_the_defaults():
     example = read_dotenv(Path(__file__).resolve().parent.parent / ".env.example")
-    assert example == {"TAX_AGENT_API_KEY": "", "SPEND_CAP_USD": "150", "RUN_CAP_USD": "2.00"}
+    assert example == {"TAX_AGENT_API_KEY": "", "SPEND_CAP_USD": "150", "RUN_CAP_USD": "5.00"}
 
 
 def test_settings_repr_hides_key():
