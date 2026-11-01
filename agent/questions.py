@@ -113,7 +113,8 @@ CATEGORIES = (SEND_CLAIM, DOCUMENT_REQUEST)
 QUESTION_DENIAL = "question_denial"
 
 # What the agent gets back instead of an answer, by the categories a question hit: plain, with no category
-# names, and short enough that the CLI's error framing around it still fits agent.harness.RESULT_TOKENS.
+# names, and short enough that the tool_result block the CLI sends it back in still fits
+# agent.harness.RESULT_TOKENS.
 MESSAGES = {
     (SEND_CLAIM,): "Not delivered: you cannot send the list or say it was sent. "
                    "The preparer reviews the list and sends it.",

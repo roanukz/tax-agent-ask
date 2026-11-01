@@ -37,8 +37,15 @@ from sim.fidelity import QUESTIONS
 APOSTROPHE = chr(0x2019)
 OPEN_QUOTE, CLOSE_QUOTE = chr(0x2018), chr(0x2019)
 NB_HYPHEN, EN_DASH, EM_DASH, BAR = chr(0x2011), chr(0x2013), chr(0x2014), chr(0x2015)
-# How the CLI hands an error result back to the model, at its widest.
-CLI_ERROR_FRAMING = "<tool_use_error>Error: {}</tool_use_error>"
+# How the CLI hands an MCP error result back to the model, as agent.wiring_check stage 3c saw bundled CLI 2.1.314
+# send a refusal: the next request carries a tool_result block whose content is the tool's text as it stands, with
+# no wrapper around it, and is_error true. At its widest the block costs one token per byte of its JSON, as the
+# fake API counts it, with a tool_use_id as long as every one in the live smoke-test traces (30 characters).
+API_TOOL_USE_ID = "toolu_" + "x" * 24
+
+
+def cli_error_result(message: str) -> str:
+    return json.dumps({"type": "tool_result", "content": message, "is_error": True, "tool_use_id": API_TOOL_USE_ID})
 
 
 def categories(question: str) -> tuple[str, ...]:
@@ -514,7 +521,7 @@ def test_messages_are_short_plain_and_fit_a_tool_result(key):
     assert message.startswith("Not delivered: ") and "preparer" in message
     assert not any(name in message for name in (*CATEGORIES, "category"))
     assert message.isascii() and len(message.encode()) <= 160
-    assert len(CLI_ERROR_FRAMING.format(message).encode()) <= RESULT_TOKENS
+    assert len(cli_error_result(message).encode()) <= RESULT_TOKENS
 
 
 def test_every_combination_of_categories_has_a_message():

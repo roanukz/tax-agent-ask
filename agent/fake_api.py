@@ -22,8 +22,12 @@ connection with no answer at all.
 Every request body is kept in .requests, with the usage the fake reported
 for it, so a check can see what the CLI sent and what the API would have
 billed; a cut or dropped request is kept at its prompt and full output,
-the most it could have been billed. Request headers, which hold the key,
-are never kept. pytest blocks TCP sockets, so no test starts it.
+the most it could have been billed. Each record also has the message_id
+of its reply, whose nth content block, when it is a tool call, has the ID
+toolu_{message_id}_{n}, so a check can find the request that made a call
+and the one that sent its result back (tool_result_block). Request
+headers, which hold the key, are never kept. pytest blocks TCP sockets, so
+no test starts it.
 """
 
 from __future__ import annotations
@@ -66,10 +70,25 @@ def tool_result_texts(body: Mapping[str, Any]) -> list[str]:
     for message in body.get("messages") or []:
         for block in message.get("content") if isinstance(message.get("content"), list) else []:
             if isinstance(block, Mapping) and block.get("type") == "tool_result":
-                content = block.get("content")
-                texts.append(content if isinstance(content, str)
-                             else "".join(c.get("text", "") for c in content or [] if isinstance(c, Mapping)))
+                texts.append(block_text(block.get("content")))
     return texts
+
+
+def tool_result_block(body: Mapping[str, Any], tool_use_id: str) -> Mapping[str, Any] | None:
+    """The tool_result block a request sends back for the tool call tool_use_id, as the CLI framed it, or None."""
+    for message in body.get("messages") or []:
+        for block in message.get("content") if isinstance(message.get("content"), list) else []:
+            if (isinstance(block, Mapping) and block.get("type") == "tool_result"
+                    and block.get("tool_use_id") == tool_use_id):
+                return block
+    return None
+
+
+def block_text(content: Any) -> str:
+    """A tool_result's content as text: a string, or the text of its text blocks."""
+    if isinstance(content, str):
+        return content
+    return "".join(c.get("text", "") for c in content or [] if isinstance(c, Mapping))
 
 
 def intake_id_in(body: Mapping[str, Any]) -> str:
@@ -187,7 +206,7 @@ class FakeMessagesAPI:
             billed = {"input_tokens": 0, "output_tokens": 0} if fault == REFUSED else {
                 "input_tokens": prompt, "output_tokens": output}
             self.requests.append({"path": path, "main": main, "step": step, "model": model, "body": dict(body),
-                                  "usage": billed, "fault": fault})
+                                  "usage": billed, "fault": fault, "message_id": message_id})
         if fault == REFUSED:
             error = {"type": "error", "error": {"type": "rate_limit_error", "message": "fake rate limit"}}
             return 429, json.dumps(error).encode(), "application/json"

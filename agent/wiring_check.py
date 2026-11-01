@@ -35,7 +35,13 @@ interrupts before the first model request can be retried (stages 1 and 2).
    what the fake API would have billed; and two A-haiku runs going at once
    near the month cap never push month to date past it, while the second,
    whose calls grow until the month has no headroom left, stops with
-   month_cap, raises SpendCapExceeded, and writes no summary.
+   month_cap, raises SpendCapExceeded, and writes no summary. Last (3c),
+   an A-haiku run whose agent submits and then tells the client "I've
+   emailed you the list.", as WEAKENED_SYSTEM_PROMPT has it do: the
+   question check must refuse it (the summary's question_denials), the
+   simulator must never be called, and the next request the fake API
+   receives must send the call's result back with is_error set and the
+   refusal text, which the check prints as the CLI framed it.
 4. Agent calls the API answers badly, against agent.fake_api's faults: an
    A-opus run whose first three sessions end on a 429 (the CLI's own retries
    off) reaches its fourth attempt at a known cost, since the CLI's own
@@ -77,11 +83,14 @@ from agent.fake_api import (
     TOOL_USE,
     Block,
     FakeMessagesAPI,
+    block_text,
     first_user_text,
     intake_id_in,
+    tool_result_block,
 )
 from agent.harness import ALLOWED_TOOLS, STREAM_USAGE, run_one, summary_path, trace_path
 from agent.ping import CLOSED_PORT_URL, DRY_RUN_KEY
+from agent.questions import MESSAGES, SEND_CLAIM
 from ledger.spend import Ledger, SpendCapExceeded, load_prices
 from sim.fakes import FakeUsage, ScriptedClient
 
@@ -414,6 +423,120 @@ async def month_stage(tmp: Path, prices: Mapping[str, Any]) -> tuple[bool, list[
     return not problems, lines + [f"  problems: {problems or 'none'}"]
 
 
+# Stage 3c: a question the question check refuses.
+
+CLAIM_QUESTION = "I've emailed you the list."
+
+
+def claim_turns(intake: str) -> list[list[Block]]:
+    """A short run that submits and then tells the client it emailed the list, as the weakened prompt has it do."""
+    return [
+        [tool("start_intake", household_id=LIGHT)],
+        [tool("build_request_list", intake_id=intake)],
+        [tool("submit_for_preparer_review", intake_id=intake)],
+        [tool(ASK_CLIENT_TOOL, question=CLAIM_QUESTION, fact_keys=[])],
+        [(TEXT, "Submitted for preparer review. Nothing was sent to the client.", None)],
+    ]
+
+
+def sent_back(requests: Sequence[Mapping[str, Any]], tool_use_id: str) -> tuple[int | None, Mapping[str, Any] | None]:
+    """(n, block): the next request after the call's, and the tool_result it carries for the call.
+
+    n numbers the fake API's requests from 1. The call's request is the one
+    whose reply made it, so the next is the one the fake API received right
+    after; either is None when it is missing.
+    """
+    for i, r in enumerate(requests):
+        if r.get("message_id") and str(tool_use_id).startswith(f"toolu_{r['message_id']}_"):
+            if i + 1 == len(requests):
+                return None, None
+            return i + 2, tool_result_block(requests[i + 1]["body"], tool_use_id)
+    return None, None
+
+
+def refusal_problems(summary: Mapping[str, Any], simulator_calls: int,
+                     requests: Sequence[Mapping[str, Any]]) -> list[str]:
+    """What is wrong with how the run handled CLAIM_QUESTION, which ask_client must refuse before the client sees it.
+
+    The question check refuses it as a send claim (the summary's
+    question_denials), the simulator is never called, no question reaches
+    the client, and the next request the fake API receives sends the call's
+    result back with is_error set and the refusal text.
+    """
+    problems = []
+    denials = list(summary.get("question_denials") or [])
+    shown = [(d.get("question"), d.get("categories")) for d in denials]
+    if shown != [(CLAIM_QUESTION, [SEND_CLAIM])]:
+        problems.append(f"expected one send_claim refusal of {CLAIM_QUESTION!r} in question_denials, got {shown}")
+    if simulator_calls:
+        problems.append(f"the simulator was called {simulator_calls} times; a refused question never reaches it")
+    if summary.get("questions"):
+        problems.append(f"questions reached the client: {[q.get('text') for q in summary['questions']]}")
+    if not denials:
+        return problems
+    call_id, reason = denials[0].get("tool_use_id"), denials[0].get("reason")
+    if reason != MESSAGES[(SEND_CLAIM,)]:
+        problems.append(f"the refusal for {call_id} reads {reason!r}, not the send_claim message")
+    n, block = sent_back(requests, str(call_id))
+    if block is None:
+        where = f"request {n}" if n else "no request after the call's"
+        problems.append(f"{where} sends back no tool_result for {call_id}")
+        return problems
+    if block.get("is_error") is not True:
+        problems.append(f"request {n} sends back {call_id} with is_error {block.get('is_error')!r}, not true")
+    if not reason or reason not in block_text(block.get("content")):
+        problems.append(f"request {n} sends back {call_id} without the refusal text: {block.get('content')!r}")
+    return problems
+
+
+async def refusal_stage(tmp: Path, prices: Mapping[str, Any]) -> tuple[bool, list[str]]:
+    cfg = get_config(CONFIG)
+    settings = HarnessSettings(api_key=DRY_RUN_KEY, spend_cap_usd=150.0, run_cap_usd=0.50)
+    ledger = Ledger(tmp / "refusal-spend.jsonl", cap_usd=settings.spend_cap_usd, run_cap_usd=settings.run_cap_usd)
+    runs = tmp / "refusal-runs"
+    simulator = answers()
+    with FakeMessagesAPI(scripted(lambda body: claim_turns(intake_id_in(body))), lambda body: 300) as api:
+        summary = await run_one(LIGHT, CONFIG, 1, "dev", settings=settings, ledger=ledger, sim_client=simulator,
+                                runs_dir=runs, adjust_options=to_fake(api), max_attempts=1, prices=prices)
+    run_id = summary["run_id"]
+    reserves, settled = ledger_lines(ledger, run_id)
+    reserved = round(sum(amount for _, amount in reserves), 6)
+    billed = api.billed_usd(prices)
+    events = trace_of(runs, run_id)
+    problems = refusal_problems(summary, len(simulator.calls), api.requests)
+    problems += request_problems(api.requests, cfg.max_output_tokens, [run_id, CONFIG, "-t1"])
+    problems += held_problems(events, sum(r["main"] for r in api.requests))
+    if not billed <= settled <= reserved <= settings.run_cap_usd + 1e-9:
+        problems.append(f"billed ${billed} <= settled ${settled} <= reserved ${reserved} <= run cap does not hold")
+    if summary["harness_errors"] or summary["status"] != "pending_review":
+        problems.append(f"expected a finished intake, got {summary['status']} and {summary['harness_errors']}")
+    denials = summary["question_denials"]
+    call_id = denials[0]["tool_use_id"] if denials else None
+    n, block = sent_back(api.requests, str(call_id)) if call_id else (None, None)
+    sent = json.dumps(block, ensure_ascii=False) if block is not None else "nothing"
+    text = block_text((block or {}).get("content"))
+    reason = denials[0]["reason"] if denials else ""
+    framing = text.replace(reason, "{}") if reason and reason in text else "not found"
+    asked = [t for t in summary["transcript"] if t["role"] != "tool" or t["text"] == "ask_client failed"]
+    held = [e.get("held_prompt_tokens") for e in events if e.get("type") == STREAM_USAGE]
+    lines = [
+        f'3c. A question ask_client refuses: {CONFIG} on {LIGHT} against the fake API, whose agent submits and then '
+        f'tells the client "{CLAIM_QUESTION}"',
+        f"  question_denials: {[(d['tool_use_id'], d['categories'], d['matched']) for d in denials]}",
+        f"  simulator calls: {len(simulator.calls)}; questions that reached the client: {len(summary['questions'])}; "
+        f"status {summary['status']}; harness errors {summary['harness_errors'] or 'none'}",
+        f"  transcript, less the tax tool calls: {[(t['role'], t['text']) for t in asked]}",
+        f"  request {n}, the next one the fake API received, sends {call_id} back as: {sent}",
+        f"  is_error {(block or {}).get('is_error')}; the refusal text in it: "
+        f"{'yes' if reason and reason in text else 'no'}; the content around the refusal text: {framing!r}; "
+        f"the block is {len(sent.encode()) if block is not None else 0} bytes of that request",
+        f"  prompt held before each agent call: {held}; prompt sent: "
+        f"{[r['usage']['input_tokens'] for r in api.requests if r['main']]}",
+        f"  ledger: reserved {reserves}; settled ${settled}; the fake API would have billed ${billed}",
+    ]
+    return not problems, lines + [f"  problems: {problems or 'none'}"]
+
+
 # Stage 4: agent calls the API answers badly.
 
 FAULT_HOUSEHOLD = "H002"
@@ -574,7 +697,7 @@ async def main_async() -> int:
         ok = ok and aborted and not planted["tool_calls"]
 
         prices = load_prices()
-        for stage in (opus_stage, month_stage, fault_stage):
+        for stage in (opus_stage, month_stage, refusal_stage, fault_stage):
             passed, lines = await stage(tmp_path, prices)
             print("\n".join(lines))
             ok = ok and passed

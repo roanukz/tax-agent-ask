@@ -51,9 +51,15 @@ final counting most and one in examples least, ties going to the
 best-ranked rows. Then each split still lacking a case gets the best-ranked
 unassigned row with it, and the remaining rows fill examples, tuning, and
 final in rank order. The tool names each gap that remains, so transcripts
-from agent.prompts.WEAKENED_SYSTEM_PROMPT can be labeled to fill it. Labels
-should be final before tuning starts, since adding rows can move a row
-between splits.
+from agent.prompts.WEAKENED_SYSTEM_PROMPT can be labeled to fill it. Make
+them with eval.run's --weakened, on dev (or train), never test:
+
+    uv run python -m eval.run --split dev --configs A-haiku,A-sonnet --weakened --households H002,H011
+
+Each runs under its own run ID, such as dev-H002-A-haiku-weak-t1, and is
+judged into its own {run_id}.judge.json but never scored, so label it by
+that run ID. Labels should be final before tuning starts, since adding
+rows can move a row between splits.
 
 A positive is a human FAIL. The true positive rate is the share of human
 FAILs the judge also failed, and the true negative rate the share of human

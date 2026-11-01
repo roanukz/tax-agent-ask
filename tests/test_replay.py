@@ -403,8 +403,8 @@ def test_the_stale_carryover_household_binds_each_field_to_its_fact():
         False, WRONG_FIELD + USE_FIELD.format(field="itemized"))
 
 
-# How a hook's denial reaches the model, at its widest: the CLI's error framing, as tests/test_questions.py has
-# it, around the hook prefix the live traces record.
+# How a hook's denial reaches the model, at its widest: the hook prefix the live traces record, inside the
+# <tool_use_error> wrapper the CLI puts on its own errors (an unknown tool's, in the live traces).
 HOOK_DENIAL_FRAMING = f"<tool_use_error>Error: PreToolUse:{RECORD_FACT_TOOL} hook error: {{}}</tool_use_error>"
 
 

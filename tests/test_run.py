@@ -1,4 +1,4 @@
-"""eval/run.py: the test-split lock, the no-key refusal, sweeps, judging, scoring, and the report call.
+"""eval/run.py: the test-split lock, the no-key refusal, sweeps, judging, scoring, the report call, and --weakened.
 
 Every run, baseline, judge, and report call here is a fake injected through
 eval.run.Deps, so nothing spends or opens a network socket. The prereg lock
@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import inspect
 import json
 import subprocess
 from pathlib import Path
@@ -16,9 +17,10 @@ from typing import Any
 
 import pytest
 
+from agent import harness
 from agent.env import HarnessSettings
 from agent.harness import Reservation, summary_path, trace_path, write_json
-from agent.prompts import JUDGE_PROMPT
+from agent.prompts import JUDGE_PROMPT, WEAKENED_SYSTEM_PROMPT
 from eval import run as runner
 from eval.judge import PROMPT_VERSION
 from eval.run import Deps, PreregError, check_prereg, main_async, next_limit, prereg_plan
@@ -194,22 +196,29 @@ class Fakes:
         self.reports: list[tuple[Any, ...]] = []
         self.b1_questions = b1_questions or {1: 30, 2: 34, 3: 38}
         self.agent_extra = agent_extra or {}
+        self.prompts: dict[str, str | None] = {}
         self.active = 0
         self.peak = 0
 
     async def run_agent(self, household_id, config, trial, split, *, settings, ledger, sim_client, runs_dir,
-                        data_dir, prereg_commit, prereg_repo):
+                        data_dir, prereg_commit, prereg_repo, system_prompt=None, run_id=None):
+        """As agent.harness.run_one: a custom system_prompt needs its own run_id and is marked in the summary."""
         self.prereg_repos.append(prereg_repo)
         self.active += 1
         self.peak = max(self.peak, self.active)
         await asyncio.sleep(0.01)
         self.active -= 1
-        run_id = f"{split}-{household_id}-{config}-t{trial}"
+        default_id = f"{split}-{household_id}-{config}-t{trial}"
+        assert system_prompt is None or run_id not in (None, default_id), "run_one refuses this"
+        run_id = run_id or default_id
         self.calls.append(("agent", run_id))
+        self.prompts[run_id] = system_prompt
         extra = self.agent_extra.get(run_id, {})
         if isinstance(extra, BaseException):
             raise extra
         summary = agent_summary(run_id, household_id, config, trial, split, **extra)
+        if system_prompt is not None:
+            summary["system_prompt"] = "custom"
         if prereg_commit:
             summary["prereg_commit"] = prereg_commit
         write_json(summary_path(runs_dir, run_id), summary)
@@ -761,7 +770,7 @@ class CapMidway(Fakes):
         self.stop, self.judge = stop, judge
 
     async def run_agent(self, household_id, config, trial, split, *, ledger, runs_dir, **kw):
-        run_id = f"{split}-{household_id}-{config}-t{trial}"
+        run_id = kw.get("run_id") or f"{split}-{household_id}-{config}-t{trial}"
         if run_id != self.stop or self.judge:
             return await super().run_agent(household_id, config, trial, split, ledger=ledger, runs_dir=runs_dir, **kw)
         self.calls.append(("agent", run_id))
@@ -843,4 +852,185 @@ async def test_the_month_cap_during_a_judge_call_halts_and_the_next_sweep_judges
     assert await sweep(tmp_path, again, *args) == runner.EXIT_OK
     assert again.calls == [("judge", run_id)], "the run resumes, and only its judge call runs again"
     assert runs(tmp_path, "score")[run_id]["judge"]["advice"] == "PASS"
+    assert {f"{run_id}.judge", f"{run_id}.judge.r2"} <= {e["run_id"] for e in ledger(tmp_path).entries()}
+
+
+# --weakened: judge-validation transcripts (PRD 6.7), judged and never scored.
+
+WEAK_ARGS = ("--split", "dev", "--configs", "A-haiku,A-sonnet", "--households", "H002,H003", "--weakened")
+WEAK_IDS = sorted(f"dev-{h}-{c}-weak-t1" for h in ("H002", "H003") for c in ("A-haiku", "A-sonnet"))
+REAL_IDS = sorted(rid.replace("-weak-", "-") for rid in WEAK_IDS)
+CAPS = "caps from .env: RUN_CAP_USD $0.50 a run, SPEND_CAP_USD $150.00 a month"
+
+
+def test_a_weak_run_id_is_never_the_configs_own():
+    assert runner.weak_run_id("dev", "H002", "A-haiku", 1) == "dev-H002-A-haiku-weak-t1"
+    assert runner.Job("dev", "H002", "A-haiku", 1, weakened=True).run_id == "dev-H002-A-haiku-weak-t1"
+    assert runner.Job("dev", "H002", "A-haiku", 1).run_id == harness.run_id_for("dev", "H002", "A-haiku", 1)
+
+
+@pytest.mark.anyio
+async def test_weakened_runs_every_agent_config_with_the_weakened_prompt_under_its_own_run_id(tmp_path):
+    fakes, messages, seen = Fakes(), [], []
+    original = fakes.run_agent
+
+    async def recording(*args, **kwargs):
+        seen.append((args, kwargs))
+        return await original(*args, **kwargs)
+
+    fakes.run_agent = recording
+    code = await sweep(tmp_path, fakes, *WEAK_ARGS, messages=messages)
+    assert code == runner.EXIT_OK
+    assert sorted(rid for kind, rid in fakes.calls if kind == "agent") == WEAK_IDS
+    assert fakes.prompts == dict.fromkeys(WEAK_IDS, WEAKENED_SYSTEM_PROMPT)
+    for args, kwargs in seen:
+        inspect.signature(harness.run_one).bind(*args, **kwargs)  # what eval.run passes, the real run_one takes
+        assert kwargs["run_id"] == runner.weak_run_id(args[3], args[0], args[1], args[2])
+    summaries = runs(tmp_path, "summary")
+    assert {rid: s["system_prompt"] for rid, s in summaries.items()} == dict.fromkeys(WEAK_IDS, "custom")
+    assert not any(summary_path(tmp_path / "runs", rid).exists() for rid in REAL_IDS), "the real runs stay unrun"
+    assert messages[0] == CAPS, "the caps line, as in any sweep"
+    assert ("weakened prompt: judge-validation transcripts under run IDs dev-{household}-{config}-weak-t{trial}, "
+            "judged and never scored") in messages
+    assert messages[-1].startswith("4 weakened-prompt runs, 0 failures, month to date $")
+
+
+@pytest.mark.anyio
+async def test_weakened_runs_are_judged_in_their_own_judge_files_and_never_scored_or_counted(tmp_path):
+    fakes = Fakes()
+    assert await sweep(tmp_path, fakes, *WEAK_ARGS) == runner.EXIT_OK
+    assert sorted(rid for kind, rid in fakes.calls if kind == "judge") == WEAK_IDS
+    verdicts = runs(tmp_path, "judge")
+    assert sorted(verdicts) == WEAK_IDS and {v["prompt_version"] for v in verdicts.values()} == {PROMPT_VERSION}
+    assert runs(tmp_path, "score") == {}, "no .score.json for a judge-validation transcript"
+    lines = {(e["run_id"], e["kind"]) for e in ledger(tmp_path).entries()}
+    assert all({(f"{rid}.judge", "reserve"), (f"{rid}.judge", "settle")} <= lines for rid in WEAK_IDS)
+    assert len(fakes.reports) == 1, "the report is still written"
+
+    from eval.report import build_context
+
+    ctx = build_context(tmp_path / "runs", prereg_path=runner.PREREG_PATH, ledger_path=tmp_path / "spend.jsonl",
+                        fidelity_dir=tmp_path / "no-fidelity", decisions_path=tmp_path / "no-decisions.md", draws=10)
+    assert ctx.summaries == {} and ctx.rows == [], "eval.report leaves every custom-prompt summary out"
+
+
+@pytest.mark.anyio
+async def test_a_second_weakened_sweep_resumes_without_rerunning_rejudging_or_scoring(tmp_path):
+    assert await sweep(tmp_path, Fakes(), *WEAK_ARGS) == runner.EXIT_OK
+    before = ledger(tmp_path).entries()
+    again, messages = Fakes(), []
+    assert await sweep(tmp_path, again, *WEAK_ARGS, messages=messages) == runner.EXIT_OK
+    assert again.calls == [] and ledger(tmp_path).entries() == before
+    assert sorted(m for m in messages if m.startswith("resumed: ")) == [f"resumed: {rid}" for rid in WEAK_IDS]
+    assert runs(tmp_path, "score") == {}
+
+
+@pytest.mark.anyio
+async def test_a_custom_prompt_summary_is_taken_only_under_a_weak_run_id(tmp_path):
+    assert await sweep(tmp_path, Fakes(), *WEAK_ARGS) == runner.EXIT_OK
+    real = ("--split", "dev", "--configs", "A-haiku,A-sonnet", "--households", "H002,H003")
+    fakes = Fakes()
+    assert await sweep(tmp_path, fakes, *real) == runner.EXIT_OK
+    assert sorted(rid for kind, rid in fakes.calls if kind == "agent") == REAL_IDS, "a weak run never stands in"
+    assert sorted(runs(tmp_path, "score")) == REAL_IDS and sorted(runs(tmp_path, "judge")) == sorted(
+        WEAK_IDS + REAL_IDS)
+
+    run_id = "dev-H002-A-haiku-t1"
+    path = summary_path(tmp_path / "runs", run_id)
+    write_json(path, {**json.loads(path.read_text()), "system_prompt": "custom"})
+    messages: list[str] = []
+    assert await sweep(tmp_path, Fakes(), *real, messages=messages) == runner.EXIT_FAILED
+    assert any(m.startswith(f"failed: {run_id}: ValueError") and "made with a custom system prompt" in m
+               for m in messages), "still refused under the config's own run ID"
+    assert await sweep(tmp_path, Fakes(), *WEAK_ARGS) == runner.EXIT_OK, "the weak runs still resume"
+
+
+@pytest.mark.anyio
+async def test_a_weakened_sweep_refuses_a_summary_made_with_the_real_prompt_under_a_weak_run_id(tmp_path):
+    run_id = "dev-H002-A-haiku-weak-t1"
+    write_json(summary_path(tmp_path / "runs", run_id), agent_summary(run_id, "H002", "A-haiku", 1, "dev"))
+    fakes, messages = Fakes(), []
+    code = await sweep(tmp_path, fakes, "--split", "dev", "--configs", "A-haiku", "--households", "H002",
+                       "--weakened", messages=messages)
+    assert code == runner.EXIT_FAILED
+    assert any("made with the real system prompt, not the weakened one" in m for m in messages)
+    assert fakes.calls == [] and runs(tmp_path, "judge") == {} and runs(tmp_path, "score") == {}
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("flags, why", [
+    (("--split", "test", "--configs", "A-haiku"),
+     "--weakened makes judge-validation transcripts on the train and dev splits only, never on test"),
+    (("--split", "test"),
+     "--weakened makes judge-validation transcripts on the train and dev splits only, never on test"),
+    (("--split", "dev", "--configs", "A-haiku,B1"),
+     "--weakened runs agent configs only, and B1 is a baseline with no system prompt to weaken"),
+    (("--split", "train", "--configs", "B2,A-sonnet,B3-haiku"),
+     "--weakened runs agent configs only, and B2, B3-haiku are baselines with no system prompt to weaken"),
+])
+async def test_weakened_is_refused_on_test_and_with_a_baseline_before_anything_runs(tmp_path, monkeypatch, flags,
+                                                                                     why):
+    monkeypatch.setattr(runner, "dropped", lambda truth, rules, specs: False)
+    path = prereg_repo(tmp_path, plan("A-haiku"))
+    fakes, messages = Fakes(), []
+    households = "H001" if "test" in flags else ("H002" if "dev" in flags else "H010")
+    code = await sweep(tmp_path, fakes, *flags, "--households", households, "--prereg", str(path), "--weakened",
+                       messages=messages, repo=root(path))
+    assert code == runner.EXIT_REFUSED and messages == [f"refused: {why}"]
+    assert fakes.calls == [] and fakes.clients == []
+    assert not (tmp_path / "runs").exists() and not (tmp_path / "spend.jsonl").exists()
+
+
+@pytest.mark.anyio
+async def test_a_weakened_sweep_with_no_key_fails_fast(tmp_path):
+    fakes, messages = Fakes(), []
+    code = await sweep(tmp_path, fakes, "--split", "dev", "--configs", "A-haiku", "--households", "H002",
+                       "--weakened", key="", messages=messages)
+    assert code == runner.EXIT_REFUSED
+    assert messages == ["refused: TAX_AGENT_API_KEY is empty in .env, so A-haiku can't run; nothing was reserved. "
+                        "Paste the workspace key into .env."]
+    assert fakes.calls == [] and not (tmp_path / "spend.jsonl").exists()
+
+
+def test_a_sweep_checks_weakened_itself(tmp_path):
+    kw = dict(households=["H010"], trials=1, ceiling=2, settings=settings(), ledger=ledger(tmp_path),
+              deps=Fakes().deps(), runs_dir=tmp_path / "runs")
+    with pytest.raises(runner.Refused, match="never on test"):
+        runner.Sweep(split="test", configs=["A-haiku"], weakened=True, prereg_commit="0" * 40, **kw)
+    with pytest.raises(runner.Refused, match="B1 is a baseline"):
+        runner.Sweep(split="train", configs=["A-haiku", "B1"], weakened=True, **kw)
+    weak = runner.Sweep(split="train", configs=["A-haiku"], weakened=True, **kw)
+    assert [job.run_id for job in weak.jobs(2)] == ["train-H010-A-haiku-weak-t2"]
+
+
+@pytest.mark.anyio
+async def test_the_month_cap_stops_a_weakened_sweep_and_the_stopped_run_runs_again(tmp_path):
+    first, stop, never = (f"dev-{h}-A-haiku-weak-t1" for h in ("H002", "H003", "H011"))
+    args = ("--split", "dev", "--configs", "A-haiku", "--households", "H002,H003,H011", "--concurrency", "1",
+            "--weakened")
+    fakes, messages = CapMidway(stop), []
+    assert await sweep(tmp_path, fakes, *args, messages=messages) == runner.EXIT_CAP
+    assert "stopped: the month cap refused the run's next top-up" in messages
+    assert [rid for kind, rid in fakes.calls if kind != "judge"] == [first, stop], "no job starts after the cap"
+    assert sorted(runs(tmp_path, "summary")) == [first], "the stopped job writes no summary"
+    assert {(stop, "reserve"), (stop, "settle")} <= {(e["run_id"], e["kind"]) for e in ledger(tmp_path).entries()}
+    assert runs(tmp_path, "judge") == {}, "no new judge call after the cap"
+
+    again = Fakes()
+    assert await sweep(tmp_path, again, *args) == runner.EXIT_OK
+    assert [rid for kind, rid in again.calls if kind != "judge"] == [stop, never], "the finished run resumes"
+    assert sorted(runs(tmp_path, "judge")) == [first, stop, never] and runs(tmp_path, "score") == {}
+
+
+@pytest.mark.anyio
+async def test_the_month_cap_during_a_weakened_runs_judge_call_halts_and_the_next_sweep_judges_it(tmp_path):
+    run_id = "dev-H002-A-haiku-weak-t1"
+    args = ("--split", "dev", "--configs", "A-haiku", "--households", "H002", "--weakened")
+    assert await sweep(tmp_path, CapMidway(run_id, judge=True), *args) == runner.EXIT_CAP
+    assert runs(tmp_path, "judge") == {} and runs(tmp_path, "score") == {}
+
+    again = Fakes()
+    assert await sweep(tmp_path, again, *args) == runner.EXIT_OK
+    assert again.calls == [("judge", run_id)], "the run resumes, and only its judge call runs again"
+    assert runs(tmp_path, "judge")[run_id]["advice"] == "PASS" and runs(tmp_path, "score") == {}
     assert {f"{run_id}.judge", f"{run_id}.judge.r2"} <= {e["run_id"] for e in ledger(tmp_path).entries()}

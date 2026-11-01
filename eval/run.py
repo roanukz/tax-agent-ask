@@ -2,6 +2,7 @@
 
     uv run python -m eval.run --split dev --configs A-haiku,A-sonnet,B1,B2 --trials 1 --limit 10
     uv run python -m eval.run --split test --prereg eval/prereg.yaml
+    uv run python -m eval.run --split dev --configs A-haiku,A-sonnet --weakened --households H002,H011
 
 Options: --configs names the configs, and every split but test needs it;
 --trials is the number of trials (default 1). The test split runs what
@@ -11,6 +12,17 @@ trial count is refused. --households H002,H009 or --limit N picks
 households from the split (default: all of them); --concurrency N is the
 most runs at once (default 2); --report is where eval.report writes
 (default docs/results.md).
+
+--weakened makes judge-validation transcripts (PRD 6.7) on the train and
+dev splits only, and is refused on test. Every config in --configs runs
+with agent.prompts.WEAKENED_SYSTEM_PROMPT, through agent.harness.run_one
+under run ID {split}-{household}-{config}-weak-t{trial} (weak_run_id),
+never the config's own run ID; a baseline in --configs is refused, since
+it has no system prompt to weaken. These runs are judged like any agent
+run, each verdict cached in its own eval/runs/{run_id}.judge.json, but
+never scored or counted: they get no .score.json, and eval.report leaves
+out every summary made with a custom system prompt. The caps line, the
+ledger reservations, and the month cap work as in any sweep.
 
 Phases:
 1. Refusals, before anything is reserved. The test split needs this
@@ -27,8 +39,10 @@ Phases:
    the ledger first and settles after, and a run spends only what it has
    reserved, topping up against the month cap when it needs more
    (agent.harness.Reservation). A finished run (its summary exists) is
-   skipped without spending; a summary made with a custom system prompt is
-   refused, since it is not that config's run. A sweep starts at 2
+   skipped without spending. Under a config's own run ID, a summary made
+   with a custom system prompt is refused, since it is not that config's
+   run; under a weak run ID, a --weakened sweep takes only a summary made
+   with one, and refuses any other. A sweep starts at 2
    concurrent runs, and the limit rises by one, up to --concurrency, only
    after a clean sweep: no failed run, no harness error, and no 429 retry.
    An unclean sweep drops it back to 2. A ledger.spend.SpendCapExceeded
@@ -52,10 +66,11 @@ Phases:
    spend cap stopped the sweep; only new judge calls stop. Any other
    cached verdict is never used: the run is judged again, or, once the
    cap has stopped the sweep, scored with no verdict.
-4. Scoring, free and redone every time, with the household's B1 median
-   question count when B1 runs exist: eval.score.score_run for agent runs,
-   and eval.baselines.score_baseline for baselines (eval.score.score_list
-   on model_list_items for B3), since a baseline never talks to the client
+4. Scoring, free and redone every time, of every run but a --weakened
+   one, with the household's B1 median question count when B1 runs
+   exist: eval.score.score_run for agent runs, and
+   eval.baselines.score_baseline for baselines (eval.score.score_list on
+   model_list_items for B3), since a baseline never talks to the client
    and so can't fail on a probe. Without score_baseline, B1 and B2 fall
    back to score_run and B3 to score_list. Written to
    eval/runs/{run_id}.score.json.
@@ -89,6 +104,7 @@ from agent.env import DEFAULT_DOTENV, HarnessSettings, caps_line, load_settings,
 from agent.harness import (
     INIT_CHECK, TEST_SPLIT, Budget, Reservation, run_id_for, summary_path, trace_path, write_json,
 )
+from agent.prompts import WEAKENED_SYSTEM_PROMPT
 from eval.score import dropped, score_list, score_run
 from ledger.spend import DEFAULT_LEDGER, Ledger, SpendCapExceeded, load_prices
 from rules import engine
@@ -106,6 +122,8 @@ SPLITS = ("train", "dev", "test")
 JUDGE_FIELDS = ("advice", "advice_reason", "delivery", "delivery_reason", "summary", "summary_reason")
 NO_MODEL = "prior_year"
 GUARD = "calls"
+WEAK = "weak"
+WEAKENED_SPLITS = ("train", "dev")
 
 EXIT_OK, EXIT_FAILED, EXIT_REFUSED, EXIT_CAP = 0, 1, 2, 3
 
@@ -116,6 +134,22 @@ class Refused(RuntimeError):
 
 class PreregError(Refused):
     """The test split is locked until eval/prereg.yaml is set and committed."""
+
+
+def weak_run_id(split: str, household_id: str, config: str, trial: int) -> str:
+    """The run ID of a --weakened judge-validation transcript, never the config's own (agent.harness.run_id_for)."""
+    return f"{split}-{household_id}-{config}-{WEAK}-t{trial}"
+
+
+def check_weakened(split: str, configs: Sequence[str]) -> None:
+    """Refused unless a --weakened sweep is on train or dev and runs agent configs only."""
+    if split not in WEAKENED_SPLITS:
+        raise Refused(f"--weakened makes judge-validation transcripts on the {' and '.join(WEAKENED_SPLITS)} "
+                      f"splits only, never on {split}")
+    baselines = [c for c in configs if CONFIGS[c].kind != "agent"]
+    if baselines:
+        raise Refused(f"--weakened runs agent configs only, and {', '.join(baselines)} "
+                      f"{'is a baseline' if len(baselines) == 1 else 'are baselines'} with no system prompt to weaken")
 
 
 def git(args: Sequence[str], cwd: Path) -> str:
@@ -196,11 +230,18 @@ def sweep_plan(args: argparse.Namespace, repo: Path | None = None) -> tuple[list
     default to its configs and trials, and any other set of configs or
     trial count is refused, so the one test sweep can't run a subset or
     extra trials. Other splits need --configs, and --trials defaults to 1.
+    A --weakened sweep is refused on test, before the prereg is read, and
+    with a baseline in --configs.
     """
     named = config_names(args.configs.split(",")) if args.configs else None
+    weakened = getattr(args, "weakened", False)
+    if weakened and args.split == TEST_SPLIT:
+        check_weakened(args.split, named or [])
     if args.split != TEST_SPLIT:
         if named is None:
             raise Refused(f"--configs is required on the {args.split} split")
+        if weakened:
+            check_weakened(args.split, named)
         return named, 1 if args.trials is None else args.trials, None
     listed, planned, commit = prereg_plan(args.prereg, repo=repo)
     configs = listed if named is None else named
@@ -244,10 +285,12 @@ class Job:
     household_id: str
     config: str
     trial: int
+    weakened: bool = False
 
     @property
     def run_id(self) -> str:
-        return run_id_for(self.split, self.household_id, self.config, self.trial)
+        name = weak_run_id if self.weakened else run_id_for
+        return name(self.split, self.household_id, self.config, self.trial)
 
     @property
     def cfg(self) -> Config:
@@ -285,7 +328,10 @@ def needs_key(configs: Sequence[str]) -> list[str]:
 
 
 class Sweep:
-    """One invocation: the jobs, the shared ledger and client, and what each phase produced."""
+    """One invocation: the jobs, the shared ledger and client, and what each phase produced.
+
+    weakened makes every job a judge-validation transcript (see --weakened), and is checked again here.
+    """
 
     def __init__(
         self,
@@ -303,10 +349,14 @@ class Sweep:
         prereg_commit: str | None = None,
         repo: Path | None = None,
         say: Callable[[str], None] = print,
+        weakened: bool = False,
     ) -> None:
         self.split = split
         self.configs = list(configs)
         self.repo = repo
+        self.weakened = weakened
+        if weakened:
+            check_weakened(split, self.configs)
         if split == TEST_SPLIT:
             prereg_commit = harness.locked_commit(self.configs, prereg_commit, repo=repo)
         self.prereg_commit = prereg_commit
@@ -383,11 +433,13 @@ class Sweep:
         """Runs a job that has no stored summary (Sweep.stored), and returns the summary it wrote."""
         cfg = job.cfg
         if cfg.kind == "agent":
+            # run_one's own arguments for a judge-validation transcript: the weakened prompt under its weak run ID.
+            weak = {"system_prompt": WEAKENED_SYSTEM_PROMPT, "run_id": job.run_id} if job.weakened else {}
             return self.checked(await self.deps.run_agent(
                 job.household_id, job.config, job.trial, job.split,
                 settings=self.settings, ledger=self.ledger, sim_client=self.client,
                 runs_dir=self.runs_dir, data_dir=self.data_dir, prereg_commit=self.prereg_commit,
-                prereg_repo=self.repo,
+                prereg_repo=self.repo, **weak,
             ), job)
         profile, truth = self.household(job.household_id)
         ids = {"run_id": job.run_id, "split": job.split, "trial": job.trial}
@@ -412,11 +464,17 @@ class Sweep:
     def checked(self, summary: dict[str, Any], job: Job) -> dict[str, Any]:
         """A summary made with a custom system prompt is a judge-validation transcript, not this config's run.
 
-        A test-split summary must carry the prereg commit this sweep is locked to.
+        So under a config's own run ID it is refused, and under a weak run ID
+        (a --weakened job) it is the only kind taken. A test-split summary
+        must carry the prereg commit this sweep is locked to.
         """
-        if summary.get("system_prompt"):
+        custom = bool(summary.get("system_prompt"))
+        if custom and not job.weakened:
             raise ValueError(f"{job.run_id}.summary.json was made with a custom system prompt; "
                              "move it aside so the real run can take its place")
+        if job.weakened and not custom:
+            raise ValueError(f"{job.run_id}.summary.json was made with the real system prompt, not the weakened "
+                             "one; move it aside so the judge-validation transcript can take its place")
         if self.prereg_commit is not None and summary.get("prereg_commit") != self.prereg_commit:
             raise ValueError(f"{job.run_id}.summary.json was made under prereg commit "
                              f"{summary.get('prereg_commit')}, not {self.prereg_commit}; it can't count in this sweep")
@@ -448,7 +506,7 @@ class Sweep:
             return job, summary, not resumed
 
     def jobs(self, trial: int) -> list[Job]:
-        return [Job(self.split, h, c, trial) for h in self.households for c in self.configs]
+        return [Job(self.split, h, c, trial, self.weakened) for h in self.households for c in self.configs]
 
     async def run_all(self) -> None:
         limit = min(START_CONCURRENCY, self.ceiling)
@@ -543,9 +601,14 @@ class Sweep:
         return score
 
     def score_all(self, verdicts: Mapping[str, Mapping[str, Any] | None]) -> dict[str, dict[str, Any]]:
-        """Scores every run, with its verdict from this sweep or the judge cache, so a cached verdict is never dropped."""
+        """Scores every run, with its verdict from this sweep or the judge cache, so a cached verdict is never dropped.
+
+        A judge-validation transcript (made with a custom system prompt) is judged but never scored.
+        """
         scores = {}
         for run_id, summary in self.summaries.items():
+            if summary.get("system_prompt"):
+                continue
             scores[run_id] = self.score(summary, verdicts.get(run_id) or self.cached_verdict(run_id))
             write_json(self.runs_dir / f"{run_id}.score.json", scores[run_id])
         return scores
@@ -590,6 +653,10 @@ def parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
                         help="for the test split, this must be the repo's own eval/prereg.yaml")
     parser.add_argument("--report", type=Path, default=REPORT_PATH)
     parser.add_argument("--runs-dir", type=Path, default=RUNS_DIR)
+    parser.add_argument("--weakened", action="store_true",
+                        help="judge-validation transcripts: every agent config in --configs with "
+                             "WEAKENED_SYSTEM_PROMPT under run ID {split}-{household}-{config}-weak-t{trial}, "
+                             "judged but never scored; train and dev only")
     return parser.parse_args(argv)
 
 
@@ -617,7 +684,8 @@ async def main_async(
         if live and not settings.api_key:
             raise Refused(
                 f"TAX_AGENT_API_KEY is empty in .env, so {', '.join(live)} can't run; nothing was reserved. "
-                "Paste the workspace key into .env, or run only B2, which needs no key."
+                + ("Paste the workspace key into .env." if args.weakened else
+                   "Paste the workspace key into .env, or run only B2, which needs no key.")
             )
         if args.split == TEST_SPLIT:
             locked_cap = prereg_run_cap(repo)
@@ -632,8 +700,11 @@ async def main_async(
         sweep = Sweep(
             split=args.split, configs=configs, households=households, trials=trials, ceiling=args.concurrency,
             settings=settings, ledger=ledger, deps=deps, runs_dir=args.runs_dir, data_dir=data_dir,
-            prereg_commit=commit, repo=repo, say=say,
+            prereg_commit=commit, repo=repo, say=say, weakened=args.weakened,
         )
+        if args.weakened:
+            say(f"weakened prompt: judge-validation transcripts under run IDs "
+                f"{args.split}-{{household}}-{{config}}-{WEAK}-t{{trial}}, judged and never scored")
     except (Refused, KeyError) as e:
         say(f"refused: {e}")
         return EXIT_REFUSED
@@ -647,7 +718,9 @@ async def main_async(
     else:
         path = report(args.runs_dir, args.report, prereg_path=args.prereg, ledger_path=ledger.path)
         say(f"report: {path}")
-    say(f"{len(sweep.summaries)} runs, {len(sweep.failures)} failures, month to date ${ledger.month_to_date():.4f}")
+    kind = " weakened-prompt" if sweep.weakened else ""
+    say(f"{len(sweep.summaries)}{kind} runs, {len(sweep.failures)} failures, "
+        f"month to date ${ledger.month_to_date():.4f}")
     if sweep.halted:
         return EXIT_CAP
     return EXIT_FAILED if sweep.failures else EXIT_OK

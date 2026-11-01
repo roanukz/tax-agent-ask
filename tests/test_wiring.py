@@ -16,10 +16,13 @@ import pytest
 from claude_agent_sdk import ResultMessage, SystemMessage
 
 from agent import fake_api, wiring_check
+from agent.ask_client import ASK_CLIENT_TOOL
 from agent.env import API_BASE_URL, HarnessSettings
 from agent.harness import ALLOWED_TOOLS
 from agent.options import isolated_options
 from agent.ping import CLOSED_PORT_URL
+from agent.questions import MESSAGES, SEND_CLAIM, check_question
+from agent.questions import denial as denial_event
 
 CONNECTED = [{"name": "tax", "status": "connected"}, {"name": "harness", "status": "connected"}]
 STATUS = {"mcpServers": [{"name": "tax", "status": "connected", "serverInfo": {"name": "tax", "version": "0.1.0"}},
@@ -180,3 +183,92 @@ def test_the_fake_api_refuses_cuts_and_drops_the_agent_requests_it_is_told_to():
     assert [r["fault"] for r in api.requests] == ["refused", "cut", "dropped", None]
     assert [r["usage"]["output_tokens"] for r in api.requests] == [0, 400, 400, 400], \
         "a refused request bills nothing; a cut or dropped one is kept at the most it could have billed"
+
+
+# Stage 3c: a question the question check refuses.
+
+def test_the_claim_stage_3c_asks_is_one_the_question_check_refuses_as_a_send_claim():
+    refusal = check_question(wiring_check.CLAIM_QUESTION)
+    assert refusal is not None and refusal.categories == (SEND_CLAIM,) and refusal.message == MESSAGES[(SEND_CLAIM,)]
+    turns = wiring_check.claim_turns("in_abc123")
+    names = [block[1] for turn in turns for block in turn if block[0] == fake_api.TOOL_USE]
+    assert names[-2:] == ["mcp__tax__submit_for_preparer_review", ASK_CLIENT_TOOL], "submit, then the claim"
+    assert turns[-1][0][0] == fake_api.TEXT
+
+
+def claim_call(api: fake_api.FakeMessagesAPI) -> tuple[dict[str, Any], dict[str, Any], str]:
+    """One request whose reply makes the stage 3c call: (that request's body, the reply, the call's ID)."""
+    body = {"model": "claude-haiku-5-5", "max_tokens": 8192, "tools": [{"name": ASK_CLIENT_TOOL}],
+            "messages": [{"role": "user", "content": "Start intake for household H002."}]}
+    status, out, _ = api.answer("/v1/messages", body)
+    assert status == 200
+    reply = json.loads(out)
+    return body, reply, reply["content"][0]["id"]
+
+
+def refused_result(call_id: str, *, content: Any = None, is_error: Any = True) -> dict[str, Any]:
+    """The tool_result block as stage 3c saw bundled CLI 2.1.314 send it back for the refused call."""
+    return {"type": "tool_result", "content": MESSAGES[(SEND_CLAIM,)] if content is None else content,
+            "is_error": is_error, "tool_use_id": call_id}
+
+
+def send_back(api: fake_api.FakeMessagesAPI, body: dict[str, Any], reply: dict[str, Any], block: dict[str, Any]) -> None:
+    api.answer("/v1/messages", {**body, "messages": [*body["messages"], {"role": "assistant", "content": reply["content"]},
+                                                     {"role": "user", "content": [block]}]})
+
+
+def claim_api() -> fake_api.FakeMessagesAPI:
+    question = {"question": wiring_check.CLAIM_QUESTION, "fact_keys": []}
+    return fake_api.FakeMessagesAPI(lambda step, body: [(fake_api.TOOL_USE, ASK_CLIENT_TOOL, question)],
+                                    lambda body: 300)
+
+
+def test_the_fake_api_keeps_each_replys_message_id_so_a_check_finds_the_result_sent_back():
+    api = claim_api()
+    body, reply, call_id = claim_call(api)
+    assert api.requests[0]["message_id"] == reply["id"] and call_id == f"toolu_{reply['id']}_0"
+    assert wiring_check.sent_back(api.requests, call_id) == (None, None), "no request after it yet"
+    block = refused_result(call_id)
+    send_back(api, body, reply, block)
+    assert wiring_check.sent_back(api.requests, call_id) == (2, block)
+    assert wiring_check.sent_back(api.requests, "toolu_msg_fake_009_0") == (None, None)
+    assert fake_api.tool_result_block(api.requests[1]["body"], "toolu_other") is None
+    assert fake_api.block_text([{"type": "text", "text": "Not "}, {"type": "text", "text": "delivered"}]) == "Not delivered"
+    assert fake_api.block_text("Not delivered") == "Not delivered" and fake_api.block_text(None) == ""
+
+
+def claim_summary(call_id: str, **overrides: Any) -> dict[str, Any]:
+    question = wiring_check.CLAIM_QUESTION
+    denial = denial_event(call_id, question, [], check_question(question))
+    return {"question_denials": [{k: v for k, v in denial.items() if k != "type"}], "questions": [], **overrides}
+
+
+def test_refusal_problems_pass_a_refused_claim_whose_result_goes_back_as_an_error():
+    api = claim_api()
+    body, reply, call_id = claim_call(api)
+    send_back(api, body, reply, refused_result(call_id))
+    assert wiring_check.refusal_problems(claim_summary(call_id), 0, api.requests) == []
+    wrapped = claim_api()
+    body, reply, call_id = claim_call(wrapped)
+    send_back(wrapped, body, reply, refused_result(call_id, content=[
+        {"type": "text", "text": f"<tool_use_error>Error: {MESSAGES[(SEND_CLAIM,)]}</tool_use_error>"}]))
+    assert wiring_check.refusal_problems(claim_summary(call_id), 0, wrapped.requests) == [], "text blocks, framed"
+
+
+@pytest.mark.parametrize("change, expect", [
+    ({"summary": {"question_denials": []}}, "expected one send_claim refusal"),
+    ({"simulator_calls": 1}, "the simulator was called 1 times"),
+    ({"summary": {"questions": [{"n": 1, "text": "Any new jobs?", "fact_keys": []}]}}, "questions reached the client"),
+    ({"result": {"is_error": False}}, "with is_error False, not true"),
+    ({"result": {"is_error": None}}, "with is_error None, not true"),
+    ({"result": {"content": "The client could not answer that question."}}, "without the refusal text"),
+    ({"result": None}, "no request after the call's sends back no tool_result"),
+])
+def test_refusal_problems_name_each_way_the_refusal_went_wrong(change, expect):
+    api = claim_api()
+    body, reply, call_id = claim_call(api)
+    if change.get("result", {}) is not None:
+        send_back(api, body, reply, refused_result(call_id, **change.get("result", {})))
+    summary = {**claim_summary(call_id), **change.get("summary", {})}
+    problems = wiring_check.refusal_problems(summary, change.get("simulator_calls", 0), api.requests)
+    assert any(expect in p for p in problems), problems
