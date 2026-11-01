@@ -413,9 +413,9 @@ def test_parse_reply_rejects(text, reason):
 
 @pytest.mark.anyio
 async def test_fenced_reply_is_used_without_a_retry():
-    sim, client = make_sim(['```json\n{"answer": "No.", "revealed": {"interest_income": false}}\n```'])
+    sim, client = make_sim(['```json\n{"answer": "Yes.", "revealed": {"interest_income": true}}\n```'])
     result = await sim.answer("Did you earn interest?")
-    assert result.answer == "No." and result.revealed == {"interest_income": False}
+    assert result.answer == "Yes." and result.revealed == {"interest_income": True}
     assert result.retried is False and len(client.calls) == 1
 
 
@@ -483,14 +483,14 @@ async def test_bad_revealed_entries_become_anomalies():
             "w2_employer_count": "two",
             "made_up_key": True,
             "self_employment": "true",
-            "k1_count": 2,
+            "k1_count": 0,
             "dependents_count": "--3",
             "ev_acquired_date": None,
         },
     }
     sim, _ = make_sim([json.dumps(raw), reply("Yes."), json.dumps({"answer": "Yes.", "revealed": [1]})])
     result = await sim.answer("Tell me about work.")
-    assert result.revealed == {"self_employment": True, "k1_count": 2, "ev_acquired_date": None}
+    assert result.revealed == {"self_employment": True, "k1_count": 0, "ev_acquired_date": None}
     assert {(a["kind"], a.get("key")) for a in result.anomalies} == {
         ("uncoercible", "w2_employer_count"),
         ("uncoercible", "dependents_count"),
@@ -513,7 +513,8 @@ async def test_missing_revealed_is_an_anomaly():
 @pytest.mark.anyio
 async def test_history_is_passed_on_later_calls():
     first = reply("Two jobs.", {"w2_employer_count": 2})
-    second = reply("Yes, a part-time job too, so three.", {"w2_employer_count": 3, "self_employment": False})
+    second = reply("Yes, a part-time job too, so three, and my side business.",
+                   {"w2_employer_count": 3, "self_employment": True})
     sim, client = make_sim([first, second])
     await sim.answer("How many jobs?")
     await sim.answer("Any other work?")
@@ -603,6 +604,151 @@ async def test_empty_question_is_rejected():
     with pytest.raises(ValueError):
         await sim.answer("  ")
     assert client.calls == []
+
+
+# ---- the contradiction retry ---------------------------------------------------------
+
+
+TIPS_AND_SHARE = "Any interest, tips, or partnership income?"
+
+
+@pytest.mark.anyio
+async def test_a_contradiction_goes_back_once_and_the_corrected_answer_replaces_the_first():
+    # H902 has bank interest, no tips, and no partnership share.
+    first = reply("Some interest, tips at work, and a share in my cousin's partnership.",
+                  {"interest_income": True, "tips_income": True, "k1_count": 1})
+    fixed = reply("Some interest from the bank, but no tips and no partnership share.",
+                  {"interest_income": True, "tips_income": False, "k1_count": 0})
+    sim, client = make_sim([first, fixed, reply("No.")], usage=FakeUsage(input_tokens=100, output_tokens=20))
+    result = await sim.answer(TIPS_AND_SHARE)
+    assert result.answer == "Some interest from the bank, but no tips and no partnership share."
+    assert result.revealed == {"interest_income": True, "tips_income": False, "k1_count": 0}
+    assert result.raw_text == fixed and result.raw_revealed == json.loads(fixed)["revealed"]
+    assert result.corrected == [{"key": "tips_income", "first": True, "final": False},
+                                {"key": "k1_count", "first": 1, "final": 0}]
+    assert result.unresolved == [] and result.retried is False and result.retry_reason is None
+    # The retry is the first answer, then a turn that names only the facts it got wrong.
+    retry = client.calls[1]["messages"]
+    assert retry[:2] == [{"role": "user", "content": TIPS_AND_SHARE}, {"role": "assistant", "content": first}]
+    assert retry[2] == {"role": "user", "content": (
+        "Your last answer said tips_income is true and k1_count is 1, but Your facts say tips_income is false and "
+        "k1_count is 0. Answer the same question again, truthfully, using only Your facts. Reply with only the "
+        "JSON object, as before.")}
+    assert len(retry) == 3 and client.calls[1]["system"] == client.calls[0]["system"]
+    # Both calls count, and only the corrected answer stays in the conversation.
+    assert result.usage == Usage(input_tokens=200, output_tokens=40) and sim.calls == 2
+    assert sim.history == [{"role": "user", "content": TIPS_AND_SHARE}, {"role": "assistant", "content": fixed}]
+    await sim.answer("Anything else?")
+    assert client.calls[2]["messages"] == [*sim.history[:2], {"role": "user", "content": "Anything else?"}]
+
+
+@pytest.mark.anyio
+async def test_an_answer_that_still_contradicts_after_the_retry_is_kept_and_unresolved():
+    first = reply("Yes, I gave to charity and got tips.", {"charitable_giving": True, "tips_income": True})
+    again = reply("I gave a little to charity, and I had overtime.",
+                  {"charitable_giving": True, "tips_income": False, "overtime_pay": True})
+    sim, client = make_sim([first, again])
+    result = await sim.answer("Did you give to charity, or get tips?")
+    assert len(client.calls) == 2, "one contradiction retry per question"
+    assert result.answer == "I gave a little to charity, and I had overtime." and result.raw_text == again
+    assert result.revealed == {"charitable_giving": True, "tips_income": False, "overtime_pay": True}
+    # tips_income is fixed; charitable_giving is still wrong, and overtime_pay is newly wrong, so it has no first value.
+    assert result.corrected == [{"key": "tips_income", "first": True, "final": False}]
+    assert result.unresolved == [{"key": "charitable_giving", "first": True, "final": True},
+                                 {"key": "overtime_pay", "final": True}]
+    assert sim.history[-1] == {"role": "assistant", "content": again}
+
+
+@pytest.mark.anyio
+async def test_an_unusable_reply_to_the_retry_keeps_the_first_answer_unresolved():
+    first = reply("Yes, I got tips.", {"tips_income": True})
+    sim, client = make_sim([first, "Sorry, no tips after all."])
+    result = await sim.answer("Did you get tips?")
+    assert len(client.calls) == 2, "the retry's reply is not retried again"
+    assert result.answer == "Yes, I got tips." and result.raw_text == first and result.revealed == {"tips_income": True}
+    assert result.unresolved == [{"key": "tips_income", "first": True, "final": True,
+                                  "retry_error": "the reply is not valid JSON"}]
+    assert result.corrected == [] and result.retried is False
+    assert sim.history == [{"role": "user", "content": "Did you get tips?"}, {"role": "assistant", "content": first}]
+
+
+@pytest.mark.anyio
+async def test_an_unusable_first_reply_and_a_contradiction_each_get_their_own_retry():
+    usable = reply("Yes, tips.", {"tips_income": True})
+    sim, client = make_sim(["Sure, I had tips.", usable, reply("No tips.", {"tips_income": False})])
+    result = await sim.answer("Did you get tips?")
+    assert len(client.calls) == 3 and result.retried is True and "not valid JSON" in result.retry_reason
+    assert result.answer == "No tips." and result.corrected == [{"key": "tips_income", "first": True, "final": False}]
+    # The contradiction retry follows the usable reply; the unusable one stays out of it.
+    resent = client.calls[2]["messages"]
+    assert [m["content"] for m in resent[:2]] == ["Did you get tips?", usable] and len(resent) == 3
+    assert resent[2]["content"].startswith("Your last answer said tips_income is true, but Your facts say")
+
+
+@pytest.mark.anyio
+async def test_a_fact_the_recall_gap_hides_is_never_sent_back():
+    # H902 forgets its new part-time job, so 2 employers for 3 is the gap at work.
+    sim, client = make_sim([reply("Just the two jobs.", {"w2_employer_count": 2, "tips_income": False})])
+    result = await sim.answer("How many employers paid you wages?")
+    assert result.revealed == {"w2_employer_count": 2, "tips_income": False} and len(client.calls) == 1
+    assert result.corrected == result.unresolved == []
+    side_gig = ALL_TRUTHS["H087"]
+    assert simulator.hidden_facts(side_gig["persona"]["recall_gap"]) == ("self_employment", "business_app_payments")
+    assert side_gig["true_facts"]["self_employment"] and side_gig["true_facts"]["business_app_payments"]
+    client = ScriptedClient([reply("No side work, just my job.", {"self_employment": False,
+                                                                  "business_app_payments": False})])
+    result = await ClientSimulator(side_gig, client, specs=SPECS).answer("Any side work?")
+    assert len(client.calls) == 1 and result.corrected == result.unresolved == []
+
+
+@pytest.mark.anyio
+async def test_an_uncoercible_value_or_unknown_key_is_an_anomaly_not_a_contradiction():
+    raw = {"answer": "Maybe some tips.", "revealed": {"tips_income": "maybe", "k1_count": "--3", "made_up_key": True}}
+    sim, client = make_sim([json.dumps(raw)])
+    result = await sim.answer("Did you get tips?")
+    assert len(client.calls) == 1 and result.revealed == {}
+    assert {(a["kind"], a["key"]) for a in result.anomalies} == {
+        ("uncoercible", "tips_income"), ("uncoercible", "k1_count"), ("unknown_key", "made_up_key")}
+    assert result.corrected == result.unresolved == []
+
+
+def test_contradictions_compare_coerced_values_as_the_scorer_does():
+    t = truth("H902")
+    values = simulator.true_values(t["true_facts"], SPECS)
+    assert values == fidelity.truth_values(t, SPECS)
+    revealed, anomalies = simulator.check_revealed({
+        "interest_income": "true", "w2_employer_count": "2", "ev_acquired_date": None, "tips_income": None,
+        "k1_count": 0, "filing_status": "single", "clean_energy_install_year": "2026"}, SPECS)
+    assert anomalies == []
+    hidden = simulator.hidden_facts(t["persona"]["recall_gap"])
+    # A null for a follow-up that doesn't apply matches; a null for a fact that is false is wrong, as in the scorer.
+    assert simulator.contradictions(revealed, values, hidden) == {"tips_income": None, "filing_status": "single"}
+    assert simulator.contradictions(revealed, values) == {
+        "w2_employer_count": 2, "tips_income": None, "filing_status": "single"}
+    note = simulator.contradiction_note({"tips_income": None, "ev_acquired_date": "2026-03-02", "k1_count": 2}, values)
+    assert note.startswith(
+        'Your last answer said tips_income does not apply to you, ev_acquired_date is "2026-03-02", and k1_count is '
+        "2, but Your facts say tips_income is false, ev_acquired_date does not apply to you, and k1_count is 0. ")
+
+
+@pytest.mark.anyio
+async def test_the_contradiction_retry_is_a_guarded_call_like_any_other():
+    sim, inner = make_sim([reply("Yes, I got tips.", {"tips_income": True}), reply("No tips.", {"tips_income": False})],
+                          usage=FakeUsage(input_tokens=500, output_tokens=40))
+    first = budget.call_bound_usd(sim._request([{"role": "user", "content": "Did you get tips?"}]), HAIKU, PRICES)
+    # Room for the first call's bound, not for the retry's on top of what the first call cost.
+    guard = BudgetedClient(inner, model=HAIKU, prices=PRICES, limit_usd=first)
+    guarded = ClientSimulator(truth("H902"), guard, specs=SPECS)
+    with pytest.raises(BudgetExceeded):
+        await guarded.answer("Did you get tips?")
+    assert len(inner.calls) == 1 and guard.calls == 1 and guarded.history == []
+    roomy = BudgetedClient(ScriptedClient([reply("Yes, I got tips.", {"tips_income": True}),
+                                           reply("No tips.", {"tips_income": False})],
+                                          usage=FakeUsage(input_tokens=500, output_tokens=40)),
+                           model=HAIKU, prices=PRICES, limit_usd=1.0)
+    result = await ClientSimulator(truth("H902"), roomy, specs=SPECS).answer("Did you get tips?")
+    assert result.corrected and roomy.calls == 2
+    assert roomy.spent_usd == pytest.approx(cost_usd(HAIKU, result.usage.as_dict(), PRICES))
 
 
 # ---- fidelity: questions and leaks ----------------------------------------------
@@ -933,6 +1079,72 @@ def test_null_follow_up_matches_null_truth():
     assert s.mismatches[0]["truth"] == 0
 
 
+def test_the_report_counts_and_lists_the_contradictions_sent_back(tmp_path, monkeypatch, capsys):
+    t = truth("H902")
+    q01, q08 = (next(q for q in QUESTIONS if q.id == qid) for qid in ("q01", "q08"))
+    jobs = {"w2_employer_count": 3, "unemployment": False}
+    sim, _ = make_sim([
+        reply("Three jobs, with tips and overtime.", {**jobs, "tips_income": True, "overtime_pay": True}),
+        reply("Three jobs, no tips or overtime.", {**jobs, "tips_income": False, "overtime_pay": False}),
+        reply("Yes, to my church.", {"charitable_giving": True, "gambling_winnings": False}),
+        reply("Yes, I gave to my church.", {"charitable_giving": True, "gambling_winnings": False}),
+    ])
+    # Sync, since main() below runs its own event loop.
+    records = asyncio.run(fidelity.ask_all(sim, [q01, q08]))
+    tips, overtime = ({"key": k, "first": True, "final": False} for k in ("tips_income", "overtime_pay"))
+    church = {"key": "charitable_giving", "first": True, "final": True}
+    assert [(r.answer, r.corrected, r.unresolved) for r in records] == [
+        ("Three jobs, no tips or overtime.", [tips, overtime], []), ("Yes, I gave to my church.", [], [church])]
+    s = score({"H902": t}, records, SPECS)
+    q01_at, q08_at = ({"household_id": "H902", "question_id": qid} for qid in ("q01", "q08"))
+    assert s.corrected == [{**q01_at, **tips}, {**q01_at, **overtime}] and s.unresolved == [{**q08_at, **church}]
+    assert s.contradicted_answers == 2 and s.retries == 0
+    # The match rate is on the answers kept: the corrected facts match, and the one left wrong is a mismatch.
+    assert (s.compared, s.matched) == (6, 5) and [(m["question_id"], m["key"]) for m in s.mismatches] == [
+        ("q08", "charitable_giving")]
+    paths = (tmp_path / "report.md", tmp_path / "review.md", tmp_path / "answers.json")
+    outcome = fidelity.CheckOutcome("run-1", True, s, records, Usage(), 0.0, 0.0, *paths)
+    fidelity.write_outputs(outcome, {"H902": t}, SPECS, model="fake")
+    report = outcome.report_path.read_text()
+    assert ("- Answers the simulator sent back once, because they contradicted a fact outside the recall gap: 2 of 2 "
+            "(100.0%). Facts the retry corrected: 2. Facts the answers kept still get wrong, counted as mismatches: "
+            "1.") in report
+    assert report.index("## Facts that ended") < report.index("## Contradictions sent back") < report.index(
+        "## Mismatches")
+    section = report.split("## Contradictions sent back")[1].split("## Mismatches")[0]
+    assert [x for x in section.splitlines() if x.startswith("| H902")] == [
+        "| H902 | q01 | tips_income | true | false | false | corrected |",
+        "| H902 | q01 | overtime_pay | true | false | false | corrected |",
+        "| H902 | q08 | charitable_giving | true | true | false | unresolved |",
+    ]
+    answers = json.loads(outcome.answers_path.read_text())["records"]
+    assert [(a["corrected"], a["unresolved"]) for a in answers] == [([tips, overtime], []), ([], [church])]
+    # A fact the answer kept left out, one only the retry got wrong, and a retry whose reply was unusable.
+    others = [
+        rec("q01", {"tips_income": False, "unemployment": True}, corrected=[{"key": "overtime_pay", "first": True}],
+            unresolved=[{"key": "unemployment", "final": True}]),
+        rec("q08", {"charitable_giving": True}, unresolved=[{**church, "retry_error": "the reply is not valid JSON"}]),
+    ]
+    other = fidelity.render_report(ended_outcome(others, {"H902": t}), {"H902": t}, SPECS, model="fake")
+    section = other.split("## Contradictions sent back")[1].split("## Mismatches")[0]
+    assert [x for x in section.splitlines() if x.startswith("| H902")] == [
+        "| H902 | q01 | overtime_pay | true | not revealed | false | corrected |",
+        "| H902 | q01 | unemployment | not revealed | true | false | unresolved |",
+        "| H902 | q08 | charitable_giving | true | true (the retry's reply was unusable, so the first answer was kept: "
+        "the reply is not valid JSON) | false | unresolved |",
+    ]
+    clean = fidelity.render_report(ended_outcome([rec("q01")], {"H902": t}), {"H902": t}, SPECS, model="fake")
+    assert "sent back once, because they contradicted a fact outside the recall gap: 0 of 1 (0.0%)" in clean
+    assert clean.split("## Contradictions sent back")[1].split("## Mismatches")[0].strip().endswith("None.")
+
+    async def checked(**kwargs):
+        return outcome
+
+    monkeypatch.setattr(fidelity, "run_check", checked)
+    assert fidelity.main(["--dry-run"]) == 1
+    assert "contradictions sent back: 2/2 answers, facts corrected: 2, unresolved: 1" in capsys.readouterr().out
+
+
 @pytest.mark.parametrize(
     "bad",
     [
@@ -1243,6 +1455,8 @@ def test_dry_run_cli_writes_both_reports(tmp_path, capsys):
     printed = capsys.readouterr().out
     assert "bar met: True" in printed and "dry_run: True" in printed and "recall gaps broken: 0" in printed
     assert 'facts that ended: none of these households has a "Last year only" line' in printed
+    assert "contradictions sent back: 0/220 answers, facts corrected: 0, unresolved: 0" in printed
+    assert "sent back once, because they contradicted a fact outside the recall gap: 0 of 220 (0.0%)" in report
 
 
 @pytest.mark.anyio
@@ -1255,7 +1469,19 @@ async def test_dry_run_spends_nothing_and_defaults_to_a_temp_folder(tmp_path, mo
     def no_settings():
         raise AssertionError("a dry run must not load the key")
 
+    fakes = []
+
+    class Counted(fidelity.TruthEchoClient):
+        def __init__(self, *args):
+            super().__init__(*args)
+            fakes.append(self)
+
+    monkeypatch.setattr(fidelity, "TruthEchoClient", Counted)
     outcome = await fidelity.run_check(data_dir=data, dry_run=True, settings_loader=no_settings, ledger_path=ledger)
+    # The fake answers from the truth, so nothing is sent back: one call per answer, and no retry of either kind.
+    s = outcome.score
+    assert s.corrected == s.unresolved == [] and s.contradicted_answers == 0 and s.retries == 0
+    assert sum(len(f.calls) for f in fakes) == s.answers == 220
     assert not ledger.exists()
     assert outcome.report_path.exists() and REPO not in outcome.report_path.parents
     assert tmp_path / "tmp" in outcome.report_path.parents
@@ -1290,6 +1516,7 @@ async def test_the_check_takes_every_train_and_dev_household_with_a_last_year_on
     assert (s.drawn_compared, s.drawn_matched) == (747, 747)
     assert (s.answers, s.compared, s.matched, s.meets_bar) == (308, 1065, 1065, True)
     assert s.leaks == [] and s.anomalies == [] and s.change_coverage == 1.0
+    assert s.corrected == s.unresolved == [] and s.contradicted_answers == 0 and s.retries == 0
     assert outcome.estimate_usd == estimate_cost_usd(truths.values(), SPECS, "claude-haiku-5-5", load_prices())
     assert round(outcome.estimate_usd, 2) == 0.27 and outcome.estimate_usd < 0.50
     report, review = outcome.report_path.read_text(), outcome.review_path.read_text()

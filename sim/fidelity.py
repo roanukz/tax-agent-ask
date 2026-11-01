@@ -23,6 +23,12 @@ doesn't volunteer, and a fact key name or form number in the answer text.
 Roanuk reads 30 answers for leaks the JSON doesn't show. Test households are
 never used.
 
+The simulator sends an answer that contradicts the truth outside the recall
+gap back to its model once (sim.simulator), and an agent sees only the
+answer kept, so the match rate is on the answers kept. The report counts the
+answers sent back and lists each fact the retry corrected or left wrong, with
+its first and final value, so the simulator's raw error rate stays in view.
+
 The first question, q00, asks what changed since last year before any topic
 comes up, as the agent does. It asks about every change the client
 remembers, which is every change but the ones its recall gap hides, so code
@@ -67,7 +73,7 @@ from ledger.spend import (
     cost_usd,
     load_prices,
 )
-from rules.engine import FactSpec, coerce, complete_facts, default_value, load_facts
+from rules.engine import FactSpec, default_value, load_facts
 from sim.budget import BudgetedClient, BudgetExceeded
 from sim.fakes import TruthEchoClient
 from sim.simulator import (
@@ -81,6 +87,7 @@ from sim.simulator import (
     ended_facts,
     hidden_facts,
     remembered_changes,
+    true_values,
 )
 
 REPO = Path(__file__).resolve().parent.parent
@@ -99,6 +106,11 @@ POOL_SPLITS = ("train", "dev")
 
 # Cost estimate for the reservation: no cache discount, every answer at its
 # full max_tokens, and a retry margin. The spend guard holds the run to it.
+# At the estimate's own prices the margin pays for one retry, for an unusable
+# reply or a contradiction, on about a quarter of the answers. The first live
+# check had no unusable reply, would have sent back 5 of its 220 answers, and
+# cost about a fifth of its estimate; the Block 6 agent runs would have sent
+# back 12 of 238.
 CHARS_PER_TOKEN = 3
 ANSWER_TOKENS_IN_HISTORY = 150
 RETRY_MARGIN = 1.25
@@ -244,6 +256,9 @@ class AnswerRecord:
     retried: bool = False
     error: str | None = None
     usage: dict[str, int] = field(default_factory=dict)
+    # The contradiction retry, as SimAnswer has it: the facts it corrected, and the ones the answer kept gets wrong.
+    corrected: list[dict[str, Any]] = field(default_factory=list)
+    unresolved: list[dict[str, Any]] = field(default_factory=list)
 
 
 @dataclass
@@ -292,6 +307,16 @@ class FidelityScore:
     drawn_households: list[str] = field(default_factory=list)
     drawn_compared: int = 0
     drawn_matched: int = 0
+    # The contradiction retry in the answers scored: each fact it corrected, and each fact the answer kept still
+    # gets wrong (also in mismatches), with its household and question. The match rate is on the answers kept, so
+    # these keep the simulator's raw error in view.
+    corrected: list[dict[str, Any]] = field(default_factory=list)
+    unresolved: list[dict[str, Any]] = field(default_factory=list)
+
+    @property
+    def contradicted_answers(self) -> int:
+        """Answers sent back because their first usable reply contradicted the truth outside the recall gap."""
+        return len({(x["household_id"], x["question_id"]) for x in [*self.corrected, *self.unresolved]})
 
     @property
     def coverage(self) -> float | None:
@@ -444,12 +469,15 @@ def load_truths(data_dir: Path, household_ids: Iterable[str]) -> dict[str, dict[
 
 
 def truth_values(truth: Mapping[str, Any], specs: Mapping[str, FactSpec]) -> dict[str, Any]:
-    """Every fact key's true value after coerce, with engine defaults for any missing key."""
+    """Every fact key's true value after coerce, with engine defaults for any missing key.
+
+    The simulator's contradiction check compares with the same values (sim.simulator.true_values).
+    """
     facts = truth["true_facts"]
     unknown = sorted(set(facts) - set(specs))
     if unknown:
         raise ValueError(f"{truth.get('household_id')}: unknown fact keys {unknown}")
-    return complete_facts({k: None if v is None else coerce(specs[k], v) for k, v in facts.items()}, specs)
+    return true_values(facts, specs)
 
 
 def recall_gap_of(truth: Mapping[str, Any]) -> str | None:
@@ -556,7 +584,9 @@ def score(
     The facts that ended are counted on their own too, beside the same facts
     where they are true this year, and the match rate is also taken over the
     households drawn by complexity (`drawn`; every household when it is None).
-    None of these change the bar.
+    None of these change the bar, and neither do the facts the simulator's
+    contradiction retry corrected or left wrong, which are collected from each
+    scored answer for the report; one left wrong is a mismatch like any other.
     """
     by_id = {q.id: q for q in questions}
     order = {q.id: i for i, q in enumerate(questions)}
@@ -574,6 +604,8 @@ def score(
     ended_mismatches: list[dict[str, Any]] = []
     missed_changes: list[dict[str, Any]] = []
     broken_gaps: list[dict[str, Any]] = []
+    corrected: list[dict[str, Any]] = []
+    unresolved: list[dict[str, Any]] = []
     mismatches: list[dict[str, Any]] = []
     anomalies: list[dict[str, Any]] = []
     leaks: list[dict[str, Any]] = []
@@ -596,6 +628,8 @@ def score(
             errors.append({**where, "error": rec.error})
             unscored.append({**where, "reason": "failed twice"})
             continue
+        corrected += [{**where, **c} for c in rec.corrected]
+        unresolved += [{**where, **u} for u in rec.unresolved]
         unusable = [a["kind"] for a in rec.anomalies if a.get("kind") in UNSCORED_ANOMALIES]
         if unusable:
             unscored.append({**where, "reason": unusable[0]})
@@ -721,6 +755,8 @@ def score(
         drawn_households=sorted(drawn_ids),
         drawn_compared=drawn_compared,
         drawn_matched=drawn_matched,
+        corrected=corrected,
+        unresolved=unresolved,
     )
 
 
@@ -738,8 +774,9 @@ def estimate_cost_usd(
 ) -> float:
     """A deliberately high estimate: no cache discount, every reply at max_tokens, a retry margin.
 
-    It is not a hard bound (a retry doubles an answer's calls), so the live
-    run wraps its client in a BudgetedClient that holds spend to this figure.
+    It is not a hard bound (an answer can take three calls: one retry for an
+    unusable reply and one for a contradiction), so the live run wraps its
+    client in a BudgetedClient that holds spend to this figure.
     """
     total = Usage()
     for truth in truths:
@@ -774,6 +811,8 @@ async def ask_all(sim: ClientSimulator, questions: Sequence[Question]) -> list[A
                 anomalies=result.anomalies,
                 retried=result.retried,
                 usage=result.usage.as_dict(),
+                corrected=result.corrected,
+                unresolved=result.unresolved,
             )
         )
     return records
@@ -1007,6 +1046,39 @@ def _ended_rows(
     return rows
 
 
+def _contradiction_bullet(s: FidelityScore) -> str:
+    rate = s.contradicted_answers / s.answers if s.answers else None
+    return (
+        "- Answers the simulator sent back once, because they contradicted a fact outside the recall gap: "
+        f"{s.contradicted_answers} of {s.answers} ({_pct(rate)}). Facts the retry corrected: {len(s.corrected)}. "
+        f"Facts the answers kept still get wrong, counted as mismatches: {len(s.unresolved)}. The match rate is on "
+        "the answers kept, so this is the simulator's raw error; the Contradictions sent back table lists each fact."
+    )
+
+
+def _contradiction_rows(
+    s: FidelityScore, truths: Mapping[str, Mapping[str, Any]], specs: Mapping[str, FactSpec]
+) -> list[str]:
+    """A table row for each fact the contradiction retry corrected or left wrong, in household and question order."""
+    order = {q.id: i for i, q in enumerate(QUESTIONS)}
+    entries = sorted(
+        [*((x, "corrected") for x in s.corrected), *((x, "unresolved") for x in s.unresolved)],
+        key=lambda e: (e[0]["household_id"], order.get(e[0]["question_id"], len(order))),
+    )
+    values = {hid: truth_values(truths[hid], specs) for hid in {x["household_id"] for x, _ in entries}}
+    rows = []
+    for x, outcome in entries:
+        first = _value(x["first"]) if "first" in x else "not revealed"
+        final = _value(x["final"]) if "final" in x else "not revealed"
+        if x.get("retry_error"):
+            final += f" (the retry's reply was unusable, so the first answer was kept: {x['retry_error']})"
+        rows.append(
+            f"| {x['household_id']} | {x['question_id']} | {x['key']} | {first} | {_cell(final)} | "
+            f"{_value(values[x['household_id']][x['key']])} | {outcome} |"
+        )
+    return rows
+
+
 def _banner(dry_run: bool) -> list[str]:
     if not dry_run:
         return []
@@ -1060,7 +1132,9 @@ def render_report(
         f"- Mismatches: {len(s.mismatches)}. Anomalies: {len(s.anomalies)}. Leaks code caught: {len(s.leaks)}"
         + (f" ({_kind_counts(s.leaks)})" if s.leaks else "")
         + ".",
-        f"- Answers that needed a retry: {s.retries}. Answers that failed twice: {len(s.errors)}.",
+        f"- Answers that needed a retry for an unusable reply: {s.retries}. "
+        f"Answers that failed twice: {len(s.errors)}.",
+        _contradiction_bullet(s),
         f"- Tokens: {_usage_text(outcome.usage)}. Cost at list price: ${outcome.cost_usd:.4f} "
         + (
             f"(fake tokens; a live run would reserve ${outcome.estimate_usd:.4f} first)."
@@ -1142,6 +1216,26 @@ def render_report(
             lines.append("No answer asks about or reveals one.")
     else:
         lines.append('None of these households has a "Last year only" line.')
+    lines += [
+        "",
+        "## Contradictions sent back",
+        "",
+        "When an answer contradicts a fact outside the recall gap, the simulator tells its model, in its own "
+        "conversation, which facts it got wrong, and asks the same question again, once. The answer it gives is "
+        "kept even when it still contradicts, and an agent would see only that answer. Each row is a fact the "
+        "first answer contradicted or the answer kept still gets wrong; \"not revealed\" means that answer left "
+        "the fact out. A corrected fact is not a mismatch, and an unresolved one is.",
+        "",
+    ]
+    rows = _contradiction_rows(s, truths, specs)
+    if rows:
+        lines += [
+            "| Household | Question | Fact | First answer | Answer kept | Truth | Outcome |",
+            "|---|---|---|---|---|---|---|",
+            *rows,
+        ]
+    else:
+        lines.append("None.")
     lines += ["", "## Mismatches", ""]
     if s.mismatches:
         lines += [
@@ -1356,6 +1450,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     print(
         f"mismatches: {len(s.mismatches)}, anomalies: {len(s.anomalies)}, "
         f"leaks: {len(s.leaks)}, errors: {len(s.errors)}"
+    )
+    print(
+        f"contradictions sent back: {s.contradicted_answers}/{s.answers} answers, "
+        f"facts corrected: {len(s.corrected)}, unresolved: {len(s.unresolved)}"
     )
     print(
         f"what changed ({CHANGE_QUESTION.id}): {s.changes_named}/{s.changes_asked} remembered changes named, "

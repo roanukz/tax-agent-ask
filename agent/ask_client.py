@@ -185,6 +185,8 @@ class ClientChannel:
             "delivered": text,
             "probes": [name for name, _ in probes],
             "revealed": reply.revealed,
+            "corrected": reply.corrected,
+            "unresolved": reply.unresolved,
             "usage": reply.usage.as_dict(),
         })
         return text, False

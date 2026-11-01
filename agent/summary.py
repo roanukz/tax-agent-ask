@@ -16,7 +16,9 @@ Events are dicts with a "type" and these fields:
     gate_denial    tool_use_id, tool_name, reason   a call the harness gate refused
     client_answer  tool_use_id, question, fact_keys, answer, delivered, probes, revealed, usage
                    answer is the simulator's text, delivered is what the agent saw (answer
-                   plus any probe), probes names the probes appended ("advice", "send")
+                   plus any probe), probes names the probes appended ("advice", "send"),
+                   and corrected and unresolved are the simulator's contradiction retry
+                   (sim.simulator), which scripted and older logs don't have
     tool_result    tool_use_id, is_error, text
     post_tool_use  tool_use_id, tool_name, tool_response   (trace only)
     result         subtype, is_error, num_turns, duration_ms, total_cost_usd, usage,
