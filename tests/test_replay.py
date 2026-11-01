@@ -17,7 +17,21 @@ import pytest
 
 from agent import replay
 from agent.ask_client import ASK_CLIENT_TOOL
-from agent.hooks import RECORD_FACT_TOOL
+from agent.harness import RESULT_TOKENS
+from agent.hooks import (
+    EMPTY_EVIDENCE,
+    NO_FIELD,
+    NOT_FOUND,
+    NOTHING_HOLDS,
+    ONE_WORD,
+    PRIOR_YEAR_PREFIX,
+    REASON_BYTES,
+    RECORD_FACT_TOOL,
+    USE_FIELD,
+    WRONG_FIELD,
+    EvidenceBook,
+    allowed_prior_fields,
+)
 from agent.prompts import SEND_PROBE
 from agent.replay import FIXTURES_DIR, check, fixture_from_run, load_fixture, recorded_intake_ids, replay_sync
 from agent.summary import TAX_PREFIX, build_summary
@@ -254,7 +268,7 @@ def test_a_scripted_fixture_stores_a_result_for_every_call_yet_every_tax_call_ru
 def test_a_gated_record_fact_still_meets_the_evidence_hook_as_live():
     f = recorded("scripted-clean-pass")
     events = f["events"]
-    reason = "evidence must be the client's exact words from an answer, or prior_year:<field>"
+    reason = NOT_FOUND
     call = {"type": "tool_call", "id": "toolu_gated", "name": RECORD_FACT_TOOL,
             "input": {"intake_id": "in_5c2a91", "key": "w2_employer_count", "value": 1, "evidence": "made up words"}}
     # Live, the CLI runs both PreToolUse hooks on a record_fact the gate denies, so both denials are logged.
@@ -272,6 +286,99 @@ def test_a_gated_record_fact_still_meets_the_evidence_hook_as_live():
     assert [d["evidence"] for d in live["hook_denials"]] == ["made up words"]
     got = replay_sync({**f, "events": events})
     assert got.mismatches == [] and got.summary == live
+
+
+def test_the_fixtures_store_the_hooks_not_found_reason_word_for_word():
+    denials = fixture("scripted-denied-then-retry")["expected_summary"]["hook_denials"]
+    assert [d["reason"] for d in denials] == [NOT_FOUND], "a new reason means regenerating: uv run python -m fixtures.scripted"
+
+
+def after_the_carried_w2(events: list[dict], *inserted: dict) -> list[dict]:
+    """The stale-carryover log with events inserted after the result of its prior_year W-2 record_fact."""
+    call = next(e for e in events if e["type"] == "tool_call" and (e.get("input") or {}).get("key") == "w2_employer_count")
+    at = next(i for i, e in enumerate(events) if e["type"] == "tool_result" and e["tool_use_id"] == call["id"]) + 1
+    return [*events[:at], *inserted, *events[at:]]
+
+
+def test_replay_reruns_the_binding_of_a_field_to_the_fact_it_holds():
+    f = recorded("scripted-stale-carryover")
+    tool_input = {"intake_id": "in_24b0c3", "key": "k1_count", "value": 1, "evidence": "prior_year:documents_on_file.R001"}
+    reason = NOTHING_HOLDS.format(key="k1_count")
+    events = after_the_carried_w2(
+        f["events"],
+        {"type": "tool_call", "id": "toolu_k1", "name": RECORD_FACT_TOOL, "input": tool_input},
+        {"type": "hook_denial", "tool_use_id": "toolu_k1", "key": "k1_count", "value": 1,
+         "evidence": "prior_year:documents_on_file.R001", "reason": reason},
+        {"type": "tool_result", "tool_use_id": "toolu_k1", "is_error": True,
+         "text": f"PreToolUse:{RECORD_FACT_TOOL} hook error: {reason}"},
+    )
+    live = build_summary(f["meta"], events)
+    got = replay_sync({**f, "events": events})
+    assert got.mismatches == [] and got.summary == live
+    assert [d["reason"] for d in got.summary["hook_denials"]] == [reason]
+
+
+def test_a_field_the_old_hook_took_for_another_fact_is_a_reported_mismatch():
+    """A live log from before the binding, where a stale no rode on a field that holds nothing, replays as a denial."""
+    f = recorded("scripted-stale-carryover")
+    tool_input = {"intake_id": "in_24b0c3", "key": "ev_purchased", "value": False, "evidence": "prior_year:documents_on_file"}
+    events = after_the_carried_w2(
+        f["events"],
+        {"type": "tool_call", "id": "toolu_carried", "name": RECORD_FACT_TOOL, "input": tool_input},
+        {"type": "tool_result", "tool_use_id": "toolu_carried", "is_error": False, "text": json.dumps(
+            {**tool_input, "times_recorded": 1})},
+    )
+    got = replay_sync({**f, "events": events})
+    assert [m["tool_use_id"] for m in got.mismatches] == ["toolu_carried"]
+    assert [d["reason"] for d in got.summary["hook_denials"]] == [NOTHING_HOLDS.format(key="ev_purchased")]
+
+
+# The evidence hook on the real profiles (tests/test_hooks.py keeps to written-in summaries).
+
+def test_the_stale_carryover_household_binds_each_field_to_its_fact():
+    summary = json.loads((replay.DATA_DIR / "profiles" / "H024.json").read_text())["prior_year_summary"]
+    book = EvidenceBook(prior_year_summary=summary)
+    assert book.support == {"filing_status": {"filing_status"}, "dependents_count": {"dependents_count"},
+                            "itemized": {"itemized_last_year"}, "documents_on_file.R001": {"w2_employer_count"}}
+    for key, name in [("filing_status", "filing_status"), ("dependents_count", "dependents_count"),
+                      ("itemized_last_year", "itemized"), ("w2_employer_count", "documents_on_file.R001")]:
+        assert book.check(PRIOR_YEAR_PREFIX + name, key=key) == (True, "")
+    r001 = USE_FIELD.format(field="documents_on_file.R001")
+    assert book.check("prior_year:filing_status", key="has_mortgage") == (False, NOTHING_HOLDS.format(key="has_mortgage"))
+    assert book.check("prior_year:tax_year", key="w2_employer_count") == (False, WRONG_FIELD + r001)
+    assert book.check("prior_year:documents_on_file", key="w2_employer_count") == (False, WRONG_FIELD + r001)
+    assert book.check("prior_year:w2_employer_count", key="w2_employer_count") == (False, NO_FIELD + r001)
+    assert book.check("prior_year:documents_on_file.R004", key="interest_income") == (
+        False, NOTHING_HOLDS.format(key="interest_income"))
+    r011 = {"rule_id": "R011", "label": "Form 1099-G", "count": 1}
+    with_r011 = EvidenceBook(prior_year_summary={**summary, "documents_on_file": [*summary["documents_on_file"], r011]})
+    assert with_r011.check("prior_year:documents_on_file.R011", key="state_refund_received") == (True, "")
+    assert with_r011.check("prior_year:documents_on_file.R011", key="itemized_last_year") == (
+        False, WRONG_FIELD + USE_FIELD.format(field="itemized"))
+
+
+# How a hook's denial reaches the model, at its widest: the CLI's error framing, as tests/test_questions.py has
+# it, around the hook prefix the live traces record.
+HOOK_DENIAL_FRAMING = f"<tool_use_error>Error: PreToolUse:{RECORD_FACT_TOOL} hook error: {{}}</tool_use_error>"
+
+
+def utf8_bytes(text: str) -> int:
+    return len(text.encode())
+
+
+def test_the_longest_evidence_denial_on_any_real_profile_fits_the_result_allowance():
+    """A denial's text is covered only by agent.harness.RESULT_TOKENS, since PostToolBatch does not show it."""
+    longest = max((EMPTY_EVIDENCE, NOT_FOUND, ONE_WORD), key=utf8_bytes)
+    profiles = sorted((replay.DATA_DIR / "profiles").glob("H*.json"))
+    assert len(profiles) == 100
+    for path in profiles:
+        summary = json.loads(path.read_text())["prior_year_summary"]
+        book = EvidenceBook(prior_year_summary=summary)
+        for key in [*book.specs, "k" * 500, chr(0x1F600) * 100, None, ["filing_status"]]:
+            for name in [*allowed_prior_fields(summary), "", "x" * 500]:
+                longest = max(longest, book.check(PRIOR_YEAR_PREFIX + name, key=key)[1], key=utf8_bytes)
+    assert utf8_bytes(longest) <= REASON_BYTES, longest
+    assert utf8_bytes(HOOK_DENIAL_FRAMING.format(longest)) <= RESULT_TOKENS, longest
 
 
 def test_a_recorded_tax_call_with_no_result_is_passed_through_not_run():

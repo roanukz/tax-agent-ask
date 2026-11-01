@@ -68,7 +68,7 @@
   {
     "name": "record_fact",
     "title": "Record a fact",
-    "description": "Records one fact for this intake, checked against the key's type. Evidence must be the client's exact words from an answer, or prior_year:<field> naming a field in last year's summary. Recording a key again replaces its value and keeps the history.",
+    "description": "Records one fact for this intake, checked against the key's type. Evidence must be two or more of the client's exact words in a row from one answer, or a one-word answer sentence such as \"Yes.\", or prior_year:<field> naming the field of last year's summary that holds this fact. Recording a key again replaces its value and keeps the history.",
     "annotations": {
       "readOnlyHint": false,
       "destructiveHint": false,
@@ -102,7 +102,7 @@
           "title": "Value"
         },
         "evidence": {
-          "description": "The client's exact words from an answer, or prior_year:<field> naming a field in last year's summary, such as prior_year:filing_status or prior_year:documents_on_file.R001.",
+          "description": "Two or more of the client's exact words in a row from one answer, or a one-word answer sentence such as \"Yes.\"; or prior_year:<field> naming the field of last year's summary that holds this fact: the key's prior_year_field from list_fact_keys if it has one, or else documents_on_file.<rule_id> for a rule on file that reads the key, such as prior_year:filing_status for filing_status or prior_year:documents_on_file.R001 for w2_employer_count.",
           "title": "Evidence",
           "type": "string"
         }

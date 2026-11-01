@@ -3,8 +3,12 @@
 #
 # type: bool | int | enum | date (ISO YYYY-MM-DD)
 # determinable_from_prior_year: true when last year's summary has a field that
-#   answers it (evidence prior_year:<field>). Other facts can still be carried
-#   over as leads, but they can change, and scoring reports stale carryovers.
+#   answers it, named by prior_year_field (evidence prior_year:<field>). Any
+#   other fact can be carried over only as prior_year:documents_on_file.<rule_id>,
+#   for a rule on last year's file, not a trap, whose condition or count reads
+#   it; a fact only traps read can't be carried over. Carried facts are leads:
+#   they can change, and scoring reports stale carryovers. agent/hooks.py works
+#   out which field holds which fact from this file and document_rules.yaml.
 # A fact that is never recorded counts as false for bool, 0 for int, and
 # unknown (null) for enum and date.
 

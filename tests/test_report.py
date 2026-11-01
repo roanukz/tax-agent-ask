@@ -714,8 +714,12 @@ def test_evidence_recheck_uses_client_turns_and_last_years_fields(tmp_path):
                "facts_recorded": {"w2_employer_count": {"value": 2, "evidence": "two jobs"},
                                   "filing_status": {"value": "single", "evidence": "prior_year:filing_status"},
                                   "tips_income": {"value": True, "evidence": "Jobs?"},
-                                  "itemized_last_year": {"value": False, "evidence": "prior_year:refund"}}}
-    assert evidence_problems(summary, data) == ["tips_income", "itemized_last_year"]
+                                  "itemized_last_year": {"value": False, "evidence": "prior_year:refund"},
+                                  "dependents_count": {"value": 0, "evidence": "prior_year:filing_status"},
+                                  "interest_income": {"value": False, "evidence": "t"}}}
+    flagged = ["tips_income", "itemized_last_year", "dependents_count", "interest_income"]
+    assert evidence_problems(summary, data) == flagged, "a field that holds another fact, and a letter, are flagged"
+    assert evidence_problems(summary, data, specs=SPECS, rules=RULES) == flagged
     assert evidence_problems({**summary, "transcript": []}, data) is None
     assert evidence_problems({**summary, "household_id": "H999"}, data) is None
     assert evidence_problems({"facts_recorded": {}}, data) == []

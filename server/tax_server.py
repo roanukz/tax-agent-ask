@@ -66,8 +66,9 @@ TOOLS: dict[str, tuple[str, dict[str, bool], str]] = {
         "that ended shows that no document is needed. Pass fact_key to see only the rules that read that fact."
     )),
     "record_fact": ("Record a fact", ADDITIVE, (
-        "Records one fact for this intake, checked against the key's type. Evidence must be the client's "
-        "exact words from an answer, or prior_year:<field> naming a field in last year's summary. "
+        "Records one fact for this intake, checked against the key's type. Evidence must be two or more of "
+        "the client's exact words in a row from one answer, or a one-word answer sentence such as \"Yes.\", "
+        "or prior_year:<field> naming the field of last year's summary that holds this fact. "
         "Recording a key again replaces its value and keeps the history."
     )),
     "build_request_list": ("Build the request list", READ_ONLY, (
@@ -101,8 +102,11 @@ FactValue = Annotated[
     )),
 ]
 Evidence = Annotated[str, Field(description=(
-    "The client's exact words from an answer, or prior_year:<field> naming a field in last year's summary, "
-    "such as prior_year:filing_status or prior_year:documents_on_file.R001."
+    "Two or more of the client's exact words in a row from one answer, or a one-word answer sentence such as "
+    "\"Yes.\"; or prior_year:<field> naming the field of last year's summary that holds this fact: the key's "
+    "prior_year_field from list_fact_keys if it has one, or else documents_on_file.<rule_id> for a rule on file "
+    "that reads the key, such as prior_year:filing_status for filing_status or "
+    "prior_year:documents_on_file.R001 for w2_employer_count."
 ))]
 RuleFilter = Annotated[str | None, Field(description="Only return rules whose condition reads this fact key.")]
 Document = Annotated[str, Field(description="The document to ask the client for, in plain language.")]

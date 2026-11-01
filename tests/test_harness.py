@@ -50,7 +50,7 @@ from agent.ask_client import (
 from agent.configs import HAIKU, MAX_TURNS, OPUS, SONNET, get_config
 from agent.env import API_BASE_URL, HarnessSettings, MissingKey
 from agent.harness import ALLOWED_TOOLS, REPO, SERVER_SCRIPT, run_one, summary_path, trace_path
-from agent.hooks import EvidenceBook
+from agent.hooks import NOTHING_HOLDS, EvidenceBook
 from agent.prompts import PLANNER_PROMPT, SEND_PROBE, SYSTEM_PROMPT, first_message, split_first_message
 from agent.questions import MESSAGES, SEND_CLAIM
 from agent.replay import check_async, score_summary
@@ -604,7 +604,7 @@ async def test_ask_client_returns_only_the_answer_text_and_feeds_the_evidence_bo
     assert [c.text for c in result.content] == ["Just the one job."]
     assert "revealed" not in result.content[0].text and "{" not in result.content[0].text
     assert book.answers == ["Just the one job."]
-    assert book.check("the one job") == (True, "")
+    assert book.check("the one job", key="w2_employer_count") == (True, "")
     answer = control.events[-1]
     assert answer["type"] == "client_answer" and answer["revealed"] == {"w2_employer_count": 1}
     assert client.calls[0]["messages"][-1]["content"] == "How many jobs?"
@@ -671,6 +671,25 @@ async def test_evidence_hook_checks_quotes_against_the_answers_the_agent_saw(tmp
     assert summary["facts_recorded"]["dependents_count"] == {"value": 0, "evidence": "no kids"}
     denied = [c for c in summary["tool_calls"] if c["name"] == "mcp__tax__record_fact" and c["is_error"]]
     assert len(denied) == 1
+
+
+@pytest.mark.anyio
+async def test_evidence_hook_takes_a_prior_year_field_only_for_the_fact_it_holds(tmp_path):
+    steps = h002_steps(
+        call("record_fact", intake_id=INTAKE, key="has_mortgage", value=False,
+             evidence="prior_year:documents_on_file.R001"),
+        call("record_fact", intake_id=INTAKE, key="itemized_last_year", value=False, evidence="prior_year:itemized"),
+    )
+    summary = await run(tmp_path, "H002", "A-haiku", FakeCLI(steps), sim(reply("No changes, still the one job.")))
+    assert [(d["key"], d["evidence"], d["reason"]) for d in summary["hook_denials"]] == [
+        ("has_mortgage", "prior_year:documents_on_file.R001", NOTHING_HOLDS.format(key="has_mortgage"))]
+    assert "has_mortgage" not in summary["facts_recorded"]
+    assert summary["facts_recorded"]["itemized_last_year"] == {"value": False, "evidence": "prior_year:itemized"}
+    trace = json.loads(trace_path(tmp_path / "runs", summary["run_id"]).read_text())
+    _, truth = harness.load_household(harness.DATA_DIR, "H002")
+    fixture = {"meta": trace["meta"], "events": trace["events"], "judge": None, "b1_median_questions": None,
+               "expected_summary": summary, "expected_score": score_summary(summary, truth, "dev")}
+    assert await check_async(fixture) == [], "replay binds the field to the key as live did"
 
 
 @pytest.mark.anyio

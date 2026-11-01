@@ -1090,7 +1090,7 @@ class Run:
         self.attempts += 1
         self.events.append({"type": "attempt", "n": self.attempts})
         control = RunControl(self.events)
-        book = EvidenceBook(prior_year_summary=self.profile["prior_year_summary"])
+        book = EvidenceBook(prior_year_summary=self.profile["prior_year_summary"], specs=self.specs, rules=self.rules)
         simulator = ClientSimulator(self.truth, self.sim_guard, model=SIMULATOR_MODEL, specs=self.specs)
         channel = ClientChannel(simulator, book, ProbeSchedule.from_truth(self.truth), control)
         session = Session(events=self.events, control=control, budget=self.budget, channel=channel, book=book)

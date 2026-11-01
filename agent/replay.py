@@ -18,7 +18,9 @@ question denials and walks the log in order. Each tax tool call runs again
 against a fresh in-process server (server.tax_server.build_server) through
 an MCP client, one server per session attempt, minting the intake IDs the
 log recorded. record_fact first goes through the real record_fact_hook,
-with an EvidenceBook fed the recorded answers in order. An ask_client call
+with an EvidenceBook fed the recorded answers in order and holding the
+household's prior-year summary, so both the quote check and the binding of
+a prior_year field to the fact it holds run again. An ask_client call
 meets agent.questions.check_question first, as live: a question it refuses
 gets a fresh question_denial and the refusal as an error result, and any
 other gets its recorded answer back, since the simulator is not called. A

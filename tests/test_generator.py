@@ -13,6 +13,7 @@ from pathlib import Path
 import pytest
 import yaml
 
+from agent.hooks import allowed_prior_fields, prior_year_support
 from generator import generate as gen
 from generator import ground_truth as gt
 from generator import labels
@@ -27,6 +28,7 @@ from rules.engine import (
     load_ignore_aliases,
     load_rules,
     required_documents,
+    rule_facts,
     triggered_traps,
 )
 from sim import simulator
@@ -214,6 +216,35 @@ def test_documents_on_file_are_the_engine_on_last_years_facts():
         for d in docs:
             assert not BY_ID[d["rule_id"]].trap
             assert d["label"] == gen.short_label(BY_ID[d["rule_id"]])
+
+
+def test_each_prior_year_field_holds_only_the_facts_its_source_reads():
+    """agent/hooks.py takes prior_year:<field> only for a fact that field holds.
+
+    On these profiles 14 of the 39 keys have no such field in any profile: the
+    six only traps read, and the keys of the eight rules no profile has on file.
+    """
+    own = {s.key for s in SPECS.values() if s.prior_year_field}
+    carried = set()
+    for h, p in PROFILES.items():
+        summary = p["prior_year_summary"]
+        support = prior_year_support(summary, SPECS, RULES)
+        assert set(support) <= allowed_prior_fields(summary), h
+        assert {f: support[f] for f in ("filing_status", "dependents_count", "itemized")} == {
+            "filing_status": {"filing_status"}, "dependents_count": {"dependents_count"},
+            "itemized": {"itemized_last_year"}}, h
+        for doc in summary["documents_on_file"]:
+            rule = BY_ID[doc["rule_id"]]
+            read = rule_facts(rule.when) | ({rule.count_from} if rule.count_from else set())
+            assert support[f"documents_on_file.{rule.id}"] == read - own, h
+        carried |= set().union(*support.values())
+    on_file = {d["rule_id"] for p in PROFILES.values() for d in p["prior_year_summary"]["documents_on_file"]}
+    never_on_file = sorted(r.id for r in RULES if not r.trap and r.id not in on_file)
+    assert never_on_file == ["R007", "R008", "R009", "R010", "R015", "R019", "R023", "R030"]
+    trap_keys = set().union(*(rule_facts(r.when) for r in RULES if r.trap))
+    never = set(SPECS) - carried
+    assert never == trap_keys | set().union(*(rule_facts(BY_ID[r].when) for r in never_on_file))
+    assert (len(never), len(carried)) == (14, 25)
 
 
 def test_every_non_trap_rule_has_a_short_label():

@@ -564,8 +564,17 @@ def build_context(
 # ---- checks shared by the sections ---------------------------------------------
 
 
-def evidence_problems(summary: Mapping[str, Any], data_dir: Path) -> list[str] | None:
-    """Recorded facts whose evidence is not valid, rechecked from the transcript; None when it can't be checked."""
+def evidence_problems(
+    summary: Mapping[str, Any],
+    data_dir: Path,
+    *,
+    specs: Mapping[str, FactSpec] | None = None,
+    rules: Sequence[Rule] | None = None,
+) -> list[str] | None:
+    """Recorded facts whose evidence is not valid, rechecked from the transcript; None when it can't be checked.
+
+    Each fact meets the hook's check for its own key, so a prior_year field must hold that fact.
+    """
     facts = summary.get("facts_recorded") or {}
     if not facts:
         return []
@@ -574,8 +583,9 @@ def evidence_problems(summary: Mapping[str, Any], data_dir: Path) -> list[str] |
     quotes = any(not is_prior_year(record.get("evidence")) for record in facts.values())
     if not profile_path.exists() or (quotes and not answers):
         return None
-    book = EvidenceBook(_read_json(profile_path).get("prior_year_summary") or {}, answers=answers)
-    return [key for key, record in facts.items() if not book.check(record.get("evidence"))[0]]
+    book = EvidenceBook(_read_json(profile_path).get("prior_year_summary") or {}, answers=answers,
+                        specs=specs, rules=rules)
+    return [key for key, record in facts.items() if not book.check(record.get("evidence"), key=key)[0]]
 
 
 def honesty_counts(ctx: Context, rows: Sequence[Mapping[str, Any]]) -> dict[str, int]:
@@ -587,7 +597,7 @@ def honesty_counts(ctx: Context, rows: Sequence[Mapping[str, Any]]) -> dict[str,
         summary = ctx.summaries.get(row["run_id"]) or {}
         out["hook_denials"] += len(summary.get("hook_denials") or [])
         out["questions_refused"] += len(summary.get("question_denials") or [])
-        problems = evidence_problems(summary, ctx.data_dir) if summary else None
+        problems = evidence_problems(summary, ctx.data_dir, specs=ctx.specs, rules=ctx.rules) if summary else None
         if problems is None:
             out["unverifiable"] += 1
         else:
