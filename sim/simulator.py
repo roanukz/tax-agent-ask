@@ -9,22 +9,41 @@ household, a profile, or anything else on disk. The only file it can touch is
 the public fact key list in rules/facts.yaml, and only at construction when
 the caller passes no specs.
 
-The prompt is PRD section 6.4 word for word, followed by two short parts the
-PRD doesn't have. One gives the recall gap as a plain sentence beside its
-slug, so the model can't misread it. The other lists what changed since last
-year, in the same plain lines the blind label sheet shows (no form numbers),
-because a real client knows that and the agent asks about it. The list leaves
-out every change the recall gap hides, since the client has forgotten it and
-"what changed?" must not hand it back. When the hidden fact is new this year,
-the gap sentence says so instead, for after a question brings it back.
-Knowing a change doesn't mean volunteering it: the 6.4 rules and the recall
-gap still apply.
+The prompt is PRD section 6.4 word for word, followed by three short parts
+the PRD doesn't have. One gives the recall gap as a plain sentence beside its
+slug, so the model can't misread it. One more rule says every fact an answer
+mentions agrees with the facts, recall gap aside, and that a fact that is
+false or 0 is a no, because the first live fidelity check found answers that
+contradicted a fact the prompt stated plainly. The last lists what changed
+since last year, in the same plain lines the blind label sheet shows (no form
+numbers), because a real client knows that and the agent asks about it. The
+list leaves out every change the recall gap hides, since the client has
+forgotten it and "what changed?" must not hand it back. When the hidden fact
+is new this year, the gap sentence says so instead, for after a question
+brings it back. Knowing a change doesn't mean volunteering it: the 6.4 rules
+and the recall gap still apply.
 
 Each question is a user turn and each reply an assistant turn, so later
 answers stay consistent with earlier ones. The model replies in JSON with its
 answer and the facts that answer revealed. Only the answer text is meant for
 the agent under test; the revealed facts are checked against facts.yaml and
 kept for scoring and for baseline B1.
+
+A reply that can't be used gets one retry, as PRD 6.4 says. A usable reply
+that contradicts the truth gets one retry of its own, which the PRD doesn't
+have, because the first live runs found false yeses the prompt rule alone
+didn't stop. Code coerces each revealed value with its fact's spec, as the
+fidelity scorer does, and compares it with the true value. It skips the facts
+the recall gap hides, which are meant to be wrong until the gap breaks, and
+unknown keys and uncoercible values, which stay anomalies. The retry tells
+the model, in this conversation only, which facts it got wrong and asks the
+same question again. The answer it gives replaces the first, in the history
+and in what is returned, even when it still contradicts. The agent never sees
+the first answer or the correction, and the answer kept carries the facts
+the retry corrected and any still wrong, so the raw error rate stays visible.
+That makes the client more truthful than a real person, on purpose: the runs
+measure the agent's questions, and the recall gap stays the designed source
+of the client's errors.
 """
 
 from __future__ import annotations
@@ -34,10 +53,10 @@ import copy
 import json
 import re
 from dataclasses import dataclass, field
-from typing import Any, Mapping, Sequence
+from typing import Any, Iterable, Mapping, Sequence
 
 from ledger.spend import normalize_usage
-from rules.engine import FactSpec, coerce, load_facts
+from rules.engine import FactSpec, coerce, complete_facts, load_facts
 
 DEFAULT_MODEL = "claude-haiku-5-5"
 DEFAULT_MAX_TOKENS = 1024
@@ -114,6 +133,12 @@ RECALL_GAP_WORDS = {
     ),
 }
 RECALL_GAP_LABEL = "Your recall_gap in plain words: "
+# Added after the first live fidelity check, where 5 answers contradicted a fact the prompt stated plainly
+# (gifts to charity and overtime pay that were false, a partnership share of 1 said as none).
+FACTS_RULE = (
+    "Every fact your answer mentions must agree with Your facts, unless your recall_gap makes you forget it. "
+    "A fact that is false or 0 in Your facts is a no."
+)
 CHANGES_INTRO = (
     "Compared with last year (your facts above are for this year; mention a change only if a question asks "
     "about it, unless volunteers_info is true, and your recall_gap still applies):"
@@ -173,6 +198,13 @@ CORRECTION = (
     "Your last reply could not be used: {reason}. Reply again with only the JSON object, "
     'in the form {{"answer": "<what you say>", "revealed": {{"<fact_key>": <value>}}}}, '
     "with nothing before or after it."
+)
+# Sends back a usable answer that contradicts the truth outside the recall gap, naming only the facts it got
+# wrong. The first fidelity check found 5 such values, and in the Block 6 smoke test the agents recorded 16
+# and B1 6, each as the client told it.
+CONTRADICTION = (
+    "Your last answer said {said}, but Your facts say {truth}. Answer the same question again, truthfully, "
+    "using only Your facts. Reply with only the JSON object, as before."
 )
 
 FENCE = re.compile(r"^```[A-Za-z0-9_-]*[ \t]*\n?(.*?)\n?[ \t]*```$", re.DOTALL)
@@ -240,7 +272,16 @@ class Usage:
 
 @dataclass(frozen=True)
 class SimAnswer:
-    """One answer. Only `answer` may reach the agent under test."""
+    """One answer. Only `answer` may reach the agent under test.
+
+    retried and retry_reason are about an unusable reply. corrected and
+    unresolved are the contradiction retry: each entry is {"key", "first",
+    "final"}, the fact's value in the first answer and in the answer kept,
+    each left out when that answer gave none. corrected holds the facts the
+    first answer contradicted and the answer kept doesn't; unresolved holds
+    every fact the answer kept still contradicts, plus "retry_error" when the
+    retry's reply couldn't be used and the first answer was kept.
+    """
 
     answer: str
     revealed: dict[str, Any]
@@ -250,6 +291,20 @@ class SimAnswer:
     anomalies: list[dict[str, Any]] = field(default_factory=list)
     raw_revealed: Any = None
     retry_reason: str | None = None
+    corrected: list[dict[str, Any]] = field(default_factory=list)
+    unresolved: list[dict[str, Any]] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
+class _Reply:
+    """One usable reply, read: its text, answer, checked facts, and the clean JSON the history keeps."""
+
+    text: str
+    answer: str
+    revealed: dict[str, Any]
+    anomalies: list[dict[str, Any]]
+    raw_revealed: Any
+    clean: str
 
 
 def prompt_facts(true_facts: Mapping[str, Any], specs: Mapping[str, FactSpec]) -> dict[str, Any]:
@@ -293,6 +348,25 @@ def remembered_changes(truth: Mapping[str, Any]) -> list[str]:
     """The changed facts the client recalls: all of them but the ones its recall gap hides."""
     hidden = hidden_facts((truth.get("persona") or {}).get("recall_gap"))
     return [k for k in truth.get("changed_facts") or [] if k not in hidden]
+
+
+def ended_facts(truth: Mapping[str, Any], specs: Mapping[str, FactSpec]) -> list[str]:
+    """The remembered changes the change list shows as "Last year only", in changed_facts order.
+
+    That is a top-level fact, other than a count or the filing status, that is
+    false or 0 this year, the test describe_changes applies. App payments that
+    ended with a business count too, since they ride on its line.
+    """
+    if truth.get("prior_year_facts") is None or truth.get("changed_facts") is None:
+        return []
+    facts = truth["true_facts"]
+    changed = remembered_changes(truth)
+    return [
+        k for k in changed
+        if k in specs and not specs[k].is_follow_up and k not in COUNT_CHANGES and k != "filing_status"
+        and not facts.get(k)
+        and not (k == "business_app_payments" and "self_employment" in changed and facts.get("self_employment"))
+    ]
 
 
 def recall_gap_sentence(gap: Any, facts: Mapping[str, Any], prior: Mapping[str, Any] | None = None) -> str | None:
@@ -361,7 +435,7 @@ def change_lines(truth: Mapping[str, Any], specs: Mapping[str, FactSpec]) -> lis
 
 
 def build_system_prompt(truth: Mapping[str, Any], specs: Mapping[str, FactSpec]) -> str:
-    """PRD 6.4 filled in, then the recall gap in plain words and what changed since last year."""
+    """PRD 6.4 filled in, then the recall gap in plain words, FACTS_RULE, and what changed since last year."""
     facts = prompt_facts(truth["true_facts"], specs)
     persona = prompt_persona(truth.get("persona") or {})
     values = {"true_facts_json": json.dumps(facts), "persona_json": json.dumps(persona)}
@@ -370,6 +444,7 @@ def build_system_prompt(truth: Mapping[str, Any], specs: Mapping[str, FactSpec])
     gap = recall_gap_sentence(persona.get("recall_gap"), facts, prior if isinstance(prior, Mapping) else None)
     if gap:
         prompt += f"\n{RECALL_GAP_LABEL}{gap}"
+    prompt += f"\n\n{FACTS_RULE}"
     changes = change_lines(truth, specs)
     if changes is not None:
         prompt += "\n\n" + CHANGES_INTRO + "".join(f"\n- {line}" for line in changes)
@@ -442,6 +517,57 @@ def check_revealed(raw: Any, specs: Mapping[str, FactSpec]) -> tuple[dict[str, A
     return revealed, anomalies
 
 
+def true_values(true_facts: Mapping[str, Any], specs: Mapping[str, FactSpec]) -> dict[str, Any]:
+    """Every fact key's true value after coerce, with engine defaults for any missing key.
+
+    The fidelity scorer compares revealed values with these, and so does the contradiction check.
+    """
+    return complete_facts({k: None if v is None else coerce(specs[k], v) for k, v in true_facts.items()}, specs)
+
+
+def contradictions(
+    revealed: Mapping[str, Any], values: Mapping[str, Any], hidden: Iterable[str] = ()
+) -> dict[str, Any]:
+    """The revealed values that differ from the true values, leaving out the facts the recall gap hides.
+
+    revealed is check_revealed's output, so unknown keys and uncoercible
+    values are already out. A null is a value, as in the fidelity scorer: it
+    contradicts a fact that is true, false, or 0.
+    """
+    skip = set(hidden)
+    return {
+        key: value for key, value in revealed.items()
+        if key not in skip and not (type(value) is type(values[key]) and value == values[key])
+    }
+
+
+def _fact(key: str, value: Any) -> str:
+    return f"{key} does not apply to you" if value is None else f"{key} is {json.dumps(value)}"
+
+
+def _and(parts: Sequence[str]) -> str:
+    if len(parts) < 3:
+        return " and ".join(parts)
+    return ", ".join(parts[:-1]) + ", and " + parts[-1]
+
+
+def contradiction_note(wrong: Mapping[str, Any], values: Mapping[str, Any]) -> str:
+    """The turn that sends an answer back, naming each fact it contradicted, what it said, and the true value."""
+    return CONTRADICTION.format(
+        said=_and([_fact(k, v) for k, v in wrong.items()]), truth=_and([_fact(k, values[k]) for k in wrong])
+    )
+
+
+def _outcome(key: str, first: Mapping[str, Any], final: Mapping[str, Any]) -> dict[str, Any]:
+    """One contradicted fact, with its value in the first answer and in the answer kept, when they gave one."""
+    entry: dict[str, Any] = {"key": key}
+    if key in first:
+        entry["first"] = first[key]
+    if key in final:
+        entry["final"] = final[key]
+    return entry
+
+
 class ClientSimulator:
     """One household's client for one conversation."""
 
@@ -469,6 +595,9 @@ class ClientSimulator:
                 kept[name] = copy.deepcopy(truth[name])
         self.household_id = str(truth.get("household_id", ""))
         self._system = build_system_prompt(kept, self._specs)
+        # What the contradiction check compares with, and the facts it leaves to the recall gap.
+        self._true_values = true_values(kept["true_facts"], self._specs)
+        self._hidden = hidden_facts(kept["persona"].get("recall_gap"))
         self._client = client
         self.model = model
         self.max_tokens = max_tokens
@@ -526,6 +655,13 @@ class ClientSimulator:
             raise ReplyError("the model declined to answer")
         return parse_reply(text)
 
+    def _reply(self, text: str, obj: Mapping[str, Any]) -> _Reply:
+        raw_revealed = obj.get("revealed")
+        revealed, anomalies = check_revealed(raw_revealed, self._specs)
+        answer = obj["answer"].strip()
+        clean = json.dumps({"answer": answer, "revealed": raw_revealed if isinstance(raw_revealed, dict) else {}})
+        return _Reply(text, answer, revealed, anomalies, raw_revealed, clean)
+
     async def answer(self, question: str) -> SimAnswer:
         if not isinstance(question, str) or not question.strip():
             raise ValueError("a question must be non-empty text")
@@ -560,19 +696,40 @@ class ClientSimulator:
                     usage=usage,
                 ) from second
 
-        raw_revealed = obj.get("revealed")
-        revealed, anomalies = check_revealed(raw_revealed, self._specs)
-        answer = obj["answer"].strip()
+        kept = self._reply(text, obj)
+        corrected: list[dict[str, Any]] = []
+        unresolved: list[dict[str, Any]] = []
+        wrong = contradictions(kept.revealed, self._true_values, self._hidden)
+        if wrong:
+            # One more call, in this conversation only, so the agent never sees the first answer or the correction.
+            retry = [
+                *messages,
+                {"role": "assistant", "content": kept.clean},
+                {"role": "user", "content": contradiction_note(wrong, self._true_values)},
+            ]
+            text, retry_usage, stop = await self._call(retry)
+            usage = usage + retry_usage
+            try:
+                again = self._reply(text, self._read(text, stop))
+            except ReplyError as e:
+                # Not retried again: the first answer stands, with everything it contradicted.
+                unresolved = [{**_outcome(k, kept.revealed, kept.revealed), "retry_error": str(e)} for k in wrong]
+            else:
+                still = contradictions(again.revealed, self._true_values, self._hidden)
+                corrected = [_outcome(k, kept.revealed, again.revealed) for k in wrong if k not in still]
+                unresolved = [_outcome(k, kept.revealed, again.revealed) for k in still]
+                kept = again
         # The assistant turn is the clean JSON, so later turns see the format kept.
-        clean = json.dumps({"answer": answer, "revealed": raw_revealed if isinstance(raw_revealed, dict) else {}})
-        self._history.extend([asked, {"role": "assistant", "content": clean}])
+        self._history.extend([asked, {"role": "assistant", "content": kept.clean}])
         return SimAnswer(
-            answer=answer,
-            revealed=revealed,
+            answer=kept.answer,
+            revealed=kept.revealed,
             usage=usage,
-            raw_text=text,
+            raw_text=kept.text,
             retried=bool(reasons),
-            anomalies=anomalies,
-            raw_revealed=raw_revealed,
+            anomalies=kept.anomalies,
+            raw_revealed=kept.raw_revealed,
             retry_reason=reasons[0] if reasons else None,
+            corrected=corrected,
+            unresolved=unresolved,
         )

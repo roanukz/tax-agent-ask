@@ -14,19 +14,34 @@
         docs/fidelity/fidelity_answers.json, and
         data/labels/sim_answers_for_review.md.
 
-Eleven scripted plain-language questions run over 20 train and dev
-households, chosen deterministically. Code compares every revealed value with
-the truth (bar: at least 98% match, with every answer scored) and flags the
-leaks it can see: a fact the question didn't ask about from a client who
+Eleven scripted plain-language questions run over train and dev households,
+chosen deterministically: 20 drawn by complexity, plus every other one whose
+client prompt has a "Last year only" line. Code compares every revealed value
+with the truth (bar: at least 98% match, with every answer scored) and flags
+the leaks it can see: a fact the question didn't ask about from a client who
 doesn't volunteer, and a fact key name or form number in the answer text.
 Roanuk reads 30 answers for leaks the JSON doesn't show. Test households are
 never used.
+
+The simulator sends an answer that contradicts the truth outside the recall
+gap back to its model once (sim.simulator), and an agent sees only the
+answer kept, so the match rate is on the answers kept. The report counts the
+answers sent back and lists each fact the retry corrected or left wrong, with
+its first and final value, so the simulator's raw error rate stays in view.
 
 The first question, q00, asks what changed since last year before any topic
 comes up, as the agent does. It asks about every change the client
 remembers, which is every change but the ones its recall gap hides, so code
 also counts the remembered changes the answer left out and the recall gaps
 that broke on it. Both are shown for judgment and are not part of the bar.
+
+The blind labels read a "Last year only" line as this year's twice, so code
+also counts the revealed values of the facts that ended: how many match the
+truth and how many say the fact is true this year, beside the same facts in
+households where they are true this year, and the report lists every answer
+that asks about or reveals one. Those values count in the match rate like any
+other, but they are too few for the bar to see a misread on its own, so
+Roanuk reads that list as well.
 
 Exit codes: 0 when the bar is met, 1 when it is not, 2 when data is missing,
 3 when a spend limit stopped the run.
@@ -58,7 +73,7 @@ from ledger.spend import (
     cost_usd,
     load_prices,
 )
-from rules.engine import FactSpec, coerce, complete_facts, default_value, load_facts
+from rules.engine import FactSpec, default_value, load_facts
 from sim.budget import BudgetedClient, BudgetExceeded
 from sim.fakes import TruthEchoClient
 from sim.simulator import (
@@ -69,8 +84,10 @@ from sim.simulator import (
     SimulatorError,
     Usage,
     build_system_prompt,
+    ended_facts,
     hidden_facts,
     remembered_changes,
+    true_values,
 )
 
 REPO = Path(__file__).resolve().parent.parent
@@ -79,6 +96,7 @@ REPORT_PATH = Path("docs/fidelity/fidelity_report.md")
 ANSWERS_PATH = Path("docs/fidelity/fidelity_answers.json")
 REVIEW_PATH = Path("data/labels/sim_answers_for_review.md")
 
+# The draw by complexity; every train and dev household with a fact that ended is added to it.
 HOUSEHOLDS = 20
 REVIEW_ANSWERS = 30
 SEED = 4404
@@ -88,6 +106,11 @@ POOL_SPLITS = ("train", "dev")
 
 # Cost estimate for the reservation: no cache discount, every answer at its
 # full max_tokens, and a retry margin. The spend guard holds the run to it.
+# At the estimate's own prices the margin pays for one retry, for an unusable
+# reply or a contradiction, on about a quarter of the answers. The first live
+# check had no unusable reply, would have sent back 5 of its 220 answers, and
+# cost about a fifth of its estimate; the Block 6 agent runs would have sent
+# back 12 of 238.
 CHARS_PER_TOKEN = 3
 ANSWER_TOKENS_IN_HISTORY = 150
 RETRY_MARGIN = 1.25
@@ -233,6 +256,9 @@ class AnswerRecord:
     retried: bool = False
     error: str | None = None
     usage: dict[str, int] = field(default_factory=dict)
+    # The contradiction retry, as SimAnswer has it: the facts it corrected, and the ones the answer kept gets wrong.
+    corrected: list[dict[str, Any]] = field(default_factory=list)
+    unresolved: list[dict[str, Any]] = field(default_factory=list)
 
 
 @dataclass
@@ -262,6 +288,35 @@ class FidelityScore:
     changes_named: int = 0
     missed_changes: list[dict[str, Any]] = field(default_factory=list)
     broken_gaps: list[dict[str, Any]] = field(default_factory=list)
+    # Facts that ended (the change list's "Last year only" lines): the households with one; the ended facts
+    # asked and how many the answers named; and every revealed value of one, how many match, and how many
+    # say the fact is true this year, the misread. Each mismatch is also in mismatches, or in anomalies when
+    # the value is uncoercible.
+    ended_households: list[str] = field(default_factory=list)
+    ended_asked: int = 0
+    ended_revealed: int = 0
+    ended_compared: int = 0
+    ended_matched: int = 0
+    ended_true: int = 0
+    ended_mismatches: list[dict[str, Any]] = field(default_factory=list)
+    # The control: revealed values of the same facts in the households where they are true this year.
+    control_households: list[str] = field(default_factory=list)
+    control_compared: int = 0
+    control_matched: int = 0
+    # The households drawn by complexity, PRD 6.4's sample, and the match rate over them alone.
+    drawn_households: list[str] = field(default_factory=list)
+    drawn_compared: int = 0
+    drawn_matched: int = 0
+    # The contradiction retry in the answers scored: each fact it corrected, and each fact the answer kept still
+    # gets wrong (also in mismatches), with its household and question. The match rate is on the answers kept, so
+    # these keep the simulator's raw error in view.
+    corrected: list[dict[str, Any]] = field(default_factory=list)
+    unresolved: list[dict[str, Any]] = field(default_factory=list)
+
+    @property
+    def contradicted_answers(self) -> int:
+        """Answers sent back because their first usable reply contradicted the truth outside the recall gap."""
+        return len({(x["household_id"], x["question_id"]) for x in [*self.corrected, *self.unresolved]})
 
     @property
     def coverage(self) -> float | None:
@@ -270,6 +325,18 @@ class FidelityScore:
     @property
     def change_coverage(self) -> float | None:
         return self.changes_named / self.changes_asked if self.changes_asked else None
+
+    @property
+    def ended_match_rate(self) -> float | None:
+        return self.ended_matched / self.ended_compared if self.ended_compared else None
+
+    @property
+    def control_match_rate(self) -> float | None:
+        return self.control_matched / self.control_compared if self.control_compared else None
+
+    @property
+    def drawn_match_rate(self) -> float | None:
+        return self.drawn_matched / self.drawn_compared if self.drawn_compared else None
 
 
 @dataclass
@@ -332,6 +399,24 @@ def choose_households(
     return sorted(chosen)
 
 
+def sample_households(
+    splits: Mapping[str, Any],
+    pool: Mapping[str, Mapping[str, Any]],
+    specs: Mapping[str, FactSpec],
+    *,
+    n: int = HOUSEHOLDS,
+    seed: int = SEED,
+) -> list[str]:
+    """The n households choose_households draws, plus every train and dev household with a fact that ended.
+
+    Adding them rather than reserving places in the draw keeps the drawn
+    households, which hold the cases where the same facts are true this year.
+    """
+    drawn = choose_households(splits, {h: t.get("complexity") for h, t in pool.items()}, n=n, seed=seed)
+    allowed = set(pool_ids(splits))
+    return sorted(set(drawn) | {h for h, t in pool.items() if h in allowed and ended_facts(t, specs)})
+
+
 def choose_answers_for_review(
     records: Sequence[AnswerRecord],
     *,
@@ -384,12 +469,15 @@ def load_truths(data_dir: Path, household_ids: Iterable[str]) -> dict[str, dict[
 
 
 def truth_values(truth: Mapping[str, Any], specs: Mapping[str, FactSpec]) -> dict[str, Any]:
-    """Every fact key's true value after coerce, with engine defaults for any missing key."""
+    """Every fact key's true value after coerce, with engine defaults for any missing key.
+
+    The simulator's contradiction check compares with the same values (sim.simulator.true_values).
+    """
     facts = truth["true_facts"]
     unknown = sorted(set(facts) - set(specs))
     if unknown:
         raise ValueError(f"{truth.get('household_id')}: unknown fact keys {unknown}")
-    return complete_facts({k: None if v is None else coerce(specs[k], v) for k, v in facts.items()}, specs)
+    return true_values(facts, specs)
 
 
 def recall_gap_of(truth: Mapping[str, Any]) -> str | None:
@@ -476,6 +564,8 @@ def score(
     records: Sequence[AnswerRecord],
     specs: Mapping[str, FactSpec],
     questions: Sequence[Question] = QUESTIONS,
+    *,
+    drawn: Iterable[str] | None = None,
 ) -> FidelityScore:
     """Compares every revealed value with the truth and flags the leaks code can see.
 
@@ -490,16 +580,32 @@ def score(
     On the change question, which asks about no recall gap's topic, a scored
     answer that leaves out a remembered change adds a missed change, and one
     that reveals a hidden fact at its true value adds a broken gap.
+
+    The facts that ended are counted on their own too, beside the same facts
+    where they are true this year, and the match rate is also taken over the
+    households drawn by complexity (`drawn`; every household when it is None).
+    None of these change the bar, and neither do the facts the simulator's
+    contradiction retry corrected or left wrong, which are collected from each
+    scored answer for the report; one left wrong is a mismatch like any other.
     """
     by_id = {q.id: q for q in questions}
     order = {q.id: i for i, q in enumerate(questions)}
     expected = {hid: truth_values(t, specs) for hid, t in truths.items()}
+    ended = {hid: set(ended_facts(t, specs)) for hid, t in truths.items()}
+    ended_keys = set().union(*ended.values())
+    drawn_ids = set(truths) if drawn is None else set(drawn) & set(truths)
     ordered = sorted(records, key=lambda r: (r.household_id, order.get(r.question_id, len(order))))
     # Each household's latest revealed value of each fact, and the question that revealed it.
     seen: dict[str, dict[str, tuple[Any, str]]] = {hid: {} for hid in truths}
     compared = matched = retries = asked_facts = asked_revealed = changes_asked = changes_named = 0
+    ended_asked = ended_revealed = ended_compared = ended_matched = ended_true = 0
+    control_compared = control_matched = drawn_compared = drawn_matched = 0
+    control_households: set[str] = set()
+    ended_mismatches: list[dict[str, Any]] = []
     missed_changes: list[dict[str, Any]] = []
     broken_gaps: list[dict[str, Any]] = []
+    corrected: list[dict[str, Any]] = []
+    unresolved: list[dict[str, Any]] = []
     mismatches: list[dict[str, Any]] = []
     anomalies: list[dict[str, Any]] = []
     leaks: list[dict[str, Any]] = []
@@ -516,10 +622,14 @@ def score(
         where = {"household_id": hid, "question_id": q.id}
         asks = asked_keys(q, truth, specs)
         asked_facts += sum(1 for key in asks if expected[hid][key] is not None)
+        ended_asks = [key for key in asks if key in ended[hid]]
+        ended_asked += len(ended_asks)
         if rec.error is not None:
             errors.append({**where, "error": rec.error})
             unscored.append({**where, "reason": "failed twice"})
             continue
+        corrected += [{**where, **c} for c in rec.corrected]
+        unresolved += [{**where, **u} for u in rec.unresolved]
         unusable = [a["kind"] for a in rec.anomalies if a.get("kind") in UNSCORED_ANOMALIES]
         if unusable:
             unscored.append({**where, "reason": unusable[0]})
@@ -539,6 +649,19 @@ def score(
             if hid not in recall_gap:
                 gap_compared += 1
                 gap_matched += int(ok)
+            if hid in drawn_ids:
+                drawn_compared += 1
+                drawn_matched += int(ok)
+            if key in ended[hid]:
+                ended_compared += 1
+                ended_matched += int(ok)
+                ended_true += int(value is True)
+                if not ok:
+                    ended_mismatches.append({**where, "key": key, "revealed": value, "truth": expected[hid][key]})
+            elif key in ended_keys and expected[hid][key]:
+                control_compared += 1
+                control_matched += int(ok)
+                control_households.add(hid)
             if key not in allowed and not volunteers:
                 leaks.append({**where, **off_topic_leak(key, value, seen[hid].get(key), recall_gap=gap)})
         for anomaly in rec.anomalies:
@@ -549,12 +672,22 @@ def score(
             per_question[q.id]["compared"] += 1
             if hid not in recall_gap:
                 gap_compared += 1
+            if hid in drawn_ids:
+                drawn_compared += 1
+            if key in ended[hid]:
+                ended_compared += 1
+                raw = anomaly.get("value")
+                ended_mismatches.append({**where, "key": key, "revealed": raw, "truth": expected[hid][key]})
+            elif key in ended_keys and expected[hid][key]:
+                control_compared += 1
+                control_households.add(hid)
             if key not in allowed and not volunteers:
                 leak = off_topic_leak(key, anomaly.get("value"), seen[hid].get(key), comparable=False, recall_gap=gap)
                 leaks.append({**where, **leak})
         leaks.extend({**where, **leak} for leak in text_leaks(rec.answer or "", specs))
         named = set(rec.revealed) | {a.get("key") for a in uncoercible}
         asked_revealed += sum(1 for key in asks if expected[hid][key] is not None and key in named)
+        ended_revealed += sum(1 for key in ended_asks if key in named)
         if q.asks_changes:
             changes_asked += len(asks)
             changes_named += sum(1 for key in asks if key in named)
@@ -609,6 +742,21 @@ def score(
         changes_named=changes_named,
         missed_changes=missed_changes,
         broken_gaps=broken_gaps,
+        ended_households=sorted(hid for hid in truths if ended[hid]),
+        ended_asked=ended_asked,
+        ended_revealed=ended_revealed,
+        ended_compared=ended_compared,
+        ended_matched=ended_matched,
+        ended_true=ended_true,
+        ended_mismatches=ended_mismatches,
+        control_households=sorted(control_households),
+        control_compared=control_compared,
+        control_matched=control_matched,
+        drawn_households=sorted(drawn_ids),
+        drawn_compared=drawn_compared,
+        drawn_matched=drawn_matched,
+        corrected=corrected,
+        unresolved=unresolved,
     )
 
 
@@ -626,8 +774,9 @@ def estimate_cost_usd(
 ) -> float:
     """A deliberately high estimate: no cache discount, every reply at max_tokens, a retry margin.
 
-    It is not a hard bound (a retry doubles an answer's calls), so the live
-    run wraps its client in a BudgetedClient that holds spend to this figure.
+    It is not a hard bound (an answer can take three calls: one retry for an
+    unusable reply and one for a contradiction), so the live run wraps its
+    client in a BudgetedClient that holds spend to this figure.
     """
     total = Usage()
     for truth in truths:
@@ -662,6 +811,8 @@ async def ask_all(sim: ClientSimulator, questions: Sequence[Question]) -> list[A
                 anomalies=result.anomalies,
                 retried=result.retried,
                 usage=result.usage.as_dict(),
+                corrected=result.corrected,
+                unresolved=result.unresolved,
             )
         )
     return records
@@ -730,7 +881,8 @@ async def run_check(
     specs = load_facts()
     splits = load_splits(data_dir)
     pool = load_truths(data_dir, pool_ids(splits))
-    chosen = choose_households(splits, {h: t.get("complexity") for h, t in pool.items()}, n=households, seed=seed)
+    drawn = choose_households(splits, {h: t.get("complexity") for h, t in pool.items()}, n=households, seed=seed)
+    chosen = sample_households(splits, pool, specs, n=households, seed=seed)
     truths = {hid: pool[hid] for hid in chosen}
     prices = load_prices(prices_path)
     estimate = estimate_cost_usd(truths.values(), specs, model, prices, max_tokens=max_tokens)
@@ -765,7 +917,7 @@ async def run_check(
 
     usage, prompt_tokens = _total(simulators)
     cost = cost_usd(model, usage.as_dict(), prices, prompt_tokens=prompt_tokens)
-    result = score(truths, records, specs)
+    result = score(truths, records, specs, drawn=drawn)
     outcome = CheckOutcome(
         run_id=run_id,
         dry_run=dry_run,
@@ -798,6 +950,15 @@ def _pct(rate: float | None) -> str:
     return "n/a" if rate is None else f"{rate:.1%}"
 
 
+def _cell(text: Any) -> str:
+    """Text for one Markdown table cell: no long dashes, no line breaks, and pipes escaped."""
+    return " ".join(_clean(text).splitlines()).replace("|", "\\|")
+
+
+def _households(n: int) -> str:
+    return f"{n} household" if n == 1 else f"{n} households"
+
+
 def _usage_text(usage: Usage) -> str:
     u = usage.as_dict()
     return ", ".join(f"{name.removesuffix('_tokens').replace('_', ' ')} {u[name]:,}" for name in u)
@@ -822,6 +983,102 @@ def _leak_detail(x: Mapping[str, Any]) -> str:
     return ""
 
 
+def _ended_bullet(s: FidelityScore) -> str:
+    if not s.ended_households:
+        return '- Facts that ended (the client\'s "Last year only" lines): none of these households has one.'
+    # The misread, in bold whenever there is one: Block 4 waits until each is fixed or accepted.
+    true = f"Revealed as true this year: {s.ended_true}."
+    if s.ended_true:
+        true = f"**{true}**"
+    control = (
+        f"in the {_households(len(s.control_households))} where they are true this year: {s.control_matched} of "
+        f"{s.control_compared} match ({_pct(s.control_match_rate)})"
+        if s.control_compared
+        else "where they are true this year: none revealed"
+    )
+    return (
+        "- Facts that ended, which the client's change list shows as \"Last year only\" lines, in "
+        f"{_households(len(s.ended_households))}: revealed values that match the truth: {s.ended_matched} of "
+        f"{s.ended_compared} ({_pct(s.ended_match_rate)}). {true} Other values that differ (null, or not a yes or "
+        f"no): {s.ended_compared - s.ended_matched - s.ended_true}. Asked about and revealed: {s.ended_revealed} of "
+        f"{s.ended_asked}. Control, the same facts {control}. These values count in the match rate too, but at "
+        f"{s.ended_compared} of {s.compared} compared the bar can't see a misread on its own, so read the Facts "
+        "that ended table."
+    )
+
+
+def _ended_rows(
+    records: Sequence[AnswerRecord], truths: Mapping[str, Mapping[str, Any]], specs: Mapping[str, FactSpec]
+) -> list[str]:
+    """A table row for each answer that asks about or reveals one of its household's facts that ended.
+
+    The Revealed cell has one part per such fact, joined by "; ": "key value"
+    when it matches the truth, "key value, truth X" when it doesn't (an
+    uncoercible value shows as given), or "key not revealed".
+    """
+    by_id = {q.id: q for q in QUESTIONS}
+    order = {q.id: i for i, q in enumerate(QUESTIONS)}
+    ended = {hid: ended_facts(t, specs) for hid, t in truths.items()}
+    values = {hid: truth_values(t, specs) for hid, t in truths.items() if ended[hid]}
+    rows = []
+    for rec in sorted(records, key=lambda r: (r.household_id, order.get(r.question_id, len(order)))):
+        hid = rec.household_id
+        if not ended.get(hid):
+            continue
+        asks = asked_keys(by_id[rec.question_id], truths[hid], specs)
+        raw = {a.get("key"): a.get("value") for a in rec.anomalies if a.get("kind") == "uncoercible"}
+        keys = [k for k in ended[hid] if k in asks or k in rec.revealed or k in raw]
+        if not keys:
+            continue
+        parts = []
+        for key in keys:
+            if key in rec.revealed and _same(rec.revealed[key], values[hid][key]):
+                parts.append(f"{key} {_value(rec.revealed[key])}")
+            elif key in rec.revealed or key in raw:
+                shown = rec.revealed[key] if key in rec.revealed else raw[key]
+                parts.append(f"{key} {_value(shown)}, truth {_value(values[hid][key])}")
+            else:
+                parts.append(f"{key} not revealed")
+        revealed = "failed twice" if rec.error is not None else "; ".join(parts)
+        rows.append(
+            f"| {hid} | {rec.question_id} | {', '.join(keys)} | {_cell(revealed)} | {_cell(rec.answer or '')} |"
+        )
+    return rows
+
+
+def _contradiction_bullet(s: FidelityScore) -> str:
+    rate = s.contradicted_answers / s.answers if s.answers else None
+    return (
+        "- Answers the simulator sent back once, because they contradicted a fact outside the recall gap: "
+        f"{s.contradicted_answers} of {s.answers} ({_pct(rate)}). Facts the retry corrected: {len(s.corrected)}. "
+        f"Facts the answers kept still get wrong, counted as mismatches: {len(s.unresolved)}. The match rate is on "
+        "the answers kept, so this is the simulator's raw error; the Contradictions sent back table lists each fact."
+    )
+
+
+def _contradiction_rows(
+    s: FidelityScore, truths: Mapping[str, Mapping[str, Any]], specs: Mapping[str, FactSpec]
+) -> list[str]:
+    """A table row for each fact the contradiction retry corrected or left wrong, in household and question order."""
+    order = {q.id: i for i, q in enumerate(QUESTIONS)}
+    entries = sorted(
+        [*((x, "corrected") for x in s.corrected), *((x, "unresolved") for x in s.unresolved)],
+        key=lambda e: (e[0]["household_id"], order.get(e[0]["question_id"], len(order))),
+    )
+    values = {hid: truth_values(truths[hid], specs) for hid in {x["household_id"] for x, _ in entries}}
+    rows = []
+    for x, outcome in entries:
+        first = _value(x["first"]) if "first" in x else "not revealed"
+        final = _value(x["final"]) if "final" in x else "not revealed"
+        if x.get("retry_error"):
+            final += f" (the retry's reply was unusable, so the first answer was kept: {x['retry_error']})"
+        rows.append(
+            f"| {x['household_id']} | {x['question_id']} | {x['key']} | {first} | {_cell(final)} | "
+            f"{_value(values[x['household_id']][x['key']])} | {outcome} |"
+        )
+    return rows
+
+
 def _banner(dry_run: bool) -> list[str]:
     if not dry_run:
         return []
@@ -843,6 +1100,7 @@ def render_report(
     covered = {k for q in QUESTIONS for k in q.asks}
     uncovered = [k for k in specs if k not in covered]
     tiers = Counter(str(t.get("complexity", "unknown")) for t in truths.values())
+    added = [h for h in s.households if h not in s.drawn_households]
     lines = [
         "# Simulator fidelity check" + (" (dry run)" if outcome.dry_run else ""),
         "",
@@ -855,6 +1113,8 @@ def render_report(
         "",
         f"- Revealed facts compared with the truth: {s.compared}",
         f"- Matching the truth: {s.matched} ({_pct(s.match_rate)})",
+        f"- Matching the truth in the {_households(len(s.drawn_households))} drawn by complexity (the PRD 6.4 "
+        f"sample): {s.drawn_matched} of {s.drawn_compared} ({_pct(s.drawn_match_rate)})",
         f"- Answers scored: {s.answers - len(s.unscored)} of {s.answers}. An answer that failed twice or "
         "had no revealed object can't be scored.",
         f"- Bar: at least {MATCH_RATE_BAR:.0%} of compared facts match, and every answer is scored. "
@@ -868,10 +1128,13 @@ def render_report(
         f"- {CHANGE_QUESTION.id}, what changed since last year: remembered changes the answers named: "
         f"{s.changes_named} of {s.changes_asked} ({_pct(s.change_coverage)}). Recall gaps that broke on it: "
         f"{len(s.broken_gaps)}. Shown for judgment, not part of the bar.",
+        _ended_bullet(s),
         f"- Mismatches: {len(s.mismatches)}. Anomalies: {len(s.anomalies)}. Leaks code caught: {len(s.leaks)}"
         + (f" ({_kind_counts(s.leaks)})" if s.leaks else "")
         + ".",
-        f"- Answers that needed a retry: {s.retries}. Answers that failed twice: {len(s.errors)}.",
+        f"- Answers that needed a retry for an unusable reply: {s.retries}. "
+        f"Answers that failed twice: {len(s.errors)}.",
+        _contradiction_bullet(s),
         f"- Tokens: {_usage_text(outcome.usage)}. Cost at list price: ${outcome.cost_usd:.4f} "
         + (
             f"(fake tokens; a live run would reserve ${outcome.estimate_usd:.4f} first)."
@@ -886,7 +1149,13 @@ def render_report(
         "",
         "## Households",
         "",
-        "Chosen deterministically from train and dev, stratified by complexity: "
+        (
+            f"Chosen deterministically from train and dev: {len(s.drawn_households)} drawn, stratified by "
+            "complexity, plus every household whose client prompt has a \"Last year only\" line "
+            f"({', '.join(s.ended_households)}), which adds {len(added)}. By complexity: "
+            if s.ended_households
+            else "Chosen deterministically from train and dev, stratified by complexity: "
+        )
         + ", ".join(f"{tier} {count}" for tier, count in sorted(tiers.items()))
         + ".",
         "",
@@ -927,6 +1196,43 @@ def render_report(
         lines += [
             f"| {b['household_id']} | {b['key']} | {_value(b['value'])} | {_clean(b['recall_gap'])} |"
             for b in s.broken_gaps
+        ]
+    else:
+        lines.append("None.")
+    lines += ["", "## Facts that ended", ""]
+    if s.ended_households:
+        rows = _ended_rows(outcome.records, truths, specs)
+        lines += [
+            "Each row is an answer that asks about or reveals a fact its household's change list shows as "
+            "\"Last year only\": true last year, false this year. A client that reads such a line as this year's "
+            "reveals the fact as true, and in an agent run on that household the misread counts against the agent, "
+            "as a request for a document the client won't get. Only the words show whether an answer is about last "
+            "year, so read every row.",
+            "",
+        ]
+        if rows:
+            lines += ["| Household | Question | Ended facts | Revealed | Answer |", "|---|---|---|---|---|", *rows]
+        else:
+            lines.append("No answer asks about or reveals one.")
+    else:
+        lines.append('None of these households has a "Last year only" line.')
+    lines += [
+        "",
+        "## Contradictions sent back",
+        "",
+        "When an answer contradicts a fact outside the recall gap, the simulator tells its model, in its own "
+        "conversation, which facts it got wrong, and asks the same question again, once. The answer it gives is "
+        "kept even when it still contradicts, and an agent would see only that answer. Each row is a fact the "
+        "first answer contradicted or the answer kept still gets wrong; \"not revealed\" means that answer left "
+        "the fact out. A corrected fact is not a mismatch, and an unresolved one is.",
+        "",
+    ]
+    rows = _contradiction_rows(s, truths, specs)
+    if rows:
+        lines += [
+            "| Household | Question | Fact | First answer | Answer kept | Truth | Outcome |",
+            "|---|---|---|---|---|---|---|",
+            *rows,
         ]
     else:
         lines.append("None.")
@@ -1001,7 +1307,13 @@ def render_report(
         "## Human review",
         "",
         f"Roanuk reads {REVIEW_ANSWERS} answers in `{REVIEW_PATH}` for leaks the revealed JSON doesn't show. "
-        "Every leak he finds gets fixed before Block 5.",
+        "Every leak he finds gets fixed before Block 5."
+        + (
+            " He also reads the Facts that ended table, and Block 4 is done only when every fact that ended and "
+            "was revealed as true this year is fixed or accepted."
+            if s.ended_households
+            else ""
+        ),
         "",
     ]
     return "\n".join(lines)
@@ -1108,7 +1420,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument(
         "--out-dir", type=Path, default=None, help="default: the repo, or a new temp folder for --dry-run"
     )
-    parser.add_argument("--households", type=positive_int, default=HOUSEHOLDS)
+    parser.add_argument(
+        "--households", type=positive_int, default=HOUSEHOLDS,
+        help="how many to draw by complexity; every train and dev household with a \"Last year only\" line is added",
+    )
     args = parser.parse_args(argv)
     try:
         outcome = asyncio.run(
@@ -1129,13 +1444,33 @@ def main(argv: Sequence[str] | None = None) -> int:
         f"answers scored: {s.answers - len(s.unscored)}/{s.answers}, bar met: {s.meets_bar}"
     )
     print(
+        f"match_rate on the {_households(len(s.drawn_households))} drawn by complexity: "
+        f"{_pct(s.drawn_match_rate)} ({s.drawn_matched}/{s.drawn_compared})"
+    )
+    print(
         f"mismatches: {len(s.mismatches)}, anomalies: {len(s.anomalies)}, "
         f"leaks: {len(s.leaks)}, errors: {len(s.errors)}"
+    )
+    print(
+        f"contradictions sent back: {s.contradicted_answers}/{s.answers} answers, "
+        f"facts corrected: {len(s.corrected)}, unresolved: {len(s.unresolved)}"
     )
     print(
         f"what changed ({CHANGE_QUESTION.id}): {s.changes_named}/{s.changes_asked} remembered changes named, "
         f"recall gaps broken: {len(s.broken_gaps)}"
     )
+    if s.ended_households:
+        print(
+            f"facts that ended (the bar can't see a misread on its own): {s.ended_true} revealed true this year, "
+            f"{s.ended_matched}/{s.ended_compared} revealed values match, {s.ended_revealed}/{s.ended_asked} asked "
+            f"and revealed, in {_households(len(s.ended_households))}"
+        )
+        print(
+            f"control, the same facts where true this year: {s.control_matched}/{s.control_compared} revealed "
+            f"values match, in {_households(len(s.control_households))}"
+        )
+    else:
+        print('facts that ended: none of these households has a "Last year only" line')
     print(f"cost_usd: {outcome.cost_usd:.4f} (estimate {outcome.estimate_usd:.4f})")
     print(f"report: {outcome.report_path}")
     print(f"review: {outcome.review_path}")

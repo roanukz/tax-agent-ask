@@ -746,10 +746,12 @@ def test_unreadable_run_files_are_listed(tmp_path):
 async def test_fidelity_section_reads_a_dry_run(tmp_path):
     from sim import fidelity
 
-    await fidelity.run_check(data_dir=REPO / "data", out_dir=tmp_path, dry_run=True, households=2)
+    outcome = await fidelity.run_check(data_dir=REPO / "data", out_dir=tmp_path, dry_run=True, households=2)
     truths = report.load_truths(REPO / "data")
     result = report.fidelity_result(tmp_path / "docs" / "fidelity", truths, SPECS)
-    assert result["dry_run"] is True and result["meets_bar"] is True and result["households"] == 2
+    # Two drawn by complexity, plus the 9 households whose client reads a "Last year only" line.
+    assert result["dry_run"] is True and result["meets_bar"] is True
+    assert result["households"] == len(outcome.score.households) == 11
     ctx = context(tmp_path / "w", tmp_path / "runs", data_dir=make_data(tmp_path / "w"))
     ctx.fidelity = result
     text = report.render(ctx)

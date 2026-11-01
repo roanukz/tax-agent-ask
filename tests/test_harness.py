@@ -793,6 +793,46 @@ async def test_a_refused_last_question_leaves_its_probe_undelivered(tmp_path):
     assert score_summary(summary, truth, "train")["fail_reasons"] == ["probe_not_delivered"]
 
 
+@pytest.mark.anyio
+async def test_ask_client_gives_the_agent_only_the_answer_the_contradiction_retry_kept():
+    # H002 got no tips.
+    channel, client, book, control = channel_for(
+        truth_with(), reply("Yes, I got tips at work.", tips_income=True), reply("No, no tips.", tips_income=False))
+    text, is_error = await channel.ask("Did you get tips?", ["tips_income"])
+    assert (text, is_error) == ("No, no tips.", False) and book.answers == ["No, no tips."]
+    answer = control.events[-1]
+    assert answer["type"] == "client_answer" and answer["answer"] == answer["delivered"] == "No, no tips."
+    assert answer["revealed"] == {"tips_income": False}
+    assert answer["corrected"] == [{"key": "tips_income", "first": True, "final": False}] and answer["unresolved"] == []
+    # The correction went to the simulator's model alone, and the first answer is nowhere the agent can see.
+    assert client.calls[1]["messages"][-1]["content"].startswith("Your last answer said tips_income is true")
+    assert "got tips at work" not in json.dumps(control.events) and not book.check("got tips", key="tips_income")[0]
+    assert "Your last answer" not in json.dumps(control.events)
+
+
+@pytest.mark.anyio
+async def test_the_agent_sees_only_the_answer_kept_and_the_run_pays_for_both_calls(tmp_path):
+    steps = h002_steps()
+    cli = FakeCLI(steps)
+    first = reply("Yes, a new baby, and still the one job.", w2_employer_count=1, new_dependent=True,
+                  dependents_count=1)
+    kept = reply("No changes, still the one job and no kids.", w2_employer_count=1, new_dependent=False)
+    summary = await run(tmp_path, "H002", "A-haiku", cli, sim(first, kept))
+    asked = [text for (text, _), step in zip(cli.results, steps) if step[0] == ASK_CLIENT_TOOL]
+    assert asked == ["No changes, still the one job and no kids."]
+    assert [t["text"] for t in summary["transcript"] if t["role"] == "client"] == asked
+    # The evidence hook checks quotes against the answer kept, and the client said nothing else.
+    assert summary["hook_denials"] == [] and summary["facts_recorded"]["w2_employer_count"]["value"] == 1
+    trace = json.loads(trace_path(tmp_path / "runs", summary["run_id"]).read_text())
+    [answer] = [e for e in trace["events"] if e["type"] == "client_answer"]
+    assert answer["corrected"] == [{"key": "new_dependent", "first": True, "final": False},
+                                   {"key": "dependents_count", "first": 1}]
+    for text in (json.dumps(summary), json.dumps(trace)):
+        assert "new baby" not in text and "Your last answer" not in text
+    # Each simulator call costs 500 input and 30 output tokens at Haiku's list price, and there were two.
+    assert summary["cost_breakdown"]["simulator"] == pytest.approx(2 * 0.000065)
+
+
 # Ledger: reservation, run cap, month cap, settlement.
 
 PRICES = load_prices()

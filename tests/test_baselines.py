@@ -253,6 +253,42 @@ async def test_b1_with_an_oracle_simulator_reproduces_the_engine_list(hid):
     assert score["questions_asked"] == len(summary["questions"])
 
 
+class OneFalseYes(TruthEchoClient):
+    """Answers from the truth, except a false yes about tips, which it takes back when the simulator sends it back."""
+
+    async def _create(self, kwargs):
+        last = kwargs["messages"][-1]["content"]
+        if last == SPECS["tips_income"].plain_question_hint:
+            said = {"answer": "Yes, I got tips at work.", "revealed": {"tips_income": True}}
+        elif last.startswith("Your last answer said tips_income is true"):
+            said = {"answer": "No, I didn't get tips.", "revealed": {"tips_income": False}}
+        else:
+            return await super()._create(kwargs)
+        self.calls.append(kwargs)
+        return text_response(json.dumps(said), FakeUsage(input_tokens=1000, output_tokens=50))
+
+
+@pytest.mark.anyio
+async def test_b1_records_the_answer_the_contradiction_retry_kept_and_pays_for_both_calls():
+    truth = load("truth", "H002")
+    assert truth["true_facts"]["tips_income"] is False
+    question_keys = {spec.plain_question_hint: [key] for key, spec in SPECS.items()}
+    sim = ClientSimulator(truth, OneFalseYes(truth["true_facts"], question_keys, SPECS), specs=SPECS)
+    summary = await run_full_organizer(truth, load("profiles", "H002"), sim, statuses=DEV,
+                                       run_id=run_id_for("dev", "H002", "B1", 1), split="dev", trial=1)
+    assert summary["facts_recorded"]["tips_income"] == {"value": False, "evidence": "No, I didn't get tips."}
+    client_lines = [t["text"] for t in summary["transcript"] if t["role"] == "client"]
+    assert "No, I didn't get tips." in client_lines
+    assert not any("got tips at work" in line or "Your last answer" in line for line in client_lines)
+    # One question per fact still, one more simulator call, and the cost counts every call.
+    assert sim.calls == len(summary["questions"]) + 1 and summary["turns"] == len(summary["questions"])
+    assert summary["usage"] == sim.total_usage.as_dict()
+    assert summary["cost_usd"] == cost_usd("claude-haiku-5-5", summary["usage"], PRICES,
+                                           prompt_tokens=sim.max_prompt_tokens)
+    score = score_baseline(summary, truth, rules=RULES, specs=SPECS, ignore=IGNORE, statuses=DEV)
+    assert score["pass"] and score["wrong_facts"] == []
+
+
 # ---- B2 -----------------------------------------------------------------------
 
 
