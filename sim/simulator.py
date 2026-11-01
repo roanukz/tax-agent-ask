@@ -9,16 +9,19 @@ household, a profile, or anything else on disk. The only file it can touch is
 the public fact key list in rules/facts.yaml, and only at construction when
 the caller passes no specs.
 
-The prompt is PRD section 6.4 word for word, followed by two short parts the
-PRD doesn't have. One gives the recall gap as a plain sentence beside its
-slug, so the model can't misread it. The other lists what changed since last
-year, in the same plain lines the blind label sheet shows (no form numbers),
-because a real client knows that and the agent asks about it. The list leaves
-out every change the recall gap hides, since the client has forgotten it and
-"what changed?" must not hand it back. When the hidden fact is new this year,
-the gap sentence says so instead, for after a question brings it back.
-Knowing a change doesn't mean volunteering it: the 6.4 rules and the recall
-gap still apply.
+The prompt is PRD section 6.4 word for word, followed by three short parts
+the PRD doesn't have. One gives the recall gap as a plain sentence beside its
+slug, so the model can't misread it. One more rule says every fact an answer
+mentions agrees with the facts, recall gap aside, and that a fact that is
+false or 0 is a no, because the first live fidelity check found answers that
+contradicted a fact the prompt stated plainly. The last lists what changed
+since last year, in the same plain lines the blind label sheet shows (no form
+numbers), because a real client knows that and the agent asks about it. The
+list leaves out every change the recall gap hides, since the client has
+forgotten it and "what changed?" must not hand it back. When the hidden fact
+is new this year, the gap sentence says so instead, for after a question
+brings it back. Knowing a change doesn't mean volunteering it: the 6.4 rules
+and the recall gap still apply.
 
 Each question is a user turn and each reply an assistant turn, so later
 answers stay consistent with earlier ones. The model replies in JSON with its
@@ -114,6 +117,12 @@ RECALL_GAP_WORDS = {
     ),
 }
 RECALL_GAP_LABEL = "Your recall_gap in plain words: "
+# Added after the first live fidelity check, where 5 answers contradicted a fact the prompt stated plainly
+# (gifts to charity and overtime pay that were false, a partnership share of 1 said as none).
+FACTS_RULE = (
+    "Every fact your answer mentions must agree with Your facts, unless your recall_gap makes you forget it. "
+    "A fact that is false or 0 in Your facts is a no."
+)
 CHANGES_INTRO = (
     "Compared with last year (your facts above are for this year; mention a change only if a question asks "
     "about it, unless volunteers_info is true, and your recall_gap still applies):"
@@ -295,6 +304,25 @@ def remembered_changes(truth: Mapping[str, Any]) -> list[str]:
     return [k for k in truth.get("changed_facts") or [] if k not in hidden]
 
 
+def ended_facts(truth: Mapping[str, Any], specs: Mapping[str, FactSpec]) -> list[str]:
+    """The remembered changes the change list shows as "Last year only", in changed_facts order.
+
+    That is a top-level fact, other than a count or the filing status, that is
+    false or 0 this year, the test describe_changes applies. App payments that
+    ended with a business count too, since they ride on its line.
+    """
+    if truth.get("prior_year_facts") is None or truth.get("changed_facts") is None:
+        return []
+    facts = truth["true_facts"]
+    changed = remembered_changes(truth)
+    return [
+        k for k in changed
+        if k in specs and not specs[k].is_follow_up and k not in COUNT_CHANGES and k != "filing_status"
+        and not facts.get(k)
+        and not (k == "business_app_payments" and "self_employment" in changed and facts.get("self_employment"))
+    ]
+
+
 def recall_gap_sentence(gap: Any, facts: Mapping[str, Any], prior: Mapping[str, Any] | None = None) -> str | None:
     """A recall gap as a plain sentence, or None for no gap or a slug with no sentence.
 
@@ -361,7 +389,7 @@ def change_lines(truth: Mapping[str, Any], specs: Mapping[str, FactSpec]) -> lis
 
 
 def build_system_prompt(truth: Mapping[str, Any], specs: Mapping[str, FactSpec]) -> str:
-    """PRD 6.4 filled in, then the recall gap in plain words and what changed since last year."""
+    """PRD 6.4 filled in, then the recall gap in plain words, FACTS_RULE, and what changed since last year."""
     facts = prompt_facts(truth["true_facts"], specs)
     persona = prompt_persona(truth.get("persona") or {})
     values = {"true_facts_json": json.dumps(facts), "persona_json": json.dumps(persona)}
@@ -370,6 +398,7 @@ def build_system_prompt(truth: Mapping[str, Any], specs: Mapping[str, FactSpec])
     gap = recall_gap_sentence(persona.get("recall_gap"), facts, prior if isinstance(prior, Mapping) else None)
     if gap:
         prompt += f"\n{RECALL_GAP_LABEL}{gap}"
+    prompt += f"\n\n{FACTS_RULE}"
     changes = change_lines(truth, specs)
     if changes is not None:
         prompt += "\n\n" + CHANGES_INTRO + "".join(f"\n- {line}" for line in changes)

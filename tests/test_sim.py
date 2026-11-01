@@ -7,6 +7,7 @@ import io
 import json
 import pathlib
 import tempfile
+from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -103,6 +104,8 @@ def test_prompt_fills_facts_and_persona_without_nulls_or_internal_fields():
         "\nYour recall_gap in plain words: You forget the new part-time job you started this year, so you say "
         "2 employers paid you wages, not 3, unless a question asks about other work. Once one does, you remember "
         "it and answer truthfully from then on."
+        "\n\nEvery fact your answer mentions must agree with Your facts, unless your recall_gap makes you forget "
+        "it. A fact that is false or 0 in Your facts is a no."
     )
 
 
@@ -122,8 +125,9 @@ def test_prompt_says_what_changed_since_last_year_after_the_prd_text():
     t = ALL_TRUTHS["H024"]
     prompt = build_system_prompt(t, SPECS)
     head, _, tail = prompt.partition("\n\n" + simulator.CHANGES_INTRO)
-    assert head.splitlines()[-2].startswith("Your persona: ")
-    assert head.splitlines()[-1].startswith("Your recall_gap in plain words: You forget the new part-time job")
+    assert head.splitlines()[-4].startswith("Your persona: ")
+    assert head.splitlines()[-3].startswith("Your recall_gap in plain words: You forget the new part-time job")
+    assert head.splitlines()[-2:] == ["", simulator.FACTS_RULE]
     # The new job is the change H024's recall gap hides, so the list leaves it out.
     assert t["changed_facts"][0] == "w2_employer_count" and change_section(prompt) == [
         "New this year: unemployment benefits.",
@@ -142,6 +146,20 @@ def test_prompt_says_what_changed_since_last_year_after_the_prd_text():
     forgot_the_only_change = ALL_TRUTHS["H030"]
     assert forgot_the_only_change["changed_facts"] == ["digital_asset_transactions"]
     assert change_section(build_system_prompt(forgot_the_only_change, SPECS)) == ["Nothing changed since last year."]
+
+
+def test_every_prompt_has_one_rule_that_answers_agree_with_the_facts():
+    # The first live check found answers that said charity and overtime were true when the facts said false,
+    # and a partnership share of 1 as none, so one rule follows the PRD part and the recall gap sentence.
+    template = simulator.SYSTEM_PROMPT_TEMPLATE
+    assert "Your facts: " in template and simulator.FACTS_RULE not in template
+    assert "false or 0" in simulator.FACTS_RULE and fidelity.text_leaks(simulator.FACTS_RULE, SPECS) == []
+    for t in [*ALL_TRUTHS.values(), truth("H901"), truth("H902"), truth("H903")]:
+        prompt = build_system_prompt(t, SPECS)
+        assert prompt.count(simulator.FACTS_RULE) == 1, t["household_id"]
+        head, tail = prompt.split("\n\n" + simulator.FACTS_RULE)
+        assert head.splitlines()[-1].startswith(("Your persona: ", simulator.RECALL_GAP_LABEL)), t["household_id"]
+        assert tail == "" or tail.startswith("\n\n" + simulator.CHANGES_INTRO + "\n- "), t["household_id"]
 
 
 def test_every_remembered_change_of_every_household_is_in_its_prompt():
@@ -199,6 +217,50 @@ def test_change_lines_need_known_keys_and_last_years_values():
         build_system_prompt({**t, "prior_year_facts": ["not", "an", "object"]}, SPECS)
     with pytest.raises(ValueError, match="lacks a value"):
         build_system_prompt({**t, "prior_year_facts": {}}, SPECS)
+
+
+LAST_YEAR_ONLY = "Last year only: "
+
+
+def test_ended_facts_are_the_last_year_only_lines():
+    for hid, t in ALL_TRUTHS.items():
+        ended = simulator.ended_facts(t, SPECS)
+        lines = [x for x in change_section(build_system_prompt(t, SPECS)) if x.startswith(LAST_YEAR_ONLY)]
+        assert bool(ended) == bool(lines), hid
+        for key in ended:
+            assert key in simulator.remembered_changes(t) and not SPECS[key].is_follow_up, (hid, key)
+            assert key not in simulator.COUNT_CHANGES and key != "filing_status", (hid, key)
+            assert t["prior_year_facts"][key] and not t["true_facts"][key], (hid, key)
+            if key == "business_app_payments" and "self_employment" in ended:
+                # Ended app payments ride on the ended business's line.
+                noun = simulator.CHANGE_NOUNS["self_employment"] + ", with some customers paying through an app"
+            else:
+                noun = simulator.CHANGE_NOUNS[key]
+            assert any(x.startswith(LAST_YEAR_ONLY + noun) for x in lines), (hid, key)
+    assert simulator.ended_facts(ALL_TRUTHS["H011"], SPECS) == ["tuition_paid"]
+    business_and_tuition = ["self_employment", "business_app_payments", "tuition_paid"]
+    assert simulator.ended_facts(ALL_TRUTHS["H022"], SPECS) == business_and_tuition
+    assert simulator.ended_facts(ALL_TRUTHS["H032"], SPECS) == ["marketplace_coverage", "tuition_paid"]
+    assert simulator.ended_facts(ALL_TRUTHS["H015"], SPECS) == ["self_employment"]
+    # A count that fell is a line with both numbers, and a hand-made truth has no change list.
+    assert "Employers paying wages: 3 last year, 2 this year." in change_section(
+        build_system_prompt(ALL_TRUTHS["H010"], SPECS))
+    assert simulator.ended_facts(ALL_TRUTHS["H010"], SPECS) == [] and simulator.ended_facts(truth("H902"), SPECS) == []
+    # A gap that hides the only change leaves nothing that ended.
+    side_gig = "forgets_side_gig_unless_asked_about_freelance_work"
+    forgot = {**ALL_TRUTHS["H015"], "persona": {**ALL_TRUTHS["H015"]["persona"], "recall_gap": side_gig}}
+    assert simulator.ended_facts(forgot, SPECS) == []
+    assert change_section(build_system_prompt(forgot, SPECS)) == ["Nothing changed since last year."]
+    # Over train and dev, the households the fidelity check can use: 9 with 11 such lines.
+    pool = fidelity.pool_ids(fidelity.load_splits(REPO / "data"))
+    ended = {hid: simulator.ended_facts(ALL_TRUTHS[hid], SPECS) for hid in pool}
+    ended = {hid: keys for hid, keys in ended.items() if keys}
+    assert sorted(ended) == ["H011", "H015", "H022", "H032", "H059", "H065", "H067", "H085", "H091"]
+    lines = [x for hid in ended for x in change_section(build_system_prompt(ALL_TRUTHS[hid], SPECS))
+             if x.startswith(LAST_YEAR_ONLY)]
+    assert len(lines) == 11
+    assert Counter(k for keys in ended.values() for k in keys) == {
+        "tuition_paid": 5, "self_employment": 3, "marketplace_coverage": 3, "business_app_payments": 2}
 
 
 def test_every_generator_recall_gap_has_a_plain_sentence():
@@ -752,6 +814,118 @@ def test_report_and_review_show_the_change_question():
     assert "Code flags: unasked_fact w2_employer_count" in review
 
 
+MISREAD = "Yes, we paid tuition for my son."
+
+
+def tuition_ended_records(q07=None, q07_anomalies=(), q10_answer="Some words."):
+    """H011, whose tuition ended: q00 names its changes, q03 restates tuition, q07 misreads it, q10 corrects it."""
+    q00 = {"dependents_count": 2, "new_dependent": True, "social_security": True, "has_mortgage": True,
+           "bought_home": True, "tuition_paid": False, "efficiency_improvements": True}
+    q07 = {"tuition_paid": True, "student_loan_interest": False, "dependent_care_paid": False} if q07 is None else q07
+    return [
+        rec("q00", q00, hid="H011"),
+        rec("q03", {"interest_income": True, "tuition_paid": False}, hid="H011"),
+        rec("q07", q07, MISREAD, hid="H011", anomalies=list(q07_anomalies)),
+        rec("q10", {"tuition_paid": False}, q10_answer, hid="H011"),
+    ]
+
+
+def test_score_counts_facts_that_ended_and_lists_misreads():
+    t = ALL_TRUTHS["H011"]
+    assert simulator.ended_facts(t, SPECS) == ["tuition_paid"] and t["persona"]["volunteers_info"] is False
+    s = score({"H011": t}, tuition_ended_records(), SPECS)
+    assert (s.compared, s.matched, s.meets_bar) == (13, 12, False)
+    # q00 and q07 ask about tuition; q00, q03, q07, and q10 reveal it, and only q07 says it is true this year.
+    assert s.ended_households == ["H011"]
+    assert (s.ended_asked, s.ended_revealed, s.ended_compared, s.ended_matched, s.ended_true) == (2, 2, 4, 3, 1)
+    misread = {"household_id": "H011", "question_id": "q07", "key": "tuition_paid", "revealed": True, "truth": False}
+    assert s.ended_mismatches == [misread] and s.ended_match_rate == pytest.approx(0.75)
+    assert [{k: m[k] for k in misread} for m in s.mismatches] == [misread] and s.mismatches[0]["corrected_by"] == "q10"
+    assert [(x["question_id"], x["kind"], x["match"]) for x in s.leaks] == [("q03", "restated_fact", "tuition_paid")]
+    # No household here has tuition this year, so the control is empty; with no draw given, every household is drawn.
+    assert (s.control_compared, s.control_households, s.control_match_rate) == (0, [], None)
+    assert (s.drawn_households, s.drawn_compared, s.drawn_matched) == (["H011"], 13, 12)
+    left_out = score({"H011": t}, tuition_ended_records(q07={"student_loan_interest": False}), SPECS)
+    assert (left_out.ended_asked, left_out.ended_revealed, left_out.ended_true) == (2, 1, 0)
+    # An uncoercible value is compared and not matched, and listed with the anomalies rather than the mismatches.
+    maybe = uncoercible("tuition_paid", "maybe")
+    s = score({"H011": t}, tuition_ended_records(q07={}, q07_anomalies=[maybe]), SPECS)
+    assert (s.ended_compared, s.ended_matched, s.ended_true, s.ended_revealed) == (4, 3, 0, 2)
+    assert s.ended_mismatches == [{**misread, "revealed": "maybe"}] and s.mismatches == []
+    assert [(a["question_id"], a["kind"], a["key"]) for a in s.anomalies] == [("q07", "uncoercible", "tuition_paid")]
+    # The control: the same fact where it is true this year (H058 started paying tuition), and a drawn subset.
+    paid = ALL_TRUTHS["H058"]
+    assert paid["true_facts"]["tuition_paid"] is True and simulator.ended_facts(paid, SPECS) == []
+    records = tuition_ended_records() + [rec("q07", {"tuition_paid": False}, hid="H058"),
+                                         rec("q10", {"tuition_paid": True}, hid="H058")]
+    s = score({"H011": t, "H058": paid}, records, SPECS, drawn=["H058", "H999"])
+    assert (s.control_compared, s.control_matched, s.control_households) == (2, 1, ["H058"])
+    assert (s.ended_compared, s.ended_matched) == (4, 3) and s.drawn_households == ["H058"]
+    assert (s.drawn_compared, s.drawn_matched, s.compared) == (2, 1, 15)
+    nothing_ended = score({"H902": truth("H902")}, [rec("q07", {"tuition_paid": False})], SPECS)
+    assert nothing_ended.ended_households == [] and nothing_ended.ended_match_rate is None
+    assert nothing_ended.ended_compared == nothing_ended.control_compared == 0
+
+
+def ended_outcome(records, truths, tmp_path=Path(".")):
+    s = score(truths, records, SPECS)
+    paths = (tmp_path / "report.md", tmp_path / "review.md", tmp_path / "answers.json")
+    return fidelity.CheckOutcome("run-1", True, s, records, Usage(), 0.0, 0.0, *paths)
+
+
+def test_report_shows_the_facts_that_ended(tmp_path, monkeypatch, capsys):
+    truths = {"H011": ALL_TRUTHS["H011"]}
+    records = tuition_ended_records(q10_answer="No, nothing else.\nThe tuition | ended last year.")
+    outcome = ended_outcome(records, truths, tmp_path)
+    report = fidelity.render_report(outcome, truths, SPECS, model="fake")
+    assert ("- Facts that ended, which the client's change list shows as \"Last year only\" lines, in 1 household: "
+            "revealed values that match the truth: 3 of 4 (75.0%). **Revealed as true this year: 1.** Other values "
+            "that differ (null, or not a yes or no): 0. Asked about and revealed: 2 of 2. Control, the same facts "
+            "where they are true this year: none revealed. These values count in the match rate too, but at 4 of 13 "
+            "compared the bar can't see a misread on its own") in report
+    assert "Matching the truth in the 1 household drawn by complexity (the PRD 6.4 sample): 12 of 13 (92.3%)" in report
+    assert 'plus every household whose client prompt has a "Last year only" line (H011), which adds 0.' in report
+    assert report.index("## What changed since last year") < report.index("## Facts that ended") < report.index(
+        "## Mismatches")
+    section = report.split("## Facts that ended")[1].split("## Mismatches")[0]
+    assert [x for x in section.splitlines() if x.startswith("| H011")] == [
+        "| H011 | q00 | tuition_paid | tuition_paid false | Some words. |",
+        "| H011 | q03 | tuition_paid | tuition_paid false | Some words. |",
+        f"| H011 | q07 | tuition_paid | tuition_paid true, truth false | {MISREAD} |",
+        "| H011 | q10 | tuition_paid | tuition_paid false | No, nothing else. The tuition \\| ended last year. |",
+    ]
+    assert "Block 4 is done only when every fact that ended and was revealed as true this year is fixed" in report
+    # The other cells: a fact left out, an uncoercible value, and an answer that failed twice.
+    for q07, anomalies, cell in [
+        ({"student_loan_interest": False}, [], "tuition_paid not revealed"),
+        ({}, [uncoercible("tuition_paid", "maybe | so")], 'tuition_paid "maybe \\| so", truth false'),
+    ]:
+        other = fidelity.render_report(ended_outcome(tuition_ended_records(q07, anomalies), truths), truths, SPECS,
+                                       model="fake")
+        assert f"| H011 | q07 | tuition_paid | {cell} | {MISREAD} |" in other
+        assert "Revealed as true this year: 0." in other and "**Revealed as true" not in other
+    failed = [*tuition_ended_records()[:2], rec("q07", answer=None, error="unusable reply twice", hid="H011")]
+    assert "| H011 | q07 | tuition_paid | failed twice |  |" in fidelity.render_report(
+        ended_outcome(failed, truths), truths, SPECS, model="fake")
+    # A household with no change list has nothing that ended.
+    plain = fidelity.render_report(ended_outcome([rec("q01")], {"H902": truth("H902")}), {"H902": truth("H902")},
+                                   SPECS, model="fake")
+    assert '- Facts that ended (the client\'s "Last year only" lines): none of these households has one.' in plain
+    assert 'None of these households has a "Last year only" line.' in plain and "Facts that ended table" not in plain
+    assert "Chosen deterministically from train and dev, stratified by complexity: " in plain
+
+    async def checked(**kwargs):
+        return outcome
+
+    monkeypatch.setattr(fidelity, "run_check", checked)
+    assert fidelity.main(["--dry-run"]) == 1
+    printed = capsys.readouterr().out
+    assert ("facts that ended (the bar can't see a misread on its own): 1 revealed true this year, 3/4 revealed "
+            "values match, 2/2 asked and revealed, in 1 household") in printed
+    assert "control, the same facts where true this year: 0/0 revealed values match, in 0 households" in printed
+    assert "match_rate on the 1 household drawn by complexity: 92.3% (12/13)" in printed
+
+
 def test_null_follow_up_matches_null_truth():
     s = score({"H902": truth("H902")}, [rec("q09", {"ev_purchased": False, "ev_acquired_date": None})], SPECS)
     assert (s.compared, s.matched, s.mismatches) == (2, 2, [])
@@ -872,6 +1046,30 @@ def test_household_choice_is_deterministic_stratified_and_never_test():
     assert choose_households({"train": ["H002", "H001"], "dev": []}, n=20) == ["H001", "H002"]
 
 
+def tuition_truth(hid, tier, ended):
+    """A synthetic truth whose tuition ended this year, or that changed nothing."""
+    return {"household_id": hid, "complexity": tier, "persona": {"recall_gap": "none"},
+            "true_facts": {"tuition_paid": False}, "prior_year_facts": {"tuition_paid": ended},
+            "changed_facts": ["tuition_paid"] if ended else []}
+
+
+def test_sample_adds_every_household_with_a_last_year_only_line():
+    splits, tiers = big_splits()
+    # H061 is a test household and H100 is listed in both dev and test, so neither may get in.
+    ended = {"H005", "H045", "H061", "H100"}
+    pool = {h: tuition_truth(h, tier, h in ended) for h, tier in tiers.items()}
+    drawn = choose_households(splits, tiers)
+    chosen = fidelity.sample_households(splits, pool, SPECS)
+    assert chosen == sorted(set(drawn) | {"H005", "H045"}) and len(chosen) > len(drawn)
+    assert not {"H061", "H100"} & set(chosen)
+    assert fidelity.sample_households(splits, dict(reversed(pool.items())), SPECS) == chosen
+    assert fidelity.sample_households(splits, pool, SPECS, n=5) == sorted(
+        set(choose_households(splits, tiers, n=5)) | {"H005", "H045"})
+    assert fidelity.sample_households(splits, pool, SPECS, n=60) == fidelity.pool_ids(splits)
+    nothing_ended = {h: tuition_truth(h, tier, False) for h, tier in tiers.items()}
+    assert fidelity.sample_households(splits, nothing_ended, SPECS) == drawn
+
+
 @pytest.mark.parametrize("n", [0, -1, -5, 2.5, True, "3"])
 def test_household_count_must_be_a_positive_whole_number(n):
     splits, tiers = big_splits()
@@ -902,12 +1100,23 @@ def test_review_sample_is_deterministic_and_spread_over_questions():
     assert len(small) == 24
 
 
+def check_truths():
+    """The live check's households from the frozen data: 20 drawn by complexity and 8 more that ended a fact."""
+    splits = fidelity.load_splits(REPO / "data")
+    pool = fidelity.load_truths(REPO / "data", fidelity.pool_ids(splits))
+    return {hid: pool[hid] for hid in fidelity.sample_households(splits, pool, SPECS)}
+
+
 def test_estimate_stays_under_the_run_cap():
     prices = load_prices()
-    estimate = estimate_cost_usd([truth("H903")] * 20, SPECS, "claude-haiku-5-5", prices)
-    assert 0 < estimate < 0.50
-    shorter = estimate_cost_usd([truth("H903")] * 20, SPECS, "claude-haiku-5-5", prices, max_tokens=300)
+    truths = list(check_truths().values())
+    estimate = estimate_cost_usd(truths, SPECS, "claude-haiku-5-5", prices)
+    # Up from $0.19 for 20 households. A .env made from the old template may still say RUN_CAP_USD=0.50,
+    # and the reservation is this estimate, so it has to fit under that as well as the $2.00 default.
+    assert len(truths) == 28 and round(estimate, 2) == 0.27 and estimate < 0.50
+    shorter = estimate_cost_usd(truths, SPECS, "claude-haiku-5-5", prices, max_tokens=300)
     assert shorter < estimate
+    assert estimate_cost_usd([truth("H903")] * 20, SPECS, "claude-haiku-5-5", prices) < estimate
 
 
 # ---- spend guard -------------------------------------------------------------------
@@ -1020,6 +1229,9 @@ def test_dry_run_cli_writes_both_reports(tmp_path, capsys):
     assert "100.0%" in report and "**Met.**" in report and "Answers scored: 220 of 220" in report
     assert "remembered changes the answers named: " in report and "Recall gaps that broke on it: 0." in report
     assert "## What changed since last year" in report
+    # The fixture households have no change list, so nothing ended and the draw is the whole check.
+    assert "none of these households has one." in report and "## Facts that ended" in report
+    assert "Matching the truth in the 20 households drawn by complexity (the PRD 6.4 sample): " in report
     assert review.count("\n## ") == 30 and "at least 2 per question" in review
     other_lines = [x for x in review.splitlines() if x.startswith("Other facts with a value")]
     assert len(other_lines) == 30 and not any(" null" in x for x in other_lines)
@@ -1030,6 +1242,7 @@ def test_dry_run_cli_writes_both_reports(tmp_path, capsys):
         assert chr(0x2014) not in text and chr(0x2013) not in text
     printed = capsys.readouterr().out
     assert "bar met: True" in printed and "dry_run: True" in printed and "recall gaps broken: 0" in printed
+    assert 'facts that ended: none of these households has a "Last year only" line' in printed
 
 
 @pytest.mark.anyio
@@ -1051,6 +1264,45 @@ async def test_dry_run_spends_nothing_and_defaults_to_a_temp_folder(tmp_path, mo
     assert outcome.score.changes_asked > 0 and outcome.score.change_coverage == 1.0 and outcome.score.broken_gaps == []
     assert outcome.usage.cache_read_tokens > 0 and outcome.usage.cache_write_tokens > 0
     assert outcome.cost_usd > 0 and outcome.estimate_usd > outcome.cost_usd
+
+
+DRAWN = ["H010", "H011", "H013", "H018", "H021", "H036", "H042", "H043", "H046", "H048", "H051", "H054", "H058",
+         "H080", "H081", "H082", "H087", "H089", "H093", "H095"]
+ENDED = ["H011", "H015", "H022", "H032", "H059", "H065", "H067", "H085", "H091"]
+
+
+@pytest.mark.anyio
+async def test_the_check_takes_every_train_and_dev_household_with_a_last_year_only_line(tmp_path):
+    outcome = await fidelity.run_check(data_dir=REPO / "data", out_dir=tmp_path, dry_run=True)
+    s = outcome.score
+    splits = fidelity.load_splits(REPO / "data")
+    # The draw is the same 20 as before; the 8 ended households it left out are added.
+    assert s.drawn_households == DRAWN and s.ended_households == ENDED
+    assert s.households == sorted(set(DRAWN) | set(ENDED)) == sorted(check_truths()) and len(s.households) == 28
+    assert not set(s.households) & set(splits["test"])
+    # Adding rather than reserving keeps a household where each fact that ends elsewhere is true this year.
+    truths = fidelity.load_truths(REPO / "data", s.households)
+    for key in ("tuition_paid", "self_employment", "business_app_payments", "marketplace_coverage"):
+        assert [h for h in s.households if truths[h]["true_facts"][key] and h not in ENDED], key
+    assert (s.ended_asked, s.ended_revealed, s.ended_compared, s.ended_matched, s.ended_true) == (26, 26, 26, 26, 0)
+    assert s.ended_mismatches == [] and s.ended_match_rate == 1.0
+    assert (s.control_compared, s.control_matched, len(s.control_households)) == (32, 32, 10)
+    assert (s.drawn_compared, s.drawn_matched) == (747, 747)
+    assert (s.answers, s.compared, s.matched, s.meets_bar) == (308, 1065, 1065, True)
+    assert s.leaks == [] and s.anomalies == [] and s.change_coverage == 1.0
+    assert outcome.estimate_usd == estimate_cost_usd(truths.values(), SPECS, "claude-haiku-5-5", load_prices())
+    assert round(outcome.estimate_usd, 2) == 0.27 and outcome.estimate_usd < 0.50
+    report, review = outcome.report_path.read_text(), outcome.review_path.read_text()
+    for test_id in splits["test"]:
+        assert test_id not in report and test_id not in review
+    section = report.split("## Facts that ended")[1].split("## Mismatches")[0]
+    assert len([x for x in section.splitlines() if x.startswith("| H0")]) == 20
+    assert ("| H022 | q00 | self_employment, business_app_payments, tuition_paid | self_employment false; "
+            "business_app_payments false; tuition_paid false |") in section
+    assert "in 9 households: revealed values that match the truth: 26 of 26 (100.0%)" in report
+    assert "Matching the truth in the 20 households drawn by complexity (the PRD 6.4 sample): 747 of 747" in report
+    # The review sample keeps its rule: 30 answers, 2 or 3 per question.
+    assert review.count("\n## ") == 30 and "at least 2 per question" in review
 
 
 class LiveStandIn:
