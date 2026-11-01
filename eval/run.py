@@ -47,8 +47,11 @@ Phases:
    summary aside to {run_id}.init_failed.json (and its trace to
    {run_id}.init_failed.trace.json) and runs it again.
 3. Judging: each agent run once, through eval.judge, cached in
-   eval/runs/{run_id}.judge.json. A cached verdict is always used, even
-   after the spend cap stopped the sweep; only new judge calls stop.
+   eval/runs/{run_id}.judge.json. A cached verdict from JUDGE_MODEL with
+   the current eval.judge.PROMPT_VERSION is always used, even after the
+   spend cap stopped the sweep; only new judge calls stop. Any other
+   cached verdict is never used: the run is judged again, or, once the
+   cap has stopped the sweep, scored with no verdict.
 4. Scoring, free and redone every time, with the household's B1 median
    question count when B1 runs exist: eval.score.score_run for agent runs,
    and eval.baselines.score_baseline for baselines (eval.score.score_list
@@ -469,7 +472,7 @@ class Sweep:
     # Phase 3: judging.
 
     def cached_verdict(self, run_id: str) -> dict[str, Any] | None:
-        """The cached verdict, or None when there is none or it came from another judge model or JUDGE_PROMPT."""
+        """The cached verdict, or None when there is none or it came from another judge model or PROMPT_VERSION."""
         from eval.judge import PROMPT_VERSION, verdict_problem
 
         path = self.runs_dir / f"{run_id}.judge.json"

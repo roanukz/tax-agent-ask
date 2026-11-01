@@ -4,7 +4,7 @@
         Writes data/labels/judge_labels.csv with only its header, unless it exists.
     uv run python -m eval.judge grade [--model claude-sonnet-5-5]
         Judges every labeled run that has no verdict from that model and the
-        current JUDGE_PROMPT, weakened-prompt runs included. It writes
+        current PROMPT_VERSION, weakened-prompt runs included. It writes
         eval/runs/{run_id}.judge.json for the configured JUDGE_MODEL, the
         file eval.run reads, and {run_id}.judge.{model}.json for any other
         model, so a comparison never replaces the verdicts runs are scored
@@ -23,12 +23,16 @@ agent.prompts.JUDGE_PROMPT, filled with the draft list and the transcript.
 The draft list has one line per document: each request_list rule's
 document text from rules/document_rules.yaml with its count, then each
 custom request. The transcript is summary["transcript"], one line per
-turn, plus the final note when the transcript does not already end with it,
-since question 3 grades that note. A reply that is not the verdict JSON
-gets one retry with the reason; a second bad reply raises JudgeError, which
-the caller records as a judge error, never as a pass. Every verdict records
-its model and prompt_version, a hash of JUDGE_PROMPT, so validation never
-mixes judges or prompt versions.
+turn, with the final note under FINAL_NOTE_LABEL, since question 3 grades
+that note and the judge has to see it went to the preparer, not the
+client. The last agent turn takes the label when it says the final message
+and no client answer or failed ask_client follows it, which would make it
+a question to the client; when it says something else, the note is added
+at the end. A reply that is not the verdict JSON gets one retry with the
+reason; a second bad reply raises JudgeError, which the caller records as
+a judge error, never as a pass. Every verdict records its model and
+prompt_version, a hash of JUDGE_PROMPT and TRANSCRIPT_FORMAT, so
+validation never mixes judges, prompts, or renderings.
 
 Validation. data/labels/judge_labels.csv holds one row per labeled run:
 run_id, advice, delivery, summary (each PASS or FAIL, or blank when not
@@ -89,7 +93,11 @@ REPO = Path(__file__).resolve().parent.parent
 LABELS_PATH = REPO / "data" / "labels" / "judge_labels.csv"
 RUNS_DIR = REPO / "eval" / "runs"
 PREREG_PATH = REPO / "eval" / "prereg.yaml"
-PROMPT_VERSION = hashlib.sha256(JUDGE_PROMPT.encode()).hexdigest()[:12]
+# How render_draft_list and render_transcript fill JUDGE_PROMPT. Raise it when what the judge reads changes, so
+# verdicts on the old rendering are judged again. Format 1 (the Block 6 smoke test) left a final note that was
+# the last agent turn under the plain Assistant label; 2 labels it.
+TRANSCRIPT_FORMAT = 2
+PROMPT_VERSION = hashlib.sha256(f"{JUDGE_PROMPT}\ntranscript format {TRANSCRIPT_FORMAT}".encode()).hexdigest()[:12]
 
 QUESTIONS = ("advice", "delivery", "summary")
 PASS, FAIL = "PASS", "FAIL"
@@ -146,16 +154,27 @@ def render_draft_list(summary: Mapping[str, Any], rules: Sequence[Rule]) -> str:
     return "\n".join(lines) or EMPTY_LIST
 
 
+def _answers_a_question(turn: Mapping[str, Any]) -> bool:
+    """A client answer, or the line agent.summary writes in its place when an ask_client question failed."""
+    if turn.get("role") == "client":
+        return True
+    return turn.get("role") == "tool" and str(turn.get("text") or "").split(" ", 1)[0] == "ask_client"
+
+
 def render_transcript(summary: Mapping[str, Any]) -> str:
     turns = list(summary.get("transcript") or [])
-    lines = []
-    for turn in turns:
-        role = turn.get("role")
-        label = ROLE_LABELS.get(role, str(role or "unknown").capitalize())
-        lines.append(f"{label}: {turn.get('text') or ''}")
     final = (summary.get("final_message") or "").strip()
-    agent_texts = [(t.get("text") or "").strip() for t in turns if t.get("role") == "agent"]
-    if final and (not agent_texts or agent_texts[-1] != final):
+    agent_at = [i for i, t in enumerate(turns) if t.get("role") == "agent"]
+    last = agent_at[-1] if agent_at else None
+    says_final = last is not None and (turns[last].get("text") or "").strip() == final
+    # A last agent turn that says the final message is the note, unless an answer after it makes it a question.
+    note_at = last if final and says_final and not any(_answers_a_question(t) for t in turns[last + 1:]) else None
+    lines = []
+    for i, turn in enumerate(turns):
+        role = turn.get("role")
+        label = FINAL_NOTE_LABEL if i == note_at else ROLE_LABELS.get(role, str(role or "unknown").capitalize())
+        lines.append(f"{label}: {turn.get('text') or ''}")
+    if final and not says_final:
         lines.append(f"{FINAL_NOTE_LABEL}: {final}")
     return "\n".join(lines) or EMPTY_TRANSCRIPT
 
@@ -509,7 +528,7 @@ def verdict_problem(verdict: Mapping[str, Any] | None, model: str, prompt_versio
     if verdict["model"] != model:
         return f"judged by {verdict['model']}"
     if verdict.get("prompt_version") != prompt_version:
-        return "judged with another JUDGE_PROMPT"
+        return "judged with another JUDGE_PROMPT or transcript format"
     return None
 
 

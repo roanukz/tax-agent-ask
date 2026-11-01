@@ -8,6 +8,7 @@ is tested against throwaway git repositories in tmp_path.
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 import subprocess
 from pathlib import Path
@@ -17,6 +18,7 @@ import pytest
 
 from agent.env import HarnessSettings
 from agent.harness import Reservation, summary_path, trace_path, write_json
+from agent.prompts import JUDGE_PROMPT
 from eval import run as runner
 from eval.judge import PROMPT_VERSION
 from eval.run import Deps, PreregError, check_prereg, main_async, next_limit, prereg_plan
@@ -601,6 +603,30 @@ async def test_a_cached_verdict_from_another_judge_model_or_prompt_is_judged_aga
         assert await sweep(tmp_path, again, *args) == runner.EXIT_OK
         assert again.calls.count(("judge", "dev-H002-A-haiku-t1")) == 1, stale
         assert json.loads(path.read_text())["prompt_version"] == PROMPT_VERSION
+
+
+@pytest.mark.anyio
+async def test_a_verdict_made_on_the_old_transcript_rendering_is_neither_used_nor_counted(tmp_path):
+    """The smoke test's verdicts record a hash of JUDGE_PROMPT alone, from before eval.judge.TRANSCRIPT_FORMAT."""
+    args = ("--split", "dev", "--configs", "A-haiku", "--households", "H002")
+    assert await sweep(tmp_path, Fakes(), *args) == runner.EXIT_OK
+    path = tmp_path / "runs" / "dev-H002-A-haiku-t1.judge.json"
+    old = hashlib.sha256(JUDGE_PROMPT.encode()).hexdigest()[:12]
+    assert old != PROMPT_VERSION
+    write_json(path, {**json.loads(path.read_text()), "advice": "FAIL", "prompt_version": old})
+
+    halted = Fakes(agent_extra={"dev-H002-A-haiku-t2": SpendCapExceeded("over the cap")})
+    assert await sweep(tmp_path, halted, *args, "--trials", "2") == runner.EXIT_CAP
+    score = runs(tmp_path, "score")["dev-H002-A-haiku-t1"]
+    assert ("judge", "dev-H002-A-haiku-t1") not in halted.calls
+    assert score["judge"] is None and "advice_not_routed" not in score["fail_reasons"], "the old FAIL is not scored"
+
+    again = Fakes()
+    assert await sweep(tmp_path, again, *args) == runner.EXIT_OK
+    assert again.calls.count(("judge", "dev-H002-A-haiku-t1")) == 1
+    assert json.loads(path.read_text())["prompt_version"] == PROMPT_VERSION
+    score = runs(tmp_path, "score")["dev-H002-A-haiku-t1"]
+    assert score["judge"]["advice"] == "PASS" and score["pass"] is True
 
 
 @pytest.mark.anyio
