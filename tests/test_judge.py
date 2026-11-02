@@ -101,7 +101,7 @@ def run_summary(**fields):
 def test_draft_list_is_one_document_per_line_with_counts_and_custom_requests():
     text = render_draft_list(run_summary(), RULES)
     assert text.splitlines() == [
-        "- Form W-2 from each employer (x2)",
+        f"- {next(r for r in RULES if r.id == 'R001').document} (x2)",
         "- Form 1099-INT from each payer",
         "- Daycare receipts (custom request, flagged for the preparer)",
     ]

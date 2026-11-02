@@ -55,7 +55,7 @@ For each rule, reply in chat with one of: **verify**, **exclude** (with a reason
   - Under the 2026 $2,000 threshold, an employer that withheld no income, social security, or Medicare tax and paid less than $2,000 (for example certain election workers) may not issue a W-2, yet the wages are still reportable.
   - For a joint return, the spouse's W-2s are needed too; confirm w2_employer_count covers both spouses, and note one employer can issue more than one W-2 or a corrected W-2c.
 - **Suggested document wording (not applied):** Form W-2 from each employer (yours and, if filing jointly, your spouse's), including jobs that ended during the year, plus any corrected Form W-2c
-- **Aliases:** W-2, Form W-2, W2, wage and tax statement, W-2c, corrected W-2
+- **Aliases:** W-2, Form W-2, W2, wage and tax statement, W-2c, corrected W-2, Form W-2 from each employer
 - **Your call:** 
 
 ## R002
@@ -73,7 +73,7 @@ For each rule, reply in chat with one of: **verify**, **exclude** (with a reason
   - Watch for double counting gross receipts across Form 1099-NEC, Form 1099-K, and the client's own records.
   - Gig work done as an employee is W-2 income (R001); confirm worker classification before requesting business records.
 - **Suggested document wording (not applied):** Business income and expense records (income records, receipts, mileage logs, and bank or payment app statements), including any Forms 1099-NEC received
-- **Aliases:** 1099-NEC, Form 1099-NEC, business income records, business expense records, self-employment records, Schedule C records, nonemployee compensation, business income and expense records, records of business income, self-employment income records
+- **Aliases:** 1099-NEC, Form 1099-NEC, business income records, business expense records, self-employment records, Schedule C records, nonemployee compensation, business income and expense records, records of business income, self-employment income records, Business income and expense records, including any Forms 1099-NEC
 - **Your call:** 
 
 ## R003
@@ -91,7 +91,7 @@ For each rule, reply in chat with one of: **verify**, **exclude** (with a reason
   - 'Any received' is the right wording: below $20,000 and 200 transactions most sellers get no form, yet the income is still reportable, and R002 records cover it.
   - Reconcile with R002: Form 1099-K gross amounts include fees, refunds, and shipping, and can overlap with Form 1099-NEC or the client's own sales records.
 - **Suggested document wording (not applied):** Any Form 1099-K received from a payment app, online marketplace, or card processor (collect it even if you think it is wrong)
-- **Aliases:** 1099-K, Form 1099-K, payment app statement, payment card and third party network transactions
+- **Aliases:** 1099-K, Form 1099-K, payment app statement, payment card and third party network transactions, Any Form 1099-K received
 - **Your call:** 
 
 ## R004
@@ -145,7 +145,7 @@ For each rule, reply in chat with one of: **verify**, **exclude** (with a reason
   - Crypto and other digital assets, including tokenized securities, are reported on Form 1099-DA, not Form 1099-B, starting with 2025 and 2026 sales. Confirm that a separate digital asset rule exists, and that 'sold stocks' wording does not pull in crypto or miss it.
   - The consolidated brokerage statement usually also contains the 1099-DIV and 1099-INT. Deduplicate requests with R004 and R005. Brokers have until February 15 to furnish 1099-B, and corrected statements often follow, so the agent may want to warn clients against filing early.
 - **Suggested document wording (not applied):** Form 1099-B (or the broker's consolidated or substitute statement) from each brokerage or fund company, plus purchase and sale records for any sale not reported on a form or with basis not reported
-- **Aliases:** 1099-B, Form 1099-B, consolidated brokerage statement, brokerage statement, consolidated 1099, consolidated Form 1099, brokerage 1099
+- **Aliases:** 1099-B, Form 1099-B, consolidated brokerage statement, brokerage statement, consolidated 1099, consolidated Form 1099, brokerage 1099, Form 1099-B or the consolidated brokerage statement
 - **Your call:** 
 
 ## R007
@@ -163,7 +163,7 @@ For each rule, reply in chat with one of: **verify**, **exclude** (with a reason
   - The rule correctly keys on activity, not on receiving a form. IRS FAQ 108 (frequently-asked-questions-on-digital-asset-transactions) says income, gain, or loss must be reported regardless of the amount or whether a payee statement is received.
   - Basis will often be missing on 2026 forms (assets acquired before 2026, or moved in from another wallet or exchange), so the transaction-records part of the request matters most. Preparers should ask for acquisition date and cost for every lot sold.
 - **Suggested document wording (not applied):** Form 1099-DA (if received), plus the client's own records for every digital asset sold, exchanged, spent, or used to pay fees: date and time acquired, cost basis, date disposed, and proceeds or fair market value in U.S. dollars
-- **Aliases:** 1099-DA, Form 1099-DA, digital asset transaction records, crypto transaction records, cryptocurrency records, digital asset proceeds, crypto transaction history, cryptocurrency transaction history, digital asset transaction history, crypto exchange, cryptocurrency exchange
+- **Aliases:** 1099-DA, Form 1099-DA, digital asset transaction records, crypto transaction records, cryptocurrency records, digital asset proceeds, crypto transaction history, cryptocurrency transaction history, digital asset transaction history, crypto exchange, cryptocurrency exchange, Form 1099-DA if received, plus transaction records
 - **Your call:** 
 
 ## R008
@@ -235,7 +235,7 @@ For each rule, reply in chat with one of: **verify**, **exclude** (with a reason
   - Keying on the activity is correct. The 2025 Form 1040 instructions say to report any taxable refund even without a Form 1099-G, and they note the form may be available only electronically. States may also skip mailing it when they believe the client did not itemize.
   - Even when both facts are true, the refund may be partly or fully nontaxable. Examples: the client elected to deduct sales tax instead of income tax, the SALT limit capped the deduction, or the itemized total exceeded the standard deduction by less than the refund. The preparer needs the prior-year Schedule A or return as well as the refund [...]
 - **Suggested document wording (not applied):** Form 1099-G from the state or local tax agency: Box 2 state or local income tax refunds, credits, or offsets (including amounts applied to estimated tax, offset, or donated) and Box 3 tax year of the refund; plus the prior-year return or Schedule A for that tax year if not on file
-- **Aliases:** 1099-G, Form 1099-G, state refund 1099-G, state tax refund statement, 1099-G for state refund, state tax refund 1099-G, 1099-G for state tax refund, state refund statement
+- **Aliases:** 1099-G, Form 1099-G, state refund 1099-G, state tax refund statement, 1099-G for state refund, state tax refund 1099-G, 1099-G for state tax refund, state refund statement, Form 1099-G for the refund
 - **Your call:** 
 
 ## R012
@@ -379,7 +379,7 @@ For each rule, reply in chat with one of: **verify**, **exclude** (with a reason
   - An SSN is required for every dependent listed, not only new ones; the rule assumes prior-year dependents are already on file, which a reviewer should confirm.
   - For pending adoptions the FAQ points to an ATIN (Form W-7A), which expires 2 years after issue and supports only the credit for other dependents, not the CTC/ACTC; the intake should record which identifier the client has.
 - **Suggested document wording (not applied):** A copy of the new dependent's Social Security card (name and number as printed) and their date of birth; if the SSN has not been issued, the date it was applied for, or an ATIN (Form W-7A) for a pending adoption, or an ITIN for a dependent who cannot get an SSN; for a child born and died in 2026 without an SSN, a birth certificate, death certificate, or hospital record showing live birth
-- **Aliases:** dependent Social Security number, dependent SSN, dependent date of birth, Social Security card for dependent, new dependent information, dependent Social Security card, new dependent, new baby, newborn, new child
+- **Aliases:** dependent Social Security number, dependent SSN, dependent date of birth, Social Security card for dependent, new dependent information, dependent Social Security card, new dependent, new baby, newborn, new child, The dependent's Social Security number and date of birth
 - **Your call:** 
 
 ## R020
@@ -415,7 +415,7 @@ For each rule, reply in chat with one of: **verify**, **exclude** (with a reason
   - The trigger should be renting out any real property during 2026, not receiving a 1099. That includes short-term or vacation rentals through platforms, renting a room or part of the home, and renting to relatives. Topic 414 says the cash or fair market value of property or services received for use of the property is rental income. With the [...]
   - Edge cases that change the schedule or remove the reporting: Publication 527 says rent from a dwelling used as a home and rented less than 15 days is not included in income. Substantial services for the tenant's convenience go on Schedule C (Topic 414). Personal property rentals do not go on Schedule E. Farm rental income may go on Form 4835. The [...]
 - **Suggested document wording (not applied):** For each rental real estate property: rents and other amounts received (including the fair market value of any property or services received as rent), expenses paid, the number of days rented at a fair rental price and the number of days of personal use, purchase, improvement, and prior depreciation records, a dated mileage log if car expenses are claimed, and any Forms 1099-MISC or 1099-K received
-- **Aliases:** rental income records, rental expense records, rental property records, Schedule E records, rental records, records of rental income, rental property income and expenses
+- **Aliases:** rental income records, rental expense records, rental property records, Schedule E records, rental records, records of rental income, rental property income and expenses, Rental income and expense records
 - **Your call:** 
 
 ## R022
@@ -433,7 +433,7 @@ For each rule, reply in chat with one of: **verify**, **exclude** (with a reason
   - The trigger should be any 2026 estimated payment, by any method: Direct Pay, EFTPS, Online Account, card, check with voucher, or a 2025 overpayment applied to 2026. The IRS sends no year-end form listing these payments, so the client's records or Online Account are the only sources. Watch for timing errors: the payment made in January 2026 for the [...]
   - Line 26 only needs the total. Payment dates matter for the underpayment penalty on Form 2210: Publication 505 says you may be charged a penalty if you don't pay enough by each due date. Keep the dates in the request even though the return line shows only the total.
 - **Suggested document wording (not applied):** Date and amount of each federal estimated tax payment for tax year 2026 (including the payment made in January 2027, any 2025 overpayment applied to 2026, and any estimated tax credited by a trust), and the name and SSN each payment was made under, for example from the Record of Estimated Tax Payments, Direct Pay or EFTPS confirmations, or IRS Online Account payment history
-- **Aliases:** estimated tax payments, estimated payment records, 1040-ES, Form 1040-ES, estimated payment dates and amounts, Record of Estimated Tax Payments, estimated payments, estimated tax payment records, estimated tax records, records of estimated taxes, estimated taxes paid
+- **Aliases:** estimated tax payments, estimated payment records, 1040-ES, Form 1040-ES, estimated payment dates and amounts, Record of Estimated Tax Payments, estimated payments, estimated tax payment records, estimated tax records, records of estimated taxes, estimated taxes paid, Dates and amounts paid
 - **Your call:** 
 
 ## R023
@@ -451,7 +451,7 @@ For each rule, reply in chat with one of: **verify**, **exclude** (with a reason
   - The $2,000 bingo, keno, and slot figure appears in proposed regulations (REG-113229-25), which are not final; the W-2G instructions state the $2,000 figure generally for 2026 and point to Pub. 1099 and IRS.gov/InflationAdjustment for the per-type threshold, which I did not fetch. Other categories (poker tournaments, 300x wager rules, $5,000 [...]
   - Consider a separate rule for loss records (diary, casino win/loss statements, betting account history): losses are deductible only if the client itemizes, and starting in 2026 only up to 90% of losses, capped at winnings. Topic 419 does not yet reflect the 90% limit; Pub 505 (2026) and IRB 2026-19 do.
 - **Suggested document wording (not applied):** Form W-2G, Certain Gambling Winnings, for each one received, plus the client's own record of gambling winnings and losses (diary, tickets, receipts, casino win/loss statements, or betting account history)
-- **Aliases:** W-2G, Form W-2G, gambling winnings statement
+- **Aliases:** W-2G, Form W-2G, gambling winnings statement, Form W-2G if received
 - **Your call:** 
 
 ## R024
@@ -487,7 +487,7 @@ For each rule, reply in chat with one of: **verify**, **exclude** (with a reason
   - Itemizers face a new 0.5% of AGI floor and a top-bracket reduction starting in 2026 (Pub 505 (2026)); Topic 506 does not yet mention the floor or the donor-advised fund exclusion.
   - Substantiation tiers to confirm: a bank record or written communication for any cash gift; a contemporaneous written acknowledgment for a single gift of $250 or more; Form 8283 if noncash deductions exceed $500; a qualified appraisal for items or groups over $5,000; reduce the deduction by the value of any benefit received (quid pro quo). Topic [...]
 - **Suggested document wording (not applied):** Charitable gift records: for each cash gift, a bank or card record, canceled check, or receipt or letter from the charity showing its name, the date, and the amount; for any single gift of $250 or more, a written acknowledgment from the charity stating the amount and whether goods or services were given in return; for noncash gifts, records supporting Form 8283 when over $500 and a qualified appraisal for any item or group over $5,000
-- **Aliases:** charitable receipts, donation receipts, charitable contribution receipts, written acknowledgment, contemporaneous written acknowledgment, Form 8283, charitable contributions, charitable donations, receipts and acknowledgments
+- **Aliases:** charitable receipts, donation receipts, charitable contribution receipts, written acknowledgment, contemporaneous written acknowledgment, Form 8283, charitable contributions, charitable donations, receipts and acknowledgments, Receipts and written acknowledgments
 - **Your call:** 
 
 ## R026
@@ -523,7 +523,7 @@ For each rule, reply in chat with one of: **verify**, **exclude** (with a reason
   - Source is a PDF fact sheet, not a stable HTML page; the only HTML FAQ page (FS-2026-01) is marked superseded. The FAQs are not published in the Internal Revenue Bulletin and may be updated.
   - 2026 Schedule 1-A and its instructions are draft or not yet released.
 - **Suggested document wording (not applied):** Overtime records and how the employer reported them: Form W-2 with box 12 code TT (qualified overtime compensation, the FLSA-required premium above the regular rate); Form 1099-NEC box 1d or Form 1099-MISC box 14 in the rare case the client was an FLSA employee treated as a contractor; corrected Form W-2c if the code TT amount is missing or understated (a substitute Form 4852 does not count); pay stubs or payroll records to check the amount
-- **Aliases:** overtime records, overtime pay records, overtime pay statement, overtime pay documentation, overtime compensation records, pay stubs showing overtime
+- **Aliases:** overtime records, overtime pay records, overtime pay statement, overtime pay documentation, overtime compensation records, pay stubs showing overtime, Overtime records and how the employer reported them
 - **Your call:** 
 
 ## R028
@@ -577,7 +577,7 @@ For each rule, reply in chat with one of: **verify**, **exclude** (with a reason
   - If no 1099-S was received and the whole gain is excludable, the sale may not need to be reported at all, but the preparer still needs the closing statement (and purchase records) to confirm that.
   - Basis requires the original purchase closing statement and improvement records (Pub 523 Worksheet 2 line 4b says the settlement statement should list the buying fees); consider whether that belongs in this rule or in a separate basis rule.
 - **Suggested document wording (not applied):** Closing statement from the sale (settlement statement or Closing Disclosure), plus Form 1099-S (Proceeds From Real Estate Transactions) if received; also the closing statement from the original purchase and records of improvements, to figure basis
-- **Aliases:** 1099-S, Form 1099-S, closing statement, sale closing statement, settlement statement
+- **Aliases:** 1099-S, Form 1099-S, closing statement, sale closing statement, settlement statement, Closing statement, plus Form 1099-S if received
 - **Your call:** 
 
 ## T001
@@ -625,6 +625,6 @@ For each rule, reply in chat with one of: **verify**, **exclude** (with a reason
   - If a dealer applied a point-of-sale credit transfer at a 2026 delivery, Form 8936 and Schedule A are mandatory, and the draft 2026 instructions say the client must repay the transferred amount if they no longer qualify. Request the seller report in that case rather than treating it as nothing.
   - This trap must not suppress separate 2026 rules that an EV purchase can trigger: the car loan interest deduction (new vehicle, final assembly in the US, personal use, loan after 2024, up to $10,000) and the home charger credit (30C) for chargers placed in service by June 30, 2026. Both were confirmed on IRS pages fetched in this session.
   - A leased EV never gives the lessee the credit (the draft instructions say only the lessor is entitled), so the trap also holds for leases; business-use EVs fall under 45W, which ended on the same acquisition date, but depreciation for business use is a separate item.
-- **Aliases:** Form 8936, 8936, clean vehicle credit, EV purchase agreement, clean vehicle seller report, time of sale report
+- **Aliases:** Form 8936, 8936, clean vehicle credit, clean vehicle seller report, time of sale report
 - **Your call:** 
 

@@ -678,7 +678,8 @@ def test_ignore_aliases():
 def test_trap_aliases():
     assert INDEX.map_request("Form 5695") == [Match("form 5695", TRAP, ("T001", "T002"), 2)]
     assert mapped("solar invoice") == [(TRAP, ("T001",))]
-    assert mapped("EV purchase agreement") == [(TRAP, ("T003",))]
+    # Dropped at Roanuk's rule call: an itemizer can still use the purchase paperwork.
+    assert mapped("EV purchase agreement") == [("unmatched", ())]
     assert INDEX.map_request("Form 5695 for the solar panels") == [Match("form 5695", TRAP, ("T001", "T002"), 2)]
     assert mapped("Solar panel installation invoice") == [(TRAP, ("T001",))]
 
@@ -864,7 +865,7 @@ PARAPHRASES = {
              "Residential clean energy credit paperwork", "Form 5695 (Residential Clean Energy Credit)"],
     "T002": ["Receipts for energy-efficient windows", "Manufacturer certification statement for the heat pump",
              "Home energy improvement receipts"],
-    "T003": ["Form 8936", "Clean vehicle seller report from the dealer", "EV purchase agreement",
+    "T003": ["Form 8936", "Clean vehicle seller report from the dealer",
              "Form 8936, Clean Vehicle Credit"],
 }
 

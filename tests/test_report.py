@@ -901,7 +901,8 @@ def test_rules_table_has_every_rule_with_its_source_and_status():
     rows = table.splitlines()[2:]
     assert table.splitlines()[0] == "| ID | When | Document requested | Source | Source version | Status | Verified on |"
     assert [row.split(" | ")[0].strip("| ") for row in rows] == [r.id for r in RULES]
-    assert "| R001 | `w2_employer_count` >= 1 | Form W-2 from each employer (count from `w2_employer_count`) |" in table
+    r001 = next(r for r in RULES if r.id == "R001").document
+    assert f"| R001 | `w2_employer_count` >= 1 | {r001} (count from `w2_employer_count`) |" in table
     assert "`clean_energy_installed` = yes and `clean_energy_install_year` = 2026" in table
     assert table.count("Nothing federal: the credit ended (trap)") == 3
     for r in RULES:
