@@ -56,12 +56,9 @@
           <strong>Status on November 2, 2026.</strong> Built and tested offline
           on synthetic households, then run live for the first time on the train
           and dev groups only, with one trial of every configuration on the 40
-          dev households. The one test run has not happened, so no result here
-          is the preregistered one, and every agent number is a dev result from
-          one trial. From that trial I chose the configuration the bars will
+          dev households. From that trial I chose the configuration the bars
           judge, the agent on Claude Opus 5.5, and raised the cost bar to fit it.
-          The bars are still proposals, and they lock before that run. Since
-          then I have verified 29 of the 33 rules and labeled 60 transcripts for
+          The bars locked on November 2, before the one test run. I have verified 29 of the 33 rules and labeled 60 transcripts for
           the honesty judge, which meets its bars on delivery but not yet on
           advice or summary, so its verdicts here are not yet checked ones.
           The one test run is done: on the 25 test households whose rules are verified, the agent on Claude Opus 5.5 passed 92.0% of 75 runs (interval 84.0% to 97.3%) and missed 0.8% of required documents, at $0.37 a household, against 84.0% for the full organizer and 52.0% for last year's list. Advice verdicts in that rate come from a judge my labels have not yet validated on advice.
@@ -173,7 +170,7 @@
               with no questions, and a model that writes the list itself from
               perfect facts. Code scores every run, while a model judge decides
               whether the agent gave advice or claimed to send the list, and I
-              check that judge against my own labels before the test run. The proposed bars lock before that run. The configuration chosen from dev must pass at least 90% of test runs and miss at most 2% of documents. Its median question count must also be at most half the full organizer's, and it must cost at most $0.60 a household, a bar I raised from my original $0.10 after seeing the dev results (<a href="#judged">Part 5</a>). Since scoring cannot
+              check that judge against my own labels. The bars locked before the one test run. The configuration chosen from dev must pass at least 90% of test runs and miss at most 2% of documents. Its median question count must also be at most half the full organizer's, and it must cost at most $0.60 a household, a bar I raised from my original $0.10 after seeing the dev results (<a href="#judged">Part 5</a>). Since scoring cannot
               catch a wrong rule, I also listed documents for 30 households
               blind, settled every difference with the rules, and had the 17 that
               disputed a rule checked against the official sources
@@ -206,8 +203,8 @@
               can bring, in 4 of 4 households, and they read a tuition payment
               that had stopped as this year's in 2 of 3. All 190 differences were
               settled and logged. The 95 about facts that did not change rest on my
-              rule verification, which so far covers 10 of the 33 rules, and on
-              November 1 I asked for all five proposed rule edits. On November 1, 2026, all 3,296
+              rule verification, which now covers 29 of the 33 rules, after I asked
+              for all five proposed rule edits. On November 1, 2026, all 3,296
               offline tests passed with the network blocked, and mutation testing,
               which plants small bugs in the scoring code to see whether the
               tests notice, had caught 1,065 of 1,067 (<a href="#results">Part 6</a>).
@@ -250,10 +247,9 @@
               not a person, and in the dev trial it still caused 7 of the 19 wrong
               facts in agent runs. My blind lists come from one labeler who is not a
               practicing preparer, and they cover only what changed. Test scoring
-              counts only the rules I have verified, and so far that is 10 of the
-              33; I sent the other 23 back for changes. I have not labeled the judge's
-              transcripts yet, so the judge is not validated, though its advice and
-              delivery verdicts count toward a run's pass. In the 9 dev households
+              counts only the rules I have verified, 29 of the 33 so far. My labels
+              validate the judge on delivery but not yet on advice, though its advice
+              verdicts count toward a run's pass. In the 9 dev households
               with a trap for an ended credit, it now fails advice on 4 of the 33
               notes to the preparer that say the credit ended and passes the other
               29. It had passed 3 of those 4 in its first reading, on transcripts
@@ -372,7 +368,7 @@
           <div class="evidence">
             <h3>Not known</h3>
             <ul>
-              <li>How the agent does on test. It has run one trial per dev household (<a href="#results">Part 6</a>), and the bars judge only the test run, which has not happened.</li>
+              <li>How the agent does on the 15 test households the run left out, which wait on 4 rules still to verify (<a href="#results">Part 6</a>).</li>
               <li>
                 Whether a preparer would accept the agent's draft, and what they
                 would change. One firm's preparers reviewing real drafts would
@@ -540,7 +536,7 @@
           <p class="section-kicker">Part 5</p>
           <h2>How the agent will be judged</h2>
           <p>
-            The bars below are proposals written into a preregistration file: a file that fixes the bars, the configurations to run and the one they judge, before any test result exists. They can change until the file locks, before the one test run, and so far only the cost bar has. After the dev results I chose the configuration they judge, the agent on Opus 5.5, and raised that bar from $0.10 to $0.60 a household (<a href="#results">Part 6</a>). Until that file is committed with its lock date, the code refuses to run the test group, and that commit must predate the first test run. Three of the nine rows below, evidence and delivery,
+            The bars below are written into a preregistration file: a file that fixes the bars, the configurations to run and the one they judge, before any test result exists. It locked on November 2, before the one test run, and only the cost bar changed before then. After the dev results I chose the configuration they judge, the agent on Opus 5.5, and raised that bar from $0.10 to $0.60 a household (<a href="#results">Part 6</a>). The code refused to run the test group until that file was committed with its lock date, and that commit predates the first test run. Three of the nine rows below, evidence and delivery,
             the rules and the tests, come from the requirements document rather
             than from that file.
           </p>
@@ -619,9 +615,9 @@
             bootstrap that resamples households 10,000 times, since trials of the
             same household are not independent.
           </p>
-          <div class="table-scroll" tabindex="0" role="region" aria-label="The proposed bars, which lock before the one test run">
+          <div class="table-scroll" tabindex="0" role="region" aria-label="The bars, locked before the one test run">
             <table>
-              <caption>The proposed bars, which lock before the one test run (40 households, 3 trials each)</caption>
+              <caption>The bars, locked before the one test run (planned for 40 households, 3 trials each; 25 were scored)</caption>
               <thead>
                 <tr><th>Criterion</th><th>Bar</th><th>Why it matters</th></tr>
               </thead>
@@ -696,8 +692,35 @@
           <p class="section-kicker">Part 6</p>
           <h2>What is measured so far</h2>
           <p>
-            Since November 1, 2026, the harness has made live model calls, all on
-            the train and dev groups, and the test group is untouched. Both the
+            The one test run, on November 2, 2026, scored the 25 test households
+            whose rules are all verified, 3 trials each; the other 15 wait on 4
+            rules still to verify, so the run left them out as the plan requires.
+            The bars locked in a commit before the first test call.
+          </p>
+          <div class="table-scroll" tabindex="0" role="region" aria-label="Test results">
+            <table>
+              <caption>Test results, 25 households, 3 trials each, with 95% household bootstrap intervals</caption>
+              <thead><tr><th scope="col">Config</th><th scope="col">Pass rate</th><th scope="col">Missed-document rate</th><th scope="col">Cost per household</th></tr></thead>
+              <tbody>
+                <tr><td>A-opus (primary)</td><td class="num">92.0% [84.0, 97.3]</td><td class="num">0.8% [0.0, 2.1]</td><td class="num">$0.3678</td></tr>
+                <tr><td>A-sonnet</td><td class="num">93.3% [88.0, 98.7]</td><td class="num">1.2% [0.0, 2.8]</td><td class="num">$0.1603</td></tr>
+                <tr><td>A-haiku</td><td class="num">85.3% [74.7, 94.7]</td><td class="num">2.5% [0.0, 6.5]</td><td class="num">$0.0127</td></tr>
+                <tr><td>A-split</td><td class="num">85.3% [74.7, 94.7]</td><td class="num">1.7% [0.0, 3.8]</td><td class="num">$0.0578</td></tr>
+                <tr><td>B1, full organizer</td><td class="num">84.0% [68.0, 96.0]</td><td class="num">7.5% [1.3, 16.7]</td><td class="num">$0.0059</td></tr>
+                <tr><td>B2, last year's list</td><td class="num">52.0% [32.0, 72.0]</td><td class="num">36.2% [23.8, 45.0]</td><td class="num">$0</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            A-opus meets the pass, missed-document, question and cost bars on its
+            point estimates, though its pass-rate interval reaches below 90%. Its
+            advice verdicts come from a judge my labels have validated on delivery
+            but not yet on advice. The rest of this part is the dev trial of
+            November 1 that chose A-opus, kept as it was.
+          </p>
+          <p>
+            Since November 1, 2026, the harness has made live model calls, first on
+            the train and dev groups. Both the
             simulator fidelity check and a smoke test of 10 dev households ran
             before and after the fixes described in Parts 3 and 5. Then a sweep
             ran every configuration once on all 40 dev households, reusing the 40
@@ -748,7 +771,7 @@
                 <tr><td>The same document, in my words</td><td class="num">78</td><td>39 of my items named a rule's document in other words, such as "mortgage payments" for Form 1098; each pairs with the rule it names</td></tr>
                 <tr><td>Checked against the source; the rule stands</td><td class="num">15</td><td>10 requests for paperwork behind ended credits, 4 missing Form 1099-K requests, and 1 health plan question with no federal document</td></tr>
                 <tr><td>My misreading</td><td class="num">2</td><td>Tuition paid last year only, read as this year's</td></tr>
-                <tr><td>A fact that did not change</td><td class="num">95</td><td>My lists named only what changed; these rule answers are checked by my rule verification alone, which so far covers 10 of the 33 rules</td></tr>
+                <tr><td>A fact that did not change</td><td class="num">95</td><td>My lists named only what changed; these rule answers are checked by my rule verification alone, which now covers 29 of the 33 rules</td></tr>
               </tbody>
             </table>
           </div>
@@ -918,7 +941,7 @@
           <p>
             Every success criterion in the
             <a href="https://github.com/Roanukz/tax-agent-ask/blob/main/docs/results.md">generated results report</a>
-            still reads "not measured yet". The report names A-opus as the primary configuration and gives the cost bar as $0.60. Beside each criterion, it says what that criterion waits on: the bars are not locked, the test run has not happened, the judge has no labels, none of the 33 rules is verified, the report does not run the tests itself, and publishing waits for my "proceed". For evidence and delivery it adds what dev shows so far: no fact without valid evidence and no run claiming the list was sent, over 160 agent runs.
+            now reports the test run: A-opus meets criteria 1 to 5, the rules criterion is not met with 29 of 33 verified, and the judge's bars are not met on advice and summary. Over 300 test agent runs, no fact was recorded without valid evidence and no run claimed the list was sent.
           </p>
           <p class="callout callout-warning">
             <strong>What these numbers can and cannot say.</strong> Last year's misses measure the gap the agent has to close in this data, not the agent. Since the generator decides how often households change (70 of 100) and what changes, and it changed every medium and complex household and no simple one, 38.6% describes this data, not any firm's clients. The blind lists are one person's, mine, and I am not a
@@ -1022,7 +1045,7 @@
 
           <div class="decision">
             <span class="decision-num">Decision 6</span>
-            <h3>Bars that lock before one test run</h3>
+            <h3>Bars that locked before one test run</h3>
             <p class="decision-risk">For: a reader who wants results that were not tuned to the test</p>
             <p>
               Dev is for iteration, while test runs once, with the configuration
@@ -1229,12 +1252,10 @@
             </li>
             <li>
               <strong>Finish verifying the rules against their sources.</strong>
-              On November 1 I verified 10 of the 33 rules and sent 23 back with
-              the changes I want, the five proposed edits among them. Every test
-              household depends on the W-2 rule, R001, which I sent back, and the
-              run drops any test household whose list depends on a rule I have not
-              verified, so the test run can score no household until those edits
-              are made and I verify the rules again.
+              I verified 10 of the 33 rules on November 1, sent 23 back with the
+              changes I wanted, and verified 19 more once those were made. The last
+              4 wait on edits, and the 15 test households that need them were left
+              out of the test run.
             </li>
             <li>
               <strong>Read and label what only I can judge.</strong> The 30
@@ -1373,7 +1394,7 @@ uv run mutmut run &amp;&amp; uv run mutmut results</code></pre>
             <li>Every household is synthetic, from one generator whose mix of situations is a design choice, not a sample of any practice.</li>
             <li>The client is a model, not a person. Real clients misremember, contradict themselves and volunteer things no persona captures. When the simulated client's answer contradicts its own facts outside a recall gap, the answer goes back to the model once, so this client is more consistent than a real one on purpose. Its words can still disagree with the facts it reveals.</li>
             <li>The blind lists, the rule verification and the judge's labels are all mine: one person, not a practicing preparer, and the blind lists cover only what changed.</li>
-            <li>Only 10 of the 33 rules are verified so far, the other 23 wait for changes I asked for, and some sources are 2026 drafts or 2025 editions.</li>
+            <li>29 of the 33 rules are verified; the other 4 wait on edits, so the test run scored 25 of the 40 test households. Some sources are 2026 drafts or 2025 editions.</li>
             <li>Two cases near the traps are never generated, a client with a Form 5695 carryforward would be scored wrong, and a request for paperwork that a rental, a home office or an itemizer could still use counts as a trap (<a href="#rules">Part 4</a>).</li>
             <li>Every simple household stayed the same and every other one changed, so change and complexity are tangled in every comparison between them. Last year's list is complete by construction where nothing changed, and its misses come from changed facts, never from changed rules.</li>
             <li>The evidence and question checks live in the test harness, not in the tool server. The evidence check finds two or more of the client's words in a row, a one-word answer sentence, or the field that holds the fact, but cannot tell whether they support the value. The question check misses some claims, one of them in a live run, and leaves them to the judge.</li>

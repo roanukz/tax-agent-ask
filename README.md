@@ -4,11 +4,22 @@ An AI intake agent that asks each tax client only what their return needs, then 
 
 This repo measures the questions, not just the list: how many questions the agent asks, and which documents it misses, compared with a full organizer and two other baselines. The agent only learns facts. Code turns facts into the document list through a rules table in which every rule cites an official source, so every miss traces to a fact the conversation didn't learn or a rule that was wrong. The agent can draft a list but has no way to send one.
 
-**Status, November 1, 2026:** under construction. Blocks 0 to 5 are built and tested offline, and the 30 blind labels are compared and settled. The first live runs are done, all on train and dev and none on test: the simulator fidelity check on 28 households, the smoke test of 10 dev households before and after the harness fixes, one trial of every config on the 40 dev households, and 20 weakened-prompt runs for judge validation. From the dev results Roanuk chose the primary config, A-opus, for accuracy, and raised the cost bar from the PRD's $0.10 a household to $0.60; both are set in `eval/prereg.yaml`, which is not locked. The test split has not run. Before it can, Roanuk verifies the 33 rules, reads the 30 sampled simulator answers, labels the 60 judge transcripts, writes a note on each of the 22 failing dev agent runs, and then locks `eval/prereg.yaml`; the lock comes last and must be committed before the test run. The teardown, [docs/index.html](docs/index.html), explains the purpose, the design decisions and what is measured so far. The design is in [PRD-tax-agent-ask.md](PRD-tax-agent-ask.md), the rules and their sources in [docs/rules.md](docs/rules.md), and the decision log in [DECISIONS.md](DECISIONS.md). The preregistered results will appear here after the one test run.
+**Status, November 2, 2026:** the one test run is done. Blocks 0 to 9 are built and run; Block 7's judge fix is open. Roanuk verified 29 of the 33 rules, labeled 60 judge transcripts and noted every failing dev run, and `eval/prereg.yaml` was locked and committed before the test run. The run scored the 25 test households whose rules are all verified; the other 15 wait on 4 rules. The teardown, [docs/index.html](docs/index.html), explains the purpose, the design decisions and the results. The design is in [PRD-tax-agent-ask.md](PRD-tax-agent-ask.md), the rules and their sources in [docs/rules.md](docs/rules.md), and the decision log in [DECISIONS.md](DECISIONS.md).
 
 ## Results
 
-The preregistered test sweep has not run, so every success criterion in [docs/results.md](docs/results.md) still reads "not measured yet". What has run is the dev sweep of November 1, 2026: every config on the 40 dev households, 1 trial each. It is iteration for choosing the primary config, not the result, and the judge whose advice and delivery verdicts count toward a run's pass has no labels yet, so it is not validated. After the sweep, the judge's transcript began marking the lines the client never saw (transcript format 3, logged in [DECISIONS.md](DECISIONS.md)), and every dev agent run was judged again and the scored ones rescored, with no agent run repeated; the agent pass rates below are from that judging. From docs/results.md, with 95% household bootstrap intervals:
+Test run of November 2, 2026, on 25 test households at 3 trials each, from [docs/results.md](docs/results.md), with 95% household bootstrap intervals. A-opus meets criteria 1 to 5 on their point estimates (its pass-rate interval reaches below 90%); the rules criterion is not met (29 of 33 verified), and the judge is validated on delivery but not on advice or summary, so the advice verdicts inside these pass rates are an unvalidated model's.
+
+| Config | Pass rate | Missed-document rate | Cost per household |
+|---|---|---|---|
+| A-opus (primary) | 92.0% [84.0, 97.3] | 0.8% [0.0, 2.1] | $0.3678 |
+| A-sonnet | 93.3% [88.0, 98.7] | 1.2% [0.0, 2.8] | $0.1603 |
+| A-haiku | 85.3% [74.7, 94.7] | 2.5% [0.0, 6.5] | $0.0127 |
+| A-split | 85.3% [74.7, 94.7] | 1.7% [0.0, 3.8] | $0.0578 |
+| B1 | 84.0% [68.0, 96.0] | 7.5% [1.3, 16.7] | $0.0059 |
+| B2 | 52.0% [32.0, 72.0] | 36.2% [23.8, 45.0] | $0.0000 |
+
+The dev sweep of November 1, every config on the 40 dev households at 1 trial, chose the primary config. It is kept below as it was, judged under transcript format 3:
 
 | Config | Pass rate | Missed-document rate | Median questions | Cost per household |
 |---|---|---|---|---|
