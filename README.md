@@ -82,3 +82,11 @@ The test split is locked until `eval/prereg.yaml` is committed with `locked_on`,
 ## Disclaimer
 
 Not tax advice. All households are synthetic. Not affiliated with any tax software vendor.
+
+## Share card
+
+`docs/og-image.svg` is the source; `docs/og-image.png` is what the pages point at for link previews. Edit the SVG, then render it at 2x with headless Chrome (from the repo root, with the SVG's comment removed into a small HTML page), as was done on November 2, 2026:
+
+```bash
+"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new --hide-scrollbars --force-device-scale-factor=2 --window-size=1200,627 --screenshot="$PWD/docs/og-image.png" "file://$PWD/og.html"
+```
