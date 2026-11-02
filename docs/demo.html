@@ -52,15 +52,15 @@
           Roanuk Zaman &middot; A walkthrough of a tool I designed and directed
         </p>
         <p class="callout callout-notice" id="status">
-          <strong>Status on November 2, 2026.</strong> The agent has run on the
-          dev group only, 40 synthetic households used to develop it, with one
-          trial of each configuration, so every agent number here is a dev
-          result and none is the preregistered result. After the changes I asked
-          for were made, 29 of the 33 rules are verified, and 25 of the 40 test
-          households can be scored. I have labeled all 60 judge transcripts:
-          against my labels the judge meets its bars on delivery but not yet on
-          advice or summary, so its fix and the lock on the bars come before the
-          one test run.
+          <strong>Status on November 2, 2026.</strong> I locked the bars and ran
+          the one test run. On the 25 test households whose rules are verified,
+          the agent on Claude Opus 5.5 passed 92.0% of 75 runs (interval 84.0% to
+          97.3%) and missed 0.8% of required documents, at $0.37 a household,
+          against 84.0% for the full organizer and 52.0% for last year's list.
+          The other 15 test households wait on 4 rules still to verify. Advice
+          verdicts in that rate come from a judge my labels have validated on
+          delivery but not yet on advice. The numbers in the steps below are dev
+          results from one trial, as they stood when each decision was made.
         </p>
 
         <div class="cta-row">
@@ -637,7 +637,7 @@
             <ul class="limits">
               <li>Four rules still wait on edits I asked for, so 15 of the 40 test households can't be scored yet.</li>
               <li>The judge meets its bars only on delivery so far. Advice and summary need a prompt fix, and FAIL cases to measure, before its verdicts count.</li>
-              <li>The bars are not locked and the one test run has not happened, so no number on this page is the preregistered result.</li>
+              <li>The test run left out 15 of the 40 test households, which depend on 4 rules still waiting on edits, and it used the judge as it stands; the steps above report dev results from one trial.</li>
               <li>Every household is synthetic and the client is a model. The labels and the rule calls are mine alone, and I am not a practicing preparer; in production a credentialed preparer would own them, with a second reviewer on the judge labels.</li>
             </ul>
           </section>

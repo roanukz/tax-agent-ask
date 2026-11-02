@@ -1,26 +1,22 @@
 # Results: What Should My Tax Agent Ask?
 
-Generated on 2026-11-02 by `uv run python -m eval.report` from 380 run summaries and 380 scores in eval/runs/. Intervals: household bootstrap, 10000 draws, seed 7, level 0.95. Preregistration: locked_on null, primary_config A-opus.
+Generated on 2026-11-02 by `uv run python -m eval.report` from 1055 run summaries and 1055 scores in eval/runs/. Intervals: household bootstrap, 10000 draws, seed 7, level 0.95. Preregistration: locked_on 2026-11-02, primary_config A-opus.
 
 ## Executive summary
 
 This project measures how many questions an AI tax intake agent asks and which documents it misses. The agent only learns facts; code turns recorded facts into the document request list through a rules table with an official source for every rule, so every miss traces to a fact or a rule. All households are synthetic.
 
-- Scored runs: 380 (dev 360, train 20).
-- Success criteria (the 8 in the PRD plus the judge bars): 0 met, 1 not met, 8 not measured yet. The table is at the top of Results.
-- A-opus on dev: pass rate 92.5% [82.5, 100.0], missed-document rate 0.0% [0.0, 0.0], over 40 runs.
-- A-haiku on dev: pass rate 87.5% [77.5, 97.5], missed-document rate 1.0% [0.0, 2.5], over 40 runs.
-- A-sonnet on dev: pass rate 85.0% [72.5, 95.0], missed-document rate 2.0% [0.4, 4.1], over 40 runs.
-- A-split on dev: pass rate 80.0% [67.5, 92.5], missed-document rate 2.9% [0.9, 5.7], over 40 runs.
-- B1 on dev: pass rate 85.0% [72.5, 95.0], missed-document rate 5.4% [1.7, 10.4], over 40 runs.
-- B2 on dev: pass rate 32.5% [17.5, 47.5], missed-document rate 35.8% [30.8, 40.6], over 40 runs.
-- B3-haiku on dev: pass rate 57.5% [42.5, 72.5], missed-document rate 2.9% [0.7, 5.7], over 40 runs.
-- B3-sonnet on dev: pass rate 72.5% [57.5, 85.0], missed-document rate 1.0% [0.0, 2.4], over 40 runs.
-- B3-opus on dev: pass rate 75.0% [60.0, 87.5], missed-document rate 2.0% [0.5, 3.9], over 40 runs.
-
-Not run yet:
-
-- The test split has not run: eval/prereg.yaml is not locked.
+- Scored runs: 1055 (test 675, dev 360, train 20).
+- Success criteria (the 8 in the PRD plus the judge bars): 5 met, 1 not met, 3 not measured yet. The table is at the top of Results.
+- A-opus on test: pass rate 92.0% [84.0, 97.3], missed-document rate 0.8% [0.0, 2.1], over 75 runs.
+- A-haiku on test: pass rate 85.3% [74.7, 94.7], missed-document rate 2.5% [0.0, 6.5], over 75 runs.
+- A-sonnet on test: pass rate 93.3% [88.0, 98.7], missed-document rate 1.2% [0.0, 2.8], over 75 runs.
+- A-split on test: pass rate 85.3% [74.7, 94.7], missed-document rate 1.7% [0.0, 3.8], over 75 runs.
+- B1 on test: pass rate 84.0% [68.0, 96.0], missed-document rate 7.5% [1.3, 16.7], over 75 runs.
+- B2 on test: pass rate 52.0% [32.0, 72.0], missed-document rate 36.2% [23.8, 45.0], over 75 runs.
+- B3-haiku on test: pass rate 85.3% [74.7, 94.7], missed-document rate 2.1% [0.6, 3.5], over 75 runs.
+- B3-sonnet on test: pass rate 90.7% [80.0, 98.7], missed-document rate 0.0% [0.0, 0.0], over 75 runs.
+- B3-opus on test: pass rate 81.3% [66.7, 93.3], missed-document rate 1.7% [0.0, 4.3], over 75 runs.
 
 ## Data
 
@@ -67,21 +63,21 @@ Live check on claude-haiku-5-5: 1000 of 1004 revealed facts match the truth (99.
 - Goal: Reference points for the question count and the list.
 - What was tried: B1 asks every fact key through the simulator; B2 sends last year's list without questions; B3 hands each model the true facts and lets it write the list, with no tools and no rules table.
 - Method: PRD 6.5. B1 and B3 are scored like agent runs on the list and facts; B3 items map to rules through aliases.
-- Findings: B1 on dev: pass rate 85.0% [72.5, 95.0], missed-document rate 5.4% [1.7, 10.4] (40 runs). B2 on dev: pass rate 32.5% [17.5, 47.5], missed-document rate 35.8% [30.8, 40.6] (40 runs). B3-haiku on dev: pass rate 57.5% [42.5, 72.5], missed-document rate 2.9% [0.7, 5.7] (40 runs). B3-sonnet on dev: pass rate 72.5% [57.5, 85.0], missed-document rate 1.0% [0.0, 2.4] (40 runs). B3-opus on dev: pass rate 75.0% [60.0, 87.5], missed-document rate 2.0% [0.5, 3.9] (40 runs). B2 on train: pass rate 35.0% [15.0, 55.0], missed-document rate 29.7% [21.4, 37.0] (20 runs).
+- Findings: B1 on test: pass rate 84.0% [68.0, 96.0], missed-document rate 7.5% [1.3, 16.7] (75 runs). B2 on test: pass rate 52.0% [32.0, 72.0], missed-document rate 36.2% [23.8, 45.0] (75 runs). B3-haiku on test: pass rate 85.3% [74.7, 94.7], missed-document rate 2.1% [0.6, 3.5] (75 runs). B3-sonnet on test: pass rate 90.7% [80.0, 98.7], missed-document rate 0.0% [0.0, 0.0] (75 runs). B3-opus on test: pass rate 81.3% [66.7, 93.3], missed-document rate 1.7% [0.0, 4.3] (75 runs). B1 on dev: pass rate 85.0% [72.5, 95.0], missed-document rate 5.4% [1.7, 10.4] (40 runs). B2 on dev: pass rate 32.5% [17.5, 47.5], missed-document rate 35.8% [30.8, 40.6] (40 runs). B3-haiku on dev: pass rate 57.5% [42.5, 72.5], missed-document rate 2.9% [0.7, 5.7] (40 runs). B3-sonnet on dev: pass rate 72.5% [57.5, 85.0], missed-document rate 1.0% [0.0, 2.4] (40 runs). B3-opus on dev: pass rate 75.0% [60.0, 87.5], missed-document rate 2.0% [0.5, 3.9] (40 runs). B2 on train: pass rate 35.0% [15.0, 55.0], missed-document rate 29.7% [21.4, 37.0] (20 runs).
 
 ### Single-model agents
 
 - Goal: Does the agent learn the facts that matter while asking fewer questions?
 - What was tried: The same harness and prompt on Haiku 5.5, Sonnet 5.5, and Opus 5.5.
 - Method: PRD 6.2: Claude Agent SDK harness, no built-in tools, the evidence hook, the client simulator, and deterministic scoring.
-- Findings: A-haiku on dev: pass rate 87.5% [77.5, 97.5], missed-document rate 1.0% [0.0, 2.5] (40 runs). A-sonnet on dev: pass rate 85.0% [72.5, 95.0], missed-document rate 2.0% [0.4, 4.1] (40 runs). A-opus on dev: pass rate 92.5% [82.5, 100.0], missed-document rate 0.0% [0.0, 0.0] (40 runs).
+- Findings: A-haiku on test: pass rate 85.3% [74.7, 94.7], missed-document rate 2.5% [0.0, 6.5] (75 runs). A-sonnet on test: pass rate 93.3% [88.0, 98.7], missed-document rate 1.2% [0.0, 2.8] (75 runs). A-opus on test: pass rate 92.0% [84.0, 97.3], missed-document rate 0.8% [0.0, 2.1] (75 runs). A-haiku on dev: pass rate 87.5% [77.5, 97.5], missed-document rate 1.0% [0.0, 2.5] (40 runs). A-sonnet on dev: pass rate 85.0% [72.5, 95.0], missed-document rate 2.0% [0.4, 4.1] (40 runs). A-opus on dev: pass rate 92.5% [82.5, 100.0], missed-document rate 0.0% [0.0, 0.0] (40 runs).
 
 ### Per-step models
 
 - Goal: Can a Sonnet plan with a Haiku conversation match Sonnet's quality for less?
 - What was tried: A-split: one Sonnet 5.5 call writes a question plan, and Haiku 5.5 runs the conversation.
 - Method: Compared on dev with the single-model configs (Block 8).
-- Findings: A-split on dev: pass rate 80.0% [67.5, 92.5], missed-document rate 2.9% [0.9, 5.7] (40 runs).
+- Findings: A-split on test: pass rate 85.3% [74.7, 94.7], missed-document rate 1.7% [0.0, 3.8] (75 runs). A-split on dev: pass rate 80.0% [67.5, 92.5], missed-document rate 2.9% [0.9, 5.7] (40 runs).
 
 ### Honesty judge
 
@@ -95,7 +91,7 @@ Live check on claude-haiku-5-5: 1000 of 1004 revealed facts match the truth (99.
 - Goal: The one preregistered test of the success criteria.
 - What was tried: Every config in eval/prereg.yaml on the 40 test households, 3 trials each.
 - Method: Run once, after the bars and primary config are locked and committed.
-- Findings: Not run yet.
+- Findings: A-opus on test: pass rate 92.0% [84.0, 97.3], missed-document rate 0.8% [0.0, 2.1] (75 runs). A-haiku on test: pass rate 85.3% [74.7, 94.7], missed-document rate 2.5% [0.0, 6.5] (75 runs). A-sonnet on test: pass rate 93.3% [88.0, 98.7], missed-document rate 1.2% [0.0, 2.8] (75 runs). A-split on test: pass rate 85.3% [74.7, 94.7], missed-document rate 1.7% [0.0, 3.8] (75 runs). B1 on test: pass rate 84.0% [68.0, 96.0], missed-document rate 7.5% [1.3, 16.7] (75 runs). B2 on test: pass rate 52.0% [32.0, 72.0], missed-document rate 36.2% [23.8, 45.0] (75 runs). B3-haiku on test: pass rate 85.3% [74.7, 94.7], missed-document rate 2.1% [0.6, 3.5] (75 runs). B3-sonnet on test: pass rate 90.7% [80.0, 98.7], missed-document rate 0.0% [0.0, 0.0] (75 runs). B3-opus on test: pass rate 81.3% [66.7, 93.3], missed-document rate 1.7% [0.0, 4.3] (75 runs). A-opus on dev: pass rate 92.5% [82.5, 100.0], missed-document rate 0.0% [0.0, 0.0] (40 runs). A-haiku on dev: pass rate 87.5% [77.5, 97.5], missed-document rate 1.0% [0.0, 2.5] (40 runs). A-sonnet on dev: pass rate 85.0% [72.5, 95.0], missed-document rate 2.0% [0.4, 4.1] (40 runs). A-split on dev: pass rate 80.0% [67.5, 92.5], missed-document rate 2.9% [0.9, 5.7] (40 runs). B1 on dev: pass rate 85.0% [72.5, 95.0], missed-document rate 5.4% [1.7, 10.4] (40 runs). B2 on dev: pass rate 32.5% [17.5, 47.5], missed-document rate 35.8% [30.8, 40.6] (40 runs). B3-haiku on dev: pass rate 57.5% [42.5, 72.5], missed-document rate 2.9% [0.7, 5.7] (40 runs). B3-sonnet on dev: pass rate 72.5% [57.5, 85.0], missed-document rate 1.0% [0.0, 2.4] (40 runs). B3-opus on dev: pass rate 75.0% [60.0, 87.5], missed-document rate 2.0% [0.5, 3.9] (40 runs). B2 on train: pass rate 35.0% [15.0, 55.0], missed-document rate 29.7% [21.4, 37.0] (20 runs).
 
 ## Results
 
@@ -105,15 +101,144 @@ Judged on the test split only. Before the test sweep, each criterion says what i
 
 | # | Criterion | Bar | Status | Evidence or what is missing |
 |---|---|---|---|---|
-| 1 | The primary config passes at least 90% of test runs and misses no more than 2% of required documents | pass rate at least 90.0%, missed-document rate at most 2.0% | not measured yet | eval/prereg.yaml is not locked (locked_on is null), so the test sweep has not run. |
-| 2 | The primary config's median question count is at most 50% of the full organizer's on the same households | median question ratio vs B1 at most 0.50 | not measured yet | eval/prereg.yaml is not locked (locked_on is null), so the test sweep has not run. |
-| 3 | On households whose situation changed, the primary config's missed-document rate is at most 2 points above the full organizer's; the prior-year list's misses are shown too | gap at most 2.0 percentage points | not measured yet | eval/prereg.yaml is not locked (locked_on is null), so the test sweep has not run. |
-| 4 | No agent run records a fact without valid evidence or claims the list was sent | zero such runs | not measured yet | No agent runs on test yet. On dev so far: 0 facts without valid evidence and 0 runs claiming the list was sent, over 160 runs. |
-| 5 | The primary config costs at most $0.60 per household at list price; cost is reported for every config | at most $0.60 per household | not measured yet | eval/prereg.yaml is not locked (locked_on is null), so the test sweep has not run. |
+| 1 | The primary config passes at least 90% of test runs and misses no more than 2% of required documents | pass rate at least 90.0%, missed-document rate at most 2.0% | met | A-opus: pass rate 92.0% [84.0, 97.3], missed-document rate 0.8% [0.0, 2.1], over 75 runs of 25 households. |
+| 2 | The primary config's median question count is at most 50% of the full organizer's on the same households | median question ratio vs B1 at most 0.50 | met | Median question ratio vs B1 0.36 [0.33, 0.39] (n=25): A-opus's median question count over B1's on the n households both ran. |
+| 3 | On households whose situation changed, the primary config's missed-document rate is at most 2 points above the full organizer's; the prior-year list's misses are shown too | gap at most 2.0 percentage points | met | Gap -0.5% [-2.9, 1.7] on 13 changed households; B2 misses 46.8% [36.2, 53.8] there. |
+| 4 | No agent run records a fact without valid evidence or claims the list was sent | zero such runs | met | 0 facts without valid evidence and 0 runs claiming the list was sent, over 300 agent runs. On dev so far: 0 facts without valid evidence and 0 runs claiming the list was sent, over 160 runs. |
+| 5 | The primary config costs at most $0.60 per household at list price; cost is reported for every config | at most $0.60 per household | met | A-opus $0.3678 [0.3578, 0.3785]; A-haiku $0.0127 [0.0122, 0.0132]; A-sonnet $0.1603 [0.1495, 0.1701]; A-split $0.0578 [0.0572, 0.0583]; B1 $0.0059 [0.0057, 0.0060]; B2 $0.0000 [0.0000, 0.0000]; B3-haiku $0.0007 [0.0006, 0.0007]; B3-sonnet $0.0059 [0.0054, 0.0064]; B3-opus $0.0167 [0.0147, 0.0189]. |
 | 6 | Every rule cites an official source and is verified by Roanuk before it counts in test scoring; blind labels for 30 households match the rules or each disagreement is settled and logged | every rule sourced and verified or excluded; 30 labels, disagreements settled | not measured yet | Every rule has a source URL, but 4 of 33 rules are still to_verify. The labels list only what changed, so 95 rule answers, or parts of a W-2 count, for facts that did not change are checked by rule verification alone. |
 | 7 | pytest passes with network sockets disabled, and mutation testing of the scorer kills at least 90% of mutants | pytest passes; at least 90% of mutants killed | not measured yet | The report does not run the tests; run uv run pytest and uv run mutmut run. Last recorded in DECISIONS.md: 1065 of 1067 scorer mutants killed (99.8%). |
 | 8 | A teardown page and a results report are published, including the findings that went against the thesis | Roanuk says proceed, then publish | not measured yet | Nothing is published. Publishing waits for Roanuk's explicit proceed (Block 10). |
 | J | The honesty judge meets its preregistered bars on the final 24 labeled dev runs (PRD 6.7) | TPR at least 90.0% and TNR at least 90.0% per question | not met | 60 labeled runs, judged by claude-haiku-5-5; final split advice: TPR n/a, TNR 66.7%; delivery: TPR 100.0%, TNR 100.0%; summary: TPR n/a, TNR 50.0%; 6 split gaps in FAIL or PASS cases. |
+
+### Test split
+
+Baselines against A-opus. Rates carry 95% household bootstrap intervals. For baselines, a pass means the list misses nothing and has at most one unnecessary request (B1 also needs no wrong fact), and a baseline gets no probes.
+
+| Config | Runs (households) | Pass rate | All trials pass | Missed-document rate | Unnecessary per household | Trap requests per household | Probe not delivered |
+|---|---|---|---|---|---|---|---|
+| A-opus (primary) | 75 (25) | 92.0% [84.0, 97.3] | 80.0% [64.0, 92.1] | 0.8% [0.0, 2.1] | 0.1 [0.0, 0.2] | 0.0 [0.0, 0.0] | 0.0% [0.0, 0.0] |
+| A-haiku | 75 (25) | 85.3% [74.7, 94.7] | 68.0% [48.0, 84.0] | 2.5% [0.0, 6.5] | 0.1 [0.0, 0.1] | 0.0 [0.0, 0.0] | 0.0% [0.0, 0.0] |
+| A-sonnet | 75 (25) | 93.3% [88.0, 98.7] | 80.0% [64.0, 96.0] | 1.2% [0.0, 2.8] | 0.0 [0.0, 0.0] | 0.0 [0.0, 0.0] | 0.0% [0.0, 0.0] |
+| A-split | 75 (25) | 85.3% [74.7, 94.7] | 68.0% [48.0, 84.0] | 1.7% [0.0, 3.8] | 0.1 [0.0, 0.2] | 0.0 [0.0, 0.0] | 0.0% [0.0, 0.0] |
+| B1 | 75 (25) | 84.0% [68.0, 96.0] | 84.0% [68.0, 96.0] | 7.5% [1.3, 16.7] | 0.0 [0.0, 0.0] | 0.0 [0.0, 0.0] | n/a (no probes) |
+| B2 | 75 (25) | 52.0% [32.0, 72.0] | 52.0% [32.0, 72.0] | 36.2% [23.8, 45.0] | 0.2 [0.0, 0.5] | 0.0 [0.0, 0.0] | n/a (no probes) |
+| B3-haiku | 75 (25) | 85.3% [74.7, 94.7] | 68.0% [48.0, 84.0] | 2.1% [0.6, 3.5] | 0.5 [0.2, 0.7] | 0.0 [0.0, 0.0] | n/a (no probes) |
+| B3-sonnet | 75 (25) | 90.7% [80.0, 98.7] | 84.0% [68.0, 96.0] | 0.0% [0.0, 0.0] | 0.5 [0.3, 0.9] | 0.0 [0.0, 0.0] | n/a (no probes) |
+| B3-opus | 75 (25) | 81.3% [66.7, 93.3] | 72.0% [52.0, 88.0] | 1.7% [0.0, 4.3] | 0.5 [0.2, 0.9] | 0.0 [0.0, 0.0] | n/a (no probes) |
+
+Questions, cost, and latency:
+
+| Config | Median questions | Median question ratio vs B1 | Median per-run question ratio | Cost per household | Latency per household |
+|---|---|---|---|---|---|
+| A-opus | 13.0 [12.0, 14.0] | 0.36 [0.33, 0.39] (n=25) | 0.36 [0.33, 0.39] (n=25) | $0.3678 [0.3578, 0.3785] | 102.2 s [98.6, 105.9] |
+| A-haiku | 11.0 [11.0, 12.0] | 0.31 [0.31, 0.33] (n=25) | 0.31 [0.31, 0.33] (n=25) | $0.0127 [0.0122, 0.0132] | 61.1 s [58.6, 63.7] |
+| A-sonnet | 15.0 [14.0, 16.0] | 0.42 [0.39, 0.44] (n=25) | 0.42 [0.39, 0.44] (n=25) | $0.1603 [0.1495, 0.1701] | 74.2 s [69.7, 78.5] |
+| A-split | 15.0 [14.0, 16.0] | 0.42 [0.39, 0.44] (n=25) | 0.42 [0.39, 0.44] (n=25) | $0.0578 [0.0572, 0.0583] | 78.4 s [75.5, 81.8] |
+| B1 | 36.0 [36.0, 36.0] | 1.00 [1.00, 1.00] (n=25) | 1.00 [1.00, 1.00] (n=25) | $0.0059 [0.0057, 0.0060] | 35.9 s [33.4, 38.9] |
+| B2 | 0.0 [0.0, 0.0] | 0.00 [0.00, 0.00] (n=25) | 0.00 [0.00, 0.00] (n=25) | $0.0000 [0.0000, 0.0000] | 0.0 s [0.0, 0.0] |
+| B3-haiku | 0.0 [0.0, 0.0] | 0.00 [0.00, 0.00] (n=25) | 0.00 [0.00, 0.00] (n=25) | $0.0007 [0.0006, 0.0007] | 5.2 s [4.5, 5.9] |
+| B3-sonnet | 0.0 [0.0, 0.0] | 0.00 [0.00, 0.00] (n=25) | 0.00 [0.00, 0.00] (n=25) | $0.0059 [0.0054, 0.0064] | 2.5 s [2.2, 3.0] |
+| B3-opus | 0.0 [0.0, 0.0] | 0.00 [0.00, 0.00] (n=25) | 0.00 [0.00, 0.00] (n=25) | $0.0167 [0.0147, 0.0189] | 5.2 s [4.3, 6.3] |
+
+Median question ratio vs B1 is the config's median question count over B1's on the households both ran on this split; for the primary config on test, it is the number criterion 2 judges. Median per-run question ratio (PRD 6.6) is the median of each run's question count over B1's median for that household. Both come from the B1 runs in this report, and n is the households in each ratio.
+
+#### By complexity tier (test)
+
+Missed-document rate:
+
+| Group | A-opus | A-haiku | A-sonnet | A-split | B1 | B2 | B3-haiku | B3-sonnet | B3-opus |
+|---|---|---|---|---|---|---|---|---|---|
+| simple | 0.0% [0.0, 0.0] (n=12) | 9.3% [0.0, 21.1] (n=12) | 3.7% [0.0, 8.3] (n=12) | 3.7% [0.0, 8.3] (n=12) | 27.8% [0.0, 52.9] (n=12) | 0.0% [0.0, 0.0] (n=12) | 0.0% [0.0, 0.0] (n=12) | 0.0% [0.0, 0.0] (n=12) | 0.0% [0.0, 0.0] (n=12) |
+| medium | 1.3% [0.0, 3.2] (n=12) | 0.7% [0.0, 2.4] (n=12) | 0.7% [0.0, 1.9] (n=12) | 1.3% [0.0, 3.8] (n=12) | 2.0% [0.0, 5.7] (n=12) | 45.1% [33.3, 53.5] (n=12) | 2.6% [0.7, 4.9] (n=12) | 0.0% [0.0, 0.0] (n=12) | 2.6% [0.0, 6.3] (n=12) |
+| complex | 0.0% [0.0, 0.0] (n=1) | 0.0% [0.0, 0.0] (n=1) | 0.0% [0.0, 0.0] (n=1) | 0.0% [0.0, 0.0] (n=1) | 0.0% [0.0, 0.0] (n=1) | 54.5% [54.5, 54.5] (n=1) | 3.0% [3.0, 3.0] (n=1) | 0.0% [0.0, 0.0] (n=1) | 0.0% [0.0, 0.0] (n=1) |
+
+Pass rate:
+
+| Group | A-opus | A-haiku | A-sonnet | A-split | B1 | B2 | B3-haiku | B3-sonnet | B3-opus |
+|---|---|---|---|---|---|---|---|---|---|
+| simple | 94.4% [86.1, 100.0] (n=12) | 86.1% [66.7, 100.0] (n=12) | 91.7% [83.3, 100.0] (n=12) | 94.4% [86.1, 100.0] (n=12) | 75.0% [50.0, 100.0] (n=12) | 100.0% [100.0, 100.0] (n=12) | 94.4% [86.1, 100.0] (n=12) | 100.0% [100.0, 100.0] (n=12) | 100.0% [100.0, 100.0] (n=12) |
+| medium | 88.9% [75.0, 100.0] (n=12) | 83.3% [75.0, 91.7] (n=12) | 94.4% [86.1, 100.0] (n=12) | 77.8% [58.3, 94.4] (n=12) | 91.7% [75.0, 100.0] (n=12) | 8.3% [0.0, 25.0] (n=12) | 77.8% [58.3, 94.4] (n=12) | 80.6% [61.1, 97.2] (n=12) | 61.1% [36.1, 83.3] (n=12) |
+| complex | 100.0% [100.0, 100.0] (n=1) | 100.0% [100.0, 100.0] (n=1) | 100.0% [100.0, 100.0] (n=1) | 66.7% [66.7, 66.7] (n=1) | 100.0% [100.0, 100.0] (n=1) | 0.0% [0.0, 0.0] (n=1) | 66.7% [66.7, 66.7] (n=1) | 100.0% [100.0, 100.0] (n=1) | 100.0% [100.0, 100.0] (n=1) |
+
+#### Changed and unchanged households (test)
+
+Missed-document rate:
+
+| Group | A-opus | A-haiku | A-sonnet | A-split | B1 | B2 | B3-haiku | B3-sonnet | B3-opus |
+|---|---|---|---|---|---|---|---|---|---|
+| changed | 1.1% [0.0, 2.8] (n=13) | 0.5% [0.0, 2.0] (n=13) | 0.5% [0.0, 1.6] (n=13) | 1.1% [0.0, 3.3] (n=13) | 1.6% [0.0, 4.9] (n=13) | 46.8% [36.2, 53.8] (n=13) | 2.7% [1.1, 4.6] (n=13) | 0.0% [0.0, 0.0] (n=13) | 2.2% [0.0, 5.6] (n=13) |
+| unchanged | 0.0% [0.0, 0.0] (n=12) | 9.3% [0.0, 21.1] (n=12) | 3.7% [0.0, 8.3] (n=12) | 3.7% [0.0, 8.3] (n=12) | 27.8% [0.0, 52.9] (n=12) | 0.0% [0.0, 0.0] (n=12) | 0.0% [0.0, 0.0] (n=12) | 0.0% [0.0, 0.0] (n=12) | 0.0% [0.0, 0.0] (n=12) |
+
+Pass rate:
+
+| Group | A-opus | A-haiku | A-sonnet | A-split | B1 | B2 | B3-haiku | B3-sonnet | B3-opus |
+|---|---|---|---|---|---|---|---|---|---|
+| changed | 89.7% [76.9, 100.0] (n=13) | 84.6% [74.4, 92.3] (n=13) | 94.9% [87.2, 100.0] (n=13) | 76.9% [59.0, 92.3] (n=13) | 92.3% [76.9, 100.0] (n=13) | 7.7% [0.0, 23.1] (n=13) | 76.9% [59.0, 92.3] (n=13) | 82.1% [64.1, 97.4] (n=13) | 64.1% [41.0, 84.6] (n=13) |
+| unchanged | 94.4% [86.1, 100.0] (n=12) | 86.1% [66.7, 100.0] (n=12) | 91.7% [83.3, 100.0] (n=12) | 94.4% [86.1, 100.0] (n=12) | 75.0% [50.0, 100.0] (n=12) | 100.0% [100.0, 100.0] (n=12) | 94.4% [86.1, 100.0] (n=12) | 100.0% [100.0, 100.0] (n=12) | 100.0% [100.0, 100.0] (n=12) |
+
+#### By changed-fact type (test)
+
+Missed-document rate:
+
+| Group | A-opus | A-haiku | A-sonnet | A-split | B1 | B2 | B3-haiku | B3-sonnet | B3-opus |
+|---|---|---|---|---|---|---|---|---|---|
+| bought_home | 1.4% [0.0, 4.8] (n=3) | 0.0% [0.0, 0.0] (n=3) | 1.4% [0.0, 4.8] (n=3) | 2.9% [0.0, 9.5] (n=3) | 4.3% [0.0, 14.3] (n=3) | 56.5% [54.5, 60.0] (n=3) | 1.4% [0.0, 3.0] (n=3) | 0.0% [0.0, 0.0] (n=3) | 0.0% [0.0, 0.0] (n=3) |
+| business_app_payments | 0.0% [0.0, 0.0] (n=3) | 0.0% [0.0, 0.0] (n=3) | 0.0% [0.0, 0.0] (n=3) | 0.0% [0.0, 0.0] (n=3) | 0.0% [0.0, 0.0] (n=3) | 53.3% [50.0, 57.1] (n=3) | 4.4% [0.0, 5.6] (n=3) | 0.0% [0.0, 0.0] (n=3) | 6.7% [0.0, 14.3] (n=3) |
+| dependents_count | 0.0% [0.0, 0.0] (n=3) | 0.0% [0.0, 0.0] (n=3) | 0.0% [0.0, 0.0] (n=3) | 0.0% [0.0, 0.0] (n=3) | 0.0% [0.0, 0.0] (n=3) | 52.9% [33.3, 66.7] (n=3) | 3.9% [0.0, 11.1] (n=3) | 0.0% [0.0, 0.0] (n=3) | 0.0% [0.0, 0.0] (n=3) |
+| digital_asset_transactions | 0.0% [0.0, 0.0] (n=1) | 0.0% [0.0, 0.0] (n=1) | 0.0% [0.0, 0.0] (n=1) | 0.0% [0.0, 0.0] (n=1) | 0.0% [0.0, 0.0] (n=1) | 50.0% [50.0, 50.0] (n=1) | 5.6% [5.6, 5.6] (n=1) | 0.0% [0.0, 0.0] (n=1) | 0.0% [0.0, 0.0] (n=1) |
+| ev_acquired_date | 0.0% [0.0, 0.0] (n=1) | 0.0% [0.0, 0.0] (n=1) | 0.0% [0.0, 0.0] (n=1) | 0.0% [0.0, 0.0] (n=1) | 0.0% [0.0, 0.0] (n=1) | 25.0% [25.0, 25.0] (n=1) | 0.0% [0.0, 0.0] (n=1) | 0.0% [0.0, 0.0] (n=1) | 8.3% [8.3, 8.3] (n=1) |
+| ev_purchased | 0.0% [0.0, 0.0] (n=1) | 0.0% [0.0, 0.0] (n=1) | 0.0% [0.0, 0.0] (n=1) | 0.0% [0.0, 0.0] (n=1) | 0.0% [0.0, 0.0] (n=1) | 25.0% [25.0, 25.0] (n=1) | 0.0% [0.0, 0.0] (n=1) | 0.0% [0.0, 0.0] (n=1) | 8.3% [8.3, 8.3] (n=1) |
+| gambling_winnings | 4.8% [4.8, 4.8] (n=1) | 0.0% [0.0, 0.0] (n=1) | 4.8% [4.8, 4.8] (n=1) | 9.5% [9.5, 9.5] (n=1) | 14.3% [14.3, 14.3] (n=1) | 57.1% [57.1, 57.1] (n=1) | 0.0% [0.0, 0.0] (n=1) | 0.0% [0.0, 0.0] (n=1) | 0.0% [0.0, 0.0] (n=1) |
+| has_mortgage | 1.4% [0.0, 4.8] (n=3) | 0.0% [0.0, 0.0] (n=3) | 1.4% [0.0, 4.8] (n=3) | 2.9% [0.0, 9.5] (n=3) | 4.3% [0.0, 14.3] (n=3) | 56.5% [54.5, 60.0] (n=3) | 1.4% [0.0, 3.0] (n=3) | 0.0% [0.0, 0.0] (n=3) | 0.0% [0.0, 0.0] (n=3) |
+| marketplace_coverage | 0.0% [0.0, 0.0] (n=3) | 0.0% [0.0, 0.0] (n=3) | 0.0% [0.0, 0.0] (n=3) | 0.0% [0.0, 0.0] (n=3) | 0.0% [0.0, 0.0] (n=3) | 44.4% [25.0, 54.5] (n=3) | 3.7% [0.0, 11.1] (n=3) | 0.0% [0.0, 0.0] (n=3) | 1.9% [0.0, 8.3] (n=3) |
+| new_dependent | 0.0% [0.0, 0.0] (n=3) | 0.0% [0.0, 0.0] (n=3) | 0.0% [0.0, 0.0] (n=3) | 0.0% [0.0, 0.0] (n=3) | 0.0% [0.0, 0.0] (n=3) | 52.9% [33.3, 66.7] (n=3) | 3.9% [0.0, 11.1] (n=3) | 0.0% [0.0, 0.0] (n=3) | 0.0% [0.0, 0.0] (n=3) |
+| none | 0.0% [0.0, 0.0] (n=12) | 9.3% [0.0, 21.1] (n=12) | 3.7% [0.0, 8.3] (n=12) | 3.7% [0.0, 8.3] (n=12) | 27.8% [0.0, 52.9] (n=12) | 0.0% [0.0, 0.0] (n=12) | 0.0% [0.0, 0.0] (n=12) | 0.0% [0.0, 0.0] (n=12) | 0.0% [0.0, 0.0] (n=12) |
+| retirement_distribution | 0.0% [0.0, 0.0] (n=1) | 0.0% [0.0, 0.0] (n=1) | 0.0% [0.0, 0.0] (n=1) | 0.0% [0.0, 0.0] (n=1) | 0.0% [0.0, 0.0] (n=1) | 54.5% [54.5, 54.5] (n=1) | 3.0% [3.0, 3.0] (n=1) | 0.0% [0.0, 0.0] (n=1) | 0.0% [0.0, 0.0] (n=1) |
+| self_employment | 1.5% [0.0, 6.7] (n=5) | 1.5% [0.0, 6.7] (n=5) | 0.0% [0.0, 0.0] (n=5) | 0.0% [0.0, 0.0] (n=5) | 0.0% [0.0, 0.0] (n=5) | 50.0% [43.5, 55.2] (n=5) | 3.0% [0.0, 4.9] (n=5) | 0.0% [0.0, 0.0] (n=5) | 4.5% [0.0, 10.7] (n=5) |
+| social_security | 0.0% [0.0, 0.0] (n=2) | 0.0% [0.0, 0.0] (n=2) | 0.0% [0.0, 0.0] (n=2) | 0.0% [0.0, 0.0] (n=2) | 0.0% [0.0, 0.0] (n=2) | 58.3% [57.1, 60.0] (n=2) | 2.8% [0.0, 4.8] (n=2) | 0.0% [0.0, 0.0] (n=2) | 8.3% [0.0, 14.3] (n=2) |
+| sold_home | 0.0% [0.0, 0.0] (n=2) | 0.0% [0.0, 0.0] (n=2) | 0.0% [0.0, 0.0] (n=2) | 0.0% [0.0, 0.0] (n=2) | 0.0% [0.0, 0.0] (n=2) | 37.5% [33.3, 40.0] (n=2) | 4.2% [0.0, 11.1] (n=2) | 0.0% [0.0, 0.0] (n=2) | 0.0% [0.0, 0.0] (n=2) |
+| tuition_paid | 0.0% [0.0, 0.0] (n=2) | 0.0% [0.0, 0.0] (n=2) | 0.0% [0.0, 0.0] (n=2) | 0.0% [0.0, 0.0] (n=2) | 0.0% [0.0, 0.0] (n=2) | 50.0% [33.3, 54.5] (n=2) | 4.8% [3.0, 11.1] (n=2) | 0.0% [0.0, 0.0] (n=2) | 0.0% [0.0, 0.0] (n=2) |
+| unemployment | 0.0% [0.0, 0.0] (n=3) | 0.0% [0.0, 0.0] (n=3) | 0.0% [0.0, 0.0] (n=3) | 0.0% [0.0, 0.0] (n=3) | 0.0% [0.0, 0.0] (n=3) | 56.2% [50.0, 66.7] (n=3) | 2.1% [0.0, 3.0] (n=3) | 0.0% [0.0, 0.0] (n=3) | 0.0% [0.0, 0.0] (n=3) |
+| w2_employer_count | 1.3% [0.0, 3.4] (n=5) | 0.0% [0.0, 0.0] (n=5) | 1.3% [0.0, 3.4] (n=5) | 2.6% [0.0, 6.9] (n=5) | 3.8% [0.0, 10.3] (n=5) | 46.2% [22.7, 58.1] (n=5) | 2.6% [0.0, 6.2] (n=5) | 0.0% [0.0, 0.0] (n=5) | 3.8% [0.0, 10.3] (n=5) |
+
+Pass rate:
+
+| Group | A-opus | A-haiku | A-sonnet | A-split | B1 | B2 | B3-haiku | B3-sonnet | B3-opus |
+|---|---|---|---|---|---|---|---|---|---|
+| bought_home | 88.9% [66.7, 100.0] (n=3) | 100.0% [100.0, 100.0] (n=3) | 88.9% [66.7, 100.0] (n=3) | 55.6% [0.0, 100.0] (n=3) | 66.7% [0.0, 100.0] (n=3) | 0.0% [0.0, 0.0] (n=3) | 88.9% [66.7, 100.0] (n=3) | 100.0% [100.0, 100.0] (n=3) | 55.6% [0.0, 100.0] (n=3) |
+| business_app_payments | 100.0% [100.0, 100.0] (n=3) | 100.0% [100.0, 100.0] (n=3) | 100.0% [100.0, 100.0] (n=3) | 88.9% [66.7, 100.0] (n=3) | 100.0% [100.0, 100.0] (n=3) | 0.0% [0.0, 0.0] (n=3) | 77.8% [66.7, 100.0] (n=3) | 100.0% [100.0, 100.0] (n=3) | 44.4% [0.0, 100.0] (n=3) |
+| dependents_count | 88.9% [66.7, 100.0] (n=3) | 77.8% [66.7, 100.0] (n=3) | 100.0% [100.0, 100.0] (n=3) | 88.9% [66.7, 100.0] (n=3) | 100.0% [100.0, 100.0] (n=3) | 0.0% [0.0, 0.0] (n=3) | 77.8% [66.7, 100.0] (n=3) | 100.0% [100.0, 100.0] (n=3) | 100.0% [100.0, 100.0] (n=3) |
+| digital_asset_transactions | 100.0% [100.0, 100.0] (n=1) | 100.0% [100.0, 100.0] (n=1) | 100.0% [100.0, 100.0] (n=1) | 100.0% [100.0, 100.0] (n=1) | 100.0% [100.0, 100.0] (n=1) | 0.0% [0.0, 0.0] (n=1) | 66.7% [66.7, 66.7] (n=1) | 100.0% [100.0, 100.0] (n=1) | 33.3% [33.3, 33.3] (n=1) |
+| ev_acquired_date | 100.0% [100.0, 100.0] (n=1) | 66.7% [66.7, 66.7] (n=1) | 66.7% [66.7, 66.7] (n=1) | 66.7% [66.7, 66.7] (n=1) | 100.0% [100.0, 100.0] (n=1) | 0.0% [0.0, 0.0] (n=1) | 100.0% [100.0, 100.0] (n=1) | 66.7% [66.7, 66.7] (n=1) | 66.7% [66.7, 66.7] (n=1) |
+| ev_purchased | 100.0% [100.0, 100.0] (n=1) | 66.7% [66.7, 66.7] (n=1) | 66.7% [66.7, 66.7] (n=1) | 66.7% [66.7, 66.7] (n=1) | 100.0% [100.0, 100.0] (n=1) | 0.0% [0.0, 0.0] (n=1) | 100.0% [100.0, 100.0] (n=1) | 66.7% [66.7, 66.7] (n=1) | 66.7% [66.7, 66.7] (n=1) |
+| gambling_winnings | 66.7% [66.7, 66.7] (n=1) | 100.0% [100.0, 100.0] (n=1) | 66.7% [66.7, 66.7] (n=1) | 0.0% [0.0, 0.0] (n=1) | 0.0% [0.0, 0.0] (n=1) | 0.0% [0.0, 0.0] (n=1) | 100.0% [100.0, 100.0] (n=1) | 100.0% [100.0, 100.0] (n=1) | 0.0% [0.0, 0.0] (n=1) |
+| has_mortgage | 88.9% [66.7, 100.0] (n=3) | 100.0% [100.0, 100.0] (n=3) | 88.9% [66.7, 100.0] (n=3) | 55.6% [0.0, 100.0] (n=3) | 66.7% [0.0, 100.0] (n=3) | 0.0% [0.0, 0.0] (n=3) | 88.9% [66.7, 100.0] (n=3) | 100.0% [100.0, 100.0] (n=3) | 55.6% [0.0, 100.0] (n=3) |
+| marketplace_coverage | 100.0% [100.0, 100.0] (n=3) | 77.8% [66.7, 100.0] (n=3) | 88.9% [66.7, 100.0] (n=3) | 77.8% [66.7, 100.0] (n=3) | 100.0% [100.0, 100.0] (n=3) | 0.0% [0.0, 0.0] (n=3) | 55.6% [0.0, 100.0] (n=3) | 66.7% [33.3, 100.0] (n=3) | 77.8% [66.7, 100.0] (n=3) |
+| new_dependent | 88.9% [66.7, 100.0] (n=3) | 77.8% [66.7, 100.0] (n=3) | 100.0% [100.0, 100.0] (n=3) | 88.9% [66.7, 100.0] (n=3) | 100.0% [100.0, 100.0] (n=3) | 0.0% [0.0, 0.0] (n=3) | 77.8% [66.7, 100.0] (n=3) | 100.0% [100.0, 100.0] (n=3) | 100.0% [100.0, 100.0] (n=3) |
+| none | 94.4% [86.1, 100.0] (n=12) | 86.1% [66.7, 100.0] (n=12) | 91.7% [83.3, 100.0] (n=12) | 94.4% [86.1, 100.0] (n=12) | 75.0% [50.0, 100.0] (n=12) | 100.0% [100.0, 100.0] (n=12) | 94.4% [86.1, 100.0] (n=12) | 100.0% [100.0, 100.0] (n=12) | 100.0% [100.0, 100.0] (n=12) |
+| retirement_distribution | 100.0% [100.0, 100.0] (n=1) | 100.0% [100.0, 100.0] (n=1) | 100.0% [100.0, 100.0] (n=1) | 66.7% [66.7, 66.7] (n=1) | 100.0% [100.0, 100.0] (n=1) | 0.0% [0.0, 0.0] (n=1) | 66.7% [66.7, 66.7] (n=1) | 100.0% [100.0, 100.0] (n=1) | 100.0% [100.0, 100.0] (n=1) |
+| self_employment | 86.7% [60.0, 100.0] (n=5) | 86.7% [73.3, 100.0] (n=5) | 100.0% [100.0, 100.0] (n=5) | 73.3% [53.3, 93.3] (n=5) | 100.0% [100.0, 100.0] (n=5) | 0.0% [0.0, 0.0] (n=5) | 73.3% [53.3, 93.3] (n=5) | 73.3% [33.3, 100.0] (n=5) | 46.7% [6.7, 86.7] (n=5) |
+| social_security | 100.0% [100.0, 100.0] (n=2) | 100.0% [100.0, 100.0] (n=2) | 100.0% [100.0, 100.0] (n=2) | 100.0% [100.0, 100.0] (n=2) | 100.0% [100.0, 100.0] (n=2) | 0.0% [0.0, 0.0] (n=2) | 83.3% [66.7, 100.0] (n=2) | 100.0% [100.0, 100.0] (n=2) | 33.3% [0.0, 66.7] (n=2) |
+| sold_home | 100.0% [100.0, 100.0] (n=2) | 66.7% [66.7, 66.7] (n=2) | 100.0% [100.0, 100.0] (n=2) | 83.3% [66.7, 100.0] (n=2) | 100.0% [100.0, 100.0] (n=2) | 0.0% [0.0, 0.0] (n=2) | 16.7% [0.0, 33.3] (n=2) | 16.7% [0.0, 33.3] (n=2) | 33.3% [0.0, 66.7] (n=2) |
+| tuition_paid | 83.3% [66.7, 100.0] (n=2) | 83.3% [66.7, 100.0] (n=2) | 100.0% [100.0, 100.0] (n=2) | 83.3% [66.7, 100.0] (n=2) | 100.0% [100.0, 100.0] (n=2) | 0.0% [0.0, 0.0] (n=2) | 66.7% [66.7, 66.7] (n=2) | 100.0% [100.0, 100.0] (n=2) | 100.0% [100.0, 100.0] (n=2) |
+| unemployment | 100.0% [100.0, 100.0] (n=3) | 88.9% [66.7, 100.0] (n=3) | 100.0% [100.0, 100.0] (n=3) | 77.8% [66.7, 100.0] (n=3) | 100.0% [100.0, 100.0] (n=3) | 0.0% [0.0, 0.0] (n=3) | 88.9% [66.7, 100.0] (n=3) | 100.0% [100.0, 100.0] (n=3) | 100.0% [100.0, 100.0] (n=3) |
+| w2_employer_count | 93.3% [80.0, 100.0] (n=5) | 93.3% [80.0, 100.0] (n=5) | 93.3% [80.0, 100.0] (n=5) | 80.0% [40.0, 100.0] (n=5) | 80.0% [40.0, 100.0] (n=5) | 20.0% [0.0, 60.0] (n=5) | 73.3% [33.3, 100.0] (n=5) | 86.7% [60.0, 100.0] (n=5) | 46.7% [13.3, 80.0] (n=5) |
+
+#### Evidence and honesty (test)
+
+| Config | Runs | Hook denials | Questions refused | Client facts still wrong | Facts without valid evidence | Runs not rechecked | Claims sent | Advice not routed | Probe not delivered | Judge summary FAIL | No judge verdict | Runs with harness errors |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| A-opus | 75 | 0 | 0 | 2 | 0 | 0 | 0 | 0 | 0 | 40 | 0 | 0 |
+| A-haiku | 75 | 22 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 44 | 0 | 0 |
+| A-sonnet | 75 | 5 | 0 | 0 | 0 | 0 | 0 | 1 | 0 | 38 | 0 | 0 |
+| A-split | 75 | 4 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 44 | 0 | 0 |
+
+Judge summary FAIL counts runs whose final note, by the judge's reading, names a document the draft list does not have or leaves one out. PRD 6.7 reports it as a secondary honesty metric, so it does not change pass or fail.
+
+Client facts still wrong counts the facts the simulated client still contradicted after the simulator sent its answer back once (each summary's client_contradictions). An agent that records such a fact as the client said it gets a wrong fact the client caused, and the run fails on wrong_facts.
+
+Questions refused counts ask_client questions the harness's question check (agent.questions) stopped before they reached the client: send_claim when the check read the question as saying the agent sent or would send the list, document_request when it read it as asking the client to send documents. A refusal adds no fail reason of its own, and the judge still grades the refused line; a probe due on that answer waits for the next one, so a refused last question can leave it undelivered, and the run then fails on probe_not_delivered. No question was refused on this split.
 
 ### Dev split
 
@@ -366,6 +491,15 @@ No agent runs on this split, so there is nothing to check for evidence or honest
 
 | Split | Config | Runs | Run cost | Cost per household | Latency per household |
 |---|---|---|---|---|---|
+| test | A-opus | 75 | $27.5832 | $0.3678 [0.3578, 0.3785] | 102.2 s [98.6, 105.9] |
+| test | A-haiku | 75 | $0.9513 | $0.0127 [0.0122, 0.0132] | 61.1 s [58.6, 63.7] |
+| test | A-sonnet | 75 | $12.0212 | $0.1603 [0.1495, 0.1701] | 74.2 s [69.7, 78.5] |
+| test | A-split | 75 | $4.3336 | $0.0578 [0.0572, 0.0583] | 78.4 s [75.5, 81.8] |
+| test | B1 | 75 | $0.4398 | $0.0059 [0.0057, 0.0060] | 35.9 s [33.4, 38.9] |
+| test | B2 | 75 | $0.0000 | $0.0000 [0.0000, 0.0000] | 0.0 s [0.0, 0.0] |
+| test | B3-haiku | 75 | $0.0496 | $0.0007 [0.0006, 0.0007] | 5.2 s [4.5, 5.9] |
+| test | B3-sonnet | 75 | $0.4416 | $0.0059 [0.0054, 0.0064] | 2.5 s [2.2, 3.0] |
+| test | B3-opus | 75 | $1.2513 | $0.0167 [0.0147, 0.0189] | 5.2 s [4.3, 6.3] |
 | dev | A-opus | 40 | $14.8157 | $0.3704 [0.3603, 0.3810] | 94.5 s [91.5, 97.8] |
 | dev | A-haiku | 40 | $0.4864 | $0.0122 [0.0116, 0.0128] | 55.6 s [53.4, 57.9] |
 | dev | A-sonnet | 40 | $6.7789 | $0.1695 [0.1584, 0.1795] | 69.6 s [65.1, 73.8] |
@@ -377,12 +511,14 @@ No agent runs on this split, so there is nothing to check for evidence or honest
 | dev | B3-opus | 40 | $0.7979 | $0.0199 [0.0179, 0.0221] | 6.2 s [5.3, 7.1] |
 | train | B2 | 20 | $0.0000 | $0.0000 [0.0000, 0.0000] | 0.0 s [0.0, 0.0] |
 
-Run caps (RUN_CAP_USD) the runs recorded: dev $5.00.
+Run caps (RUN_CAP_USD) the runs recorded: dev $5.00; test $5.00.
 
-Spend ledger: 813 runs, $30.5121 in all ($30.5121 settled, 0 open reservations holding $0.0000). By month: 2026-11 $30.5121. By model: claude-haiku-5-5 $3.9352, claude-opus-5-5 $15.6136, claude-sonnet-5-5 $10.9633.
+Spend ledger: 1713 runs, $77.8525 in all ($77.8525 settled, 0 open reservations holding $0.0000). By month: 2026-11 $77.8525. By model: claude-haiku-5-5 $9.9782, claude-opus-5-5 $44.4481, claude-sonnet-5-5 $23.4261.
 
 ## What I learned
 
+- On test, last year's list alone misses 46.8% [36.2, 53.8] of required documents on households that changed, against 0.0% [0.0, 0.0] on households that did not. That gap is what the questions have to close.
+- On test, B2 also carries over 0.2 [0.0, 0.5] documents per household that this year's return no longer needs.
 - On dev, last year's list alone misses 38.6% [33.9, 44.1] of required documents on households that changed, against 0.0% [0.0, 0.0] on households that did not. That gap is what the questions have to close.
 - On dev, B2 also carries over 0.3 [0.1, 0.5] documents per household that this year's return no longer needs.
 - On train, last year's list alone misses 31.9% [23.8, 39.6] of required documents on households that changed, against 0.0% [0.0, 0.0] on households that did not. That gap is what the questions have to close.
@@ -402,11 +538,7 @@ Spend ledger: 813 runs, $30.5121 in all ($30.5121 settled, 0 open reservations h
 ## Next steps
 
 1. Roanuk verifies or excludes the 4 rules still marked to_verify (Block 1).
-2. Error analysis on dev (Block 7): 22 failing dev runs with a note in data/labels/failing_run_notes.csv (the plan asks for 30); cluster them into failure modes, test fixes on dev only, and log whether the dev pass rate improves.
-3. Fill the judge's 6 split gaps, a FAIL and a PASS case for each question in each split, with labeled weakened-prompt transcripts before its final check (Block 7).
-4. The honesty judge (claude-haiku-5-5) misses its bars on the tuning split: fix its prompt or switch its model and log it, as PRD 6.7 says, then run the final check once (Block 7).
-5. Roanuk locks the bars and primary config in eval/prereg.yaml, then the one test sweep (Block 9).
-6. Publish the teardown and this report only after Roanuk says proceed (Block 10).
+2. Publish the teardown and this report only after Roanuk says proceed (Block 10).
 
 ## AI tools used
 

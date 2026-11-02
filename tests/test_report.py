@@ -3,6 +3,7 @@
 import csv
 import dataclasses
 import json
+import re
 import shutil
 import types
 from pathlib import Path
@@ -201,8 +202,10 @@ def context(tmp_path, runs, *, prereg_path=None, verified=True, **kw):
 
 
 def test_report_with_no_runs_renders_and_says_what_has_not_run(tmp_path):
-    # No judge labels here: the repo's own data/labels/judge_labels.csv has Roanuk's 60 by now.
-    out = write_report(tmp_path / "runs", tmp_path / "results.md", prereg_path=REPO / "eval" / "prereg.yaml",
+    # No judge labels and an unlocked prereg here: the repo's own files have Roanuk's labels and lock by now.
+    unlocked = tmp_path / "prereg.yaml"
+    unlocked.write_text(re.sub(r"(?m)^locked_on: .*$", "locked_on: null", (REPO / "eval" / "prereg.yaml").read_text()))
+    out = write_report(tmp_path / "runs", tmp_path / "results.md", prereg_path=unlocked,
                        ledger_path=tmp_path / "spend.jsonl", fidelity_dir=tmp_path / "none", draws=DRAWS,
                        generated_on="2026-10-31", judge_labels_path=tmp_path / "no-labels.csv")
     text = out.read_text()
