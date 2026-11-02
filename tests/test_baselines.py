@@ -9,6 +9,7 @@ from pathlib import Path
 import pytest
 
 from eval import baselines
+from rules.engine import load_rules as engine_load_rules
 from eval import run as eval_run
 from eval.baselines import (
     B3_EFFORT,
@@ -400,6 +401,8 @@ def test_b2_split_runner_refuses_a_locked_prereg_with_uncommitted_edits(tmp_path
 def test_b2_on_test_stamps_the_prereg_commit_and_skips_unverified_households(tmp_path, monkeypatch):
     path = prereg_repo(tmp_path)
     monkeypatch.setattr(eval_run, "REPO", path.parent.parent)
+    pending = pending_rules_path(tmp_path)
+    monkeypatch.setattr(baselines, "load_rules", lambda path=pending: engine_load_rules(pending))
     commit = git(path.parent.parent, "rev-parse", "HEAD")
     said = []
     assert run_prior_year_split("test", runs_dir=tmp_path / "runs", prereg_path=path, say=said.append) == []
@@ -570,3 +573,16 @@ def test_score_baseline_fails_b1_on_a_wrong_fact_but_never_on_probes():
     assert score["wrong_facts"][0]["fact"] == "interest_income"
     assert score["probe_not_delivered"] == [] and score["advice_routed"] and not score["claims_sent"]
     assert score["question_ratio_vs_full_organizer"] == pytest.approx(1 / 36)
+
+
+def pending_rules_path(tmp_path):
+    """A copy of the rules with every rule still to verify, as before Roanuk's calls, so every test household
+    depends on an unverified rule."""
+    import re
+    text = (Path(__file__).resolve().parent.parent / "rules" / "document_rules.yaml").read_text()
+    text = re.sub(r"status: verified\n  verified_by: \S+\n  verified_on: \S+",
+                  "status: to_verify\n  verified_by: null\n  verified_on: null", text)
+    path = tmp_path / "pending_rules.yaml"
+    path.write_text(text)
+    return path
+

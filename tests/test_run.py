@@ -342,7 +342,10 @@ async def test_a_sweep_prints_the_caps_in_effect(tmp_path):
 
 
 @pytest.mark.anyio
-async def test_the_test_split_drops_households_that_depend_on_unverified_rules(tmp_path):
+async def test_the_test_split_drops_households_that_depend_on_unverified_rules(tmp_path, monkeypatch):
+    from rules import engine
+    pending, real = pending_rules_path(tmp_path), engine.load_rules
+    monkeypatch.setattr(engine, "load_rules", lambda path=pending: real(pending))
     fakes, messages, path = Fakes(), [], prereg_repo(tmp_path, plan("B2"))
     code = await sweep(tmp_path, fakes, "--split", "test", "--configs", "B2", "--households", "H001,H004",
                        "--prereg", str(path), messages=messages, repo=root(path))
@@ -1034,3 +1037,16 @@ async def test_the_month_cap_during_a_weakened_runs_judge_call_halts_and_the_nex
     assert again.calls == [("judge", run_id)], "the run resumes, and only its judge call runs again"
     assert runs(tmp_path, "judge")[run_id]["advice"] == "PASS" and runs(tmp_path, "score") == {}
     assert {f"{run_id}.judge", f"{run_id}.judge.r2"} <= {e["run_id"] for e in ledger(tmp_path).entries()}
+
+
+def pending_rules_path(tmp_path):
+    """A copy of the rules with every rule still to verify, as before Roanuk's calls, so every test household
+    depends on an unverified rule."""
+    import re
+    text = (Path(__file__).resolve().parent.parent / "rules" / "document_rules.yaml").read_text()
+    text = re.sub(r"status: verified\n  verified_by: \S+\n  verified_on: \S+",
+                  "status: to_verify\n  verified_by: null\n  verified_on: null", text)
+    path = tmp_path / "pending_rules.yaml"
+    path.write_text(text)
+    return path
+

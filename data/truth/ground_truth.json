@@ -1,5 +1,5 @@
 {
-  "rules_fingerprint": "4a1701e4f0b8426566f06c565f2fb1c1d045b95a4fcdc33277918678352b1a5b",
+  "rules_fingerprint": "03d10e6de5548a61ead5cf21f50dcbed00f3e61935dcae0668e0adb55def5710",
   "statuses": [
     "verified",
     "to_verify"
@@ -56,14 +56,7 @@
       ],
       "traps": [],
       "unverified_rule_ids": [
-        "R001",
-        "R002",
-        "R003",
-        "R014",
-        "R015",
-        "R021",
-        "R022",
-        "R025"
+        "R020"
       ]
     },
     "H002": {
@@ -76,9 +69,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001"
-      ]
+      "unverified_rule_ids": []
     },
     "H003": {
       "split": "dev",
@@ -90,9 +81,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001"
-      ]
+      "unverified_rule_ids": []
     },
     "H004": {
       "split": "test",
@@ -116,11 +105,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001",
-        "R014",
-        "R015"
-      ]
+      "unverified_rule_ids": []
     },
     "H005": {
       "split": "test",
@@ -140,11 +125,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001",
-        "R002",
-        "R030"
-      ]
+      "unverified_rule_ids": []
     },
     "H006": {
       "split": "test",
@@ -156,9 +137,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001"
-      ]
+      "unverified_rule_ids": []
     },
     "H007": {
       "split": "test",
@@ -175,7 +154,6 @@
       ],
       "traps": [],
       "unverified_rule_ids": [
-        "R001",
         "R017"
       ]
     },
@@ -209,13 +187,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001",
-        "R002",
-        "R003",
-        "R007",
-        "R025"
-      ]
+      "unverified_rule_ids": []
     },
     "H009": {
       "split": "test",
@@ -267,15 +239,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001",
-        "R008",
-        "R010",
-        "R014",
-        "R015",
-        "R019",
-        "R021"
-      ]
+      "unverified_rule_ids": []
     },
     "H010": {
       "split": "train",
@@ -291,10 +255,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001",
-        "R019"
-      ]
+      "unverified_rule_ids": []
     },
     "H011": {
       "split": "dev",
@@ -337,10 +298,7 @@
         "T002"
       ],
       "unverified_rule_ids": [
-        "R001",
-        "R014",
-        "R015",
-        "R019",
+        "R020",
         "T002"
       ]
     },
@@ -354,9 +312,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001"
-      ]
+      "unverified_rule_ids": []
     },
     "H013": {
       "split": "train",
@@ -368,9 +324,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001"
-      ]
+      "unverified_rule_ids": []
     },
     "H014": {
       "split": "test",
@@ -422,14 +376,7 @@
         "T002"
       ],
       "unverified_rule_ids": [
-        "R001",
-        "R006",
-        "R007",
-        "R011",
-        "R014",
-        "R015",
-        "R021",
-        "R027",
+        "R020",
         "T001",
         "T002"
       ]
@@ -460,11 +407,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001",
-        "R011",
-        "R014"
-      ]
+      "unverified_rule_ids": []
     },
     "H016": {
       "split": "test",
@@ -484,11 +427,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001",
-        "R019",
-        "R025"
-      ]
+      "unverified_rule_ids": []
     },
     "H017": {
       "split": "test",
@@ -543,14 +482,7 @@
         "T003"
       ],
       "unverified_rule_ids": [
-        "R001",
-        "R002",
-        "R006",
-        "R019",
-        "R021",
-        "R025",
-        "R027",
-        "T003"
+        "R020"
       ]
     },
     "H018": {
@@ -599,11 +531,7 @@
         "T002"
       ],
       "unverified_rule_ids": [
-        "R001",
-        "R006",
-        "R011",
-        "R014",
-        "R025",
+        "R020",
         "T001",
         "T002"
       ]
@@ -647,10 +575,7 @@
       ],
       "traps": [],
       "unverified_rule_ids": [
-        "R001",
-        "R002",
-        "R010",
-        "R021"
+        "R020"
       ]
     },
     "H020": {
@@ -667,10 +592,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001",
-        "R007"
-      ]
+      "unverified_rule_ids": []
     },
     "H021": {
       "split": "dev",
@@ -682,9 +604,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001"
-      ]
+      "unverified_rule_ids": []
     },
     "H022": {
       "split": "train",
@@ -729,12 +649,7 @@
       ],
       "traps": [],
       "unverified_rule_ids": [
-        "R001",
-        "R008",
-        "R019",
-        "R021",
-        "R023",
-        "R027"
+        "R020"
       ]
     },
     "H023": {
@@ -747,9 +662,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001"
-      ]
+      "unverified_rule_ids": []
     },
     "H024": {
       "split": "dev",
@@ -767,11 +680,7 @@
       "traps": [
         "T003"
       ],
-      "unverified_rule_ids": [
-        "R001",
-        "R010",
-        "T003"
-      ]
+      "unverified_rule_ids": []
     },
     "H025": {
       "split": "test",
@@ -798,9 +707,6 @@
         "T002"
       ],
       "unverified_rule_ids": [
-        "R001",
-        "R013",
-        "R030",
         "T002"
       ]
     },
@@ -814,9 +720,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001"
-      ]
+      "unverified_rule_ids": []
     },
     "H027": {
       "split": "test",
@@ -865,13 +769,8 @@
       ],
       "traps": [],
       "unverified_rule_ids": [
-        "R001",
-        "R002",
-        "R003",
-        "R014",
         "R017",
-        "R023",
-        "R025"
+        "R020"
       ]
     },
     "H028": {
@@ -888,10 +787,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001",
-        "R010"
-      ]
+      "unverified_rule_ids": []
     },
     "H029": {
       "split": "dev",
@@ -911,11 +807,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001",
-        "R013",
-        "R030"
-      ]
+      "unverified_rule_ids": []
     },
     "H030": {
       "split": "dev",
@@ -931,10 +823,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001",
-        "R007"
-      ]
+      "unverified_rule_ids": []
     },
     "H031": {
       "split": "train",
@@ -958,12 +847,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001",
-        "R007",
-        "R008",
-        "R014"
-      ]
+      "unverified_rule_ids": []
     },
     "H032": {
       "split": "dev",
@@ -999,14 +883,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001",
-        "R002",
-        "R003",
-        "R008",
-        "R013",
-        "R021"
-      ]
+      "unverified_rule_ids": []
     },
     "H033": {
       "split": "test",
@@ -1018,9 +895,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001"
-      ]
+      "unverified_rule_ids": []
     },
     "H034": {
       "split": "test",
@@ -1049,9 +924,7 @@
       ],
       "traps": [],
       "unverified_rule_ids": [
-        "R001",
-        "R021",
-        "R023"
+        "R020"
       ]
     },
     "H035": {
@@ -1064,9 +937,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001"
-      ]
+      "unverified_rule_ids": []
     },
     "H036": {
       "split": "dev",
@@ -1123,16 +994,7 @@
       ],
       "traps": [],
       "unverified_rule_ids": [
-        "R001",
-        "R002",
-        "R003",
-        "R014",
-        "R015",
-        "R016",
-        "R017",
-        "R021",
-        "R022",
-        "R023"
+        "R017"
       ]
     },
     "H037": {
@@ -1165,12 +1027,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001",
-        "R002",
-        "R003",
-        "R016"
-      ]
+      "unverified_rule_ids": []
     },
     "H038": {
       "split": "train",
@@ -1182,9 +1039,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001"
-      ]
+      "unverified_rule_ids": []
     },
     "H039": {
       "split": "dev",
@@ -1204,10 +1059,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001",
-        "R019"
-      ]
+      "unverified_rule_ids": []
     },
     "H040": {
       "split": "test",
@@ -1240,12 +1092,8 @@
         "T003"
       ],
       "unverified_rule_ids": [
-        "R001",
-        "R006",
-        "R021",
         "T001",
-        "T002",
-        "T003"
+        "T002"
       ]
     },
     "H041": {
@@ -1266,11 +1114,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001",
-        "R021",
-        "R030"
-      ]
+      "unverified_rule_ids": []
     },
     "H042": {
       "split": "train",
@@ -1282,9 +1126,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001"
-      ]
+      "unverified_rule_ids": []
     },
     "H043": {
       "split": "dev",
@@ -1296,9 +1138,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001"
-      ]
+      "unverified_rule_ids": []
     },
     "H044": {
       "split": "train",
@@ -1310,9 +1150,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001"
-      ]
+      "unverified_rule_ids": []
     },
     "H045": {
       "split": "test",
@@ -1324,9 +1162,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001"
-      ]
+      "unverified_rule_ids": []
     },
     "H046": {
       "split": "train",
@@ -1362,13 +1198,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001",
-        "R002",
-        "R010",
-        "R014",
-        "R015"
-      ]
+      "unverified_rule_ids": []
     },
     "H047": {
       "split": "test",
@@ -1380,9 +1210,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001"
-      ]
+      "unverified_rule_ids": []
     },
     "H048": {
       "split": "dev",
@@ -1435,15 +1263,7 @@
       ],
       "traps": [],
       "unverified_rule_ids": [
-        "R001",
-        "R002",
-        "R006",
-        "R011",
-        "R014",
-        "R016",
-        "R021",
-        "R023",
-        "R025"
+        "R020"
       ]
     },
     "H049": {
@@ -1456,9 +1276,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001"
-      ]
+      "unverified_rule_ids": []
     },
     "H050": {
       "split": "dev",
@@ -1513,14 +1331,7 @@
         "T003"
       ],
       "unverified_rule_ids": [
-        "R001",
-        "R010",
-        "R014",
-        "R016",
-        "R021",
-        "R023",
-        "R025",
-        "T003"
+        "R020"
       ]
     },
     "H051": {
@@ -1553,12 +1364,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001",
-        "R002",
-        "R003",
-        "R022"
-      ]
+      "unverified_rule_ids": []
     },
     "H052": {
       "split": "train",
@@ -1590,13 +1396,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001",
-        "R002",
-        "R003",
-        "R021",
-        "R025"
-      ]
+      "unverified_rule_ids": []
     },
     "H053": {
       "split": "dev",
@@ -1647,11 +1447,8 @@
         "T001"
       ],
       "unverified_rule_ids": [
-        "R001",
-        "R006",
         "R017",
-        "R021",
-        "R027",
+        "R020",
         "T001"
       ]
     },
@@ -1665,9 +1462,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001"
-      ]
+      "unverified_rule_ids": []
     },
     "H055": {
       "split": "test",
@@ -1690,8 +1485,6 @@
         "T002"
       ],
       "unverified_rule_ids": [
-        "R001",
-        "R013",
         "R017",
         "T002"
       ]
@@ -1713,8 +1506,6 @@
         "T002"
       ],
       "unverified_rule_ids": [
-        "R001",
-        "R002",
         "T002"
       ]
     },
@@ -1728,9 +1519,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001"
-      ]
+      "unverified_rule_ids": []
     },
     "H058": {
       "split": "dev",
@@ -1747,7 +1536,6 @@
       ],
       "traps": [],
       "unverified_rule_ids": [
-        "R001",
         "R017"
       ]
     },
@@ -1777,13 +1565,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001",
-        "R014",
-        "R015",
-        "R021",
-        "R022"
-      ]
+      "unverified_rule_ids": []
     },
     "H060": {
       "split": "test",
@@ -1799,10 +1581,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001",
-        "R002"
-      ]
+      "unverified_rule_ids": []
     },
     "H061": {
       "split": "test",
@@ -1845,12 +1624,6 @@
         "T001"
       ],
       "unverified_rule_ids": [
-        "R001",
-        "R008",
-        "R011",
-        "R014",
-        "R015",
-        "R021",
         "T001"
       ]
     },
@@ -1880,12 +1653,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001",
-        "R002",
-        "R014",
-        "R015"
-      ]
+      "unverified_rule_ids": []
     },
     "H063": {
       "split": "dev",
@@ -1897,9 +1665,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001"
-      ]
+      "unverified_rule_ids": []
     },
     "H064": {
       "split": "test",
@@ -1925,11 +1691,7 @@
       "traps": [
         "T003"
       ],
-      "unverified_rule_ids": [
-        "R001",
-        "R025",
-        "T003"
-      ]
+      "unverified_rule_ids": []
     },
     "H065": {
       "split": "dev",
@@ -1981,12 +1743,7 @@
         "T002"
       ],
       "unverified_rule_ids": [
-        "R001",
-        "R006",
-        "R014",
-        "R015",
-        "R023",
-        "R025",
+        "R020",
         "T001",
         "T002"
       ]
@@ -2044,14 +1801,7 @@
         "T001"
       ],
       "unverified_rule_ids": [
-        "R001",
-        "R006",
-        "R008",
-        "R014",
-        "R015",
-        "R016",
-        "R022",
-        "R025",
+        "R020",
         "T001"
       ]
     },
@@ -2108,14 +1858,7 @@
         "T002"
       ],
       "unverified_rule_ids": [
-        "R001",
-        "R002",
-        "R003",
-        "R007",
-        "R008",
-        "R014",
-        "R021",
-        "R025",
+        "R020",
         "T002"
       ]
     },
@@ -2129,9 +1872,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001"
-      ]
+      "unverified_rule_ids": []
     },
     "H069": {
       "split": "test",
@@ -2170,11 +1911,8 @@
         "T003"
       ],
       "unverified_rule_ids": [
-        "R001",
-        "R008",
         "R017",
-        "R022",
-        "T003"
+        "R020"
       ]
     },
     "H070": {
@@ -2187,9 +1925,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001"
-      ]
+      "unverified_rule_ids": []
     },
     "H071": {
       "split": "train",
@@ -2201,9 +1937,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001"
-      ]
+      "unverified_rule_ids": []
     },
     "H072": {
       "split": "test",
@@ -2252,13 +1986,7 @@
       ],
       "traps": [],
       "unverified_rule_ids": [
-        "R001",
-        "R008",
-        "R013",
-        "R016",
-        "R019",
-        "R021",
-        "R027"
+        "R020"
       ]
     },
     "H073": {
@@ -2279,11 +2007,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001",
-        "R014",
-        "R030"
-      ]
+      "unverified_rule_ids": []
     },
     "H074": {
       "split": "test",
@@ -2302,8 +2026,6 @@
         "T001"
       ],
       "unverified_rule_ids": [
-        "R001",
-        "R007",
         "T001"
       ]
     },
@@ -2321,9 +2043,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001"
-      ]
+      "unverified_rule_ids": []
     },
     "H076": {
       "split": "dev",
@@ -2363,14 +2083,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001",
-        "R007",
-        "R010",
-        "R014",
-        "R015",
-        "R021"
-      ]
+      "unverified_rule_ids": []
     },
     "H077": {
       "split": "dev",
@@ -2402,13 +2115,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001",
-        "R002",
-        "R003",
-        "R023",
-        "R030"
-      ]
+      "unverified_rule_ids": []
     },
     "H078": {
       "split": "test",
@@ -2420,9 +2127,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001"
-      ]
+      "unverified_rule_ids": []
     },
     "H079": {
       "split": "dev",
@@ -2451,9 +2156,7 @@
       ],
       "traps": [],
       "unverified_rule_ids": [
-        "R001",
-        "R002",
-        "R016"
+        "R020"
       ]
     },
     "H080": {
@@ -2477,8 +2180,6 @@
         "T002"
       ],
       "unverified_rule_ids": [
-        "R001",
-        "R016",
         "T002"
       ]
     },
@@ -2492,9 +2193,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001"
-      ]
+      "unverified_rule_ids": []
     },
     "H082": {
       "split": "dev",
@@ -2506,9 +2205,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001"
-      ]
+      "unverified_rule_ids": []
     },
     "H083": {
       "split": "test",
@@ -2539,9 +2236,7 @@
         "T002"
       ],
       "unverified_rule_ids": [
-        "R001",
-        "R008",
-        "R014",
+        "R020",
         "T002"
       ]
     },
@@ -2569,12 +2264,7 @@
       "traps": [
         "T003"
       ],
-      "unverified_rule_ids": [
-        "R001",
-        "R014",
-        "R015",
-        "T003"
-      ]
+      "unverified_rule_ids": []
     },
     "H085": {
       "split": "train",
@@ -2598,11 +2288,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001",
-        "R006",
-        "R008"
-      ]
+      "unverified_rule_ids": []
     },
     "H086": {
       "split": "dev",
@@ -2631,10 +2317,7 @@
       ],
       "traps": [],
       "unverified_rule_ids": [
-        "R001",
-        "R002",
-        "R003",
-        "R006"
+        "R020"
       ]
     },
     "H087": {
@@ -2686,17 +2369,7 @@
         "T003"
       ],
       "unverified_rule_ids": [
-        "R001",
-        "R002",
-        "R003",
-        "R007",
-        "R011",
-        "R014",
-        "R017",
-        "R021",
-        "R027",
-        "R030",
-        "T003"
+        "R017"
       ]
     },
     "H088": {
@@ -2709,9 +2382,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001"
-      ]
+      "unverified_rule_ids": []
     },
     "H089": {
       "split": "train",
@@ -2723,9 +2394,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001"
-      ]
+      "unverified_rule_ids": []
     },
     "H090": {
       "split": "test",
@@ -2737,9 +2406,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001"
-      ]
+      "unverified_rule_ids": []
     },
     "H091": {
       "split": "train",
@@ -2786,11 +2453,7 @@
         "T002"
       ],
       "unverified_rule_ids": [
-        "R001",
-        "R002",
-        "R006",
-        "R008",
-        "R025",
+        "R020",
         "T002"
       ]
     },
@@ -2839,12 +2502,7 @@
         "T001"
       ],
       "unverified_rule_ids": [
-        "R001",
-        "R002",
-        "R003",
-        "R008",
-        "R010",
-        "R023",
+        "R020",
         "T001"
       ]
     },
@@ -2874,13 +2532,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001",
-        "R008",
-        "R019",
-        "R023",
-        "R027"
-      ]
+      "unverified_rule_ids": []
     },
     "H094": {
       "split": "test",
@@ -2892,9 +2544,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001"
-      ]
+      "unverified_rule_ids": []
     },
     "H095": {
       "split": "dev",
@@ -2922,12 +2572,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001",
-        "R006",
-        "R008",
-        "R010"
-      ]
+      "unverified_rule_ids": []
     },
     "H096": {
       "split": "test",
@@ -2939,9 +2584,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001"
-      ]
+      "unverified_rule_ids": []
     },
     "H097": {
       "split": "train",
@@ -2962,8 +2605,7 @@
       ],
       "traps": [],
       "unverified_rule_ids": [
-        "R001",
-        "R013"
+        "R020"
       ]
     },
     "H098": {
@@ -2992,13 +2634,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001",
-        "R014",
-        "R015",
-        "R022",
-        "R023"
-      ]
+      "unverified_rule_ids": []
     },
     "H099": {
       "split": "test",
@@ -3018,11 +2654,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001",
-        "R010",
-        "R019"
-      ]
+      "unverified_rule_ids": []
     },
     "H100": {
       "split": "test",
@@ -3034,9 +2666,7 @@
         }
       ],
       "traps": [],
-      "unverified_rule_ids": [
-        "R001"
-      ]
+      "unverified_rule_ids": []
     }
   }
 }

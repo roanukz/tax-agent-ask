@@ -168,6 +168,18 @@ def full_set(runs, *, primary_kw=None, skip=()):
         write_run(runs, "dev", hid, "B2", 1, passed=False, missed=1, questions=0, cost=0.0)
 
 
+def pending_rules_path(tmp_path):
+    """A copy of the rules with every rule still to verify, as before Roanuk's calls, so every test household
+    depends on an unverified rule."""
+    import re
+    text = (Path(__file__).resolve().parent.parent / "rules" / "document_rules.yaml").read_text()
+    text = re.sub(r"status: verified\n  verified_by: \S+\n  verified_on: \S+",
+                  "status: to_verify\n  verified_by: null\n  verified_on: null", text)
+    path = tmp_path / "pending_rules.yaml"
+    path.write_text(text)
+    return path
+
+
 def verified_rules(tmp_path):
     """A copy of the rules with every status verified, so test households stay in test scoring."""
     path = tmp_path / "document_rules.yaml"
@@ -417,7 +429,7 @@ def test_client_facts_still_wrong_after_the_retry_are_counted(tmp_path):
 def test_test_runs_that_depend_on_unverified_rules_leave_test_scoring(tmp_path):
     runs = tmp_path / "runs"
     full_set(runs)
-    ctx = context(tmp_path, runs, verified=False)
+    ctx = context(tmp_path, runs, verified=False, rules_path=pending_rules_path(tmp_path))
     assert not ctx.split_rows("test") and len(ctx.dropped_runs) == 4 * 3 * 9
     assert ctx.split_rows("dev")
     assert statuses(ctx)["1"] == NOT_MEASURED

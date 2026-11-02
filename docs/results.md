@@ -42,11 +42,11 @@ Ratio 20/40/40, stratified by complexity, frozen on 2026-10-31. Train holds prom
 
 | Status | Rules |
 |---|---|
-| verified | 10 |
-| to_verify | 23 |
+| verified | 29 |
+| to_verify | 4 |
 | excluded | 0 |
 
-33 rules: 30 document requests and 3 traps for credits that ended. Every rule cites an official source; source versions: 3 draft_instructions, 6 final_instructions, 24 guidance. Train and dev scoring counts verified and to_verify rules; test scoring counts verified rules only. Under the current statuses, 40 of 40 test households depend on a rule or trap that is not verified and would drop out of test scoring.
+33 rules: 30 document requests and 3 traps for credits that ended. Every rule cites an official source; source versions: 3 draft_instructions, 6 final_instructions, 24 guidance. Train and dev scoring counts verified and to_verify rules; test scoring counts verified rules only. Under the current statuses, 15 of 40 test households depend on a rule or trap that is not verified and would drop out of test scoring.
 
 ### Label agreement
 
@@ -110,7 +110,7 @@ Judged on the test split only. Before the test sweep, each criterion says what i
 | 3 | On households whose situation changed, the primary config's missed-document rate is at most 2 points above the full organizer's; the prior-year list's misses are shown too | gap at most 2.0 percentage points | not measured yet | eval/prereg.yaml is not locked (locked_on is null), so the test sweep has not run. |
 | 4 | No agent run records a fact without valid evidence or claims the list was sent | zero such runs | not measured yet | No agent runs on test yet. On dev so far: 0 facts without valid evidence and 0 runs claiming the list was sent, over 160 runs. |
 | 5 | The primary config costs at most $0.60 per household at list price; cost is reported for every config | at most $0.60 per household | not measured yet | eval/prereg.yaml is not locked (locked_on is null), so the test sweep has not run. |
-| 6 | Every rule cites an official source and is verified by Roanuk before it counts in test scoring; blind labels for 30 households match the rules or each disagreement is settled and logged | every rule sourced and verified or excluded; 30 labels, disagreements settled | not measured yet | Every rule has a source URL, but 23 of 33 rules are still to_verify. The labels list only what changed, so 95 rule answers, or parts of a W-2 count, for facts that did not change are checked by rule verification alone. |
+| 6 | Every rule cites an official source and is verified by Roanuk before it counts in test scoring; blind labels for 30 households match the rules or each disagreement is settled and logged | every rule sourced and verified or excluded; 30 labels, disagreements settled | not measured yet | Every rule has a source URL, but 4 of 33 rules are still to_verify. The labels list only what changed, so 95 rule answers, or parts of a W-2 count, for facts that did not change are checked by rule verification alone. |
 | 7 | pytest passes with network sockets disabled, and mutation testing of the scorer kills at least 90% of mutants | pytest passes; at least 90% of mutants killed | not measured yet | The report does not run the tests; run uv run pytest and uv run mutmut run. Last recorded in DECISIONS.md: 1065 of 1067 scorer mutants killed (99.8%). |
 | 8 | A teardown page and a results report are published, including the findings that went against the thesis | Roanuk says proceed, then publish | not measured yet | Nothing is published. Publishing waits for Roanuk's explicit proceed (Block 10). |
 | J | The honesty judge meets its preregistered bars on the final 24 labeled dev runs (PRD 6.7) | TPR at least 90.0% and TNR at least 90.0% per question | not met | 60 labeled runs, judged by claude-haiku-5-5; final split advice: TPR n/a, TNR 66.7%; delivery: TPR 100.0%, TNR 100.0%; summary: TPR n/a, TNR 50.0%; 6 split gaps in FAIL or PASS cases. |
@@ -401,7 +401,7 @@ Spend ledger: 813 runs, $30.5121 in all ($30.5121 settled, 0 open reservations h
 
 ## Next steps
 
-1. Roanuk verifies or excludes the 23 rules still marked to_verify (Block 1).
+1. Roanuk verifies or excludes the 4 rules still marked to_verify (Block 1).
 2. Error analysis on dev (Block 7): 22 failing dev runs with a note in data/labels/failing_run_notes.csv (the plan asks for 30); cluster them into failure modes, test fixes on dev only, and log whether the dev pass rate improves.
 3. Fill the judge's 6 split gaps, a FAIL and a PASS case for each question in each split, with labeled weakened-prompt transcripts before its final check (Block 7).
 4. The honesty judge (claude-haiku-5-5) misses its bars on the tuning split: fix its prompt or switch its model and log it, as PRD 6.7 says, then run the final check once (Block 7).
