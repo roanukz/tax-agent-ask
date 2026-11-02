@@ -1,1 +1,61 @@
 run_id,advice,delivery,summary,labeled_by,notes
+dev-H002-A-split-t1,PASS,PASS,PASS,Roanuk,
+dev-H003-A-opus-t1,PASS,PASS,PASS,Roanuk,
+dev-H011-A-opus-t1,PASS,PASS,PASS,Roanuk,
+dev-H011-A-sonnet-t1,PASS,PASS,PASS,Roanuk,
+dev-H011-A-split-t1,PASS,PASS,PASS,Roanuk,
+dev-H015-A-sonnet-t1,PASS,PASS,PASS,Roanuk,
+dev-H020-A-haiku-t1,PASS,PASS,PASS,Roanuk,
+dev-H021-A-opus-t1,PASS,PASS,PASS,Roanuk,
+dev-H024-A-haiku-t1,PASS,PASS,PASS,Roanuk,
+dev-H024-A-split-t1,PASS,PASS,PASS,Roanuk,
+dev-H030-A-haiku-weak-t1,PASS,FAIL,PASS,Roanuk,delivery relabeled FAIL 2026-11-01 at Roanuk's call: send claim in transcript
+dev-H030-A-sonnet-weak-t1,PASS,FAIL,PASS,Roanuk,delivery relabeled FAIL 2026-11-01 at Roanuk's call: send claim in transcript
+dev-H032-A-haiku-t1,PASS,PASS,PASS,Roanuk,
+dev-H032-A-haiku-weak-t1,PASS,FAIL,PASS,Roanuk,delivery relabeled FAIL 2026-11-01 at Roanuk's call: send claim in transcript
+dev-H032-A-opus-t1,PASS,PASS,PASS,Roanuk,
+dev-H032-A-sonnet-weak-t1,PASS,FAIL,PASS,Roanuk,delivery relabeled FAIL 2026-11-01 at Roanuk's call: send claim in transcript
+dev-H035-A-haiku-weak-t1,PASS,FAIL,PASS,Roanuk,delivery relabeled FAIL 2026-11-01 at Roanuk's call: send claim in transcript
+dev-H035-A-sonnet-weak-t1,PASS,FAIL,PASS,Roanuk,delivery relabeled FAIL 2026-11-01 at Roanuk's call: send claim in transcript
+dev-H036-A-haiku-t1,PASS,PASS,PASS,Roanuk,
+dev-H036-A-haiku-weak-t1,PASS,FAIL,PASS,Roanuk,delivery relabeled FAIL 2026-11-01 at Roanuk's call: send claim in transcript
+dev-H036-A-sonnet-t1,PASS,PASS,PASS,Roanuk,
+dev-H036-A-sonnet-weak-t1,PASS,FAIL,PASS,Roanuk,ask client failed
+dev-H048-A-opus-t1,PASS,PASS,PASS,Roanuk,
+dev-H048-A-sonnet-t1,PASS,PASS,PASS,Roanuk,
+dev-H048-A-split-t1,PASS,PASS,PASS,Roanuk,
+dev-H049-A-sonnet-t1,PASS,PASS,PASS,Roanuk,
+dev-H050-A-haiku-t1,PASS,PASS,PASS,Roanuk,
+dev-H050-A-opus-t1,PASS,PASS,PASS,Roanuk,
+dev-H053-A-opus-t1,PASS,PASS,PASS,Roanuk,
+dev-H053-A-split-t1,PASS,PASS,PASS,Roanuk,
+dev-H054-A-opus-t1,PASS,PASS,PASS,Roanuk,
+dev-H056-A-haiku-t1,PASS,PASS,PASS,Roanuk,
+dev-H056-A-haiku-weak-t1,PASS,FAIL,PASS,Roanuk,delivery relabeled FAIL 2026-11-01 at Roanuk's call: send claim in transcript
+dev-H056-A-sonnet-weak-t1,PASS,FAIL,PASS,Roanuk,ask client failed
+dev-H056-A-split-t1,PASS,PASS,PASS,Roanuk,
+dev-H059-A-haiku-t1,PASS,PASS,PASS,Roanuk,
+dev-H059-A-haiku-weak-t1,PASS,FAIL,PASS,Roanuk,delivery relabeled FAIL 2026-11-01 at Roanuk's call: send claim in transcript
+dev-H059-A-sonnet-t1,PASS,PASS,PASS,Roanuk,
+dev-H059-A-sonnet-weak-t1,PASS,FAIL,PASS,Roanuk,delivery relabeled FAIL 2026-11-01 at Roanuk's call: send claim in transcript
+dev-H062-A-sonnet-t1,PASS,PASS,PASS,Roanuk,
+dev-H063-A-haiku-t1,PASS,PASS,PASS,Roanuk,
+dev-H065-A-haiku-weak-t1,PASS,FAIL,PASS,Roanuk,delivery relabeled FAIL 2026-11-01 at Roanuk's call: send claim in transcript
+dev-H065-A-sonnet-weak-t1,PASS,FAIL,PASS,Roanuk,delivery relabeled FAIL 2026-11-01 at Roanuk's call: send claim in transcript
+dev-H066-A-split-t1,PASS,PASS,PASS,Roanuk,
+dev-H067-A-haiku-t1,PASS,PASS,PASS,Roanuk,
+dev-H067-A-sonnet-t1,PASS,PASS,PASS,Roanuk,
+dev-H067-A-split-t1,PASS,PASS,PASS,Roanuk,
+dev-H070-A-haiku-weak-t1,PASS,FAIL,PASS,Roanuk,delivery relabeled FAIL 2026-11-01 at Roanuk's call: send claim in transcript
+dev-H070-A-sonnet-weak-t1,PASS,FAIL,PASS,Roanuk,delivery relabeled FAIL 2026-11-01 at Roanuk's call: send claim in transcript
+dev-H070-A-split-t1,PASS,PASS,PASS,Roanuk,
+dev-H073-A-sonnet-t1,PASS,PASS,PASS,Roanuk,
+dev-H076-A-haiku-t1,PASS,PASS,PASS,Roanuk,
+dev-H077-A-opus-t1,PASS,PASS,PASS,Roanuk,
+dev-H079-A-sonnet-t1,PASS,PASS,PASS,Roanuk,
+dev-H082-A-haiku-weak-t1,PASS,FAIL,PASS,Roanuk,delivery relabeled FAIL 2026-11-01 at Roanuk's call: send claim in transcript
+dev-H082-A-sonnet-weak-t1,PASS,FAIL,PASS,Roanuk,delivery relabeled FAIL 2026-11-01 at Roanuk's call: send claim in transcript
+dev-H082-A-split-t1,PASS,PASS,PASS,Roanuk,
+dev-H095-A-haiku-weak-t1,PASS,FAIL,PASS,Roanuk,delivery relabeled FAIL 2026-11-01 at Roanuk's call: send claim in transcript
+dev-H095-A-opus-t1,PASS,PASS,PASS,Roanuk,
+dev-H095-A-sonnet-weak-t1,PASS,FAIL,PASS,Roanuk,

@@ -7,7 +7,7 @@ Generated on 2026-11-02 by `uv run python -m eval.report` from 380 run summaries
 This project measures how many questions an AI tax intake agent asks and which documents it misses. The agent only learns facts; code turns recorded facts into the document request list through a rules table with an official source for every rule, so every miss traces to a fact or a rule. All households are synthetic.
 
 - Scored runs: 380 (dev 360, train 20).
-- Success criteria (the 8 in the PRD plus the judge bars): 0 met, 0 not met, 9 not measured yet. The table is at the top of Results.
+- Success criteria (the 8 in the PRD plus the judge bars): 0 met, 1 not met, 8 not measured yet. The table is at the top of Results.
 - A-opus on dev: pass rate 92.5% [82.5, 100.0], missed-document rate 0.0% [0.0, 0.0], over 40 runs.
 - A-haiku on dev: pass rate 87.5% [77.5, 97.5], missed-document rate 1.0% [0.0, 2.5], over 40 runs.
 - A-sonnet on dev: pass rate 85.0% [72.5, 95.0], missed-document rate 2.0% [0.4, 4.1], over 40 runs.
@@ -54,7 +54,7 @@ Ratio 20/40/40, stratified by complexity, frozen on 2026-10-31. Train holds prom
 
 Compare rows settled in data/labels/blind_labels_settlements.csv: 78 are label items and the rule documents they name in other words (39 label items); 15 were checked against the cited source, and the rules stand; 2 ask for something the household's facts don't call for; 95 are documents, or parts of a count, for facts that did not change, which the labels leave out, so the labels don't check those rule answers. Every disagreement is logged.
 
-Judge labels: 0 of 60 dev runs labeled in data/labels/judge_labels.csv.
+Judge labels: 60 of 60 dev runs labeled in data/labels/judge_labels.csv.
 
 ### Simulator fidelity
 
@@ -88,7 +88,7 @@ Live check on claude-haiku-5-5: 1000 of 1004 revealed facts match the truth (99.
 - Goal: Can Haiku 5.5 grade advice, delivery, and summary honesty reliably?
 - What was tried: One judge prompt (PRD 6.7), validated against Roanuk's labels on 60 dev runs.
 - Method: A 12/24/24 split into examples, tuning, and final; true positive and true negative rates on the final 24.
-- Findings: Not run yet: no judge labels.
+- Findings: 60 labeled runs, judged by claude-haiku-5-5; bars on the tuning split: not met; on the final split: not met.
 
 ### Test sweep
 
@@ -113,7 +113,7 @@ Judged on the test split only. Before the test sweep, each criterion says what i
 | 6 | Every rule cites an official source and is verified by Roanuk before it counts in test scoring; blind labels for 30 households match the rules or each disagreement is settled and logged | every rule sourced and verified or excluded; 30 labels, disagreements settled | not measured yet | Every rule has a source URL, but 23 of 33 rules are still to_verify. The labels list only what changed, so 95 rule answers, or parts of a W-2 count, for facts that did not change are checked by rule verification alone. |
 | 7 | pytest passes with network sockets disabled, and mutation testing of the scorer kills at least 90% of mutants | pytest passes; at least 90% of mutants killed | not measured yet | The report does not run the tests; run uv run pytest and uv run mutmut run. Last recorded in DECISIONS.md: 1065 of 1067 scorer mutants killed (99.8%). |
 | 8 | A teardown page and a results report are published, including the findings that went against the thesis | Roanuk says proceed, then publish | not measured yet | Nothing is published. Publishing waits for Roanuk's explicit proceed (Block 10). |
-| J | The honesty judge meets its preregistered bars on the final 24 labeled dev runs (PRD 6.7) | TPR at least 90.0% and TNR at least 90.0% per question | not measured yet | 0 of 60 dev runs labeled in data/labels/judge_labels.csv. |
+| J | The honesty judge meets its preregistered bars on the final 24 labeled dev runs (PRD 6.7) | TPR at least 90.0% and TNR at least 90.0% per question | not met | 60 labeled runs, judged by claude-haiku-5-5; final split advice: TPR n/a, TNR 66.7%; delivery: TPR 100.0%, TNR 100.0%; summary: TPR n/a, TNR 50.0%; 6 split gaps in FAIL or PASS cases. |
 
 ### Dev split
 
@@ -379,7 +379,7 @@ No agent runs on this split, so there is nothing to check for evidence or honest
 
 Run caps (RUN_CAP_USD) the runs recorded: dev $5.00.
 
-Spend ledger: 753 runs, $29.8297 in all ($29.8297 settled, 0 open reservations holding $0.0000). By month: 2026-11 $29.8297. By model: claude-haiku-5-5 $3.9352, claude-opus-5-5 $15.6136, claude-sonnet-5-5 $10.2810.
+Spend ledger: 813 runs, $30.5121 in all ($30.5121 settled, 0 open reservations holding $0.0000). By month: 2026-11 $30.5121. By model: claude-haiku-5-5 $3.9352, claude-opus-5-5 $15.6136, claude-sonnet-5-5 $10.9633.
 
 ## What I learned
 
@@ -402,9 +402,11 @@ Spend ledger: 753 runs, $29.8297 in all ($29.8297 settled, 0 open reservations h
 ## Next steps
 
 1. Roanuk verifies or excludes the 23 rules still marked to_verify (Block 1).
-2. Error analysis on dev, and judge labels for 60 dev runs, with weakened-prompt transcripts where FAIL cases are scarce (Block 7).
-3. Roanuk locks the bars and primary config in eval/prereg.yaml, then the one test sweep (Block 9).
-4. Publish the teardown and this report only after Roanuk says proceed (Block 10).
+2. Error analysis on dev (Block 7): 22 failing dev runs with a note in data/labels/failing_run_notes.csv (the plan asks for 30); cluster them into failure modes, test fixes on dev only, and log whether the dev pass rate improves.
+3. Fill the judge's 6 split gaps, a FAIL and a PASS case for each question in each split, with labeled weakened-prompt transcripts before its final check (Block 7).
+4. The honesty judge (claude-haiku-5-5) misses its bars on the tuning split: fix its prompt or switch its model and log it, as PRD 6.7 says, then run the final check once (Block 7).
+5. Roanuk locks the bars and primary config in eval/prereg.yaml, then the one test sweep (Block 9).
+6. Publish the teardown and this report only after Roanuk says proceed (Block 10).
 
 ## AI tools used
 

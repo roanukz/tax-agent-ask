@@ -189,9 +189,10 @@ def context(tmp_path, runs, *, prereg_path=None, verified=True, **kw):
 
 
 def test_report_with_no_runs_renders_and_says_what_has_not_run(tmp_path):
+    # No judge labels here: the repo's own data/labels/judge_labels.csv has Roanuk's 60 by now.
     out = write_report(tmp_path / "runs", tmp_path / "results.md", prereg_path=REPO / "eval" / "prereg.yaml",
                        ledger_path=tmp_path / "spend.jsonl", fidelity_dir=tmp_path / "none", draws=DRAWS,
-                       generated_on="2026-10-31")
+                       generated_on="2026-10-31", judge_labels_path=tmp_path / "no-labels.csv")
     text = out.read_text()
     assert sections_in_order(text)
     assert "No scored runs yet." in text and "Not run yet:" in text
@@ -218,7 +219,7 @@ def test_report_with_b2_only_is_labeled_as_such(tmp_path):
     run_prior_year_split("dev", runs_dir=runs)
     text = write_report(runs, tmp_path / "results.md", prereg_path=REPO / "eval" / "prereg.yaml",
                         ledger_path=tmp_path / "spend.jsonl", fidelity_dir=tmp_path / "none", draws=DRAWS,
-                        generated_on="2026-10-31").read_text()
+                        generated_on="2026-10-31", judge_labels_path=tmp_path / "no-labels.csv").read_text()
     assert sections_in_order(text)
     assert "**B2 baseline only.**" in text and "before any live model run" in text
     assert "### Dev split" in text and "### Test split" not in text and "### Train split" not in text
@@ -713,6 +714,30 @@ def test_judge_criterion_reads_labels_and_verdicts(tmp_path):
     crit = {c.number: c for c in criteria(context(tmp_path / "j", runs, judge_labels_path=labels,
                                                   data_dir=make_data(tmp_path / "j")))}
     assert "1 labeled run without a verdict from this judge and prompt" in crit["J"].detail
+
+
+def test_next_steps_keep_block_7_open_once_the_judge_labels_are_in(tmp_path):
+    runs = tmp_path / "runs"
+    runs.mkdir()
+    labels = tmp_path / "judge_labels.csv"
+    with open(labels, "w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(LABEL_HEADER)
+        for i in range(60):
+            verdicts = ["FAIL" if (i + k) % 5 == 0 else "PASS" for k in range(3)]
+            w.writerow([f"dev-H{i:03d}-A-haiku-t1", *verdicts, "roanuk", ""])
+            # A judge that fails everything: every human PASS is a miss, so the tuning bars are not met.
+            verdict = {**dict.fromkeys(QUESTIONS, "FAIL"), "model": JUDGE_MODEL, "prompt_version": PROMPT_VERSION}
+            (runs / f"dev-H{i:03d}-A-haiku-t1.judge.json").write_text(json.dumps(verdict))
+    ctx = context(tmp_path, runs, judge_labels_path=labels)
+    (ctx.data_dir / "labels" / "failing_run_notes.csv").write_text(
+        "run_id,config,note,noted_on\n" + "".join(f"dev-H{i:03d}-A-haiku-t1,A-haiku,note {i},2026-11-01\n" for i in range(22)))
+    steps = report.next_steps(ctx)
+    assert not any("judge labels for 60 dev runs" in s for s in steps)
+    assert any("Error analysis on dev (Block 7): 22 failing dev runs with a note" in s and "asks for 30" in s for s in steps)
+    assert any("misses its bars on the tuning split" in s for s in steps)
+    (ctx.data_dir / "labels" / "failing_run_notes.csv").unlink()
+    assert any("Error analysis on dev (Block 7): 0 failing dev runs with a note" in s for s in report.next_steps(ctx))
 
 
 # ---- helpers ------------------------------------------------------------------------

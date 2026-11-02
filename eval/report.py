@@ -54,6 +54,7 @@ household. Both show n, the households in the ratio.
 from __future__ import annotations
 
 import argparse
+import csv
 import json
 import re
 import statistics
@@ -104,6 +105,9 @@ TIERS = ("simple", "medium", "complex")
 MET, NOT_MET, NOT_MEASURED = "met", "not met", "not measured yet"
 BLIND_LABEL_TARGET = 30
 JUDGE_LABEL_TARGET = 60
+# PRD Block 7: Roanuk reads 30 failing dev traces and writes a note on each.
+FAILING_NOTE_TARGET = 30
+FAILING_NOTES_FILE = "failing_run_notes.csv"
 BREAKDOWN_METRICS = {name: stats.METRICS[name] for name in ("missed_document_rate", "pass_rate")}
 BREAKDOWNS = (
     ("complexity", "By complexity tier"),
@@ -392,6 +396,15 @@ def md_table(header: Sequence[str], rows: Iterable[Sequence[str]]) -> str:
     lines = ["| " + " | ".join(esc(h) for h in header) + " |", "|" + "---|" * len(header)]
     lines.extend("| " + " | ".join(esc(c) for c in row) + " |" for row in rows)
     return "\n".join(lines)
+
+
+def failing_notes(data_dir: Path) -> int:
+    """Failing dev runs with a note from Roanuk's error analysis, 0 when the file is missing or unreadable."""
+    try:
+        with open(Path(data_dir) / "labels" / FAILING_NOTES_FILE, newline="", encoding="utf-8") as f:
+            return sum(1 for row in csv.DictReader(f) if (row.get("note") or "").strip())
+    except (OSError, csv.Error):
+        return 0
 
 
 def plural(n: int, word: str, many: str | None = None) -> str:
@@ -1431,6 +1444,21 @@ def next_steps(ctx: Context) -> list[str]:
     if labeled < JUDGE_LABEL_TARGET:
         steps.append(f"Error analysis on dev, and judge labels for {JUDGE_LABEL_TARGET} dev runs, with "
                      "weakened-prompt transcripts where FAIL cases are scarce (Block 7).")
+    elif not ctx.split_rows("test"):
+        # The labels are in, but Block 7 is done only when the failure modes are written, the judge's rates are
+        # reported, and the fixes are tested on dev.
+        v = ctx.validation
+        notes = failing_notes(ctx.data_dir)
+        steps.append(f"Error analysis on dev (Block 7): {plural(notes, 'failing dev run')} with a note in "
+                     f"data/labels/{FAILING_NOTES_FILE} (the plan asks for {FAILING_NOTE_TARGET}); cluster them into "
+                     "failure modes, test fixes on dev only, and log whether the dev pass rate improves.")
+        if v.split.missing:
+            steps.append(f"Fill the judge's {plural(len(v.split.missing), 'split gap')}, a FAIL and a PASS case for "
+                         "each question in each split, with labeled weakened-prompt transcripts before its final "
+                         "check (Block 7).")
+        if v.tuning_met is False:
+            steps.append(f"The honesty judge ({v.model}) misses its bars on the tuning split: fix its prompt or "
+                         "switch its model and log it, as PRD 6.7 says, then run the final check once (Block 7).")
     if not ctx.split_rows("dev", "A-split"):
         steps.append("Run A-split against the single-model configs on dev and propose a primary config (Block 8).")
     if not ctx.split_rows("test"):

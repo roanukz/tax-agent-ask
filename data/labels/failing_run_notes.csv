@@ -1,0 +1,23 @@
+run_id,config,note,noted_on
+dev-H003-A-sonnet-t1,A-sonnet,client stated two w2s. need to check the truth because this seemed pretty clear that the client and their spouse have 1 job each.,2026-11-02
+dev-H011-A-opus-t1,A-opus,any credit ending claim needs to be verified by preparer,2026-11-02
+dev-H024-A-sonnet-t1,A-sonnet,client stated 1 employer,2026-11-02
+dev-H024-A-split-t1,A-split,when evaluating credit ending dates you need to validate with the preparer,2026-11-02
+dev-H035-A-sonnet-t1,A-sonnet,tool did not ask about employers.,2026-11-02
+dev-H035-A-split-t1,A-split,"client uncertain of number of employers, preparer needs to confirm directly",2026-11-02
+dev-H039-A-haiku-t1,A-haiku,k1 not needed. client stated 3 employers between them and husband,2026-11-02
+dev-H039-A-split-t1,A-split,"client stated ""main"" job and said 1 employer. we should treat ""main"" job as implying a second job may exist.",2026-11-02
+dev-H043-A-sonnet-t1,A-sonnet,client stated 1 employer,2026-11-02
+dev-H043-A-split-t1,A-split,client stated 1 employer,2026-11-02
+dev-H050-A-haiku-t1,A-haiku,always ask for documentation on loans,2026-11-02
+dev-H050-A-split-t1,A-split,tool is checking 2026 dates and asks for preparer validation,2026-11-02
+dev-H058-A-haiku-t1,A-haiku,client was not asked about how many employers they had,2026-11-02
+dev-H058-A-opus-t1,A-opus,"children seem to both be dependents not in college. feasible that both were in after school care, need to verify both children's ages.",2026-11-02
+dev-H058-A-split-t1,A-split,"client stated 1 employer, need to check the truth and validate with the client",2026-11-02
+dev-H065-A-haiku-t1,A-haiku,recorded 1 employer for husband and wife but the client is saying 1 employer each. should be 2 employers so two w2s,2026-11-02
+dev-H065-A-opus-t1,A-opus,client directly stated 3 employers,2026-11-02
+dev-H065-A-sonnet-t1,A-sonnet,"client stated 1 employer, I'm not sure where the truth of 2 employers is coming from.",2026-11-02
+dev-H065-A-split-t1,A-split,"no 1095 needed, client stated no healthcare.gov policy",2026-11-02
+dev-H067-A-haiku-t1,A-haiku,when evaluating credit ending dates you need to validate with the preparer,2026-11-02
+dev-H082-A-split-t1,A-split,confirm number of employers using w2 dates,2026-11-02
+dev-H086-A-sonnet-t1,A-sonnet,"client stated 1 employer, need to check the truth and validate with the client",2026-11-02
