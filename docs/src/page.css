@@ -18,3 +18,8 @@ pre code {
   background: none;
   font-size: inherit;
 }
+
+/* A button label that wraps stays centered when the button fills a narrow screen. */
+.cta-row .btn {
+  text-align: center;
+}

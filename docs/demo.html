@@ -1,0 +1,664 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>What Should My Tax Agent Ask? The Build, Step by Step</title>
+    <meta
+      name="description"
+      content="A step by step walkthrough of how the tax intake agent was built: the six decisions that shaped it, the review screens where I applied judgment by hand, and one synthetic household followed through all six."
+    />
+    <meta property="og:title" content="What Should My Tax Agent Ask? The Build, Step by Step" />
+    <meta
+      property="og:description"
+      content="Six decisions behind an AI tax intake agent, each with what I weighed and what it cost, and the review screens where my judgment went in: a blind answer key, a rule check against IRS sources, the judge's transcript, and the model and its cost."
+    />
+    <meta name="author" content="Roanuk Zaman" />
+    <meta property="og:type" content="article" />
+    <meta property="article:author" content="Roanuk Zaman" />
+    <link rel="stylesheet" href="src/tokens.css" />
+    <link rel="stylesheet" href="src/teardown.css" />
+    <link rel="stylesheet" href="src/page.css" />
+    <link rel="stylesheet" href="src/demo.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%231f6379'/%3E%3Ctext x='50' y='70' font-size='56' text-anchor='middle' fill='white' font-family='sans-serif'%3E%3F%3C/text%3E%3C/svg%3E"
+    />
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+
+    <nav class="topbar" aria-label="Site">
+      <div class="wrap">
+        <a href="index.html">Read the teardown</a>
+        <a href="https://github.com/Roanukz/tax-agent-ask">View source</a>
+      </div>
+    </nav>
+
+    <header class="hero">
+      <div class="wrap">
+        <p class="eyebrow">Build walkthrough</p>
+        <h1>Six decisions behind the tax agent</h1>
+        <p class="lede">
+          I designed this agent and directed its build, and Claude Code wrote
+          the code and ran every experiment under rules I set. These six steps
+          are the decisions that shaped how it works, each with what I weighed
+          and what it cost, and the review screens where my judgment went in by
+          hand. One synthetic household runs through all six, and so does one
+          form: the Form 1095-A a preparer needs to reconcile the Premium Tax
+          Credit on Form 8962.
+        </p>
+        <p class="byline">
+          Roanuk Zaman &middot; A walkthrough of a tool I designed and directed
+        </p>
+        <p class="callout callout-notice" id="status">
+          <strong>Status on November 1, 2026.</strong> The agent has run on the
+          dev group only, 40 synthetic households used to develop it, with one
+          trial of each configuration, so every agent number here is a dev
+          result and none is the preregistered result. I have ruled on all 33
+          rules: 10 are verified in the rules file, and 23 wait for changes I
+          asked for. Because every test household needs one of those 23, the W-2
+          rule, no test household can be scored until the edits are made and I
+          verify the rules again. My judge labels and the lock on the bars also
+          come before the one test run.
+        </p>
+
+        <div class="cta-row">
+          <a class="btn btn-primary" href="#household">Start with the running example</a>
+          <a class="btn btn-secondary" href="index.html">Read the full teardown</a>
+        </div>
+
+        <div class="facts">
+          <div class="fact">
+            <span class="fact-value">10 of 33</span>
+            <span class="fact-label">Rules I verified against their IRS sources, one at a time; I sent the other 23 back for changes before they count</span>
+          </div>
+          <div class="fact">
+            <span class="fact-value">4 of 4</span>
+            <span class="fact-label">Dev households with a new Marketplace plan where last year's list missed the Form 1095-A; every agent configuration asked for it</span>
+          </div>
+          <div class="fact">
+            <span class="fact-value">12 to 4</span>
+            <span class="fact-label">Advice failures the honesty judge found on dev, before and after its transcript marked the lines the client never saw; my own labels still have to validate the judge</span>
+          </div>
+          <div class="fact">
+            <span class="fact-value">$0.37</span>
+            <span class="fact-label">Dev cost per household of the configuration I chose for accuracy, against $0.012 for the one proposed; I raised the cost bar from $0.10 to $0.60 before the lock</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="wrap">
+      <div class="layout">
+        <nav class="toc" aria-label="Steps">
+          <p class="toc-title">Steps</p>
+          <ol>
+            <li><a href="#household">The running example</a></li>
+            <li><a href="#step-1">Step 1. Split the job</a></li>
+            <li><a href="#step-2">Step 2. Measurement first</a></li>
+            <li><a href="#step-3">Step 3. A blind answer key</a></li>
+            <li><a href="#step-4">Step 4. A rule check</a></li>
+            <li><a href="#step-5">Step 5. What the judge reads</a></li>
+            <li><a href="#step-6">Step 6. Model and cost</a></li>
+            <li><a href="#carries">What carries over</a></li>
+            <li><a href="#not-done">What is not done</a></li>
+          </ol>
+        </nav>
+
+        <main id="main" tabindex="-1">
+          <section id="household">
+            <p class="section-kicker">The running example</p>
+            <h2>One household, one form</h2>
+            <p>
+              H053 is a synthetic couple filing jointly with one dependent,
+              and four things changed in their year. They have a second
+              employer, a health plan bought through HealthCare.gov or a state
+              exchange for the first time, new college tuition payments, and
+              solar panels whose installation finished in 2026. Last year's
+              request list knows about none of the new items. Those solar
+              panels are what this project calls a trap. Under IRS fact sheet
+              FS-2025-05, the residential clean energy credit ended for
+              systems finished after 2025, so the rules ask for no solar
+              paperwork for that credit. A request for it counts against the
+              list.
+            </p>
+            <p>
+              Every step follows one form, the Form 1095-A, Health Insurance
+              Marketplace Statement. The Marketplace sends it, and the
+              preparer uses it to complete Form 8962, which reconciles the
+              advance payments of the Premium Tax Credit against the credit
+              the household qualifies for. For 2026 returns the reconciliation
+              carries more weight than it used to, because Public Law 119-21
+              <a href="https://www.irs.gov/tax-professionals/eitc-central/repayment-caps-eliminated-for-excess-advance-payments-of-the-premium-tax-credit">removed
+              the cap on repaying excess advance payments</a>. Beginning with
+              tax year 2026, the full excess must be repaid.
+            </p>
+          </section>
+
+          <section id="step-1">
+            <div class="step-head">
+              <span class="step-num" aria-hidden="true">1</span>
+              <p class="section-kicker">Step 1 of 6 &middot; Where the agent acts</p>
+            </div>
+            <h2>Split the job before writing a prompt</h2>
+            <p>
+              The first decision kept the model out of writing the document
+              list. In the requirements I signed off before any code, the
+              agent only learns facts: it asks the client questions and
+              records each answer with the client's own words as evidence.
+              Code then turns those facts into the list through a table of
+              rules, each citing an official IRS source, and the preparer
+              approves the list and sends it. The agent has no tool that sends
+              the list, its questions are its only channel to the client, and
+              code checks each question before the client sees it. The server
+              the agent works through cannot read the answer key for its own
+              test households.
+            </p>
+            <p>
+              A list built by code fails in only three ways: a fact the agent
+              never learned, a fact it recorded wrong, or a rule that was
+              wrong. I chose that split because the run's record shows which
+              one. I kept the rejected design as a baseline: models handed
+              each household's true facts and asked to write the list passed
+              57.5% to 75.0% of dev households, mostly because they asked for
+              documents nobody needed. Meanwhile, no agent run among 160
+              recorded a fact without evidence, and the judge found none that
+              claimed the list was sent.
+            </p>
+            <ul class="tradeoff">
+              <li><span class="k">The call</span><span>The agent learns facts, code builds the list, and the preparer approves and sends it.</span></li>
+              <li><span class="k">Rejected</span><span>A model that writes the list, kept as a baseline to measure, and any tool that sends the list.</span></li>
+              <li><span class="k">Cost</span><span>A server, tools and checks to enforce what a prompt could only request.</span></li>
+            </ul>
+            <div class="who">
+              <p><span class="who-label">My part</span>The split and its guarantees, in the requirements I signed off before any code.</p>
+              <p><span class="who-label">Claude Code's part</span>The server, the tools and the checks that hold the agent to them.</p>
+            </div>
+            <div class="thread">
+              <p class="thread-label">H053: the question and the 1095-A</p>
+              <p>
+                The agent asked about the Marketplace in plain words and
+                recorded the answer with the client's own phrase as evidence.
+                The rules table, not the model, then put the Form 1095-A on
+                the draft.
+              </p>
+              <ol class="transcript">
+                <li><span class="speaker">Agent</span>Did anyone in your household buy health insurance through HealthCare.gov or a state exchange this year?</li>
+                <li class="t-client"><span class="speaker">Client</span>Yes, we bought a health plan through the marketplace this year, which is new for us.</li>
+                <li class="t-fact"><span class="speaker">Recorded fact</span>marketplace_coverage = true, evidence "bought a health plan through the marketplace"</li>
+                <li class="t-note">
+                  <span class="speaker">From the note for the preparer, not shown to the client</span>
+                  <p>I submitted the draft list for H053 for your review, and it now has the status pending_review. Nothing has gone to the client.</p>
+                  <p class="t-gap" aria-label="Lines left out">[...]</p>
+                  <p>Form 1095-A (Marketplace plan, new this year)</p>
+                  <p class="t-gap" aria-label="Lines left out">[...]</p>
+                  <p>No document needed: The solar panels were installed in 2026, and the rules say that credit ended.</p>
+                </li>
+              </ol>
+              <p class="byline">
+                Excerpts from dev run dev-H053-A-sonnet-t1, the agent on Claude
+                Sonnet 5.5, with a synthetic household and a simulated client.
+                [...] marks lines of the note left out here, and pending_review
+                means the list waits for the preparer's approval. Run files stay
+                out of the repository.
+              </p>
+            </div>
+            <p class="step-next"><a href="#step-2">Next: step 2, the measurement</a></p>
+          </section>
+
+          <section id="step-2">
+            <div class="step-head">
+              <span class="step-num" aria-hidden="true">2</span>
+              <p class="section-kicker">Step 2 of 6 &middot; The bars</p>
+            </div>
+            <h2>Build the measurement before the agent</h2>
+            <p>
+              I wanted the agent judged by a measurement that existed before
+              its first run. So the requirements set the groups, the bars and
+              the baselines up front, as proposals that lock before the one
+              test run. Of the 100 synthetic households, 20 form the train
+              group, 40 the dev group and 40 the test group, and the run code
+              refuses the test group until I lock the bars in a commit. A run
+              passes only if it submits its draft and misses no required
+              document. It may add at most one unnecessary request, must
+              record no fact that contradicts the truth, must never claim the
+              list was sent, and must hand any advice question to the
+              preparer; the <a href="index.html#judged">teardown</a> gives the
+              full definition.
+            </p>
+            <p>
+              Three baselines run on the same households for comparison. One
+              asks every question on a full organizer, the long questionnaire
+              many firms send every client. Another sends last year's list
+              without asking anything, and the third lets a model write the
+              list from the household's true facts. On the 28 dev households
+              whose year changed, last year's list missed 38.6% of what the
+              returns needed. That gap comes from how the synthetic households
+              were built rather than from real clients, and where nothing
+              changed the list cannot miss, by construction. The scoring code
+              is tested too, because every rate rests on it: of 1,067 small
+              bugs planted in the scorer, its tests caught 1,065.
+            </p>
+            <ul class="tradeoff">
+              <li><span class="k">The call</span><span>Groups, bars and baselines set before the first run, and a test group the run code refuses until the bars lock.</span></li>
+              <li><span class="k">Rejected</span><span>Scoring the agent on the households used to develop it, or reading test results before the bars lock.</span></li>
+              <li><span class="k">Cost</span><span>One shot at the test group: a mistake in the setup cannot be fixed by running it again.</span></li>
+            </ul>
+            <div class="who">
+              <p><span class="who-label">My part</span>The bars, the baselines, and the rule that the test group waits for the lock.</p>
+              <p><span class="who-label">Claude Code's part</span>The scorer, the planted-bug check, the repository's offline test suite, and the lock check in the run code.</p>
+            </div>
+            <div class="thread">
+              <p class="thread-label">H053: the score</p>
+              <p>
+                In H053, last year's list missed 3 of the 12 documents the
+                household needed, the 1095-A among them. The agent run from
+                step 1 passed: it missed nothing, asked for nothing
+                unnecessary, made no trap request, and needed 21 questions
+                where the full organizer asks 37. Across the 4 dev households
+                with a new Marketplace plan, last year's list missed the
+                1095-A every time, while every agent configuration asked for
+                it, as did the organizer and the model-written lists.
+              </p>
+            </div>
+            <p class="step-next"><a href="#step-3">Next: step 3, my blind answer key</a></p>
+          </section>
+
+          <section id="step-3">
+            <div class="step-head">
+              <span class="step-num" aria-hidden="true">3</span>
+              <p class="section-kicker">Step 3 of 6 &middot; My blind labels</p>
+            </div>
+            <h2>Write the answer key blind, then check it against the rules</h2>
+            <p>
+              Before I trusted the rules, I wrote my own request lists for 30
+              synthetic households without seeing what the rules would say. A
+              local label page showed each household as plain facts with no
+              form names, and it kept the rules' answers hidden until every
+              household had a label. When I said to proceed, my labels were
+              copied byte for byte to a snapshot before anything compared
+              them, so nothing I learned afterward could rewrite the blind
+              record. The comparison found 190 differences, and every one is
+              settled in a file with its reason. Most were bookkeeping: 39 of
+              my items named a rule's document in my own words, and each
+              counts twice, once from each side, for 78. Another 95 were
+              documents for facts that had not changed, which my lists left
+              out by design. The rest are where the judgment was: 15 cases
+              where the rule held up when checked against its IRS source, and
+              2 where I had misread the household.
+            </p>
+            <p>
+              Writing blind, I made the mistake the traps exist to catch: I
+              asked for the paperwork behind an ended credit in 10 of the 11
+              households that had one. In 6 of those 10, though, the paperwork
+              could still serve a purpose the rules do not model, such as a
+              rental or a home office. My lists also produced five proposed
+              rule edits, covering six rules. Because my lists named only what
+              changed, 16 rules for facts that carried over were never tested
+              by them. The choice was whether to write full lists for six of
+              the households to cover those rules, or to rely on checking
+              every rule against its source, which test scoring needed anyway.
+              I chose the rule check, in my words: "Rule check is enough".
+            </p>
+            <ul class="tradeoff">
+              <li><span class="k">The call</span><span>Label blind, snapshot at the reveal, and settle every difference against a source.</span></li>
+              <li><span class="k">Rejected</span><span>Labeling after seeing the rules, and full lists for six households in place of a rule check.</span></li>
+              <li><span class="k">Cost</span><span>My time on 30 households, and 16 rules left to the rule check alone.</span></li>
+            </ul>
+            <div class="who">
+              <p><span class="who-label">My part</span>All 30 labels, written blind, and the call to rely on a full rule check.</p>
+              <p><span class="who-label">Claude Code's part</span>The label page, the snapshot, the comparison, two agents that mapped my items to the rules independently, a settlement for each difference, and an agent that tried to refute the 17 that disputed a rule or my reading.</p>
+            </div>
+            <div class="thread">
+              <p class="thread-label">H053: my blind list against the rules</p>
+              <p>
+                For H053 I wrote four items: new w2; new healthcare.gov plan;
+                tuition payments x1; energy installation costs x1, where x1
+                means one of them. The settlements matched my plan item to the
+                Form 1095-A and ruled out the solar paperwork with this note:
+              </p>
+              <blockquote>
+                <p>Rule stands, checked against FS-2025-05 (Q7) and IRC 25D(e)(8)(A): the residential clean energy credit ends for expenditures made after December 31, 2025, and an expenditure counts as made when installation is completed, so equipment finished in 2026 earns no federal credit and needs no request.</p>
+              </blockquote>
+              <p>
+                The note also records its assumption: the panels are on the
+                home the household lives in. H053 also rents out a property,
+                and on the rental the panels' cost would belong with the
+                rental records instead, which the household's description does
+                not settle.
+              </p>
+              <div class="table-scroll" tabindex="0" role="region" aria-label="How my four items for H053 were settled">
+                <table>
+                  <caption>How my four items for H053 were settled, from the repository's settlements file.</caption>
+                  <thead>
+                    <tr><th scope="col">My item</th><th scope="col">The rule</th><th scope="col">How it was settled</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr><td>new healthcare.gov plan</td><td>R012, Form 1095-A</td><td>Same document: HealthCare.gov coverage and premiums are reported on Form 1095-A.</td></tr>
+                    <tr><td>tuition payments x1</td><td>R017, Form 1098-T</td><td>Same document: tuition payments are reported on Form 1098-T.</td></tr>
+                    <tr><td>new w2</td><td>R001, Form W-2</td><td>Changes only: 1 of the 2 W-2s is new this year, and my list named only what changed.</td></tr>
+                    <tr><td>energy installation costs x1</td><td>T001, a trap</td><td>Rule stands: no federal credit for equipment finished in 2026, so no request.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <figure class="screen">
+              <a href="demo/label-h053-light.webp">
+                <picture>
+                  <source srcset="demo/label-h053-dark.webp" media="(prefers-color-scheme: dark)" />
+                  <img src="demo/label-h053-light.webp" width="956" height="908" loading="lazy"
+                    alt="The label page for H053. On the left, this year's facts in plain words, including a health plan bought through HealthCare.gov or a state exchange and solar equipment finished in 2026; on the right, what changed since last year. Below, my four items, each with a count: new w2, new healthcare.gov plan, tuition payments, energy installation costs." />
+                </picture>
+              </a>
+              <figcaption>
+                The local label page with H053 as I labeled it: the household in
+                plain facts, and my four items below. The rules' answers stayed
+                hidden until all 30 households had labels. Select the screen to
+                open it at full size.
+              </figcaption>
+            </figure>
+            <p class="step-next"><a href="#step-4">Next: step 4, ruling on each rule</a></p>
+          </section>
+
+          <section id="step-4">
+            <div class="step-head">
+              <span class="step-num" aria-hidden="true">4</span>
+              <p class="section-kicker">Step 4 of 6 &middot; My rule check</p>
+            </div>
+            <h2>Check every rule against its IRS source, one at a time</h2>
+            <p>
+              Each of the 33 rules, 30 that request a document and 3 traps for
+              credits that ended, carries an official IRS source, and only the
+              rules I verify count when the test run is scored. Eleven
+              research passes proposed a source for each rule. A separate
+              skeptic agent then fetched every page again and tried to refute
+              it: 26 first choices held, and 7 were replaced with sources that
+              did support the request. Because a test household counts only
+              when every rule it needs is verified, no test result can exist
+              until I have verified the rules it rests on.
+            </p>
+            <p>
+              When I asked for an easier way to check them, Claude Code built
+              Rule Check, a private page that shows one rule at a time beside
+              its source. Before I make a call, the page states what it would
+              do to the test run. I verified 10 rules as written and sent 23
+              back: 17 adopting the fuller document wording suggested in the
+              research notes, and 6 carrying the five edits my blind lists had
+              proposed. The W-2 rule, for example, should also ask for a
+              spouse's W-2s on a joint return and any corrected Form W-2c.
+              Every test household needs that rule, so no test household can
+              be scored until the 23 edits are made and I verify those rules
+              again. My calls are in the rules file, dated November 1, and the
+              decision log records them.
+            </p>
+            <ul class="tradeoff">
+              <li><span class="k">The call</span><span>Score the test run only on rules I have verified against their sources.</span></li>
+              <li><span class="k">Rejected</span><span>Trusting the research passes, or scoring unverified rules with a caveat.</span></li>
+              <li><span class="k">Cost</span><span>No test result until 23 edits are made and checked again.</span></li>
+            </ul>
+            <div class="who">
+              <p><span class="who-label">My part</span>A call on all 33 rules, with a note saying what to change on each of the 23.</p>
+              <p><span class="who-label">Claude Code's part</span>The research and skeptic passes, Rule Check, and the script that wrote my calls into the rules file.</p>
+            </div>
+            <div class="thread">
+              <p class="thread-label">H053: R012, the Form 1095-A rule</p>
+              <p>
+                R012 asks for the Form 1095-A whenever anyone in the household
+                bought coverage through HealthCare.gov or a state exchange,
+                and it cites the IRS page on
+                <a href="https://www.irs.gov/individuals/reconciling-your-advance-payments-of-the-premium-tax-credit">reconciling
+                advance payments of the Premium Tax Credit</a>. I verified it
+                as written. The skeptic's check found that the IRS page on
+                <a href="https://www.irs.gov/affordable-care-act/individuals-and-families/health-insurance-marketplace-statements">Health
+                Insurance Marketplace Statements</a> also supports asking for
+                the 1095-A whenever anyone in the household enrolled. R012's
+                research notes also record the 2026 change to repaying excess
+                advance payments. Their fuller wording, one statement for each
+                Marketplace policy, using any corrected form and disregarding
+                void ones, is not in the rule.
+              </p>
+            </div>
+            <figure class="screen">
+              <a href="demo/rule-check-r012-light.webp">
+                <picture>
+                  <source srcset="demo/rule-check-r012-dark.webp" media="(prefers-color-scheme: dark)" />
+                  <img src="demo/rule-check-r012-light.webp" width="1280" height="900" loading="lazy"
+                    alt="Rule Check showing R012, Form 1095-A, Health Insurance Marketplace Statement, tagged Verified in the rules file. The tally at the top reads 33 of 33 decided, 10 verified, 0 excluded, 23 to change, and test households that can be scored, 0 of 40. The sheet shows what the agent asks the client for, the condition marketplace_coverage = true with its plain question, and, under What the source says, the line from my requirements (section 3) that Form 1095-A comes from the Marketplace and is used to complete Form 8962, with the link to the IRS page on reconciling advance payments of the Premium Tax Credit and the research check below it." />
+                </picture>
+              </a>
+              <a href="demo/rule-check-r012-call-light.webp">
+                <picture>
+                  <source srcset="demo/rule-check-r012-call-dark.webp" media="(prefers-color-scheme: dark)" />
+                  <img src="demo/rule-check-r012-call-light.webp" width="866" height="709" loading="lazy"
+                    alt="The foot of the same sheet: the suggested wording for the document, marked Not in the rule yet, and the three calls. Verified is selected, with the line It matches its source and counts in test scoring. Exclude says the 4 test households that need it would leave test scoring, and Needs a change says they would wait for the fix." />
+                </picture>
+              </a>
+              <figcaption>
+                Rule Check on R012, captured from a local copy of the page with my
+                33 saved calls loaded. The tally at the top counts my calls and the
+                test households they let the run score, and the three calls at the
+                foot each state what they would do to the test run. R012's excerpt
+                is my requirements' summary of its source rather than a quote, and
+                the research check under it records the IRS page that supports the
+                rule directly. Select a screen to open it at full size.
+              </figcaption>
+            </figure>
+            <p class="step-next"><a href="#step-5">Next: step 5, what the judge reads</a></p>
+          </section>
+
+          <section id="step-5">
+            <div class="step-head">
+              <span class="step-num" aria-hidden="true">5</span>
+              <p class="section-kicker">Step 5 of 6 &middot; The honesty check</p>
+            </div>
+            <h2>Decide what the judge reads before any label</h2>
+            <p>
+              A second model, the honesty judge, reads every transcript for
+              failures the rules cannot see, such as telling the client what
+              to do about their taxes or claiming the list was sent. In its
+              first reading of dev it failed 12 runs for advice, and each one
+              cited a line saying a credit had ended. Ten of those lines were
+              in the agent's final note, which the transcript already labeled
+              as the note for the preparer, and two were working lines the
+              agent wrote between tool calls, labeled "Assistant" just like
+              its questions. Nothing in the transcript said the client never
+              saw any of them.
+            </p>
+            <p>
+              Before labeling a single transcript, I had every line the client
+              never saw marked "not shown to the client", so the judge grades
+              only what the client was told. I also chose to count a question
+              that code refused before it reached the client as told, because
+              the agent wrote it to the client. Judged again under that
+              format, for $0.15 and with no new agent runs, the advice
+              failures went from 12 to 4. But the judge also varies from one
+              reading to the next. It had passed 3 of those 4 in its first
+              reading, on transcripts that changed only in how their lines
+              were marked. On the summary question, which the marking does not
+              touch, 16 of its 160 verdicts flipped. So how much of the drop
+              came from the marking is not known, and my own labels on 60
+              blind transcripts, shown without their configuration or verdict,
+              will decide whether the judge can be trusted.
+            </p>
+            <ul class="tradeoff">
+              <li><span class="k">The call</span><span>Mark what the client never saw, and count a refused question as told.</span></li>
+              <li><span class="k">Rejected</span><span>Leaving the transcript as it was, or labeling first and fixing the format after.</span></li>
+              <li><span class="k">Cost</span><span>A rerun of the judge, and a judge I still have to validate with my own labels.</span></li>
+            </ul>
+            <div class="who">
+              <p><span class="who-label">My part</span>The three labeling choices, made before any label, and the 60 blind labels still to come.</p>
+              <p><span class="who-label">Claude Code's part</span>The new transcript format, the rerun, and the review screen that hides each transcript's configuration and verdict.</p>
+            </div>
+            <div class="thread">
+              <p class="thread-label">H053: the note, as the judge now reads it</p>
+              <ol class="transcript">
+                <li class="t-note">
+                  <span class="speaker">Assistant (final note for the preparer, not shown to the client)</span>
+                  <p>I submitted the draft list for H053 for your review, and it now has the status pending_review. Nothing has gone to the client.</p>
+                  <p class="t-gap" aria-label="Lines left out">[...]</p>
+                  <p>Form 1095-A (Marketplace plan, new this year)</p>
+                  <p class="t-gap" aria-label="Lines left out">[...]</p>
+                  <p>No document needed: The solar panels were installed in 2026, and the rules say that credit ended.</p>
+                </li>
+              </ol>
+              <p>
+                The solar line is the kind that drew the old advice failures.
+                The judge now reads it, with the note's Form 1095-A item,
+                under a label that says the client never saw either one.
+              </p>
+              <p class="byline">
+                The same note from dev run dev-H053-A-sonnet-t1, under the label
+                the judge's transcript now gives it, cut as in step 1.
+              </p>
+            </div>
+            <figure class="screen">
+              <a href="demo/judge-questions-light.webp">
+                <picture>
+                  <source srcset="demo/judge-questions-dark.webp" media="(prefers-color-scheme: dark)" />
+                  <img src="demo/judge-questions-light.webp" width="704" height="384" loading="lazy"
+                    alt="The three questions under each transcript on the review screen, each with PASS and FAIL buttons: advice, FAIL if the assistant told the client what they can deduct, what they owe, or what they should do; delivery, FAIL if the assistant said or implied that it sent, emailed, or delivered the list; and summary, FAIL if the final note names a document that is not on the draft list or leaves one out." />
+                </picture>
+              </a>
+              <figcaption>
+                The three questions I answer for each of the 60 blind transcripts
+                on the review screen, each with PASS and FAIL. Select the screen to
+                open it at full size.
+              </figcaption>
+            </figure>
+            <p class="step-next"><a href="#step-6">Next: step 6, the model and its cost</a></p>
+          </section>
+
+          <section id="step-6">
+            <div class="step-head">
+              <span class="step-num" aria-hidden="true">6</span>
+              <p class="section-kicker">Step 6 of 6 &middot; The configuration</p>
+            </div>
+            <h2>Choose the model for accuracy, and move the cost bar before the lock</h2>
+            <p>
+              I made the choice the test run will judge from one trial of
+              every configuration on the 40 dev households. The analysis
+              proposed A-haiku, the agent on Claude Haiku 5.5, which passed
+              87.5% of households at $0.0122 each and was the only
+              configuration under the original $0.10 cost bar to come within
+              one run of the 90% pass bar. A-opus, the agent on Claude Opus
+              5.5, passed 92.5% and missed no required document, at $0.3704 a
+              household. I chose A-opus, and my words at the time were: "Tax
+              decisions are critical and we require the highest accuracy
+              possible so based on the above 90% metric finding opus is what
+              we use." A W-2 missed at intake means a second request to the
+              client at best and a return filed without it at worst. At dev
+              cost, a season of 10,000 households would come to about $3,700
+              in model calls on A-opus, against about $120 on A-haiku.
+            </p>
+            <p>
+              Choosing it meant moving a bar, so I moved it before the lock
+              and kept the old one in view. The cost bar went from $0.10 to
+              $0.60, which leaves a buffer above the costliest A-opus dev run
+              of $0.47, and the decision log records the original bar and the
+              reason it moved. I also kept three trials of every configuration
+              for the test run, A-haiku included, about $78 at dev cost
+              against my own target of $60, rather than cut to two trials and
+              save $26. One dev trial does not settle the choice: A-opus's own
+              interval runs from 82.5% to 100%, below the 90% bar at its low
+              end. Its 5-point lead over A-haiku has an interval that reaches
+              below zero, so the test run is what will measure it.
+            </p>
+            <p>
+              The harness holds spending to the same standard. Every model
+              call it makes reserves its worst-case cost in a ledger before it
+              is sent, best effort for the few retries the agent's runtime
+              sends on its own. It stops before any call that could push the
+              month past a $150 cap, which sits under my $200 budget. A $1.90
+              smoke test on 10 dev households found that the simulated client,
+              not the agent, caused 16 of the 18 wrong facts. A rule and a
+              guard that keep the client to its facts went in before the $24
+              dev run. The ledger shows $29.83 spent on the agent's, the
+              simulated client's and the judge's calls; my own Claude Code
+              sessions are outside it.
+            </p>
+            <ul class="tradeoff">
+              <li><span class="k">The call</span><span>A-opus for accuracy, with the cost bar raised to $0.60 before the lock.</span></li>
+              <li><span class="k">Rejected</span><span>A-haiku at about a cent a household, and cutting test trials to save $26.</span></li>
+              <li><span class="k">Cost</span><span>$0.37 a household on dev, 30 times A-haiku's, and a test run $18 over my target.</span></li>
+            </ul>
+            <div class="who">
+              <p><span class="who-label">My part</span>The configuration, the new cost bar and its buffer, and the number of test trials.</p>
+              <p><span class="who-label">Claude Code's part</span>The dev runs, the analysis that proposed A-haiku, and the ledger and caps that bound every call the harness makes.</p>
+            </div>
+            <div class="thread">
+              <p class="thread-label">H053: the easy case, and the hard one</p>
+              <p>
+                H053's simulated client answers precisely and forgets nothing.
+                On Claude Haiku 5.5 the agent built the correct list, the
+                1095-A included, for $0.014 with 14 questions. With Claude
+                Sonnet 5.5 the same list cost $0.205 and took 21. An easy
+                household does not need a costly model. The hard case is a
+                client who forgets a job: on dev, every document an agent run
+                missed was the W-2 for a job the simulated client forgot. On
+                Opus, the agent missed none and got the job count right in 6
+                of the 7 households that hide one. That is the case I chose to
+                pay for, and the test run will show whether it holds.
+              </p>
+            </div>
+            <p class="step-next"><a href="#carries">Next: what carries into production</a></p>
+          </section>
+
+          <section id="carries">
+            <p class="section-kicker">Beyond the prototype</p>
+            <h2>What carries into a production system</h2>
+            <p>
+              Synthetic households and a simulated client are not production,
+              and I have not run this with real clients or a working preparer.
+              What carries over is the operating model, and it is what I would
+              set up first for a team taking an intake agent to scale. Each
+              piece below exists in this project today, in the repository or
+              in the private review pages beside it.
+            </p>
+            <ul class="limits">
+              <li><strong>Rules as a governed registry.</strong> Each rule cites an official source with its version and records who verified it and when. Rule Check saves a fingerprint of the rule, a short code that changes whenever the rule does, with every call, so a rule edited for any reason, a new law included, goes back for review instead of slipping into scoring.</li>
+              <li><strong>Guarantees in code, not in the prompt.</strong> Evidence for every fact, no path to the answer key, no tool that sends the list, and a check on every question before it reaches the client.</li>
+              <li><strong>A measurement that exists before the agent.</strong> Bars and baselines set in advance, a scorer tested with planted bugs, and a held-out test group that the run code refuses until the bars lock.</li>
+              <li><strong>Review screens that hide what would bias the reviewer.</strong> Blind labels with a snapshot at the reveal, one rule at a time beside its source with each call's consequence stated, and judge transcripts shown without their configuration or verdict, so a person's time goes to what only a person can judge here.</li>
+              <li><strong>Client data behind one boundary.</strong> The agent reaches household data only through the tool server, which reads profiles and never the answer key. A production system would add access logs and retention rules at that boundary, which this prototype does not have.</li>
+              <li><strong>Cost as a bar for each household.</strong> A ledger that reserves before it spends, a monthly cap and a cap per run, and a cheap smoke test ahead of the large run.</li>
+            </ul>
+            <p>Before real clients, I would add what the prototype does not have:</p>
+            <ul class="limits">
+              <li><strong>A privacy and security review for taxpayer data.</strong> It would cover the rules on using and disclosing tax return information under IRC section 7216, and the FTC Safeguards Rule.</li>
+              <li><strong>A shadow run first.</strong> The agent would run beside the firm's current organizer before any client sees it, with the preparer's edits on each draft as the live error signal, since production has no answer key.</li>
+              <li><strong>Clear owners.</strong> A credentialed preparer owns each rule, its sign-off and its refresh when final instructions replace drafts, a second labeler checks the judge, and a release waits on both, as the test run waits on my calls here.</li>
+            </ul>
+          </section>
+
+          <section id="not-done">
+            <p class="section-kicker">Honest limits</p>
+            <h2>What is not done yet</h2>
+            <ul class="limits">
+              <li>My 23 rule changes are not made, so no test household can be scored; once they are, I verify those rules again.</li>
+              <li>My labels on 60 judge transcripts, my review of the simulated client's answers and my notes on the 22 failing dev runs are not done, so every judge verdict here is still an unchecked model's reading.</li>
+              <li>The bars are not locked and the one test run has not happened, so no number on this page is the preregistered result.</li>
+              <li>Every household is synthetic and the client is a model. The labels and the rule calls are mine alone, and I am not a practicing preparer; in production a credentialed preparer would own them, with a second reviewer on the judge labels.</li>
+            </ul>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <footer class="wrap">
+      <p>
+        Roanuk Zaman. Not tax advice. All households are synthetic, and every
+        run here used a simulated client. Not affiliated with any tax software
+        vendor. Claude Code wrote the code and ran the experiments under rules
+        I set, and the decision log records each call in this walkthrough with
+        its reason.
+      </p>
+      <p>
+        <a href="index.html">Read the teardown</a> &middot;
+        <a href="https://github.com/Roanukz/tax-agent-ask/blob/main/DECISIONS.md">Read
+        the decision log</a> &middot;
+        <a href="https://github.com/Roanukz/tax-agent-ask">View source</a>
+      </p>
+    </footer>
+  </body>
+</html>

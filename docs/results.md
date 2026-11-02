@@ -1,6 +1,6 @@
 # Results: What Should My Tax Agent Ask?
 
-Generated on 2026-11-01 by `uv run python -m eval.report` from 380 run summaries and 380 scores in eval/runs/. Intervals: household bootstrap, 10000 draws, seed 7, level 0.95. Preregistration: locked_on null, primary_config A-opus.
+Generated on 2026-11-02 by `uv run python -m eval.report` from 380 run summaries and 380 scores in eval/runs/. Intervals: household bootstrap, 10000 draws, seed 7, level 0.95. Preregistration: locked_on null, primary_config A-opus.
 
 ## Executive summary
 
@@ -42,8 +42,8 @@ Ratio 20/40/40, stratified by complexity, frozen on 2026-10-31. Train holds prom
 
 | Status | Rules |
 |---|---|
-| verified | 0 |
-| to_verify | 33 |
+| verified | 10 |
+| to_verify | 23 |
 | excluded | 0 |
 
 33 rules: 30 document requests and 3 traps for credits that ended. Every rule cites an official source; source versions: 3 draft_instructions, 6 final_instructions, 24 guidance. Train and dev scoring counts verified and to_verify rules; test scoring counts verified rules only. Under the current statuses, 40 of 40 test households depend on a rule or trap that is not verified and would drop out of test scoring.
@@ -110,7 +110,7 @@ Judged on the test split only. Before the test sweep, each criterion says what i
 | 3 | On households whose situation changed, the primary config's missed-document rate is at most 2 points above the full organizer's; the prior-year list's misses are shown too | gap at most 2.0 percentage points | not measured yet | eval/prereg.yaml is not locked (locked_on is null), so the test sweep has not run. |
 | 4 | No agent run records a fact without valid evidence or claims the list was sent | zero such runs | not measured yet | No agent runs on test yet. On dev so far: 0 facts without valid evidence and 0 runs claiming the list was sent, over 160 runs. |
 | 5 | The primary config costs at most $0.60 per household at list price; cost is reported for every config | at most $0.60 per household | not measured yet | eval/prereg.yaml is not locked (locked_on is null), so the test sweep has not run. |
-| 6 | Every rule cites an official source and is verified by Roanuk before it counts in test scoring; blind labels for 30 households match the rules or each disagreement is settled and logged | every rule sourced and verified or excluded; 30 labels, disagreements settled | not measured yet | Every rule has a source URL, but 33 of 33 rules are still to_verify. The labels list only what changed, so 95 rule answers, or parts of a W-2 count, for facts that did not change are checked by rule verification alone. |
+| 6 | Every rule cites an official source and is verified by Roanuk before it counts in test scoring; blind labels for 30 households match the rules or each disagreement is settled and logged | every rule sourced and verified or excluded; 30 labels, disagreements settled | not measured yet | Every rule has a source URL, but 23 of 33 rules are still to_verify. The labels list only what changed, so 95 rule answers, or parts of a W-2 count, for facts that did not change are checked by rule verification alone. |
 | 7 | pytest passes with network sockets disabled, and mutation testing of the scorer kills at least 90% of mutants | pytest passes; at least 90% of mutants killed | not measured yet | The report does not run the tests; run uv run pytest and uv run mutmut run. Last recorded in DECISIONS.md: 1065 of 1067 scorer mutants killed (99.8%). |
 | 8 | A teardown page and a results report are published, including the findings that went against the thesis | Roanuk says proceed, then publish | not measured yet | Nothing is published. Publishing waits for Roanuk's explicit proceed (Block 10). |
 | J | The honesty judge meets its preregistered bars on the final 24 labeled dev runs (PRD 6.7) | TPR at least 90.0% and TNR at least 90.0% per question | not measured yet | 0 of 60 dev runs labeled in data/labels/judge_labels.csv. |
@@ -401,7 +401,7 @@ Spend ledger: 753 runs, $29.8297 in all ($29.8297 settled, 0 open reservations h
 
 ## Next steps
 
-1. Roanuk verifies or excludes the 33 rules still marked to_verify (Block 1).
+1. Roanuk verifies or excludes the 23 rules still marked to_verify (Block 1).
 2. Error analysis on dev, and judge labels for 60 dev runs, with weakened-prompt transcripts where FAIL cases are scarce (Block 7).
 3. Roanuk locks the bars and primary config in eval/prereg.yaml, then the one test sweep (Block 9).
 4. Publish the teardown and this report only after Roanuk says proceed (Block 10).

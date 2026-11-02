@@ -80,7 +80,10 @@ def test_title_and_hero_order():
     positions = [hero.group(1).find(marker) for marker in order]
     assert -1 not in positions, dict(zip(order, positions))
     assert positions == sorted(positions)
-    assert len(re.findall(r'class="btn ', hero.group(1))) == 2
+    buttons = re.findall(r'<a class="btn [^"]+" href="([^"]+)">([^<]+)</a>', hero.group(1))
+    assert buttons == [("demo.html", "View a step by step demo of the build process"),
+                       ("#results", "See what is measured so far"),
+                       (SOURCE, "View the source")]
     assert len(re.findall(r'<div class="fact">', hero.group(1))) == 4
 
 

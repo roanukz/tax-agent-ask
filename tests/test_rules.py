@@ -151,8 +151,10 @@ def test_h017_documents_and_traps():
 
 
 def test_only_listed_statuses_count():
-    assert required_documents(H017, RULES, SPECS) == []
-    rules = [r if r.id != "R004" else engine.Rule(**{**r.__dict__, "status": "verified"}) for r in RULES]
+    # Start from every rule still to verify, since the rules file's statuses change as Roanuk verifies rules.
+    pending = [engine.Rule(**{**r.__dict__, "status": "to_verify", "verified_by": None, "verified_on": None}) for r in RULES]
+    assert required_documents(H017, pending, SPECS) == []
+    rules = [r if r.id != "R004" else engine.Rule(**{**r.__dict__, "status": "verified"}) for r in pending]
     assert required_documents(H017, rules, SPECS) == [{"rule_id": "R004", "count": 1}]
     excluded = [engine.Rule(**{**r.__dict__, "status": "excluded"}) for r in RULES]
     assert required_documents(H017, excluded, SPECS, statuses=ALL) == []
@@ -284,8 +286,8 @@ def test_validator_accepts_filled_repo_rules(tmp_path):
         (lambda rs: by_id(rs, "R004")["when"]["all"][0].update(gt=1), "needs exactly one"),
         (lambda rs: by_id(rs, "R004")["when"]["all"][0].update(eq="yes"), "doesn't fit bool"),
         (lambda rs: by_id(rs, "T001").update(document="Form 5695"), "a trap has document"),
-        (lambda rs: by_id(rs, "R004").update(status="verified"), "verified_by and verified_on"),
-        (lambda rs: by_id(rs, "R004").update(verified_by="roanuk"), "can't have verified_by"),
+        (lambda rs: by_id(rs, "R004").update(status="verified", verified_by=None, verified_on=None), "verified_by and verified_on"),
+        (lambda rs: by_id(rs, "R004").update(status="to_verify", verified_by="roanuk", verified_on=None), "can't have verified_by"),
         (lambda rs: by_id(rs, "R004").update(source_url="https://example.com/x"), "official .gov"),
         (lambda rs: by_id(rs, "R004").update(source_url="http://www.irs.gov/x"), "official .gov"),
         (lambda rs: by_id(rs, "R004").update(source_version="final"), "source_version"),

@@ -64,6 +64,7 @@
         </p>
 
         <div class="cta-row">
+          <a class="btn btn-primary" href="demo.html">View a step by step demo of the build process</a>
           <a class="btn btn-primary" href="#results">See what is measured so far</a>
           <a class="btn btn-secondary" href="https://github.com/Roanukz/tax-agent-ask">View the source</a>
         </div>
@@ -200,8 +201,9 @@
               Against the rules, my blind lists asked for the paperwork behind an ended credit in 10 of the 11 households that had one. For 6 of them that paperwork could still serve a purpose the rules do not model. They never asked for the Form 1099-K that app payments
               can bring, in 4 of 4 households, and they read a tuition payment
               that had stopped as this year's in 2 of 3. All 190 differences were
-              settled and logged, with 95 of them waiting on my rule verification
-              along with five proposed rule edits. On November 1, 2026, all 3,296
+              settled and logged. The 95 about facts that did not change rest on my
+              rule verification, which so far covers 10 of the 33 rules, and on
+              November 1 I asked for all five proposed rule edits. On November 1, 2026, all 3,296
               offline tests passed with the network blocked, and mutation testing,
               which plants small bugs in the scoring code to see whether the
               tests notice, had caught 1,065 of 1,067 (<a href="#results">Part 6</a>).
@@ -243,9 +245,9 @@
               change and complexity cannot be told apart. The client is a model,
               not a person, and in the dev trial it still caused 7 of the 19 wrong
               facts in agent runs. My blind lists come from one labeler who is not a
-              practicing preparer, and they cover only what changed. None of the
-              33 rules is verified yet, which test scoring requires, and that
-              verifying will be mine as well. I have not labeled the judge's
+              practicing preparer, and they cover only what changed. Test scoring
+              counts only the rules I have verified, and so far that is 10 of the
+              33; I sent the other 23 back for changes. I have not labeled the judge's
               transcripts yet, so the judge is not validated, though its advice and
               delivery verdicts count toward a run's pass. In the 9 dev households
               with a trap for an ended credit, it now fails advice on 4 of the 33
@@ -742,7 +744,7 @@
                 <tr><td>The same document, in my words</td><td class="num">78</td><td>39 of my items named a rule's document in other words, such as "mortgage payments" for Form 1098; each pairs with the rule it names</td></tr>
                 <tr><td>Checked against the source; the rule stands</td><td class="num">15</td><td>10 requests for paperwork behind ended credits, 4 missing Form 1099-K requests, and 1 health plan question with no federal document</td></tr>
                 <tr><td>My misreading</td><td class="num">2</td><td>Tuition paid last year only, read as this year's</td></tr>
-                <tr><td>A fact that did not change</td><td class="num">95</td><td>My lists named only what changed; these rule answers will be checked by my rule verification alone, which has not happened yet</td></tr>
+                <tr><td>A fact that did not change</td><td class="num">95</td><td>My lists named only what changed; these rule answers are checked by my rule verification alone, which so far covers 10 of the 33 rules</td></tr>
               </tbody>
             </table>
           </div>
@@ -771,7 +773,8 @@
               households where nothing new applied, I left the list empty. That
               left 16 rules, for facts that carried over, untested by my lists,
               and I chose to rely on my verification of each rule against its
-              source for those, which has not happened yet.
+              source for those. On November 1 I verified 8 of those 16 and sent the
+              other 8 back for changes.
             </li>
           </ul>
           <p>
@@ -1221,12 +1224,13 @@
               (<a href="#judged">Part 5</a>).
             </li>
             <li>
-              <strong>Verify the 33 rules against their sources</strong>, my
-              step, about 45 minutes by the plan's estimate, and decide the five
-              proposed edits. Every test household depends on the W-2 rule, R001,
-              and the run drops any test household whose list depends on a rule I
-              have not verified, so with none verified the test run would score
-              no household.
+              <strong>Finish verifying the rules against their sources.</strong>
+              On November 1 I verified 10 of the 33 rules and sent 23 back with
+              the changes I want, the five proposed edits among them. Every test
+              household depends on the W-2 rule, R001, which I sent back, and the
+              run drops any test household whose list depends on a rule I have not
+              verified, so the test run can score no household until those edits
+              are made and I verify the rules again.
             </li>
             <li>
               <strong>Read and label what only I can judge.</strong> The 30
@@ -1247,7 +1251,7 @@
               configuration cannot be cut, but 2 trials of every configuration
               would come to about $52. I kept 3 trials and accepted the $78, which
               would leave the month under its $150 cap. The lock itself comes last,
-              after I verify the rules, check the judge against my labels and write
+              after I finish verifying the rules, check the judge against my labels and write
               a note on each failing dev run, and its commit must predate the test
               run.
             </li>
@@ -1365,7 +1369,7 @@ uv run mutmut run &amp;&amp; uv run mutmut results</code></pre>
             <li>Every household is synthetic, from one generator whose mix of situations is a design choice, not a sample of any practice.</li>
             <li>The client is a model, not a person. Real clients misremember, contradict themselves and volunteer things no persona captures. When the simulated client's answer contradicts its own facts outside a recall gap, the answer goes back to the model once, so this client is more consistent than a real one on purpose. Its words can still disagree with the facts it reveals.</li>
             <li>The blind lists, the rule verification and the judge's labels are all mine: one person, not a practicing preparer, and the blind lists cover only what changed.</li>
-            <li>None of the 33 rules is verified yet, and some sources are 2026 drafts or 2025 editions.</li>
+            <li>Only 10 of the 33 rules are verified so far, the other 23 wait for changes I asked for, and some sources are 2026 drafts or 2025 editions.</li>
             <li>Two cases near the traps are never generated, a client with a Form 5695 carryforward would be scored wrong, and a request for paperwork that a rental, a home office or an itemizer could still use counts as a trap (<a href="#rules">Part 4</a>).</li>
             <li>Every simple household stayed the same and every other one changed, so change and complexity are tangled in every comparison between them. Last year's list is complete by construction where nothing changed, and its misses come from changed facts, never from changed rules.</li>
             <li>The evidence and question checks live in the test harness, not in the tool server. The evidence check finds two or more of the client's words in a row, a one-word answer sentence, or the field that holds the fact, but cannot tell whether they support the value. The question check misses some claims, one of them in a live run, and leaves them to the judge.</li>

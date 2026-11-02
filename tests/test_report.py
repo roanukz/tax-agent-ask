@@ -569,6 +569,8 @@ async def test_eval_run_scores_baselines_the_way_the_report_describes(tmp_path):
 
 def test_criterion_6_is_met_only_with_verified_rules_and_agreeing_labels(tmp_path):
     ctx = context(tmp_path, tmp_path / "runs", verified=False)
+    # The rules file's own statuses change as Roanuk verifies rules; this case needs every rule still to verify.
+    ctx.rules = [dataclasses.replace(r, status="to_verify", verified_by=None, verified_on=None) for r in ctx.rules]
     crit = {c.number: c for c in criteria(ctx)}
     assert crit["6"].status == NOT_MEASURED
     assert "33 of 33 rules are still to_verify" in crit["6"].detail and "0 of 30 households" in crit["6"].detail
