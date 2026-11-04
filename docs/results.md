@@ -7,7 +7,7 @@ Generated on 2026-11-04 by `uv run python -m eval.report` from 1055 run summarie
 This project measures how many questions an AI tax intake agent asks and which documents it misses. The agent only learns facts; code turns recorded facts into the document request list through a rules table with an official source for every rule, so every miss traces to a fact or a rule. All households are synthetic.
 
 - Scored runs: 1055 (test 675, dev 360, train 20).
-- Success criteria (the 8 in the PRD plus the judge bars): 6 met, 1 not met, 2 not measured yet. The table is at the top of Results.
+- Success criteria (the 8 in the PRD plus the judge bars): 2 met, 1 not met, 6 not measured yet. The table is at the top of Results.
 - A-opus on test: pass rate 92.0% [84.0, 97.3], missed-document rate 0.8% [0.0, 2.1], over 75 runs.
 - A-haiku on test: pass rate 85.3% [74.7, 94.7], missed-document rate 2.5% [0.0, 6.5], over 75 runs.
 - A-sonnet on test: pass rate 93.3% [88.0, 98.7], missed-document rate 1.2% [0.0, 2.8], over 75 runs.
@@ -38,11 +38,11 @@ Ratio 20/40/40, stratified by complexity, frozen on 2026-10-31. Train holds prom
 
 | Status | Rules |
 |---|---|
-| verified | 29 |
-| to_verify | 4 |
+| verified | 33 |
+| to_verify | 0 |
 | excluded | 0 |
 
-33 rules: 30 document requests and 3 traps for credits that ended. Every rule cites an official source; source versions: 3 draft_instructions, 6 final_instructions, 24 guidance. Train and dev scoring counts verified and to_verify rules; test scoring counts verified rules only. Under the current statuses, 15 of 40 test households depend on a rule or trap that is not verified and would drop out of test scoring.
+33 rules: 30 document requests and 3 traps for credits that ended. Every rule cites an official source; source versions: 3 draft_instructions, 6 final_instructions, 24 guidance. Train and dev scoring counts verified and to_verify rules; test scoring counts verified rules only. Under the current statuses, 0 of 40 test households depend on a rule or trap that is not verified and would drop out of test scoring.
 
 ### Label agreement
 
@@ -101,12 +101,12 @@ Judged on the test split only. Before the test sweep, each criterion says what i
 
 | # | Criterion | Bar | Status | Evidence or what is missing |
 |---|---|---|---|---|
-| 1 | The primary config passes at least 90% of test runs and misses no more than 2% of required documents | pass rate at least 90.0%, missed-document rate at most 2.0% | met | A-opus: pass rate 92.0% [84.0, 97.3], missed-document rate 0.8% [0.0, 2.1], over 75 runs of 25 households. |
-| 2 | The primary config's median question count is at most 50% of the full organizer's on the same households | median question ratio vs B1 at most 0.50 | met | Median question ratio vs B1 0.36 [0.33, 0.39] (n=25): A-opus's median question count over B1's on the n households both ran. |
-| 3 | On households whose situation changed, the primary config's missed-document rate is at most 2 points above the full organizer's; the prior-year list's misses are shown too | gap at most 2.0 percentage points | met | Gap -0.5% [-2.9, 1.7] on 13 changed households; B2 misses 46.8% [36.2, 53.8] there. |
-| 4 | No agent run records a fact without valid evidence or claims the list was sent | zero such runs | met | 0 facts without valid evidence and 0 runs claiming the list was sent, over 300 agent runs. On dev so far: 0 facts without valid evidence and 0 runs claiming the list was sent, over 160 runs. |
-| 5 | The primary config costs at most $0.60 per household at list price; cost is reported for every config | at most $0.60 per household | met | A-opus $0.3678 [0.3578, 0.3785]; A-haiku $0.0127 [0.0122, 0.0132]; A-sonnet $0.1603 [0.1495, 0.1701]; A-split $0.0578 [0.0572, 0.0583]; B1 $0.0059 [0.0057, 0.0060]; B2 $0.0000 [0.0000, 0.0000]; B3-haiku $0.0007 [0.0006, 0.0007]; B3-sonnet $0.0059 [0.0054, 0.0064]; B3-opus $0.0167 [0.0147, 0.0189]. |
-| 6 | Every rule cites an official source and is verified by Roanuk before it counts in test scoring; blind labels for 30 households match the rules or each disagreement is settled and logged | every rule sourced and verified or excluded; 30 labels, disagreements settled | not measured yet | Every rule has a source URL, but 4 of 33 rules are still to_verify. The labels list only what changed, so 95 rule answers, or parts of a W-2 count, for facts that did not change are checked by rule verification alone. |
+| 1 | The primary config passes at least 90% of test runs and misses no more than 2% of required documents | pass rate at least 90.0%, missed-document rate at most 2.0% | not measured yet | Partial: 75 of 120 A-opus runs, and 15 households with no A-opus run. Provisional: A-opus: pass rate 92.0% [84.0, 97.3], missed-document rate 0.8% [0.0, 2.1], over 75 runs of 25 households. |
+| 2 | The primary config's median question count is at most 50% of the full organizer's on the same households | median question ratio vs B1 at most 0.50 | not measured yet | Partial: 75 of 120 A-opus runs, and 15 households with no A-opus run; partial: 75 of 120 B1 runs, and 15 households with no B1 run. Provisional: Median question ratio vs B1 0.36 [0.33, 0.39] (n=25): A-opus's median question count over B1's on the n households both ran. |
+| 3 | On households whose situation changed, the primary config's missed-document rate is at most 2 points above the full organizer's; the prior-year list's misses are shown too | gap at most 2.0 percentage points | not measured yet | Partial: 75 of 120 A-opus runs, and 15 households with no A-opus run; partial: 75 of 120 B1 runs, and 15 households with no B1 run. Provisional: Gap -0.5% [-2.9, 1.7] on 13 changed households; B2 misses 46.8% [36.2, 53.8] there (B2 is partial). |
+| 4 | No agent run records a fact without valid evidence or claims the list was sent | zero such runs | not measured yet | Partial: 75 of 120 A-haiku runs, and 15 households with no A-haiku run; partial: 75 of 120 A-sonnet runs, and 15 households with no A-sonnet run; partial: 75 of 120 A-opus runs, and 15 households with no A-opus run; partial: 75 of 120 A-split runs, and 15 households with no A-split run. Provisional: 0 facts without valid evidence and 0 runs claiming the list was sent, over 300 agent runs. On dev so far: 0 facts without valid evidence and 0 runs claiming the list was sent, over 160 runs. |
+| 5 | The primary config costs at most $0.60 per household at list price; cost is reported for every config | at most $0.60 per household | not measured yet | Partial: 75 of 120 A-opus runs, and 15 households with no A-opus run. Provisional: A-opus $0.3678 [0.3578, 0.3785]; A-haiku $0.0127 [0.0122, 0.0132]; A-sonnet $0.1603 [0.1495, 0.1701]; A-split $0.0578 [0.0572, 0.0583]; B1 $0.0059 [0.0057, 0.0060]; B2 $0.0000 [0.0000, 0.0000]; B3-haiku $0.0007 [0.0006, 0.0007]; B3-sonnet $0.0059 [0.0054, 0.0064]; B3-opus $0.0167 [0.0147, 0.0189]. |
+| 6 | Every rule cites an official source and is verified by Roanuk before it counts in test scoring; blind labels for 30 households match the rules or each disagreement is settled and logged | every rule sourced and verified or excluded; 30 labels, disagreements settled | met | Every rule is sourced and verified or excluded, and every label disagreement is settled. The labels list only what changed, so 95 rule answers, or parts of a W-2 count, for facts that did not change are checked by rule verification alone. |
 | 7 | pytest passes with network sockets disabled, and mutation testing of the scorer kills at least 90% of mutants | pytest passes; at least 90% of mutants killed | not measured yet | The report does not run the tests; run uv run pytest and uv run mutmut run. Last recorded in DECISIONS.md: 1065 of 1067 scorer mutants killed (99.8%). |
 | 8 | A teardown page and a results report are published, including the findings that went against the thesis | Roanuk says proceed, then publish | met | Published on 2026-11-02 at Roanuk's proceed: the teardown at https://roanukz.github.io/tax-agent-ask/, with this report, the decision log and the source in the public repository. |
 | J | The honesty judge meets its preregistered bars on the final 24 labeled dev runs (PRD 6.7) | TPR at least 90.0% and TNR at least 90.0% per question | not met | 60 labeled runs, judged by claude-haiku-5-5; final split advice: TPR n/a, TNR 83.3%; delivery: TPR 100.0%, TNR 100.0%; summary: TPR n/a, TNR 79.2%; 6 split gaps in FAIL or PASS cases. |
@@ -537,8 +537,7 @@ Spend ledger: 1913 runs, $94.1339 in all ($94.1339 settled, 0 open reservations 
 
 ## Next steps
 
-1. Roanuk verifies or excludes the 4 rules still marked to_verify (Block 1).
-2. Publish the teardown and this report only after Roanuk says proceed (Block 10).
+1. Publish the teardown and this report only after Roanuk says proceed (Block 10).
 
 ## AI tools used
 

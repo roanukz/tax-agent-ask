@@ -224,7 +224,7 @@ def test_report_with_no_runs_renders_and_says_what_has_not_run(tmp_path):
     assert "The honesty judge has not graded any run" in text
     assert "The live simulator fidelity check has not run." in text
     assert "Spend ledger: empty." in text and "B2 baseline only" not in text
-    assert "1 met, 0 not met, 8 not measured yet" in text
+    assert "2 met, 0 not met, 7 not measured yet" in text  # 8 (published) and 6 (all 33 rules verified, labels settled)
     assert "Not tax advice." in text
     assert chr(0x2013) not in text and chr(0x2014) not in text
 
@@ -251,7 +251,7 @@ def test_report_with_b2_only_is_labeled_as_such(tmp_path):
     not_run = text.split("No dev runs yet for ", 1)[1].split(".\n", 1)[0]
     assert sorted(not_run.replace(", and ", ", ").split(", ")) == sorted(
         ["A-haiku", "A-sonnet", "A-opus", "A-split", "B1", "B3-haiku", "B3-sonnet", "B3-opus"]), not_run
-    assert "1 met, 0 not met, 8 not measured yet" in text
+    assert "2 met, 0 not met, 7 not measured yet" in text  # 8 (published) and 6 (all 33 rules verified, labels settled)
 
 
 def test_report_rates_carry_bootstrap_intervals(tmp_path):

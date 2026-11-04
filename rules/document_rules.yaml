@@ -288,9 +288,9 @@
   source_version: guidance
   tax_years: [2026]
   trap: false
-  status: to_verify
-  verified_by: null
-  verified_on: null
+  status: verified
+  verified_by: roanuk
+  verified_on: 2026-11-04
 
 - id: R018
   when:
@@ -339,9 +339,9 @@
   source_version: draft_instructions
   tax_years: [2026]
   trap: false
-  status: to_verify
-  verified_by: null
-  verified_on: null
+  status: verified
+  verified_by: roanuk
+  verified_on: 2026-11-04
 
 - id: R021
   when:
@@ -527,9 +527,9 @@
   source_version: guidance
   tax_years: [2026]
   trap: true
-  status: to_verify
-  verified_by: null
-  verified_on: null
+  status: verified
+  verified_by: roanuk
+  verified_on: 2026-11-04
 
 - id: T002
   when:
@@ -545,9 +545,9 @@
   source_version: guidance
   tax_years: [2026]
   trap: true
-  status: to_verify
-  verified_by: null
-  verified_on: null
+  status: verified
+  verified_by: roanuk
+  verified_on: 2026-11-04
 
 - id: T003
   when:
