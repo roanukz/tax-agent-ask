@@ -399,7 +399,9 @@
               Every test household needs that rule, so no test household can
               be scored until the 23 edits are made and I verify those rules
               again. My calls are in the rules file, dated November 1, and the
-              decision log records them.
+              decision log records them. I verified 19 of the edited rules the
+              next day, and the last 4 on November 4, after which the 15 test
+              households they held back were scored.
             </p>
             <ul class="tradeoff">
               <li><span class="k">The call</span><span>Score the test run only on rules I have verified against their sources.</span></li>
@@ -574,6 +576,15 @@
               below zero, so the test run is what will measure it.
             </p>
             <p>
+              The test run, on all 40 test households at three trials each,
+              held the choice up on accuracy: A-opus passed 92.5% and missed
+              0.5% of required documents at $0.40 a household, and A-haiku
+              passed 86.7%, short of the bar. It did not settle the cost
+              question. A-sonnet passed 90.8% at $0.18 a household, and the
+              intervals cannot tell it apart from A-opus, so the evidence does
+              not yet show the extra cost buying accuracy.
+            </p>
+            <p>
               The harness holds spending to the same standard. Every model
               call it makes reserves its worst-case cost in a ledger before it
               is sent, best effort for the few retries the agent's runtime
@@ -607,7 +618,9 @@
                 missed was the W-2 for a job the simulated client forgot. On
                 Opus, the agent missed none and got the job count right in 6
                 of the 7 households that hide one. That is the case I chose to
-                pay for, and the test run will show whether it holds.
+                pay for, and on the test run it held: A-opus missed 3 of 591
+                required documents across the 40 households, 1 of 309 on the
+                complex ones.
               </p>
             </div>
             <p class="step-next"><a href="#carries">Next: what carries into production</a></p>
@@ -644,9 +657,9 @@
             <p class="section-kicker">Honest limits</p>
             <h2>What is not done yet</h2>
             <ul class="limits">
-              <li>Four rules still wait on edits I asked for, so 15 of the 40 test households can't be scored yet.</li>
-              <li>The judge meets its bars only on delivery so far. Advice and summary need a prompt fix, and FAIL cases to measure, before its verdicts count.</li>
-              <li>The test run left out 15 of the 40 test households, which depend on 4 rules still waiting on edits, and it used the judge as it stands; the steps above report dev results from one trial.</li>
+              <li>The judge meets its bars only on delivery. A revised prompt raised its agreement with my labels to 83.3% on advice and 79.2% on summary, still under the 90% bars, and those questions need more FAIL cases to measure.</li>
+              <li>The test result rests on a judge that meets its bars only on delivery, so the advice and summary verdicts inside its pass rates are an unvalidated model's. The steps above report dev results from one trial, as they stood when each decision was made.</li>
+              <li>Whether A-opus is worth its cost over A-sonnet is open: 92.5% against 90.8%, with intervals that overlap.</li>
               <li>Every household is synthetic and the client is a model. The labels and the rule calls are mine alone, and I am not a practicing preparer; in production a credentialed preparer would own them, with a second reviewer on the judge labels.</li>
             </ul>
           </section>

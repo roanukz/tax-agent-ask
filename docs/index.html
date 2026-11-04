@@ -61,7 +61,7 @@
           directed
         </p>
         <p class="callout callout-notice" id="status">
-          <strong>Status on November 2, 2026.</strong> Built and tested offline
+          <strong>Status on November 4, 2026.</strong> Built and tested offline
           on synthetic households, then run live for the first time on the train
           and dev groups only, with one trial of every configuration on the 40
           dev households. From that trial I chose the configuration the bars
@@ -214,7 +214,7 @@
               can bring, in 4 of 4 households, and they read a tuition payment
               that had stopped as this year's in 2 of 3. All 190 differences were
               settled and logged. The 95 about facts that did not change rest on my
-              rule verification, which now covers 29 of the 33 rules, after I asked
+              rule verification, which now covers all 33 rules, after I asked
               for all five proposed rule edits. On November 1, 2026, all 3,296
               offline tests passed with the network blocked, and mutation testing,
               which plants small bugs in the scoring code to see whether the
@@ -258,7 +258,7 @@
               not a person, and in the dev trial it still caused 7 of the 19 wrong
               facts in agent runs. My blind lists come from one labeler who is not a
               practicing preparer, and they cover only what changed. Test scoring
-              counts only the rules I have verified, 29 of the 33 so far. My labels
+              counts only the rules I have verified, now all 33. My labels
               validate the judge on delivery but not yet on advice, though its advice
               verdicts count toward a run's pass. In the 9 dev households
               with a trap for an ended credit, it now fails advice on 4 of the 33
@@ -379,7 +379,7 @@
           <div class="evidence">
             <h3>Not known</h3>
             <ul>
-              <li>How the agent does on the 15 test households the run left out, which wait on 4 rules still to verify (<a href="#results">Part 6</a>).</li>
+              <li>Whether Opus's extra cost buys accuracy: on the test run A-opus passed 92.5% at $0.40 a household and A-sonnet 90.8% at $0.18, with intervals that overlap (<a href="#results">Part 6</a>).</li>
               <li>
                 Whether a preparer would accept the agent's draft, and what they
                 would change. One firm's preparers reviewing real drafts would
@@ -684,9 +684,12 @@
             its own, that check is best effort, and the API workspace's own spend
             limit is the hard stop behind it. My requirements document put the
             whole project at about $50 at list price, about $30 of it for the test
-            run, which it said should come in under $60. So far the live runs have
-            cost $29.83 by the
-            <a href="https://github.com/Roanukz/tax-agent-ask/blob/main/ledger/spend.jsonl">ledger</a>.
+            run, which it said should come in under $60. Before the test run the
+            live runs had cost $29.83 by the
+            <a href="https://github.com/Roanukz/tax-agent-ask/blob/main/ledger/spend.jsonl">ledger</a>;
+            by its end the ledger showed $153.78, which includes a dev rerun,
+            the judge work and about $17 booked at their limit for runs a network
+            outage stopped before they reached the model.
             At dev cost per household, the test run with every configuration at 3
             trials would come to about $78, over that $60, and $44.55 of it is the
             agent on Opus. The cut order in my requirements document drops the
@@ -824,7 +827,7 @@
                 <tr><td>The same document, in my words</td><td class="num">78</td><td>39 of my items named a rule's document in other words, such as "mortgage payments" for Form 1098; each pairs with the rule it names</td></tr>
                 <tr><td>Checked against the source; the rule stands</td><td class="num">15</td><td>10 requests for paperwork behind ended credits, 4 missing Form 1099-K requests, and 1 health plan question with no federal document</td></tr>
                 <tr><td>My misreading</td><td class="num">2</td><td>Tuition paid last year only, read as this year's</td></tr>
-                <tr><td>A fact that did not change</td><td class="num">95</td><td>My lists named only what changed; these rule answers are checked by my rule verification alone, which now covers 29 of the 33 rules</td></tr>
+                <tr><td>A fact that did not change</td><td class="num">95</td><td>My lists named only what changed; these rule answers are checked by my rule verification alone, which now covers all 33 rules</td></tr>
               </tbody>
             </table>
           </div>
@@ -1092,7 +1095,7 @@
               (<a href="#results">Part 6</a>).
             </p>
             <ul class="tradeoff">
-              <li><span class="k">Cost</span><span>They depend on rules I have yet to verify against IRS guidance, two nearby cases are never generated, and a request made for a use the rules do not model counts against the list.</span></li>
+              <li><span class="k">Cost</span><span>They rest on my reading of IRS guidance, two nearby cases are never generated, and a request made for a use the rules do not model counts against the list.</span></li>
             </ul>
           </div>
 
@@ -1442,12 +1445,12 @@ uv run mutmut run &amp;&amp; uv run mutmut results</code></pre>
 
           <h3>Honest limits of this write up</h3>
           <ul>
-            <li>The agent results are dev results from one trial per household, not the preregistered test result, and the judge's verdicts in them are an unvalidated model's reading, which changed on some runs when it read them a second time.</li>
+            <li>The test result covers 40 households at 3 trials each, so its intervals are wide, and the judge's advice and summary verdicts inside it are an unvalidated model's reading, which changed on some dev runs when it read them a second time. Most other agent results on this page are dev results from one trial per household.</li>
             <li>I raised the cost bar after I saw those results, from $0.10 to $0.60 a household, so the configuration I chose for accuracy would meet it with a buffer above its costliest dev run. The other bars have not changed.</li>
             <li>Every household is synthetic, from one generator whose mix of situations is a design choice, not a sample of any practice.</li>
             <li>The client is a model, not a person. Real clients misremember, contradict themselves and volunteer things no persona captures. When the simulated client's answer contradicts its own facts outside a recall gap, the answer goes back to the model once, so this client is more consistent than a real one on purpose. Its words can still disagree with the facts it reveals.</li>
             <li>The blind lists, the rule verification and the judge's labels are all mine: one person, not a practicing preparer, and the blind lists cover only what changed.</li>
-            <li>29 of the 33 rules are verified; the other 4 wait on edits, so the test run scored 25 of the 40 test households. Some sources are 2026 drafts or 2025 editions.</li>
+            <li>The last 4 rules were verified after the first test scoring, so the test run scored 25 households on November 2 and the other 15 on November 4, in a run declared before it started; the network dropped during the second, and 17 runs that never reached the model ran again. Some sources are 2026 drafts or 2025 editions.</li>
             <li>Two cases near the traps are never generated, a client with a Form 5695 carryforward would be scored wrong, and a request for paperwork that a rental, a home office or an itemizer could still use counts as a trap (<a href="#rules">Part 4</a>).</li>
             <li>Every simple household stayed the same and every other one changed, so change and complexity are tangled in every comparison between them. Last year's list is complete by construction where nothing changed, and its misses come from changed facts, never from changed rules.</li>
             <li>The evidence and question checks live in the test harness, not in the tool server. The evidence check finds two or more of the client's words in a row, a one-word answer sentence, or the field that holds the fact, but cannot tell whether they support the value. The question check misses some claims, one of them in a live run, and leaves them to the judge.</li>
