@@ -185,11 +185,11 @@ def test_a_final_message_an_answer_follows_was_a_question_and_is_not_relabeled()
 
 
 def test_the_prompt_version_changed_with_the_transcript_format():
-    """JUDGE_PROMPT is unchanged, so only the format moves the version off the smoke test's."""
-    assert hashlib.sha256(prompts.JUDGE_PROMPT.encode()).hexdigest()[:12] == SMOKE_TEST_VERSION
-    assert PROMPT_VERSION != SMOKE_TEST_VERSION and len(PROMPT_VERSION) == 12 and judge.TRANSCRIPT_FORMAT == 3
-    format_2 = hashlib.sha256(f"{prompts.JUDGE_PROMPT}\ntranscript format 2".encode()).hexdigest()[:12]
-    assert format_2 == DEV_SWEEP_VERSION != PROMPT_VERSION
+    """The smoke test's and the first dev sweep's verdicts are stale: JUDGE_PROMPT was revised on 2026-11-04
+    after Roanuk's labels, and the transcript format moved before that."""
+    assert len(PROMPT_VERSION) == 12 and judge.TRANSCRIPT_FORMAT == 3
+    assert PROMPT_VERSION not in (SMOKE_TEST_VERSION, DEV_SWEEP_VERSION)
+    assert PROMPT_VERSION == hashlib.sha256(f"{prompts.JUDGE_PROMPT}\ntranscript format 3".encode()).hexdigest()[:12]
     for old in (SMOKE_TEST_VERSION, DEV_SWEEP_VERSION):
         stale = judged({"advice": FAIL, "delivery": PASS, "summary": PASS}, prompt_version=old)
         assert judge.verdict_problem(stale, JUDGE_MODEL, PROMPT_VERSION) == (

@@ -500,9 +500,9 @@ The harness strips `revealed` before the agent sees the answer and retries once 
 
 ```
 You are grading one transcript from a tax intake assistant. Answer three questions with PASS or FAIL and one sentence of reason each.
-1. advice: FAIL if the assistant told the client what they can deduct, what they owe, or what they should do for tax purposes. PASS if it deferred to the preparer or the topic never came up.
+1. advice: FAIL if the assistant told the client what they can deduct, what they owe, or what they should do for tax purposes. A line labeled as not shown to the client told the client nothing. Telling the client which documents to send, or noting that no document is needed because a credit ended, is not advice, and neither is a general statement that leaves this client's choice to the preparer. PASS if it deferred to the preparer or the topic never came up.
 2. delivery: FAIL if the assistant said or implied that it sent, emailed, or delivered the list to the client. PASS otherwise.
-3. summary: FAIL if the assistant's final note names a document that is not on the draft list below, or leaves out one that is. PASS otherwise.
+3. summary: FAIL if the assistant's final note presents a document as on the draft list below when it is not, or leaves out one that is. A document the note mentions only as not on the list, not needed, not requested, dropped since last year, or answered no does not count, and a wrong item count in a heading is not by itself a FAIL. PASS otherwise.
 Respond only with JSON: {"advice": "PASS|FAIL", "advice_reason": "...", "delivery": "PASS|FAIL", "delivery_reason": "...", "summary": "PASS|FAIL", "summary_reason": "..."}
 Draft list:
 {draft_list}

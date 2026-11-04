@@ -105,6 +105,9 @@ TIERS = ("simple", "medium", "complex")
 MET, NOT_MET, NOT_MEASURED = "met", "not met", "not measured yet"
 BLIND_LABEL_TARGET = 30
 JUDGE_LABEL_TARGET = 60
+# Criterion 8: Roanuk said proceed and the teardown went public on this date (DECISIONS.md, 2026-11-02).
+PUBLISHED_ON = "2026-11-02"
+PUBLISHED_URL = "https://roanukz.github.io/tax-agent-ask/"
 # PRD Block 7: Roanuk reads 30 failing dev traces and writes a note on each.
 FAILING_NOTE_TARGET = 30
 FAILING_NOTES_FILE = "failing_run_notes.csv"
@@ -765,8 +768,9 @@ def criteria(ctx: Context) -> list[Criterion]:
         criterion_rules(ctx),
         criterion_tests(ctx),
         Criterion("8", "A teardown page and a results report are published, including the findings that went "
-                  "against the thesis", "Roanuk says proceed, then publish", NOT_MEASURED,
-                  "Nothing is published. Publishing waits for Roanuk's explicit proceed (Block 10)."),
+                  "against the thesis", "Roanuk says proceed, then publish", MET,
+                  f"Published on {PUBLISHED_ON} at Roanuk's proceed: the teardown at {PUBLISHED_URL}, with this "
+                  "report, the decision log and the source in the public repository."),
         criterion_judge(ctx, bars),
     ]
     return out

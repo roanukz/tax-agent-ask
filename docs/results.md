@@ -1,13 +1,13 @@
 # Results: What Should My Tax Agent Ask?
 
-Generated on 2026-11-02 by `uv run python -m eval.report` from 1055 run summaries and 1055 scores in eval/runs/. Intervals: household bootstrap, 10000 draws, seed 7, level 0.95. Preregistration: locked_on 2026-11-02, primary_config A-opus.
+Generated on 2026-11-04 by `uv run python -m eval.report` from 1055 run summaries and 1055 scores in eval/runs/. Intervals: household bootstrap, 10000 draws, seed 7, level 0.95. Preregistration: locked_on 2026-11-02, primary_config A-opus.
 
 ## Executive summary
 
 This project measures how many questions an AI tax intake agent asks and which documents it misses. The agent only learns facts; code turns recorded facts into the document request list through a rules table with an official source for every rule, so every miss traces to a fact or a rule. All households are synthetic.
 
 - Scored runs: 1055 (test 675, dev 360, train 20).
-- Success criteria (the 8 in the PRD plus the judge bars): 5 met, 1 not met, 3 not measured yet. The table is at the top of Results.
+- Success criteria (the 8 in the PRD plus the judge bars): 6 met, 1 not met, 2 not measured yet. The table is at the top of Results.
 - A-opus on test: pass rate 92.0% [84.0, 97.3], missed-document rate 0.8% [0.0, 2.1], over 75 runs.
 - A-haiku on test: pass rate 85.3% [74.7, 94.7], missed-document rate 2.5% [0.0, 6.5], over 75 runs.
 - A-sonnet on test: pass rate 93.3% [88.0, 98.7], missed-document rate 1.2% [0.0, 2.8], over 75 runs.
@@ -108,8 +108,8 @@ Judged on the test split only. Before the test sweep, each criterion says what i
 | 5 | The primary config costs at most $0.60 per household at list price; cost is reported for every config | at most $0.60 per household | met | A-opus $0.3678 [0.3578, 0.3785]; A-haiku $0.0127 [0.0122, 0.0132]; A-sonnet $0.1603 [0.1495, 0.1701]; A-split $0.0578 [0.0572, 0.0583]; B1 $0.0059 [0.0057, 0.0060]; B2 $0.0000 [0.0000, 0.0000]; B3-haiku $0.0007 [0.0006, 0.0007]; B3-sonnet $0.0059 [0.0054, 0.0064]; B3-opus $0.0167 [0.0147, 0.0189]. |
 | 6 | Every rule cites an official source and is verified by Roanuk before it counts in test scoring; blind labels for 30 households match the rules or each disagreement is settled and logged | every rule sourced and verified or excluded; 30 labels, disagreements settled | not measured yet | Every rule has a source URL, but 4 of 33 rules are still to_verify. The labels list only what changed, so 95 rule answers, or parts of a W-2 count, for facts that did not change are checked by rule verification alone. |
 | 7 | pytest passes with network sockets disabled, and mutation testing of the scorer kills at least 90% of mutants | pytest passes; at least 90% of mutants killed | not measured yet | The report does not run the tests; run uv run pytest and uv run mutmut run. Last recorded in DECISIONS.md: 1065 of 1067 scorer mutants killed (99.8%). |
-| 8 | A teardown page and a results report are published, including the findings that went against the thesis | Roanuk says proceed, then publish | not measured yet | Nothing is published. Publishing waits for Roanuk's explicit proceed (Block 10). |
-| J | The honesty judge meets its preregistered bars on the final 24 labeled dev runs (PRD 6.7) | TPR at least 90.0% and TNR at least 90.0% per question | not met | 60 labeled runs, judged by claude-haiku-5-5; final split advice: TPR n/a, TNR 66.7%; delivery: TPR 100.0%, TNR 100.0%; summary: TPR n/a, TNR 50.0%; 6 split gaps in FAIL or PASS cases. |
+| 8 | A teardown page and a results report are published, including the findings that went against the thesis | Roanuk says proceed, then publish | met | Published on 2026-11-02 at Roanuk's proceed: the teardown at https://roanukz.github.io/tax-agent-ask/, with this report, the decision log and the source in the public repository. |
+| J | The honesty judge meets its preregistered bars on the final 24 labeled dev runs (PRD 6.7) | TPR at least 90.0% and TNR at least 90.0% per question | not met | 60 labeled runs, judged by claude-haiku-5-5; final split advice: TPR n/a, TNR 83.3%; delivery: TPR 100.0%, TNR 100.0%; summary: TPR n/a, TNR 79.2%; 6 split gaps in FAIL or PASS cases. |
 
 ### Test split
 
@@ -513,7 +513,7 @@ No agent runs on this split, so there is nothing to check for evidence or honest
 
 Run caps (RUN_CAP_USD) the runs recorded: dev $5.00; test $5.00.
 
-Spend ledger: 1713 runs, $77.8525 in all ($77.8525 settled, 0 open reservations holding $0.0000). By month: 2026-11 $77.8525. By model: claude-haiku-5-5 $9.9782, claude-opus-5-5 $44.4481, claude-sonnet-5-5 $23.4261.
+Spend ledger: 1913 runs, $94.1339 in all ($94.1339 settled, 0 open reservations holding $0.0000). By month: 2026-11 $94.1339. By model: claude-haiku-5-5 $10.0747, claude-opus-5-5 $59.8868, claude-sonnet-5-5 $24.1723.
 
 ## What I learned
 

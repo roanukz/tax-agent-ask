@@ -729,6 +729,39 @@
             but not yet on advice. The rest of this part is the dev trial of
             November 1 that chose A-opus, kept as it was.
           </p>
+          <p class="callout callout-warning">
+            <strong>Read the 92.0% with its sample in mind.</strong> The 25 test
+            households that could be scored are not a fair draw from the 40. The 4
+            rules still waiting cover K-1s, energy credits and tuition refunds,
+            which belong to the complicated households, so the run scored all 12
+            simple households, 12 of 18 medium ones and only 1 of the 10 complex
+            ones. The result says how the agent does on simple and medium returns,
+            not yet on complex ones.
+          </p>
+          <p>
+            Three things the test changed about my thinking. First, the advice
+            judge is not what holds A-opus back: none of its 6 failing test runs
+            failed on advice, and all 6 recorded a wrong fact, 2 of them also
+            missing a document and 2 asking for too much. Second, A-sonnet passed
+            93.3% at $0.16 a household, which the intervals cannot tell apart from
+            A-opus at $0.37, so on this evidence I would run Sonnet and spend the
+            difference on the complex households. Third, my own labels needed
+            checking too: 17 of my 60 judge labels said PASS on transcripts where
+            the assistant claimed to have emailed the list, which my written rule
+            calls a FAIL, and I corrected them before using them.
+          </p>
+          <p>
+            Two fixes followed on dev, never on test. Revising the judge's advice
+            and summary questions on the tuning labels raised its agreement with my
+            PASS labels on the held-out split from 66.7% to 83.3% on advice and from
+            50.0% to 79.2% on summary, still short of the 90% bars. An agent fix
+            failed: asking every client once more about any other job did not
+            raise A-opus's dev pass rate, which went from 37 to 36 of 40, because
+            A-opus already found the hidden job in all 7 households that have one
+            and the extra question led the simulated client to count jobs it did
+            not have in 3 others. I reverted it, so the agent that took the test is
+            the agent in this repository.
+          </p>
           <p>
             Since November 1, 2026, the harness has made live model calls, first on
             the train and dev groups. Both the
