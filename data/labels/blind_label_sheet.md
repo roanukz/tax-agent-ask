@@ -36,7 +36,7 @@ This year:
 - Has a mortgage on their home.
 - Bought a home this year.
 - Owns a share of 2 partnerships, small companies, estates, or trusts.
-- Made energy-saving home upgrades, such as windows, insulation, or a heat pump, put in during 2026.
+- Made energy-saving upgrades to the home they live in, such as windows, insulation, or a heat pump, put in during 2026.
 - Took the standard deduction on last year's return.
 
 Changed since last year:
@@ -107,8 +107,8 @@ This year:
 - Paid for child care or other dependent care so they could work.
 - Owns a share of 1 partnership, small company, estate, or trust.
 - Gave money or goods to charity.
-- Installed solar panels or similar clean energy equipment; the work was finished in 2026.
-- Made energy-saving home upgrades, such as windows, insulation, or a heat pump, put in during 2026.
+- Installed solar panels or similar clean energy equipment on the home they live in; the work was finished in 2026.
+- Made energy-saving upgrades to the home they live in, such as windows, insulation, or a heat pump, put in during 2026.
 - Itemized deductions on last year's return.
 
 Changed since last year:
@@ -302,7 +302,7 @@ This year:
 - Owns a share of 2 partnerships, small companies, estates, or trusts.
 - Rented out a property.
 - Was paid overtime at work.
-- Installed solar panels or similar clean energy equipment; the work was finished in 2026.
+- Installed solar panels or similar clean energy equipment on the home they live in; the work was finished in 2026.
 - Took the standard deduction on last year's return.
 
 Changed since last year:
@@ -320,7 +320,7 @@ This year:
 - Dependents: 1.
 - Paid wages by 1 employer, counting any job that ended during the year.
 - Did freelance or gig work, or ran a small business of their own.
-- Made energy-saving home upgrades, such as windows, insulation, or a heat pump, put in during 2026.
+- Made energy-saving upgrades to the home they live in, such as windows, insulation, or a heat pump, put in during 2026.
 - Took the standard deduction on last year's return.
 
 Changed since last year:
@@ -345,7 +345,7 @@ This year:
 - Owns a share of 1 partnership, small company, estate, or trust.
 - Sent the IRS tax payments during the year, apart from paycheck withholding.
 - Gave money or goods to charity.
-- Installed solar panels or similar clean energy equipment; the work was finished in 2026.
+- Installed solar panels or similar clean energy equipment on the home they live in; the work was finished in 2026.
 - Itemized deductions on last year's return.
 
 Changed since last year:
@@ -374,7 +374,7 @@ This year:
 - Rented out a property.
 - Gave money or goods to charity.
 - Pays interest on a loan for a new car bought for personal use.
-- Made energy-saving home upgrades, such as windows, insulation, or a heat pump, put in during 2026.
+- Made energy-saving upgrades to the home they live in, such as windows, insulation, or a heat pump, put in during 2026.
 - Took the standard deduction on last year's return.
 
 Changed since last year:
@@ -425,7 +425,7 @@ This year:
 - Paid wages by 1 employer, counting any job that ended during the year.
 - Paid interest on a student loan.
 - The IRS gives them a six-digit identity protection number each year.
-- Made energy-saving home upgrades, such as windows, insulation, or a heat pump, put in during 2026.
+- Made energy-saving upgrades to the home they live in, such as windows, insulation, or a heat pump, put in during 2026.
 - Took the standard deduction on last year's return.
 
 Changed since last year:

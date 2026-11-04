@@ -397,7 +397,7 @@ For each rule, reply in chat with one of: **verify**, **exclude** (with a reason
   - Clients often don't recognize some interests as partnerships: publicly traded partnerships and some commodity ETFs in brokerage accounts issue K-1s, and multi-member LLCs file as partnerships. k1_count should count each entity separately.
   - Some interests do not produce a K-1: single-member LLCs that are disregarded entities, and grantor or revocable trusts, which usually send a grantor letter or report on the owner's own forms. The intake wording should not promise a K-1 for these.
 - **Suggested document wording (not applied):** Schedule K-1 from each partnership, S corporation, estate, or trust in which the client held an interest or was a beneficiary at any time during 2026 (one per entity, count from k1_count), plus any Schedule K-3 a partnership or S corporation sends
-- **Aliases:** K-1, Schedule K-1, Form K-1, Schedule K-3
+- **Aliases:** K-1, Schedule K-1, Form K-1, Schedule K-3, Schedule K-1 from each
 - **Your call:** 
 
 ## R021

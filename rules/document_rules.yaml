@@ -330,9 +330,9 @@
   when:
     all:
       - {fact: k1_count, gte: 1}
-  document: "Schedule K-1 from each"
+  document: "Schedule K-1 from each partnership, S corporation, estate, or trust in which the client held an interest or was a beneficiary at any time during 2026 (a separate K-1 for each entity), plus any Schedule K-3 a partnership or S corporation sends"
   count_from: k1_count
-  aliases: ["K-1", "Schedule K-1", "Form K-1", "Schedule K-3"]
+  aliases: ["K-1", "Schedule K-1", "Form K-1", "Schedule K-3", "Schedule K-1 from each"]
   client_reason: "You have a share in a partnership, company, estate, or trust, so we need the year-end statement from each one."
   source_url: "https://www.irs.gov/pub/irs-dft/i1040se--dft.pdf"
   source_title: "2026 Instructions for Schedule E (Form 1040), Supplemental Income and Loss (early release draft, posted 09/24/2026)"

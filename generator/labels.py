@@ -195,9 +195,9 @@ def describe_this_year(f: Mapping[str, Any], specs: Mapping[str, FactSpec]) -> l
         elif key == "k1_count" and f[key]:
             lines.append(f"Owns a share of {_plural(f[key], 'partnership, small company, estate, or trust', 'partnerships, small companies, estates, or trusts')}.")
         elif key == "clean_energy_installed" and f[key]:
-            lines.append(f"Installed solar panels or similar clean energy equipment; the work was finished in {f['clean_energy_install_year']}.")
+            lines.append(f"Installed solar panels or similar clean energy equipment on the home they live in; the work was finished in {f['clean_energy_install_year']}.")
         elif key == "efficiency_improvements" and f[key]:
-            lines.append(f"Made energy-saving home upgrades, such as windows, insulation, or a heat pump, put in during {f['efficiency_improvements_year']}.")
+            lines.append(f"Made energy-saving upgrades to the home they live in, such as windows, insulation, or a heat pump, put in during {f['efficiency_improvements_year']}.")
         elif key == "ev_purchased" and f[key]:
             lines.append(f"Bought an electric vehicle; signed the contract and made a payment on {f['ev_acquired_date']}.")
     lines.append(

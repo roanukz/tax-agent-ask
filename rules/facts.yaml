@@ -256,7 +256,7 @@
 - key: clean_energy_installed
   type: bool
   topic: home
-  plain_question_hint: "Did you install solar panels, a solar water heater, a home battery, or similar clean energy equipment?"
+  plain_question_hint: "Did you install solar panels, a solar water heater, a home battery, or similar clean energy equipment on the home you live in?"
   determinable_from_prior_year: false
   asked_if: null
 
@@ -272,7 +272,7 @@
 - key: efficiency_improvements
   type: bool
   topic: home
-  plain_question_hint: "Did you make energy-saving upgrades to your home, such as new windows, insulation, a heat pump, or a new furnace?"
+  plain_question_hint: "Did you make energy-saving upgrades to the home you live in, such as new windows, insulation, a heat pump, or a new furnace?"
   determinable_from_prior_year: false
   asked_if: null
 
