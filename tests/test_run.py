@@ -1050,3 +1050,13 @@ def pending_rules_path(tmp_path):
     path.write_text(text)
     return path
 
+
+
+def test_a_run_that_never_reached_the_model_is_unreached_and_nothing_else_is():
+    from eval.run import unreached
+
+    dead = {"status": "not_started", "usage": {"input_tokens": 0, "output_tokens": 0}, "tool_calls": []}
+    assert unreached(dead)
+    assert not unreached({**dead, "usage": {"input_tokens": 12, "output_tokens": 0}})
+    assert not unreached({**dead, "tool_calls": [{"name": "ask_client"}]})
+    assert not unreached({**dead, "status": "pending_review"})

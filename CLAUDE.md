@@ -2,7 +2,7 @@
 - Read PRD-tax-agent-ask.md before any work. Build one block at a time. After each block, report its done-check result and stop until Roanuk says continue.
 - All data is synthetic. Household data uses obviously fake names and never real people's names, Social Security numbers, EINs, street addresses, or real company names.
 - Never reference Roanuk's employer or its clients, or anything nonpublic, anywhere in the repo.
-- The API key lives in .env as TAX_AGENT_API_KEY. After Roanuk adds it, never read, print, or commit .env. Never set ANTHROPIC_API_KEY in this shell or in any file; the harness passes the key only to its own child processes.
+- The API key lives in .env as TAX_AGENT_API_KEY. After Roanuk adds it, never read, print, or commit .env. One exception: when Roanuk asks for a new spend or run cap, Claude may rewrite only the SPEND_CAP_USD or RUN_CAP_USD line of .env with a script that prints nothing from the file, then confirm the new value from the harness's "caps from .env" line. Never set ANTHROPIC_API_KEY in this shell or in any file; the harness passes the key only to its own child processes.
 - Model calls run only through the harness. Every call reserves its estimated cost in ledger/spend.jsonl first. Stop before any call that would push this calendar month's spend past SPEND_CAP_USD.
 - Never run the test split until eval/prereg.yaml is committed with locked_on and primary_config set.
 - Every document rule needs an official source URL and a status. Only rules with status verified count in test scoring.

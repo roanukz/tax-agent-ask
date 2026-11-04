@@ -59,7 +59,11 @@ Phases:
    run after it. It measured no agent behavior, so it is neither judged
    nor scored, and it is never resumed: the next invocation moves its
    summary aside to {run_id}.init_failed.json (and its trace to
-   {run_id}.init_failed.trace.json) and runs it again.
+   {run_id}.init_failed.trace.json) and runs it again. A run that never
+   reached the model (unreached: not started, no tokens, no tool calls,
+   as when the network dropped before its first turn) measured no agent
+   behavior either, so the next invocation moves it aside the same way,
+   to {run_id}.unreached.json, and runs it again; it stops nothing.
 3. Judging: each agent run once, through eval.judge, cached in
    eval/runs/{run_id}.judge.json. A cached verdict from JUDGE_MODEL with
    the current eval.judge.PROMPT_VERSION is always used, even after the
@@ -315,6 +319,16 @@ def init_failed(summary: Mapping[str, Any]) -> str | None:
     return None
 
 
+def unreached(summary: Mapping[str, Any]) -> bool:
+    """True when the run never reached the model: not started, no tokens used, no tool called."""
+    usage = summary.get("usage") or {}
+    return (
+        summary.get("status") == "not_started"
+        and not any(usage.values())
+        and not summary.get("tool_calls")
+    )
+
+
 def b1_median(runs_dir: Path, split: str, household_id: str) -> float | None:
     counts = [
         len(json.loads(p.read_text()).get("questions") or [])
@@ -414,19 +428,26 @@ class Sweep:
             aside = self.set_aside(job.run_id)
             self.say(f"set aside: {job.run_id} stopped at the init check, so it runs again; its summary is {aside.name}")
             return None
+        if unreached(summary):
+            aside = self.set_aside(job.run_id, "unreached")
+            self.say(f"set aside: {job.run_id} never reached the model, so it runs again; its summary is {aside.name}")
+            return None
         return summary
 
-    def set_aside(self, run_id: str) -> Path:
-        """Moves the summary to {run_id}.init_failed.json (then .init_failed.2.json, and so on), its trace beside it."""
-        stem, n = f"{run_id}.init_failed", 1
+    def set_aside(self, run_id: str, reason: str = "init_failed") -> Path:
+        """Moves the summary to {run_id}.{reason}.json (then .{reason}.2.json, and so on), its trace and score beside it (as .scored.json, which the report never reads)."""
+        stem, n = f"{run_id}.{reason}", 1
         while (self.runs_dir / f"{stem}.json").exists():
             n += 1
-            stem = f"{run_id}.init_failed.{n}"
+            stem = f"{run_id}.{reason}.{n}"
         aside = self.runs_dir / f"{stem}.json"
         os.replace(summary_path(self.runs_dir, run_id), aside)
         trace = trace_path(self.runs_dir, run_id)
         if trace.exists():
             os.replace(trace, self.runs_dir / f"{stem}.trace.json")
+        score = self.runs_dir / f"{run_id}.score.json"
+        if score.exists():
+            os.replace(score, self.runs_dir / f"{stem}.scored.json")
         return aside
 
     async def run_job(self, job: Job) -> dict[str, Any]:
@@ -522,7 +543,7 @@ class Sweep:
                     clean = clean and not ran
                     continue
                 clean = clean and (not ran or is_clean(summary))
-                if init_failed(summary):
+                if init_failed(summary) or unreached(summary):
                     continue  # not a trial: neither judged nor scored, and the next sweep runs it again
                 self.summaries[job.run_id] = summary
             limit = next_limit(limit, self.ceiling, clean and not self.halted)

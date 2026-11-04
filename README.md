@@ -4,20 +4,22 @@ An AI intake agent that asks each tax client only what their return needs, then 
 
 This repo measures the questions, not just the list: how many questions the agent asks, and which documents it misses, compared with a full organizer and two other baselines. The agent only learns facts. Code turns facts into the document list through a rules table in which every rule cites an official source, so every miss traces to a fact the conversation didn't learn or a rule that was wrong. The agent can draft a list but has no way to send one.
 
-**Status, November 2, 2026:** the one test run is done. Blocks 0 to 9 are built and run; Block 7's judge fix is open. Roanuk verified 29 of the 33 rules, labeled 60 judge transcripts and noted every failing dev run, and `eval/prereg.yaml` was locked and committed before the test run. The run scored the 25 test households whose rules are all verified; the other 15 wait on 4 rules. The teardown, [docs/index.html](docs/index.html), explains the purpose, the design decisions and the results. The design is in [PRD-tax-agent-ask.md](PRD-tax-agent-ask.md), the rules and their sources in [docs/rules.md](docs/rules.md), and the decision log in [DECISIONS.md](DECISIONS.md).
+**Status, November 4, 2026:** the test run is done, on all 40 test households. Blocks 0 to 9 are built and run; Block 7's judge fix is open. Roanuk verified all 33 rules, labeled 60 judge transcripts and noted every failing dev run, and `eval/prereg.yaml` was locked and committed before the test run. The run scored the first 25 test households on November 2 and, once the last 4 rules were verified, the other 15 on November 4, in a run declared in a commit before it started. The teardown, [docs/index.html](docs/index.html), explains the purpose, the design decisions and the results. The design is in [PRD-tax-agent-ask.md](PRD-tax-agent-ask.md), the rules and their sources in [docs/rules.md](docs/rules.md), and the decision log in [DECISIONS.md](DECISIONS.md).
 
 ## Results
 
-Test run of November 2, 2026, on 25 test households at 3 trials each, from [docs/results.md](docs/results.md), with 95% household bootstrap intervals. A-opus meets criteria 1 to 5 on their point estimates (its pass-rate interval reaches below 90%); the rules criterion is not met (29 of 33 verified), and the judge is validated on delivery but not on advice or summary, so the advice verdicts inside these pass rates are an unvalidated model's.
+Test run on all 40 test households at 3 trials each (25 households on November 2, 15 on November 4), from [docs/results.md](docs/results.md), with 95% household bootstrap intervals. A-opus meets criteria 1 to 6 and 8 (its pass-rate interval reaches below 90%); the judge is validated on delivery but not on advice or summary, so the advice verdicts inside these pass rates are an unvalidated model's.
 
 | Config | Pass rate | Missed-document rate | Cost per household |
 |---|---|---|---|
-| A-opus (primary) | 92.0% [84.0, 97.3] | 0.8% [0.0, 2.1] | $0.3678 |
-| A-sonnet | 93.3% [88.0, 98.7] | 1.2% [0.0, 2.8] | $0.1603 |
-| A-haiku | 85.3% [74.7, 94.7] | 2.5% [0.0, 6.5] | $0.0127 |
-| A-split | 85.3% [74.7, 94.7] | 1.7% [0.0, 3.8] | $0.0578 |
-| B1 | 84.0% [68.0, 96.0] | 7.5% [1.3, 16.7] | $0.0059 |
-| B2 | 52.0% [32.0, 72.0] | 36.2% [23.8, 45.0] | $0.0000 |
+| A-opus (primary) | 92.5% [85.8, 98.3] | 0.5% [0.0, 1.1] | $0.3980 |
+| A-sonnet | 90.8% [83.3, 96.7] | 1.4% [0.3, 3.0] | $0.1765 |
+| A-haiku | 86.7% [77.5, 94.2] | 1.9% [0.4, 4.0] | $0.0133 |
+| A-split | 86.7% [78.3, 94.2] | 1.4% [0.3, 3.0] | $0.0596 |
+| B1 | 86.7% [75.8, 95.8] | 4.1% [1.1, 8.5] | $0.0060 |
+| B2 | 32.5% [17.5, 47.5] | 35.5% [29.6, 40.8] | $0.0000 |
+
+On the 10 complex households, which the first 25 held only 1 of, A-opus passed 27 of 30 runs and missed 1 of 309 documents. The network dropped during the November 4 run, and 17 agent runs never reached the model (no tokens, no tool call); under the rule for runs that measured no agent behavior, `eval.run` set them aside as `{run_id}.unreached.json` and ran them again. Scored as failures, they would put A-opus at 89.2%.
 
 The dev sweep of November 1, every config on the 40 dev households at 1 trial, chose the primary config. It is kept below as it was, judged under transcript format 3:
 
