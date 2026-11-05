@@ -88,7 +88,7 @@
           </div>
           <div class="fact">
             <span class="fact-value">12 to 4</span>
-            <span class="fact-label">Advice failures the honesty judge found on dev, before and after its transcript marked the lines the client never saw; my own labels still have to validate the judge</span>
+            <span class="fact-label">Advice failures the honesty judge found on dev, before and after its transcript marked the lines the client never saw; my own labels validate the judge on delivery only</span>
           </div>
           <div class="fact">
             <span class="fact-value">$0.37</span>
@@ -488,17 +488,19 @@
               reading, on transcripts that changed only in how their lines
               were marked. On the summary question, which the marking does not
               touch, 16 of its 160 verdicts flipped. So how much of the drop
-              came from the marking is not known, and my own labels on 60
-              blind transcripts, shown without their configuration or verdict,
-              will decide whether the judge can be trusted.
+              came from the marking is not known. My own labels on 60 blind
+              transcripts, shown without their configuration or verdict, then
+              settled how far the judge can be trusted. They validate it on
+              delivery, but they hold no FAIL on advice or summary, so its true
+              positive rate on those two cannot be measured.
             </p>
             <ul class="tradeoff">
               <li><span class="k">The call</span><span>Mark what the client never saw, and count a refused question as told.</span></li>
               <li><span class="k">Rejected</span><span>Leaving the transcript as it was, or labeling first and fixing the format after.</span></li>
-              <li><span class="k">Cost</span><span>A rerun of the judge, and a judge I still have to validate with my own labels.</span></li>
+              <li><span class="k">Cost</span><span>A rerun of the judge, and a judge my own labels validate on delivery only.</span></li>
             </ul>
             <div class="who">
-              <p><span class="who-label">My part</span>The three labeling choices, made before any label, and the 60 blind labels still to come.</p>
+              <p><span class="who-label">My part</span>The three labeling choices, made before any label, and the 60 blind labels, done on November 1.</p>
               <p><span class="who-label">Claude Code's part</span>The new transcript format, the rerun, and the review screen that hides each transcript's configuration and verdict.</p>
             </div>
             <div class="thread">
@@ -573,7 +575,7 @@
               save $26. One dev trial does not settle the choice: A-opus's own
               interval runs from 82.5% to 100%, below the 90% bar at its low
               end. Its 5-point lead over A-haiku has an interval that reaches
-              below zero, so the test run is what will measure it.
+              below zero, so it took the test run to measure it.
             </p>
             <p>
               The test run, on all 40 test households at three trials each,
@@ -589,12 +591,14 @@
               call it makes reserves its worst-case cost in a ledger before it
               is sent, best effort for the few retries the agent's runtime
               sends on its own. It stops before any call that could push the
-              month past a $150 cap, which sits under my $200 budget. A $1.90
+              month past a $150 cap, which sits under my $200 budget; I raised
+              it to $160 to finish the test run. A $1.90
               smoke test on 10 dev households found that the simulated client,
               not the agent, caused 16 of the 18 wrong facts. A rule and a
               guard that keep the client to its facts went in before the $24
-              dev run. The ledger shows $29.83 spent on the agent's, the
-              simulated client's and the judge's calls; my own Claude Code
+              dev run. By the end of the dev work the ledger showed $29.83
+              spent on the agent's, the simulated client's and the judge's
+              calls, and $153.78 after the test run; my own Claude Code
               sessions are outside it.
             </p>
             <ul class="tradeoff">
@@ -649,7 +653,7 @@
             <ul class="limits">
               <li><strong>A privacy and security review for taxpayer data.</strong> It would cover the rules on using and disclosing tax return information under IRC section 7216, and the FTC Safeguards Rule.</li>
               <li><strong>A shadow run first.</strong> The agent would run beside the firm's current organizer before any client sees it, with the preparer's edits on each draft as the live error signal, since production has no answer key.</li>
-              <li><strong>Clear owners.</strong> A credentialed preparer owns each rule, its sign-off and its refresh when final instructions replace drafts, a second labeler checks the judge, and a release waits on both, as the test run waits on my calls here.</li>
+              <li><strong>Clear owners.</strong> A credentialed preparer owns each rule, its sign-off and its refresh when final instructions replace drafts, a second labeler checks the judge, and a release waits on both, as the test run waited on my calls here.</li>
             </ul>
           </section>
 
@@ -660,6 +664,7 @@
               <li>The judge meets its bars only on delivery. A revised prompt raised its agreement with my labels to 83.3% on advice and 79.2% on summary, still under the 90% bars, and those questions need more FAIL cases to measure.</li>
               <li>The test result rests on a judge that meets its bars only on delivery, so the advice and summary verdicts inside its pass rates are an unvalidated model's. The steps above report dev results from one trial, as they stood when each decision was made.</li>
               <li>Whether A-opus is worth its cost over A-sonnet is open: 92.5% against 90.8%, with intervals that overlap.</li>
+              <li>The fix for the job a client forgets is reverted. Asking every client once more about any other job led the simulated client to count jobs it did not have in H015, H039 and H053, so the agent that took the test is the one without it.</li>
               <li>Every household is synthetic and the client is a model. The labels and the rule calls are mine alone, and I am not a practicing preparer; in production a credentialed preparer would own them, with a second reviewer on the judge labels.</li>
             </ul>
           </section>

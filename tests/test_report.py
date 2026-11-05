@@ -755,6 +755,30 @@ def test_next_steps_keep_block_7_open_once_the_judge_labels_are_in(tmp_path):
     assert any("Error analysis on dev (Block 7): 0 failing dev runs with a note" in s for s in report.next_steps(ctx))
 
 
+def test_next_steps_after_the_test_run_name_what_is_open_and_not_publishing(tmp_path, monkeypatch):
+    runs = tmp_path / "runs"
+    runs.mkdir()
+    labels = tmp_path / "judge_labels.csv"
+    with open(labels, "w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(LABEL_HEADER)
+        for i in range(60):
+            # Human FAILs on delivery only, as in Roanuk's labels: advice and summary have no FAIL case.
+            verdicts = ["PASS", "FAIL" if i % 3 == 0 else "PASS", "PASS"]
+            w.writerow([f"dev-H{i:03d}-A-haiku-t1", *verdicts, "roanuk", ""])
+            verdict = {**dict(zip(QUESTIONS, verdicts)), "model": JUDGE_MODEL, "prompt_version": PROMPT_VERSION}
+            (runs / f"dev-H{i:03d}-A-haiku-t1.judge.json").write_text(json.dumps(verdict))
+    ctx = context(tmp_path, runs, judge_labels_path=labels)
+    dev_and_train = ctx.split_rows
+    ctx.split_rows = lambda split, *configs: ([{"config": "A-opus"}] if split == "test"
+                                              else dev_and_train(split, *configs))
+    steps = report.next_steps(ctx)
+    assert any("Add human FAIL labels on advice and summary" in s for s in steps)
+    assert not any("only after Roanuk says proceed" in s for s in steps), "the teardown is already published"
+    monkeypatch.setattr(report, "PUBLISHED_ON", "")
+    assert any("only after Roanuk says proceed" in s for s in report.next_steps(ctx))
+
+
 # ---- helpers ------------------------------------------------------------------------
 
 

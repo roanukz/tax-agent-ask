@@ -246,9 +246,10 @@
               Opus missed no document and got the job count right in 6 of the 7
               households that hide one. For a tax decision I would rather pay for
               that accuracy than save on the model, so I raised the cost bar to fit
-              Opus instead of letting the $0.10 bar rule it out. Only the one test
-              run can say whether Opus catches the forgotten job there and clears
-              its bars.
+              Opus instead of letting the $0.10 bar rule it out. The one test run
+              has since measured that choice: Opus passed 92.5% of runs on the 40
+              test households and missed 0.5% of required documents
+              (<a href="#results">Part 6</a>).
             </li>
             <li>
               <strong>Cautions, and how to check.</strong> The households are
@@ -388,9 +389,11 @@
             </ul>
           </div>
           <p class="callout callout-notice">
-            Even the rules are not finished evidence yet. Each cites an official
-            source, but none counts in test scoring until I verify it against
-            that source, which is the next step in <a href="#next">Part 9</a>.
+            The rules are evidence only as far as my check of them goes. Each
+            cites an official source, and a rule counts in test scoring only once
+            I verify it against that source. I verified all 33 by November 4,
+            but I am one person and not a practicing preparer
+            (<a href="#next">Part 9</a>).
           </p>
         </section>
 
@@ -506,8 +509,8 @@
             skeptic agent fetched each page again and tried to refute it. Of the
             first choices, 26 held, and 7 were refuted because the page did not
             support the specific document, so each of those was replaced with the
-            skeptic's source. No person has checked the sources yet, which is what
-            my rule verification is for.
+            skeptic's source. My rule verification then checked each source by
+            hand, and by November 4 I had verified all 33 rules against them.
           </p>
           <h3>Traps for credits that ended</h3>
           <p>
@@ -572,7 +575,7 @@
             revealed, in a field the agent never sees, so code can check it.
             A fidelity check over 28 households and 11
             scripted questions has to show at least 98% of revealed facts
-            matching the truth, and I will read 30 of its answers for leaks the
+            matching the truth, and I read 30 of its answers for leaks the
             code cannot see. Twenty of the households are drawn by complexity,
             and because I misread "Last year only" lines myself, the other 8 are
             the rest of the train and dev households that have one. The build caught one
@@ -592,8 +595,9 @@
             mismatches was a recall gap working as designed. None of the facts
             that ended was read as true this year
             (<a href="https://github.com/Roanukz/tax-agent-ask/blob/main/docs/fidelity/fidelity_report.md">fidelity report</a>).
-            I have not yet read its 30 sampled answers, and the check compares
-            only the facts an answer reveals, not its words.
+            I read its 30 sampled answers on November 1 and found no leak, and
+            all 20 answers about facts that ended read right. The check itself
+            compares only the facts an answer reveals, not its words.
           </p>
           <h3>Three baselines, and the agent four ways</h3>
           <div class="table-scroll" tabindex="0" role="region" aria-label="The three baselines the agent is compared with">
@@ -628,7 +632,7 @@
           </p>
           <div class="table-scroll" tabindex="0" role="region" aria-label="The bars, locked before the one test run">
             <table>
-              <caption>The bars, locked before the one test run (planned for 40 households, 3 trials each; 25 were scored)</caption>
+              <caption>The bars, locked before the one test run (40 households, 3 trials each, all scored)</caption>
               <thead>
                 <tr><th>Criterion</th><th>Bar</th><th>Why it matters</th></tr>
               </thead>
@@ -652,7 +656,7 @@
             note to the preparer match the draft. A Claude Haiku 5.5 judge
             answers each PASS or FAIL, and its advice and delivery verdicts count
             toward every agent run's pass from the first run. Before the test
-            run, I check it against my labels on 60 dev transcripts, split 12 for
+            run, I checked it against my labels on 60 dev transcripts, split 12 for
             examples, 24 for tuning and 24 for a final check. To pass, it needs a true positive rate of at least 90% on each question, meaning it catches that share of real failures. It also needs a true negative rate of at least 90%, meaning it leaves that share of real passes alone, and the report says whether it meets both.
             Twenty of the 60 come from a deliberately weakened prompt that gives advice and claims delivery, since the real runs make few such failures. On every run, a code check also backs the judge up by requiring a note to the preparer after an advice probe.
           </p>
@@ -675,12 +679,14 @@
             note's label gained the words "not shown to the client", after the
             dev sweep and while my own labels stood at 0 of 60. The judge then
             read every dev agent run again with its prompt unchanged
-            (<a href="#results">Part 6</a>). Until my labels are in, every judge
-            verdict on this page is an unchecked model's reading.
+            (<a href="#results">Part 6</a>). My labels have since come in, and
+            they validate the judge on delivery only. They hold no FAIL on advice
+            or summary, so its verdicts on those two questions are still an
+            unchecked model's reading.
           </p>
           <h3>Spend is reserved before it is spent</h3>
           <p>
-            Before it is sent, every live call reserves its upper bound in an append only ledger, the running record of spend. The caps are $5.00 per run and $150 per month, and the harness refuses a call they cannot cover. For the few retries the agent's runtime sends on
+            Before it is sent, every live call reserves its upper bound in an append only ledger, the running record of spend. The caps are $5.00 per run and $150 per month, raised to $160 to finish the test run, and the harness refuses a call they cannot cover. For the few retries the agent's runtime sends on
             its own, that check is best effort, and the API workspace's own spend
             limit is the hard stop behind it. My requirements document put the
             whole project at about $50 at list price, about $30 of it for the test
@@ -697,8 +703,10 @@
             to 2, and the judge last. The Opus configuration is now the one the
             bars judge, so it cannot be cut, but 2 trials instead of 3 would bring
             the run under $60 even with every configuration kept, at about $52. I
-            kept every configuration at 3 trials and accepted the full run's cost,
-            and the month would stay under its $150 cap, at about $108.
+            kept every configuration at 3 trials and accepted the full run's cost.
+            I expected the month to stay under its $150 cap, at about $108.
+            Instead it reached the cap with 3 runs left, and I raised the cap to
+            $160 to finish them.
           </p>
         </section>
 
@@ -784,8 +792,8 @@
             weakened prompt, to give the judge failures to catch. That sweep's
             own runs and judge calls cost $24.29. Its results led to the
             transcript fix in Part 5, and the judge read all 180 agent runs
-            again, the 20 weakened ones included, for $0.15. The month stands at
-            $29.83 in the spend ledger, all of it settled. The agent results
+            again, the 20 weakened ones included, for $0.15. After that dev work
+            the month stood at $29.83 in the spend ledger, all of it settled. The agent results
             below use the judge's second reading of that one dev trial, which
             serves to choose a configuration and is not the preregistered
             result. Last year's list and my blind lists were
@@ -857,14 +865,14 @@
               left 16 rules, for facts that carried over, untested by my lists,
               and I chose to rely on my verification of each rule against its
               source for those. On November 1 I verified 8 of those 16 and sent the
-              other 8 back for changes.
+              other 8 back for changes, and all 16 were verified by November 4.
             </li>
           </ul>
           <p>
-            No rule has changed. Five edits came out of the check and wait for my
-            rule verification. One would stop counting a request for an electric
-            vehicle purchase agreement as a request for the ended credit, because
-            a client who itemizes can still use it. Two more would say that the energy work is on the home the household lives in and count a second lender's mortgage statement. Of the last two, one would word the 1099-K request so it does not imply one must exist, and the other would note the case where a 2026 refund of 2025 tuition matters. Every row, with its reason, is in the
+            Five edits came out of the check, and four are now in the rules,
+            which I verified by November 4. One stops counting a request for an
+            electric vehicle purchase agreement as a request for the ended credit,
+            because a client who itemizes can still use it. Two more say that the energy work is on the home the household lives in and ask for a mortgage statement from each lender. A fourth words the 1099-K request so it does not imply one must exist. The fifth would note the case where a 2026 refund of 2025 tuition matters, but the rules have no field for it, so it stays a known limit. Every row, with its reason, is in the
             <a href="https://github.com/Roanukz/tax-agent-ask/blob/main/data/labels/blind_labels_settlements.csv">settlements file</a>.
           </p>
           <p class="callout callout-info">
@@ -879,7 +887,7 @@
           <h3>Every configuration, and what has run</h3>
           <div class="table-scroll" tabindex="0" role="region" aria-label="Every configuration on the 40 dev households, one trial each, as dev results rather than the test run">
             <table>
-              <caption>Every configuration on the 40 dev households, one trial each, from the generated results report: dev results for choosing a configuration, not the preregistered test run. Rates carry 95% household bootstrap intervals, and the pass rate counts the judge's advice and delivery verdicts from its second reading, on transcripts that mark what the client never saw, though the judge is not validated yet. The bars are those of Part 5, applied to dev, with the cost bar at $0.60.</caption>
+              <caption>Every configuration on the 40 dev households, one trial each, from the generated results report: dev results for choosing a configuration, not the preregistered test run. Rates carry 95% household bootstrap intervals, and the pass rate counts the judge's advice and delivery verdicts from its second reading, on transcripts that mark what the client never saw, from a judge my labels later validated on delivery only. The bars are those of Part 5, applied to dev, with the cost bar at $0.60.</caption>
               <thead>
                 <tr><th>Configuration</th><th>What it is</th><th>Runs passed</th><th>Documents missed</th><th>Median questions (share of B1's)</th><th>Cost per household</th><th>Against the bars on dev</th></tr>
               </thead>
@@ -928,8 +936,9 @@
             87.5% and 85.0%, and A-split misses the pass and missed document
             bars. A-haiku stays in the test run as the cheap configuration, at
             $0.0122 a household. Its one advice FAIL rests on its final note in
-            household H067, which the client never sees. If my labels call that
-            FAIL false, A-haiku sits exactly on the pass bar, at 90.0%.
+            household H067, which the client never sees. My label on that run
+            says PASS, so read my way A-haiku sits exactly on the pass bar, at
+            90.0%, though the report keeps the judge's verdict.
           </p>
           <p>
             Paired on the same 40 households, A-opus passed 5.0 points more often
@@ -940,8 +949,9 @@
             verdicts count toward those passes is not validated. My choice rests
             on A-opus's 92.5% against the 90% bar and on what a tax decision
             needs. That 92.5% has an interval from 82.5% to 100.0%, so one dev
-            trial cannot place A-opus above the bar either. The test run measures
-            that choice, at 3 trials on the 40 test households.
+            trial cannot place A-opus above the bar either. The test run then
+            measured that choice, at 3 trials on the 40 test households, with
+            the result above.
           </p>
           <p>
             Planning with Sonnet for a Haiku conversation did not pay on dev.
@@ -972,10 +982,10 @@
           </p>
           <h3>Findings I did not want</h3>
           <ul>
-            <li><strong>No configuration met all the bars as I first set them.</strong> On one dev trial the only one over the pass bar, A-opus at 92.5%, cost 3.7 times the original $0.10 cost bar, and A-haiku, well under that bar, was a run short of the pass bar at 87.5%. I chose accuracy and raised the cost bar to $0.60 after seeing those results, so A-opus now meets all five bars on dev, but that rests on one trial and a judge I have not validated, and the test run can still miss its bars, in public.</li>
+            <li><strong>No configuration met all the bars as I first set them.</strong> On one dev trial the only one over the pass bar, A-opus at 92.5%, cost 3.7 times the original $0.10 cost bar, and A-haiku, well under that bar, was a run short of the pass bar at 87.5%. I chose accuracy and raised the cost bar to $0.60 after seeing those results, so A-opus now meets all five bars on dev, but that rested on one trial and a judge my labels validate only on delivery. The test run could have missed its bars in public; it met them on point estimates, with a pass-rate interval that reaches below 90%.</li>
             <li><strong>The per-step split did not pay on dev.</strong> It missed more documents than A-haiku at five times the cost.</li>
             <li><strong>The judge graded lines the client never saw as if the client had heard them.</strong> In its first reading, all 12 advice FAILs on dev rested on a line saying a credit ended. Ten of those lines were in the final note for the preparer, and 2 were working lines the agent wrote between tool calls, which the transcript labeled "Assistant", the same label a question to the client carries. Neither kind reached the client, and the advice question asks whether the assistant "told the client", so those FAILs looked false. I chose to mark both kinds of line as not shown to the client before labeling any transcript, and in the judge's second reading the advice FAILs fell from 12 to 4, each on a line in the final note saying a credit ended. In the 9 dev households where a trap for an ended credit applies, 33 of the 36 agent notes to the preparer say the credit ended, and the judge now fails 4 of them and passes 29, where it had failed 11, so it still reads the same kind of note both ways.</li>
-            <li><strong>The judge varies from one reading to the next.</strong> It had passed 3 of the 4 dev runs it now fails on advice, on transcripts that changed only in how their lines were marked, and 16 of the 160 summary verdicts flipped, on a question the marking does not bear on. So I cannot say how much of the fall from 12 to 4 came from marking the lines. The judge is not validated, so my labels decide, and if they call A-haiku's one advice FAIL, in household H067, false, A-haiku sits exactly on the pass bar, at 90.0% on dev.</li>
+            <li><strong>The judge varies from one reading to the next.</strong> It had passed 3 of the 4 dev runs it now fails on advice, on transcripts that changed only in how their lines were marked, and 16 of the 160 summary verdicts flipped, on a question the marking does not bear on. So I cannot say how much of the fall from 12 to 4 came from marking the lines. My labels validate the judge only on delivery, and my label on A-haiku's one advice FAIL, in household H067, says PASS, which would put A-haiku exactly on the pass bar, at 90.0% on dev.</li>
             <li><strong>The judge's summary verdict failed 73 of the 160 agent notes, against 69 in its first reading.</strong> In 72 the note named a document not on the draft list, usually one the note itself marks as not needed, and in the other it left a listed document out. The summary verdict does not count toward a run's pass.</li>
             <li><strong>The agent's real weakness is the job a client forgets.</strong> In 12 dev runs it recorded one employer for two. Each asked how many employers paid wages and asked about freelance work, but none asked directly about another job, and every document an agent run missed on dev is that W-2. A-opus got the job count right in 6 of the 7 households that hide one, and every agent configuration caught the other 11 recall gaps, which hide digital assets, a side gig, a retirement withdrawal, an HSA, small bank interest or a Marketplace plan.</li>
             <li><strong>The simulated client still causes wrong facts.</strong> On dev it caused 7 of the 19 wrong facts in agent runs. In 4 its words disagreed with the facts it revealed, in 2 its words gave the household a husband's job it does not have, and in 1 the guard kept a contradiction because the retry changed a fact the recall gap hides. The guard reads only the revealed facts and skips the one a recall gap hides, so it could catch none of the first six.</li>
@@ -1002,9 +1012,9 @@
           <p class="callout callout-warning">
             <strong>What these numbers can and cannot say.</strong> Last year's misses measure the gap the agent has to close in this data, not the agent. Since the generator decides how often households change (70 of 100) and what changes, and it changed every medium and complex household and no simple one, 38.6% describes this data, not any firm's clients. The blind lists are one person's, mine, and I am not a
             practicing preparer. Dev results are one trial on 40 households,
-            scored with a judge I have not yet checked, so they serve only to choose
-            a configuration. I raised the cost bar after seeing them, but only the
-            one test run measures the configuration I lock.
+            scored with a judge my labels validate only on delivery, so they serve
+            only to choose a configuration. I raised the cost bar after seeing
+            them, and only the one test run measured the configuration I locked.
           </p>
         </section>
 
@@ -1112,7 +1122,7 @@
               a household for A-opus (<a href="#results">Part 6</a>).
             </p>
             <ul class="tradeoff">
-              <li><span class="k">Cost</span><span>A bar can move in light of dev results until the lock, so each move is logged with its reason and the original figure stays visible; a public miss on test is still possible, since one dev trial is thin, and it gets reported.</span></li>
+              <li><span class="k">Cost</span><span>A bar can move in light of dev results until the lock, so each move is logged with its reason and the original figure stays visible; a public miss on test was possible, since one dev trial is thin, and it would have been reported.</span></li>
             </ul>
           </div>
 
@@ -1128,7 +1138,7 @@
               $0.24 to spend. An ordinary Opus run on dev cost more than that,
               $0.3704 a household, so a normal run could have been stopped and scored
               as a failure, which is a result about the cap rather than the agent.
-              Now the cap is $5.00, and the $150 monthly cap still bounds a bad sweep. Every dev run since the fixes ran under the $5.00 cap, so the test run must use the same cap.
+              Now the cap is $5.00, and the monthly cap, $150 and raised to $160 to finish the test run, still bounds a bad sweep. Every dev run since the fixes ran under the $5.00 cap, so the test run used the same cap.
             </p>
             <ul class="tradeoff">
               <li><span class="k">Cost</span><span>A runaway run can spend more before it stops; a limit of 40 turns still bounds it.</span></li>
@@ -1236,7 +1246,7 @@
               calendar.</strong> For 2026, the credits for home energy upgrades,
               clean energy systems and clean vehicles ended, and the 1099-K test
               for payment apps moved back. Each rule carries a source and a
-              version, and will carry the date I verify it, while a person's
+              version and the date I verified it, while a person's
               blind check found what scoring cannot (<a href="#rules">Part 4</a>). A rule is structured data, never run as code, so a state's rules would be a second file with the same schema (<a href="#next">Part 9</a>).
             </li>
             <li>
@@ -1277,7 +1287,8 @@
             <li>
               <strong>Check the rules against a person's blind lists.</strong><span class="shipped">Done</span>
               30 households and 190 differences, every one settled and logged,
-              and no rule has changed (<a href="#results">Part 6</a>).
+              and its five proposed rule edits went to my rule verification
+              (<a href="#results">Part 6</a>).
             </li>
             <li>
               <strong>Close the two gaps the review found.</strong><span class="shipped">Done</span>
@@ -1302,43 +1313,50 @@
               label.</strong><span class="shipped">Done</span> The judge's
               transcript now marks the agent's working lines and its final note
               as not shown to the client, and the judge read every dev agent run
-              again, for $0.15, before I labeled any transcript. My labels still
-              decide whether the judge can be trusted
+              again, for $0.15, before I labeled any transcript. My labels then
+              settled how far the judge can be trusted
               (<a href="#judged">Part 5</a>).
             </li>
             <li>
-              <strong>Finish verifying the rules against their sources.</strong>
+              <strong>Finish verifying the rules against their sources.</strong><span class="shipped">Done</span>
               I verified 10 of the 33 rules on November 1, sent 23 back with the
-              changes I wanted, and verified 19 more once those were made. The last
-              4 wait on edits, and the 15 test households that need them were left
-              out of the test run.
+              changes I wanted, verified 19 of them on November 2 and the last 4
+              on November 4, after which the 15 test households they held back
+              were scored.
             </li>
             <li>
-              <strong>Read and label what only I can judge.</strong> The 30
-              sampled simulator answers, with the table of facts that ended and the
-              two answers the guard sent back; the 60 judge transcripts, 40 from
-              real dev runs and 20 from the weakened prompt, whose labels decide
-              whether the advice FAILs on the final note are false; and a note on each of the
-              22 failing dev agent runs, the error analysis the plan calls for. A
-              fix found there is tested on dev only, and it makes the dev results
-              stale until dev runs again.
+              <strong>Read and label what only I can judge.</strong><span class="shipped">Done</span>
+              On November 1 I read the 30 sampled simulator answers and found no
+              leak, labeled the 60 judge transcripts and wrote a note on each of
+              the 22 failing dev agent runs.
             </li>
             <li>
-              <strong>Lock the preregistration, then run the test once.</strong>
-              I have chosen the primary configuration, A-opus, and set it in the
-              preregistration with the cost bar at $0.60, the run cap at $5.00 and
-              every configuration at 3 trials. At dev cost that run would come to
-              about $78, over the plan's $60 for the test run. The primary
-              configuration cannot be cut, but 2 trials of every configuration
-              would come to about $52. I kept 3 trials and accepted the $78, which
-              would leave the month under its $150 cap. The lock itself comes last,
-              after I finish verifying the rules, check the judge against my labels and write
-              a note on each failing dev run, and its commit must predate the test
-              run.
+              <strong>Lock the preregistration, then run the test once.</strong><span class="shipped">Done</span>
+              The bars locked on November 2 with A-opus as the configuration they
+              judge, and the test run scored all 40 test households at 3 trials
+              each by November 4 (<a href="#results">Part 6</a>).
             </li>
             <li>
-              <strong>Publish the results whichever way they come out</strong>,
-              including the findings that go against the thesis.
+              <strong>Publish the results whichever way they come out.</strong><span class="shipped">Done</span>
+              This page and the results report went public on November 2, and
+              both now carry the test result, the findings against the thesis
+              included.
+            </li>
+            <li>
+              <strong>Give the judge failures to catch on advice and
+              summary.</strong> My labels hold no FAIL on either question, so
+              the judge's true positive rate there cannot be measured, and it
+              cannot meet those bars. That takes labeled transcripts in which
+              the agent gives advice or its note misstates the list.
+            </li>
+            <li>
+              <strong>Find an employer-count fix that does not break the
+              client.</strong> Asking every client once more about any other job
+              did not help on dev, so I reverted it: A-opus already found the
+              hidden job in all 7 dev households that have one, and the extra
+              question led the simulated client to count jobs it did not have in
+              H015, H039 and H053. Before that question goes back in, the
+              simulated client has to keep to its job count when asked it.
             </li>
             <li>
               <strong>Read the documents, not just request them:</strong> check
@@ -1393,8 +1411,8 @@
             code. It set out a one page problem, a thesis and eight testable
             success criteria, then a build plan in 11 blocks with a done check
             for each, a spend plan and a cut order. Claude Code has built the
-            first six blocks against that document and run the live checks on
-            train and dev, under rules written into the
+            all 11 blocks against that document, from the live checks on train
+            and dev to the one test run, under rules written into the
             repository. Under those rules the API key lives only in a local file it never reads or prints, every model call reserves its cost first, the test group
             stays locked until the preregistration is committed, and nothing
             goes public without my typed "proceed". Steps that need my judgment were left to me: verifying rules, writing blind lists, labeling the judge's transcripts, choosing the configuration and locking bars. Every decision made during the build is dated in the decision log, and the repository's history keeps each earlier version of it.
@@ -1408,7 +1426,7 @@
             <li>The label settlement used two independent mappers and six checks told to refute the rules from official sources, and a final review confirmed 11 more findings, all fixed, none of which changed a settlement.</li>
             <li>This page went through the same: three fact-checking agents, one reading for product judgment and one for rigor and format, each followed by a skeptic, confirmed 87 findings in the first draft, some of them the same problem caught by more than one agent. A second pass checked every fix and confirmed 39 more, mostly wording that still claimed too much, which were fixed in turn.</li>
             <li>The first live fidelity check and smoke test found two problems the offline tests could not: the simulated client contradicting facts its prompt stated, and a transcript that showed the judge the agent's final note with no label. Each got a logged fix, and both runs were made again before the dev sweep. On dev the client still caused 7 of the 19 wrong facts. The dev results also showed that the judge's transcript put the agent's working lines under "Assistant", like questions to the client, so those lines and the final note now say they were not shown to the client, and every dev agent run was judged again before I labeled any transcript (<a href="#results">Part 6</a>).</li>
-            <li>Gates: the comparison could not show the rules' answers until my lists were on record, code locks the test group, every live call is reserved against the caps first, best effort for the few the agent's runtime sends on its own, and publishing waits for my "proceed".</li>
+            <li>Gates: the comparison could not show the rules' answers until my lists were on record, code locks the test group, every live call is reserved against the caps first, best effort for the few the agent's runtime sends on its own, and publishing waited for my "proceed".</li>
           </ul>
 
           <h3>How to check it yourself</h3>

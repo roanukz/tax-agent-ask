@@ -1,6 +1,6 @@
 # Results: What Should My Tax Agent Ask?
 
-Generated on 2026-11-04 by `uv run python -m eval.report` from 1460 run summaries and 1460 scores in eval/runs/. Intervals: household bootstrap, 10000 draws, seed 7, level 0.95. Preregistration: locked_on 2026-11-02, primary_config A-opus.
+Generated on 2026-11-05 by `uv run python -m eval.report` from 1460 run summaries and 1460 scores in eval/runs/. Intervals: household bootstrap, 10000 draws, seed 7, level 0.95. Preregistration: locked_on 2026-11-02, primary_config A-opus.
 
 ## Executive summary
 
@@ -545,7 +545,7 @@ Spend ledger: 2489 runs, $153.7850 in all ($153.7850 settled, 0 open reservation
 
 ## Next steps
 
-1. Publish the teardown and this report only after Roanuk says proceed (Block 10).
+1. Add human FAIL labels on advice and summary, so the judge's true positive rate on them can be measured (Block 7).
 
 ## AI tools used
 

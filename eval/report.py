@@ -1467,7 +1467,18 @@ def next_steps(ctx: Context) -> list[str]:
         steps.append("Run A-split against the single-model configs on dev and propose a primary config (Block 8).")
     if not ctx.split_rows("test"):
         steps.append("Roanuk locks the bars and primary config in eval/prereg.yaml, then the one test sweep (Block 9).")
-    steps.append("Publish the teardown and this report only after Roanuk says proceed (Block 10).")
+    else:
+        # After the test run the judge can still be short of a human FAIL label on a question, and without one its
+        # true positive rate there cannot be measured, so criterion J cannot be met.
+        v = ctx.validation
+        unmeasured = [q for q in judge_mod.QUESTIONS if v and v.labels and v.final_check[q]["tpr"] is None]
+        if unmeasured:
+            steps.append(f"Add human FAIL labels on {' and '.join(unmeasured)}, so the judge's true positive rate on "
+                         f"{'them' if len(unmeasured) > 1 else 'it'} can be measured (Block 7).")
+    if not PUBLISHED_ON:
+        steps.append("Publish the teardown and this report only after Roanuk says proceed (Block 10).")
+    if not steps:
+        steps.append("None: the test run is scored and the teardown and this report are published.")
     return ["## Next steps", ""] + [f"{i}. {s}" for i, s in enumerate(steps, start=1)] + [""]
 
 
