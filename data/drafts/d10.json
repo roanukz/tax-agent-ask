@@ -1,0 +1,186 @@
+{
+  "draft_id": "d10",
+  "client_name": "Client 10",
+  "tax_year": 2026,
+  "prior_year_summary": {
+    "tax_year": 2025,
+    "filing_status": "single",
+    "dependents_count": 3,
+    "itemized": false,
+    "documents_on_file": [
+      {
+        "rule_id": "R001",
+        "label": "Form W-2",
+        "count": 2
+      }
+    ]
+  },
+  "documents": [
+    {
+      "rule_id": "R001",
+      "document": "Form W-2 from each employer (yours and, if filing jointly, your spouse's), including any employer you left during the year, plus any corrected Form W-2c",
+      "count": 2,
+      "client_reason": "You were paid wages, so we need the year-end wage statement from each employer, including any job you left.",
+      "source_url": "https://www.irs.gov/taxtopics/tc401",
+      "source_title": "Topic no. 401, Wages and salaries",
+      "triggered_by": [
+        {
+          "fact": "w2_employer_count",
+          "value": 2,
+          "evidence": "two jobs this year"
+        }
+      ]
+    }
+  ],
+  "custom_requests": [],
+  "no_document_needed": [],
+  "not_asked": [
+    "business_app_payments",
+    "state_refund_received"
+  ],
+  "notes_for_preparer": [
+    {
+      "text": "Client asked: \"Will I owe money this year?\""
+    }
+  ],
+  "facts_recorded": {
+    "filing_status": {
+      "value": "single",
+      "evidence": "I'm still single"
+    },
+    "dependents_count": {
+      "value": 3,
+      "evidence": "same three dependents"
+    },
+    "new_dependent": {
+      "value": false,
+      "evidence": "no new babies"
+    },
+    "w2_employer_count": {
+      "value": 2,
+      "evidence": "two jobs this year"
+    },
+    "self_employment": {
+      "value": false,
+      "evidence": "No, I didn't do any freelance"
+    },
+    "interest_income": {
+      "value": false,
+      "evidence": "didn't get any interest"
+    },
+    "dividend_income": {
+      "value": false,
+      "evidence": "or dividends from stocks"
+    },
+    "sold_investments": {
+      "value": false,
+      "evidence": "didn't sell any stocks"
+    },
+    "digital_asset_transactions": {
+      "value": false,
+      "evidence": "didn't deal with any crypto"
+    },
+    "retirement_distribution": {
+      "value": false,
+      "evidence": "didn't take any money out"
+    },
+    "social_security": {
+      "value": false,
+      "evidence": "didn't get Social Security"
+    },
+    "unemployment": {
+      "value": false,
+      "evidence": "or unemployment this year"
+    },
+    "marketplace_coverage": {
+      "value": false,
+      "evidence": "didn't get insurance through the marketplace"
+    },
+    "hsa_withdrawal": {
+      "value": false,
+      "evidence": "didn't use or put money into a health savings account"
+    },
+    "hsa_direct_contribution": {
+      "value": false,
+      "evidence": "didn't use or put money into a health savings account"
+    },
+    "has_mortgage": {
+      "value": false,
+      "evidence": "I don't have a mortgage"
+    },
+    "bought_home": {
+      "value": false,
+      "evidence": "didn't buy or sell a home"
+    },
+    "sold_home": {
+      "value": false,
+      "evidence": "didn't buy or sell a home"
+    },
+    "dependent_care_paid": {
+      "value": false,
+      "evidence": "didn't pay for child care"
+    },
+    "student_loan_interest": {
+      "value": false,
+      "evidence": "didn't pay any student loan interest"
+    },
+    "tuition_paid": {
+      "value": false,
+      "evidence": "or tuition this year"
+    },
+    "k1_count": {
+      "value": 0,
+      "evidence": "not part of any partnership"
+    },
+    "rental_property": {
+      "value": false,
+      "evidence": "didn't rent out any property"
+    },
+    "estimated_payments_made": {
+      "value": false,
+      "evidence": "didn't send the IRS any payments"
+    },
+    "gambling_winnings": {
+      "value": false,
+      "evidence": "didn't win any gambling"
+    },
+    "charitable_giving": {
+      "value": false,
+      "evidence": "didn't give any money"
+    },
+    "ip_pin_enrolled": {
+      "value": false,
+      "evidence": "don't have an Identity Protection PIN"
+    },
+    "tips_income": {
+      "value": false,
+      "evidence": "no tips from customers"
+    },
+    "overtime_pay": {
+      "value": false,
+      "evidence": "no extra pay for hours over 40"
+    },
+    "ev_purchased": {
+      "value": false,
+      "evidence": "didn't buy a new car or an electric vehicle"
+    },
+    "new_vehicle_loan": {
+      "value": false,
+      "evidence": "didn't take out a loan"
+    },
+    "clean_energy_installed": {
+      "value": false,
+      "evidence": "didn't put in solar panels"
+    },
+    "efficiency_improvements": {
+      "value": false,
+      "evidence": "didn't do energy-saving upgrades"
+    },
+    "itemized_last_year": {
+      "value": false,
+      "evidence": "prior_year:itemized"
+    }
+  },
+  "agent_note": "I submitted the draft list for your review, and it's pending. Nothing has gone to the client.\n\n**On the draft list (1 item):**\n- Form W-2 from each employer, 2 in total. One is from a job the client left. The rule also covers any corrected W-2c.\n\n**Client's tax question:** They asked, \"Will I owe money this year?\" I told them you would answer it and left a note for you.\n\n**Things to check:**\n- **Same as last year:** The client says they are still single with the same 3 dependents, and that there are no new dependents.\n- **Tips and overtime:** The client was unsure at first. When I asked again in plainer terms, they said no tips and no overtime.\n- **Questions I didn't ask:**\n  - Payment-app or marketplace income: I skipped this because they said they had no freelance or business work.\n  - State tax refund: I skipped this because they didn't itemize last year (taken from last year's summary), so the refund rule can't apply.\n- **Everything else:** The client said no to every other topic the rules cover, such as investments, retirement, health coverage, home, education, rentals, and vehicles. I recorded each of those as \"no\".\n- **Custom requests:** None.",
+  "draft_sha256": "8e4faa88bd6c91f883f88ce69f8c2f9e32f0a4ae65e2edf06b948224fa732612"
+}

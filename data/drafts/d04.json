@@ -1,0 +1,270 @@
+{
+  "draft_id": "d04",
+  "client_name": "Client 04",
+  "tax_year": 2026,
+  "prior_year_summary": {
+    "tax_year": 2025,
+    "filing_status": "single",
+    "dependents_count": 0,
+    "itemized": false,
+    "documents_on_file": [
+      {
+        "rule_id": "R001",
+        "label": "Form W-2",
+        "count": 1
+      },
+      {
+        "rule_id": "R016",
+        "label": "Form 1098-E",
+        "count": 1
+      },
+      {
+        "rule_id": "R028",
+        "label": "Vehicle loan interest statement",
+        "count": 1
+      }
+    ]
+  },
+  "documents": [
+    {
+      "rule_id": "R001",
+      "document": "Form W-2 from each employer (yours and, if filing jointly, your spouse's), including any employer you left during the year, plus any corrected Form W-2c",
+      "count": 2,
+      "client_reason": "You were paid wages, so we need the year-end wage statement from each employer, including any job you left.",
+      "source_url": "https://www.irs.gov/taxtopics/tc401",
+      "source_title": "Topic no. 401, Wages and salaries",
+      "triggered_by": [
+        {
+          "fact": "w2_employer_count",
+          "value": 2,
+          "evidence": "I went from one job to two employers this year"
+        }
+      ]
+    },
+    {
+      "rule_id": "R002",
+      "document": "Business income and expense records (income records, receipts, mileage logs, and bank or payment app statements), including any Forms 1099-NEC received",
+      "count": 1,
+      "client_reason": "You had freelance or business income, so we need your income and expense records and any year-end payment statements from clients.",
+      "source_url": "https://www.irs.gov/businesses/small-businesses-self-employed/manage-taxes-for-your-gig-work",
+      "source_title": "Manage taxes for your gig work",
+      "triggered_by": [
+        {
+          "fact": "self_employment",
+          "value": true,
+          "evidence": "I started a small side business doing freelance work"
+        }
+      ]
+    },
+    {
+      "rule_id": "R003",
+      "document": "Any Form 1099-K received from a payment app, online marketplace, or card processor (collect it even if you think it is wrong)",
+      "count": 1,
+      "client_reason": "If customers paid you through an app, an online marketplace, or a card processor, we need any year-end statement you received from it, even if you think it is wrong.",
+      "source_url": "https://www.irs.gov/businesses/understanding-your-form-1099-k",
+      "source_title": "Understanding your Form 1099-K",
+      "triggered_by": [
+        {
+          "fact": "business_app_payments",
+          "value": true,
+          "evidence": "customers pay me through an app"
+        }
+      ]
+    },
+    {
+      "rule_id": "R009",
+      "document": "Form SSA-1099",
+      "count": 1,
+      "client_reason": "You received Social Security, so we need the yearly benefit statement.",
+      "source_url": "https://www.irs.gov/taxtopics/tc423",
+      "source_title": "Topic no. 423, Social Security and equivalent railroad retirement benefits",
+      "triggered_by": [
+        {
+          "fact": "social_security",
+          "value": true,
+          "evidence": "I also started getting Social Security benefits"
+        }
+      ]
+    },
+    {
+      "rule_id": "R016",
+      "document": "Form 1098-E, Student Loan Interest Statement, from each lender or servicer (or the lender's year-end statement or account summary showing interest paid, if no Form 1098-E was issued)",
+      "count": 1,
+      "client_reason": "You paid student loan interest, so we need the year-end interest statement from your loan servicer.",
+      "source_url": "https://www.irs.gov/taxtopics/tc456",
+      "source_title": "Topic no. 456, Student loan interest deduction",
+      "triggered_by": [
+        {
+          "fact": "student_loan_interest",
+          "value": true,
+          "evidence": "Yes, I paid interest on my student loan this year"
+        }
+      ]
+    },
+    {
+      "rule_id": "R028",
+      "document": "Lender's interest statement",
+      "count": 1,
+      "client_reason": "You paid interest on a loan for a new vehicle, so we need the lender's statement of interest paid.",
+      "source_url": "https://www.irs.gov/instructions/i1098vli",
+      "source_title": "Instructions for Form 1098-VLI (Rev. December 2026), for calendar year 2026",
+      "triggered_by": [
+        {
+          "fact": "new_vehicle_loan",
+          "value": true,
+          "evidence": "yes, I have a loan on a new car I bought for myself"
+        }
+      ]
+    }
+  ],
+  "custom_requests": [],
+  "no_document_needed": [],
+  "not_asked": [
+    "state_refund_received"
+  ],
+  "notes_for_preparer": [],
+  "facts_recorded": {
+    "w2_employer_count": {
+      "value": 2,
+      "evidence": "I went from one job to two employers this year"
+    },
+    "self_employment": {
+      "value": true,
+      "evidence": "I started a small side business doing freelance work"
+    },
+    "business_app_payments": {
+      "value": true,
+      "evidence": "customers pay me through an app"
+    },
+    "social_security": {
+      "value": true,
+      "evidence": "I also started getting Social Security benefits"
+    },
+    "new_dependent": {
+      "value": false,
+      "evidence": "No new baby"
+    },
+    "bought_home": {
+      "value": false,
+      "evidence": "I didn't move or buy or sell a home"
+    },
+    "sold_home": {
+      "value": false,
+      "evidence": "I didn't move or buy or sell a home"
+    },
+    "filing_status": {
+      "value": "single",
+      "evidence": "prior_year:filing_status"
+    },
+    "dependents_count": {
+      "value": 0,
+      "evidence": "prior_year:dependents_count"
+    },
+    "tips_income": {
+      "value": false,
+      "evidence": "I didn't get any tips or overtime at either job"
+    },
+    "overtime_pay": {
+      "value": false,
+      "evidence": "I didn't get any tips or overtime at either job"
+    },
+    "unemployment": {
+      "value": false,
+      "evidence": "I didn't get any unemployment benefits this year"
+    },
+    "retirement_distribution": {
+      "value": false,
+      "evidence": "I didn't take anything out of a retirement account or pension or roll one over either"
+    },
+    "interest_income": {
+      "value": false,
+      "evidence": "I didn't earn any interest from banks or bonds"
+    },
+    "dividend_income": {
+      "value": false,
+      "evidence": "I didn't get any dividends"
+    },
+    "sold_investments": {
+      "value": false,
+      "evidence": "I also didn't sell any stocks, bonds, or mutual funds this year"
+    },
+    "digital_asset_transactions": {
+      "value": false,
+      "evidence": "I didn't sell, trade, or get paid in any crypto or digital assets"
+    },
+    "gambling_winnings": {
+      "value": false,
+      "evidence": "no gambling winnings either, not at a casino or the lottery"
+    },
+    "rental_property": {
+      "value": false,
+      "evidence": "No, I don't rent out any property"
+    },
+    "has_mortgage": {
+      "value": false,
+      "evidence": "and I don't have a mortgage"
+    },
+    "student_loan_interest": {
+      "value": true,
+      "evidence": "Yes, I paid interest on my student loan this year"
+    },
+    "new_vehicle_loan": {
+      "value": true,
+      "evidence": "yes, I have a loan on a new car I bought for myself"
+    },
+    "dependent_care_paid": {
+      "value": false,
+      "evidence": "I didn't pay for child care or anyone's care so I could work"
+    },
+    "marketplace_coverage": {
+      "value": false,
+      "evidence": "no, I don't have health insurance through HealthCare.gov or a state exchange"
+    },
+    "hsa_withdrawal": {
+      "value": false,
+      "evidence": "I didn't take any money out of a health savings account this year"
+    },
+    "hsa_direct_contribution": {
+      "value": false,
+      "evidence": "I didn't put any money into one on my own either"
+    },
+    "estimated_payments_made": {
+      "value": false,
+      "evidence": "I didn't send the IRS any separate tax payments during the year"
+    },
+    "charitable_giving": {
+      "value": false,
+      "evidence": "and I didn't give to charity"
+    },
+    "ip_pin_enrolled": {
+      "value": false,
+      "evidence": "I also don't have an Identity Protection PIN from the IRS"
+    },
+    "ev_purchased": {
+      "value": false,
+      "evidence": "No, I didn't buy an electric or plug-in hybrid"
+    },
+    "clean_energy_installed": {
+      "value": false,
+      "evidence": "I didn't put in any solar or clean energy equipment"
+    },
+    "efficiency_improvements": {
+      "value": false,
+      "evidence": "I didn't do any energy-saving upgrades on my place"
+    },
+    "tuition_paid": {
+      "value": false,
+      "evidence": "I didn't pay any college tuition or fees either"
+    },
+    "k1_count": {
+      "value": 0,
+      "evidence": "no, I don't have a share in a partnership, small company, or trust"
+    },
+    "itemized_last_year": {
+      "value": false,
+      "evidence": "prior_year:itemized"
+    }
+  },
+  "agent_note": "Intake in_dd7038 for household Client 04 is submitted for preparer review with status pending_review. I have not sent anything to the client.\n\n**Draft document list (6 items):**\n1. **Form W-2 from each employer, x2.** The client went from one job to two employers this year. Please confirm both W-2s are included, including any job they left.\n2. **Business income and expense records, x1.** The client started a small freelance business this year.\n3. **Any Form 1099-K from payment apps, x1.** Customers pay the client through an app. The rule says to collect it even if the client thinks it is wrong.\n4. **Form SSA-1099, x1.** The client started receiving Social Security this year.\n5. **Form 1098-E (student loan interest), x1.** Carried from last year's documents and confirmed by the client's answer that they paid student loan interest.\n6. **Lender's vehicle loan interest statement, x1.** The client has a loan on a new car bought for personal use.\n\n**Things I was unsure about:**\n- **Filing status and dependents** (single, 0 dependents) were carried over from last year, not confirmed with the client this year. The client did not mention any household changes, but please confirm.\n- **Itemizing** was carried over from last year (not itemized). I did not ask the client about it this year.\n- **State tax refund** was not asked. It only matters if the client itemized, so it should not change the list.\n- **Overtime and tips:** the client said no to both, so no related documents were added.\n- **Client answered \"no\"** to the rest of the topics: new dependents, home purchase or sale, retirement, unemployment, interest and dividends, investment sales, crypto, gambling, rentals, mortgage, child care, marketplace insurance, HSA, estimated tax payments, charitable giving, IP PIN, EV or clean energy purchases, tuition, and K-1s.\n- **The client asked no tax questions.**",
+  "draft_sha256": "f155025279bb6edbcc9f44a830e8bbcd02c7839ca0629d72dcf5b4306849a47b"
+}

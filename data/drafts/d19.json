@@ -1,0 +1,270 @@
+{
+  "draft_id": "d19",
+  "client_name": "Client 19",
+  "tax_year": 2026,
+  "prior_year_summary": {
+    "tax_year": 2025,
+    "filing_status": "married_separate",
+    "dependents_count": 3,
+    "itemized": false,
+    "documents_on_file": [
+      {
+        "rule_id": "R001",
+        "label": "Form W-2",
+        "count": 1
+      },
+      {
+        "rule_id": "R018",
+        "label": "Dependent care provider information",
+        "count": 1
+      },
+      {
+        "rule_id": "R025",
+        "label": "Charitable contribution receipts",
+        "count": 1
+      }
+    ]
+  },
+  "documents": [
+    {
+      "rule_id": "R001",
+      "document": "Form W-2 from each employer (yours and, if filing jointly, your spouse's), including any employer you left during the year, plus any corrected Form W-2c",
+      "count": 1,
+      "client_reason": "You were paid wages, so we need the year-end wage statement from each employer, including any job you left.",
+      "source_url": "https://www.irs.gov/taxtopics/tc401",
+      "source_title": "Topic no. 401, Wages and salaries",
+      "triggered_by": [
+        {
+          "fact": "w2_employer_count",
+          "value": 1,
+          "evidence": "Just one employer"
+        }
+      ]
+    },
+    {
+      "rule_id": "R002",
+      "document": "Business income and expense records (income records, receipts, mileage logs, and bank or payment app statements), including any Forms 1099-NEC received",
+      "count": 1,
+      "client_reason": "You had freelance or business income, so we need your income and expense records and any year-end payment statements from clients.",
+      "source_url": "https://www.irs.gov/businesses/small-businesses-self-employed/manage-taxes-for-your-gig-work",
+      "source_title": "Manage taxes for your gig work",
+      "triggered_by": [
+        {
+          "fact": "self_employment",
+          "value": true,
+          "evidence": "I did some freelance work"
+        }
+      ]
+    },
+    {
+      "rule_id": "R003",
+      "document": "Any Form 1099-K received from a payment app, online marketplace, or card processor (collect it even if you think it is wrong)",
+      "count": 1,
+      "client_reason": "If customers paid you through an app, an online marketplace, or a card processor, we need any year-end statement you received from it, even if you think it is wrong.",
+      "source_url": "https://www.irs.gov/businesses/understanding-your-form-1099-k",
+      "source_title": "Understanding your Form 1099-K",
+      "triggered_by": [
+        {
+          "fact": "business_app_payments",
+          "value": true,
+          "evidence": "through a payment app"
+        }
+      ]
+    },
+    {
+      "rule_id": "R007",
+      "document": "Form 1099-DA (if received), plus the client's own records for every digital asset sold, exchanged, spent, or used to pay fees: date and time acquired, cost basis, date disposed, and proceeds or fair market value in U.S. dollars",
+      "count": 1,
+      "client_reason": "You sold or traded digital assets, so we need any year-end statement from the platform and your own transaction records.",
+      "source_url": "https://www.irs.gov/filing/digital-assets",
+      "source_title": "Digital assets (IRS.gov)",
+      "triggered_by": [
+        {
+          "fact": "digital_asset_transactions",
+          "value": true,
+          "evidence": "sell and trade some cryptocurrency"
+        }
+      ]
+    },
+    {
+      "rule_id": "R018",
+      "document": "Provider name, address, taxpayer ID, and amount paid",
+      "count": 1,
+      "client_reason": "You paid for care, so we need each provider's name, address, taxpayer ID number, and how much you paid.",
+      "source_url": "https://www.irs.gov/pub/irs-dft/i2441--dft.pdf",
+      "source_title": "2026 Instructions for Form 2441, Child and Dependent Care Expenses (draft, August 21, 2026)",
+      "triggered_by": [
+        {
+          "fact": "dependent_care_paid",
+          "value": true,
+          "evidence": "I paid someone to watch my kids"
+        }
+      ]
+    },
+    {
+      "rule_id": "R025",
+      "document": "Charitable gift records: for each cash gift, a bank or card record, canceled check, or receipt or letter from the charity showing its name, the date, and the amount; for any single gift of $250 or more, a written acknowledgment from the charity stating the amount and whether goods or services were given in return; for noncash gifts, records supporting Form 8283 when over $500 and a qualified appraisal when Form 8283 requires it",
+      "count": 1,
+      "client_reason": "You gave to charity, so we need your receipts and the written acknowledgments from the charities.",
+      "source_url": "https://www.irs.gov/taxtopics/tc506",
+      "source_title": "Topic no. 506, Charitable contributions",
+      "triggered_by": [
+        {
+          "fact": "charitable_giving",
+          "value": true,
+          "evidence": "I donated money"
+        }
+      ]
+    }
+  ],
+  "custom_requests": [],
+  "no_document_needed": [],
+  "not_asked": [
+    "state_refund_received"
+  ],
+  "notes_for_preparer": [],
+  "facts_recorded": {
+    "filing_status": {
+      "value": "married_separate",
+      "evidence": "still filing separately"
+    },
+    "dependents_count": {
+      "value": 3,
+      "evidence": "still have three dependents"
+    },
+    "new_dependent": {
+      "value": false,
+      "evidence": "no, I haven't had a baby"
+    },
+    "w2_employer_count": {
+      "value": 1,
+      "evidence": "Just one employer"
+    },
+    "dependent_care_paid": {
+      "value": true,
+      "evidence": "I paid someone to watch my kids"
+    },
+    "charitable_giving": {
+      "value": true,
+      "evidence": "I donated money"
+    },
+    "self_employment": {
+      "value": true,
+      "evidence": "I did some freelance work"
+    },
+    "business_app_payments": {
+      "value": true,
+      "evidence": "through a payment app"
+    },
+    "estimated_payments_made": {
+      "value": false,
+      "evidence": "I didn't make any separate payments"
+    },
+    "interest_income": {
+      "value": false,
+      "evidence": "didn't earn any interest"
+    },
+    "dividend_income": {
+      "value": false,
+      "evidence": "get any dividends"
+    },
+    "sold_investments": {
+      "value": false,
+      "evidence": "didn't sell any stocks"
+    },
+    "digital_asset_transactions": {
+      "value": true,
+      "evidence": "sell and trade some cryptocurrency"
+    },
+    "retirement_distribution": {
+      "value": false,
+      "evidence": "didn't take anything out"
+    },
+    "social_security": {
+      "value": false,
+      "evidence": "didn't get Social Security"
+    },
+    "unemployment": {
+      "value": false,
+      "evidence": "or unemployment benefits this year"
+    },
+    "has_mortgage": {
+      "value": false,
+      "evidence": "I don't have a mortgage"
+    },
+    "bought_home": {
+      "value": false,
+      "evidence": "didn't buy or sell a home"
+    },
+    "sold_home": {
+      "value": false,
+      "evidence": "didn't buy or sell a home"
+    },
+    "marketplace_coverage": {
+      "value": false,
+      "evidence": "nobody in my household"
+    },
+    "hsa_withdrawal": {
+      "value": false,
+      "evidence": "didn't use a health savings account"
+    },
+    "hsa_direct_contribution": {
+      "value": false,
+      "evidence": "didn't use a health savings account"
+    },
+    "student_loan_interest": {
+      "value": false,
+      "evidence": "didn't pay student loan interest"
+    },
+    "tuition_paid": {
+      "value": false,
+      "evidence": "paid college tuition or fees"
+    },
+    "tips_income": {
+      "value": false,
+      "evidence": "didn't get any tips"
+    },
+    "overtime_pay": {
+      "value": false,
+      "evidence": "or overtime pay"
+    },
+    "rental_property": {
+      "value": false,
+      "evidence": "didn't rent out any property"
+    },
+    "gambling_winnings": {
+      "value": false,
+      "evidence": "win money gambling"
+    },
+    "ip_pin_enrolled": {
+      "value": false,
+      "evidence": "don't have an Identity Protection PIN"
+    },
+    "ev_purchased": {
+      "value": false,
+      "evidence": "didn't buy an electric"
+    },
+    "new_vehicle_loan": {
+      "value": false,
+      "evidence": "didn't take out a loan"
+    },
+    "clean_energy_installed": {
+      "value": false,
+      "evidence": "didn't install solar panels"
+    },
+    "efficiency_improvements": {
+      "value": false,
+      "evidence": "energy-saving upgrades to my home"
+    },
+    "k1_count": {
+      "value": 0,
+      "evidence": "I don't own a share"
+    },
+    "itemized_last_year": {
+      "value": false,
+      "evidence": "prior_year:itemized"
+    }
+  },
+  "agent_note": "I've submitted the draft list for Client 19 and it's waiting for your review. Nothing has gone to the client.\n\n**On the draft list (6 items):**\n1. **W-2:** one employer, count 1.\n2. **Business records:** income and expense records for the freelance and side business, plus any 1099-NEC.\n3. **1099-K:** from any payment app or marketplace the client's customers used.\n4. **Digital assets:** any 1099-DA, plus the client's own records of crypto sales and trades. The client said this is new this year.\n5. **Child care:** provider name, address, taxpayer ID and amount paid.\n6. **Charity:** records for money and goods donated. The client gave both cash and goods, so noncash-gift records may apply.\n\n**Things I was unsure about:**\n- I didn't ask about state tax refunds. The client didn't itemize last year, and the refund document only applies after itemizing. The build step lists `state_refund_received` as not asked.\n- The filing status is married filing separately, the same as last year. The client has three dependents and no new ones. The child care and charity items were also on last year's list.\n- I recorded `itemized_last_year` as false from the prior-year summary, not from the client's own answer.\n- The client gave no details on the side business, the crypto activity, or the goods donated. I added no custom requests.\n- The client asked no tax questions, so there are no preparer notes.",
+  "draft_sha256": "63c2119f805b4e6beda50e904a6576c5a2faf1a1ed5a1aec49a93dfe63fa4fd7"
+}

@@ -1,0 +1,202 @@
+[
+  {
+    "name": "list_drafts",
+    "title": "List drafts",
+    "description": "Lists the agent's draft document lists awaiting the preparer's review: each draft's ID, client, number of documents, number of flags to check, and review status.",
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": false
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "title": "list_draftsArguments"
+    }
+  },
+  {
+    "name": "open_review",
+    "title": "Open a draft for review",
+    "description": "Opens one draft on the preparer's review screen. Returns a readable summary of its documents, flags and notes. Only the preparer can approve, on the screen.",
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "openWorldHint": false
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "draft_id": {
+          "description": "The draft's ID, d plus two digits, such as d07; list_drafts gives them.",
+          "title": "Draft Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "draft_id"
+      ],
+      "title": "open_reviewArguments"
+    },
+    "_meta": {
+      "ui": {
+        "resourceUri": "ui://preparer/review.html"
+      }
+    }
+  },
+  {
+    "name": "save_review",
+    "title": "Save review",
+    "description": "Stores the preparer's decisions so far. Used by the review screen only.",
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "openWorldHint": false
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "draft_id": {
+          "description": "The draft's ID, d plus two digits, such as d07; list_drafts gives them.",
+          "title": "Draft Id",
+          "type": "string"
+        },
+        "review_token": {
+          "description": "The review token open_review gave the review screen.",
+          "title": "Review Token",
+          "type": "string"
+        },
+        "draft_sha256": {
+          "description": "The draft's SHA-256, as open_review gave it to the review screen.",
+          "title": "Draft Sha256",
+          "type": "string"
+        },
+        "decisions": {
+          "additionalProperties": true,
+          "description": "The preparer's decisions: documents, custom_requests, added, follow_ups and flags_checked.",
+          "title": "Decisions",
+          "type": "object"
+        },
+        "host": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The host's name and version from ui/initialize.",
+          "title": "Host"
+        }
+      },
+      "required": [
+        "draft_id",
+        "review_token",
+        "draft_sha256",
+        "decisions"
+      ],
+      "title": "save_reviewArguments"
+    },
+    "_meta": {
+      "ui": {
+        "resourceUri": "ui://preparer/review.html",
+        "visibility": [
+          "app"
+        ]
+      }
+    }
+  },
+  {
+    "name": "approve_review",
+    "title": "Approve list",
+    "description": "Approves the preparer's document list for a draft. Final. Used by the review screen only.",
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "openWorldHint": false
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "draft_id": {
+          "description": "The draft's ID, d plus two digits, such as d07; list_drafts gives them.",
+          "title": "Draft Id",
+          "type": "string"
+        },
+        "review_token": {
+          "description": "The review token open_review gave the review screen.",
+          "title": "Review Token",
+          "type": "string"
+        },
+        "draft_sha256": {
+          "description": "The draft's SHA-256, as open_review gave it to the review screen.",
+          "title": "Draft Sha256",
+          "type": "string"
+        },
+        "decisions": {
+          "additionalProperties": true,
+          "description": "The preparer's decisions: documents, custom_requests, added, follow_ups and flags_checked.",
+          "title": "Decisions",
+          "type": "object"
+        },
+        "host": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The host's name and version from ui/initialize.",
+          "title": "Host"
+        }
+      },
+      "required": [
+        "draft_id",
+        "review_token",
+        "draft_sha256",
+        "decisions"
+      ],
+      "title": "approve_reviewArguments"
+    },
+    "_meta": {
+      "ui": {
+        "resourceUri": "ui://preparer/review.html",
+        "visibility": [
+          "app"
+        ]
+      }
+    }
+  },
+  {
+    "name": "approved_list",
+    "title": "Approved list",
+    "description": "Gives a draft's approved document list and follow-up questions as text, or says it is not approved yet. The list stays with the preparer.",
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": false
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "draft_id": {
+          "description": "The draft's ID, d plus two digits, such as d07; list_drafts gives them.",
+          "title": "Draft Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "draft_id"
+      ],
+      "title": "approved_listArguments"
+    }
+  }
+]

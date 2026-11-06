@@ -48,6 +48,21 @@ TRUTH_ONLY_KEYS = {"true_facts", "prior_year_facts", "persona", "probes", "chang
 FOLLOW_UPS = {k: s.asked_if["fact"] for k, s in SPECS.items() if s.is_follow_up}
 
 
+# The preparer review screen's files (PRD-preparer-review.md) are not the generator's: drafts, review
+# records, the answer key, its notes and the marked drafts are written ASCII only by preparer.drafts.dump and
+# checked in their own tests.
+PREPARER_FILES = ("drafts", "reviews")
+PREPARER_TRUTH = ("review_key.json", "review_noted.json", "review_inferable.json")
+
+
+def generator_json_files():
+    for path in sorted(DATA_DIR.rglob("*.json")):
+        rel = path.relative_to(DATA_DIR)
+        if rel.parts[0] in PREPARER_FILES or (rel.parts[0] == "truth" and rel.name in PREPARER_TRUTH):
+            continue
+        yield path
+
+
 def data_files(root: Path) -> dict[str, bytes]:
     return {str(p.relative_to(root)): p.read_bytes() for p in sorted(root.rglob("*.json"))}
 
@@ -63,7 +78,8 @@ def regenerated(tmp_path_factory):
 
 
 def test_regeneration_matches_committed_data_byte_for_byte(regenerated):
-    committed = {k: v for k, v in data_files(DATA_DIR).items() if not k.startswith("labels")}
+    generator_files = {str(p.relative_to(DATA_DIR)) for p in generator_json_files()}
+    committed = {k: v for k, v in data_files(DATA_DIR).items() if not k.startswith("labels") and k in generator_files}
     assert data_files(regenerated) == committed
 
 
@@ -93,7 +109,7 @@ def test_frozen_splits_need_force(tmp_path):
 
 
 def test_json_style():
-    for path in sorted(DATA_DIR.rglob("*.json")):
+    for path in generator_json_files():
         text = path.read_text(encoding="utf-8")
         assert text == dump_json(json.loads(text)), path
         assert text.endswith("}\n") and "\r" not in text, path
@@ -105,7 +121,8 @@ def test_json_style():
 def test_one_hundred_households_in_both_folders():
     assert sorted(TRUTHS) == IDS
     assert sorted(p.stem for p in (DATA_DIR / "profiles").glob("*.json")) == IDS
-    assert sorted(p.name for p in (DATA_DIR / "truth").glob("*.json")) == sorted([f"{h}.json" for h in IDS] + ["ground_truth.json"])
+    truth_files = [p.name for p in (DATA_DIR / "truth").glob("*.json") if p.name not in PREPARER_TRUTH]
+    assert sorted(truth_files) == sorted([f"{h}.json" for h in IDS] + ["ground_truth.json"])
 
 
 def test_counts_per_complexity_and_split():

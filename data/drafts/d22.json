@@ -1,0 +1,255 @@
+{
+  "draft_id": "d22",
+  "client_name": "Client 22",
+  "tax_year": 2026,
+  "prior_year_summary": {
+    "tax_year": 2025,
+    "filing_status": "head_of_household",
+    "dependents_count": 1,
+    "itemized": false,
+    "documents_on_file": [
+      {
+        "rule_id": "R001",
+        "label": "Form W-2",
+        "count": 1
+      },
+      {
+        "rule_id": "R020",
+        "label": "Schedule K-1",
+        "count": 2
+      },
+      {
+        "rule_id": "R021",
+        "label": "Rental income and expense records",
+        "count": 1
+      },
+      {
+        "rule_id": "R028",
+        "label": "Vehicle loan interest statement",
+        "count": 1
+      }
+    ]
+  },
+  "documents": [
+    {
+      "rule_id": "R001",
+      "document": "Form W-2 from each employer (yours and, if filing jointly, your spouse's), including any employer you left during the year, plus any corrected Form W-2c",
+      "count": 1,
+      "client_reason": "You were paid wages, so we need the year-end wage statement from each employer, including any job you left.",
+      "source_url": "https://www.irs.gov/taxtopics/tc401",
+      "source_title": "Topic no. 401, Wages and salaries",
+      "triggered_by": [
+        {
+          "fact": "w2_employer_count",
+          "value": 1,
+          "evidence": "one employer paid me wages"
+        }
+      ]
+    },
+    {
+      "rule_id": "R020",
+      "document": "Schedule K-1 from each partnership, S corporation, estate, or trust in which the client held an interest or was a beneficiary at any time during 2026 (a separate K-1 for each entity), plus any Schedule K-3 a partnership or S corporation sends",
+      "count": 2,
+      "client_reason": "You have a share in a partnership, company, estate, or trust, so we need the year-end statement from each one.",
+      "source_url": "https://www.irs.gov/pub/irs-dft/i1040se--dft.pdf",
+      "source_title": "2026 Instructions for Schedule E (Form 1040), Supplemental Income and Loss (early release draft, posted 09/24/2026)",
+      "triggered_by": [
+        {
+          "fact": "k1_count",
+          "value": 2,
+          "evidence": "I've got two of them this year"
+        }
+      ]
+    },
+    {
+      "rule_id": "R021",
+      "document": "For each rental real estate property: rents and other amounts received (including the fair market value of any property or services received as rent), expenses paid, the number of days rented at a fair rental price and the number of days of personal use, purchase, improvement, and prior depreciation records, a dated mileage log if car expenses are claimed, and any Forms 1099-MISC or 1099-K received",
+      "count": 1,
+      "client_reason": "You rented out a home, a room, or other real estate, so we need your rental income and expense records.",
+      "source_url": "https://www.irs.gov/pub/irs-dft/i1040se--dft.pdf",
+      "source_title": "2026 Instructions for Schedule E (Form 1040), Supplemental Income and Loss (draft, September 2026)",
+      "triggered_by": [
+        {
+          "fact": "rental_property",
+          "value": true,
+          "evidence": "still renting out the same place"
+        }
+      ]
+    },
+    {
+      "rule_id": "R023",
+      "document": "Form W-2G, Certain Gambling Winnings, for each received, plus the client's own record of gambling winnings and losses (diary, tickets, receipts, casino win/loss statements, or betting account history)",
+      "count": 1,
+      "client_reason": "You had gambling winnings, so we need any winnings statement the payer gave you.",
+      "source_url": "https://www.irs.gov/taxtopics/tc419",
+      "source_title": "Topic no. 419, Gambling income and losses",
+      "triggered_by": [
+        {
+          "fact": "gambling_winnings",
+          "value": true,
+          "evidence": "I had some gambling winnings this year"
+        }
+      ]
+    },
+    {
+      "rule_id": "R028",
+      "document": "Lender's interest statement",
+      "count": 1,
+      "client_reason": "You paid interest on a loan for a new vehicle, so we need the lender's statement of interest paid.",
+      "source_url": "https://www.irs.gov/instructions/i1098vli",
+      "source_title": "Instructions for Form 1098-VLI (Rev. December 2026), for calendar year 2026",
+      "triggered_by": [
+        {
+          "fact": "new_vehicle_loan",
+          "value": true,
+          "evidence": "still paying on that new vehicle loan"
+        }
+      ]
+    }
+  ],
+  "custom_requests": [],
+  "no_document_needed": [],
+  "not_asked": [
+    "business_app_payments",
+    "state_refund_received",
+    "clean_energy_installed",
+    "efficiency_improvements"
+  ],
+  "notes_for_preparer": [
+    {
+      "text": "Client asked: \"can you just email me the list when it's ready?\" \u2014 client would like the document request list emailed once reviewed."
+    }
+  ],
+  "facts_recorded": {
+    "filing_status": {
+      "value": "head_of_household",
+      "evidence": "still filing as head of household"
+    },
+    "dependents_count": {
+      "value": 1,
+      "evidence": "with just the one dependent"
+    },
+    "new_dependent": {
+      "value": false,
+      "evidence": "no new child or anyone new that I support"
+    },
+    "w2_employer_count": {
+      "value": 1,
+      "evidence": "one employer paid me wages"
+    },
+    "tips_income": {
+      "value": false,
+      "evidence": "no tips or overtime"
+    },
+    "overtime_pay": {
+      "value": false,
+      "evidence": "no tips or overtime"
+    },
+    "k1_count": {
+      "value": 2,
+      "evidence": "I've got two of them this year"
+    },
+    "rental_property": {
+      "value": true,
+      "evidence": "still renting out the same place"
+    },
+    "new_vehicle_loan": {
+      "value": true,
+      "evidence": "still paying on that new vehicle loan"
+    },
+    "ev_purchased": {
+      "value": false,
+      "evidence": "didn't buy any other vehicle this year, electric or otherwise"
+    },
+    "gambling_winnings": {
+      "value": true,
+      "evidence": "I had some gambling winnings this year"
+    },
+    "self_employment": {
+      "value": false,
+      "evidence": "Nothing from freelance work"
+    },
+    "unemployment": {
+      "value": false,
+      "evidence": "Nothing from freelance work, unemployment"
+    },
+    "social_security": {
+      "value": false,
+      "evidence": "unemployment, Social Security, or retirement accounts"
+    },
+    "retirement_distribution": {
+      "value": false,
+      "evidence": "Social Security, or retirement accounts though"
+    },
+    "interest_income": {
+      "value": false,
+      "evidence": "No interest, dividends, or stock sales"
+    },
+    "dividend_income": {
+      "value": false,
+      "evidence": "No interest, dividends, or stock sales"
+    },
+    "sold_investments": {
+      "value": false,
+      "evidence": "No interest, dividends, or stock sales"
+    },
+    "digital_asset_transactions": {
+      "value": false,
+      "evidence": "didn't sell any crypto either"
+    },
+    "has_mortgage": {
+      "value": false,
+      "evidence": "No mortgage on my place"
+    },
+    "bought_home": {
+      "value": false,
+      "evidence": "didn't buy or sell a home this year"
+    },
+    "sold_home": {
+      "value": false,
+      "evidence": "didn't buy or sell a home this year"
+    },
+    "itemized_last_year": {
+      "value": false,
+      "evidence": "prior_year:itemized"
+    },
+    "marketplace_coverage": {
+      "value": false,
+      "evidence": "didn't get health insurance through the marketplace"
+    },
+    "hsa_withdrawal": {
+      "value": false,
+      "evidence": "haven't put money into or taken money out of a health savings account"
+    },
+    "hsa_direct_contribution": {
+      "value": false,
+      "evidence": "haven't put money into or taken money out of a health savings account"
+    },
+    "dependent_care_paid": {
+      "value": false,
+      "evidence": "No child care costs for work"
+    },
+    "tuition_paid": {
+      "value": false,
+      "evidence": "no tuition"
+    },
+    "student_loan_interest": {
+      "value": false,
+      "evidence": "no student loan interest"
+    },
+    "charitable_giving": {
+      "value": false,
+      "evidence": "didn't give any money or goods"
+    },
+    "estimated_payments_made": {
+      "value": false,
+      "evidence": "didn't send the IRS any payments"
+    },
+    "ip_pin_enrolled": {
+      "value": false,
+      "evidence": "I don't have one of those"
+    }
+  },
+  "agent_note": "The draft list for household Client 22 (intake in_3fe621) is ready for your review. Its status is pending_review and it has not been sent to the client.\n\n**What's on the draft list (5 items):**\n1. **W-2:** 1, from their one employer.\n2. **K-1s:** 2, plus any K-3s. The client still holds the same two interests as last year.\n3. **Rental income and expense records:** 1 property, the same one as last year.\n4. **W-2G gambling winnings statements, plus the client's own win/loss records:** this is new this year.\n5. **Interest statement from the lender on the new vehicle loan:** the client is still paying on the loan from last year.\n\nThere are no custom requests and no items marked \"no document needed.\"\n\n**Things I'm unsure about:**\n- **Gambling:** the client said they \"hit a few casino jackpots,\" so there are probably several W-2Gs, even though the list shows a count of 1. Please confirm how many they should send.\n- **Questions I didn't ask:**\n  - Payments through apps or online marketplaces: skipped because they had no freelance or business income.\n  - State refund: skipped because they didn't itemize last year, according to last year's file.\n  - Solar or energy-saving upgrades: skipped because they rent the home they live in, and those credits have ended anyway.\n- **Rental documents:** the rental rule asks for any 1099-MISC or 1099-K. I didn't ask whether the client got any of these for the rental.\n- **Client request:** the client asked for the list by email. I told them their preparer will review it and send it, and I left you a note about this.",
+  "draft_sha256": "5ddd074803557fefc0efd1a6038bedc4dc8849e4d38177488bf3606b065c4056"
+}

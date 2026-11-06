@@ -1,0 +1,364 @@
+{
+  "draft_id": "d14",
+  "client_name": "Client 14",
+  "tax_year": 2026,
+  "prior_year_summary": {
+    "tax_year": 2025,
+    "filing_status": "married_joint",
+    "dependents_count": 2,
+    "itemized": false,
+    "documents_on_file": [
+      {
+        "rule_id": "R001",
+        "label": "Form W-2",
+        "count": 1
+      },
+      {
+        "rule_id": "R004",
+        "label": "Form 1099-INT",
+        "count": 1
+      },
+      {
+        "rule_id": "R017",
+        "label": "Form 1098-T",
+        "count": 1
+      },
+      {
+        "rule_id": "R018",
+        "label": "Dependent care provider information",
+        "count": 1
+      },
+      {
+        "rule_id": "R021",
+        "label": "Rental income and expense records",
+        "count": 1
+      },
+      {
+        "rule_id": "R024",
+        "label": "IP PIN",
+        "count": 1
+      }
+    ]
+  },
+  "documents": [
+    {
+      "rule_id": "R001",
+      "document": "Form W-2 from each employer (yours and, if filing jointly, your spouse's), including any employer you left during the year, plus any corrected Form W-2c",
+      "count": 1,
+      "client_reason": "You were paid wages, so we need the year-end wage statement from each employer, including any job you left.",
+      "source_url": "https://www.irs.gov/taxtopics/tc401",
+      "source_title": "Topic no. 401, Wages and salaries",
+      "triggered_by": [
+        {
+          "fact": "w2_employer_count",
+          "value": 1,
+          "evidence": "Just one employer"
+        }
+      ]
+    },
+    {
+      "rule_id": "R004",
+      "document": "Form 1099-INT from each payer",
+      "count": 1,
+      "client_reason": "You earned interest, so we need the year-end interest statement from each bank or payer.",
+      "source_url": "https://www.irs.gov/taxtopics/tc403",
+      "source_title": "Topic no. 403, Interest received",
+      "triggered_by": [
+        {
+          "fact": "interest_income",
+          "value": true,
+          "evidence": "interest from the bank"
+        }
+      ]
+    },
+    {
+      "rule_id": "R008",
+      "document": "Form 1099-R for each distribution, direct rollover, Roth conversion, or pension or annuity payment (RRB-1099-R for railroad retirement tier II), plus proof of the redeposit date and amount for any indirect (60-day) rollover",
+      "count": 1,
+      "client_reason": "You took money out of a retirement account or rolled one over, so we need the year-end distribution statement.",
+      "source_url": "https://www.irs.gov/instructions/i1099r",
+      "source_title": "Instructions for Forms 1099-R and 5498 (2026)",
+      "triggered_by": [
+        {
+          "fact": "retirement_distribution",
+          "value": true,
+          "evidence": "take money out of a retirement account"
+        }
+      ]
+    },
+    {
+      "rule_id": "R010",
+      "document": "Form 1099-G, Certain Government Payments, from each agency that paid unemployment (state unemployment agency or Railroad Retirement Board) showing unemployment compensation and any federal income tax withheld",
+      "count": 1,
+      "client_reason": "You received unemployment benefits, so we need the year-end statement from the state.",
+      "source_url": "https://www.irs.gov/taxtopics/tc418",
+      "source_title": "Topic no. 418, Unemployment compensation",
+      "triggered_by": [
+        {
+          "fact": "unemployment",
+          "value": true,
+          "evidence": "got unemployment this year"
+        }
+      ]
+    },
+    {
+      "rule_id": "R012",
+      "document": "Form 1095-A, Health Insurance Marketplace Statement",
+      "count": 1,
+      "client_reason": "You had a Marketplace plan, so we need the statement the Marketplace sends.",
+      "source_url": "https://www.irs.gov/individuals/reconciling-your-advance-payments-of-the-premium-tax-credit",
+      "source_title": "Reconciling your advance payments of the Premium Tax Credit",
+      "triggered_by": [
+        {
+          "fact": "marketplace_coverage",
+          "value": true,
+          "evidence": "health coverage through the marketplace"
+        }
+      ]
+    },
+    {
+      "rule_id": "R014",
+      "document": "Form 1098 from each lender",
+      "count": 1,
+      "client_reason": "You have a mortgage, so we need the year-end mortgage interest statement from your lender.",
+      "source_url": "https://www.irs.gov/instructions/i1098",
+      "source_title": "Instructions for Form 1098 (12/2026)",
+      "triggered_by": [
+        {
+          "fact": "has_mortgage",
+          "value": true,
+          "evidence": "we have a mortgage"
+        }
+      ]
+    },
+    {
+      "rule_id": "R015",
+      "document": "Closing statement from the home purchase (settlement statement, Closing Disclosure, ALTA statement, or HUD-1), including the buyer's side showing points, prorated property taxes, any mortgage insurance or VA funding fee paid at closing, and settlement costs",
+      "count": 1,
+      "client_reason": "You bought a home, so we need the closing statement from the purchase.",
+      "source_url": "https://www.irs.gov/publications/p530",
+      "source_title": "Publication 530 (2025), Tax Information for Homeowners",
+      "triggered_by": [
+        {
+          "fact": "bought_home",
+          "value": true,
+          "evidence": "we bought a house"
+        }
+      ]
+    },
+    {
+      "rule_id": "R018",
+      "document": "Provider name, address, taxpayer ID, and amount paid",
+      "count": 1,
+      "client_reason": "You paid for care, so we need each provider's name, address, taxpayer ID number, and how much you paid.",
+      "source_url": "https://www.irs.gov/pub/irs-dft/i2441--dft.pdf",
+      "source_title": "2026 Instructions for Form 2441, Child and Dependent Care Expenses (draft, August 21, 2026)",
+      "triggered_by": [
+        {
+          "fact": "dependent_care_paid",
+          "value": true,
+          "evidence": "we paid for childcare"
+        }
+      ]
+    },
+    {
+      "rule_id": "R019",
+      "document": "A copy of the new dependent's Social Security card (name and number as printed) and their date of birth; if the SSN has not been issued, the date it was applied for, or an ATIN (Form W-7A) for a pending adoption, or an ITIN for a dependent who cannot get an SSN; for a child born and died in 2026 without an SSN, a birth certificate, death certificate, or hospital record showing live birth",
+      "count": 1,
+      "client_reason": "You have a new dependent, so we need a copy of their Social Security card and their date of birth.",
+      "source_url": "https://www.irs.gov/individuals/checklist-for-free-tax-return-preparation",
+      "source_title": "Checklist for free tax return preparation",
+      "triggered_by": [
+        {
+          "fact": "new_dependent",
+          "value": true,
+          "evidence": "Yes, we added one new dependent"
+        }
+      ]
+    },
+    {
+      "rule_id": "R021",
+      "document": "For each rental real estate property: rents and other amounts received (including the fair market value of any property or services received as rent), expenses paid, the number of days rented at a fair rental price and the number of days of personal use, purchase, improvement, and prior depreciation records, a dated mileage log if car expenses are claimed, and any Forms 1099-MISC or 1099-K received",
+      "count": 1,
+      "client_reason": "You rented out a home, a room, or other real estate, so we need your rental income and expense records.",
+      "source_url": "https://www.irs.gov/pub/irs-dft/i1040se--dft.pdf",
+      "source_title": "2026 Instructions for Schedule E (Form 1040), Supplemental Income and Loss (draft, September 2026)",
+      "triggered_by": [
+        {
+          "fact": "rental_property",
+          "value": true,
+          "evidence": "we do rent out a property"
+        }
+      ]
+    },
+    {
+      "rule_id": "R024",
+      "document": "This year's IP PIN",
+      "count": 1,
+      "client_reason": "You're in the IRS identity protection program, so we need this year's six-digit PIN.",
+      "source_url": "https://www.irs.gov/identity-theft-fraud-scams/frequently-asked-questions-about-the-identity-protection-personal-identification-number-ip-pin",
+      "source_title": "Frequently asked questions about the identity protection personal identification number (IP PIN)",
+      "triggered_by": [
+        {
+          "fact": "ip_pin_enrolled",
+          "value": true,
+          "evidence": "still have the IRS identity protection PIN"
+        }
+      ]
+    }
+  ],
+  "custom_requests": [],
+  "no_document_needed": [],
+  "not_asked": [
+    "business_app_payments"
+  ],
+  "notes_for_preparer": [
+    {
+      "text": "Client asked: \"Can I deduct the costs of buying the house?\""
+    }
+  ],
+  "facts_recorded": {
+    "filing_status": {
+      "value": "married_joint",
+      "evidence": "Still jointly"
+    },
+    "dependents_count": {
+      "value": 3,
+      "evidence": "3 dependents now"
+    },
+    "new_dependent": {
+      "value": true,
+      "evidence": "Yes, we added one new dependent"
+    },
+    "bought_home": {
+      "value": true,
+      "evidence": "we bought a house"
+    },
+    "has_mortgage": {
+      "value": true,
+      "evidence": "we have a mortgage"
+    },
+    "sold_home": {
+      "value": false,
+      "evidence": "didn't sell any home"
+    },
+    "rental_property": {
+      "value": true,
+      "evidence": "we do rent out a property"
+    },
+    "w2_employer_count": {
+      "value": 1,
+      "evidence": "Just one employer"
+    },
+    "dependent_care_paid": {
+      "value": true,
+      "evidence": "we paid for childcare"
+    },
+    "interest_income": {
+      "value": true,
+      "evidence": "interest from the bank"
+    },
+    "dividend_income": {
+      "value": false,
+      "evidence": "no dividends from stocks"
+    },
+    "tuition_paid": {
+      "value": false,
+      "evidence": "nobody paid college tuition"
+    },
+    "ip_pin_enrolled": {
+      "value": true,
+      "evidence": "still have the IRS identity protection PIN"
+    },
+    "retirement_distribution": {
+      "value": true,
+      "evidence": "take money out of a retirement account"
+    },
+    "unemployment": {
+      "value": true,
+      "evidence": "got unemployment this year"
+    },
+    "self_employment": {
+      "value": false,
+      "evidence": "No freelance or gig work"
+    },
+    "sold_investments": {
+      "value": false,
+      "evidence": "no investments or crypto sold"
+    },
+    "digital_asset_transactions": {
+      "value": false,
+      "evidence": "no investments or crypto sold"
+    },
+    "social_security": {
+      "value": false,
+      "evidence": "No Social Security"
+    },
+    "state_refund_received": {
+      "value": false,
+      "evidence": "No state refund"
+    },
+    "marketplace_coverage": {
+      "value": true,
+      "evidence": "health coverage through the marketplace"
+    },
+    "hsa_withdrawal": {
+      "value": false,
+      "evidence": "No health savings account activity"
+    },
+    "hsa_direct_contribution": {
+      "value": false,
+      "evidence": "No health savings account activity"
+    },
+    "estimated_payments_made": {
+      "value": false,
+      "evidence": "No estimated payments"
+    },
+    "charitable_giving": {
+      "value": false,
+      "evidence": "no charity donations"
+    },
+    "gambling_winnings": {
+      "value": false,
+      "evidence": "no gambling winnings"
+    },
+    "tips_income": {
+      "value": false,
+      "evidence": "No tips"
+    },
+    "overtime_pay": {
+      "value": false,
+      "evidence": "no overtime"
+    },
+    "new_vehicle_loan": {
+      "value": false,
+      "evidence": "no new vehicle loan"
+    },
+    "ev_purchased": {
+      "value": false,
+      "evidence": "no electric or plug-in vehicle"
+    },
+    "student_loan_interest": {
+      "value": false,
+      "evidence": "No student loan interest"
+    },
+    "clean_energy_installed": {
+      "value": false,
+      "evidence": "No solar or energy-saving upgrades"
+    },
+    "efficiency_improvements": {
+      "value": false,
+      "evidence": "No solar or energy-saving upgrades"
+    },
+    "itemized_last_year": {
+      "value": false,
+      "evidence": "prior_year:itemized"
+    },
+    "k1_count": {
+      "value": 0,
+      "evidence": "we don't have any of that"
+    }
+  },
+  "agent_note": "I've submitted the draft list for Client 14 (intake in_8dcb79). It is pending your review, and nothing has gone to the client.\n\n**On the draft list (11 items):**\n1. Form W-2 (1 employer)\n2. Form 1099-INT\n3. Form 1099-R for the retirement withdrawal\n4. Form 1099-G for unemployment\n5. Form 1095-A for the Marketplace plan\n6. Form 1098 for the mortgage\n7. Closing statement from the home purchase\n8. Child care provider details: name, address, taxpayer ID and amount paid\n9. New dependent's Social Security card and date of birth\n10. Rental income and expense records\n11. This year's IP PIN\n\nThere are no custom requests and no credits that ended.\n\n**For your attention:**\n- **Client's question:** \"Can I deduct the costs of buying the house?\" I didn't answer it. It's saved as a note for you.\n- **Not asked:** `business_app_payments`. The client said they had no freelance or gig work, so I skipped it. It counts as no.\n- **W-2 count:** The client said \"just one employer\" paid wages to the household. They also had unemployment and a retirement withdrawal, so you may want to confirm that count.\n- **Rental property:** I didn't ask whether it is the old home or a separate property, or how many rentals there are. The list asks for records for each rental.\n- **Previous home:** The client said they didn't sell a home. They bought one this year, so you may want to ask what happened to the previous residence.\n- **Last year's 1098-T:** Not requested this year. The client said nobody paid tuition.",
+  "draft_sha256": "c08703b49ec687db3557161bdc94f7c89be91cd51a2b648e087275e1bf2eef1e"
+}

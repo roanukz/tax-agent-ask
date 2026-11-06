@@ -12,3 +12,9 @@
 - Do not create a GitHub repo, make anything public, enable Pages, or post anything without Roanuk's explicit "proceed".
 - American spelling. No em dashes or en dashes in any file, comment, or commit message.
 - This is not tax advice. The agent never advises a client and never sends anything to a client.
+- For the preparer review screen, read PRD-preparer-review.md. Where it and PRD-tax-agent-ask.md disagree about that feature, it governs.
+- The preparer server reads its drafts folder and writes its reviews folder only. It never opens a truth folder, never calls a model, and has no tool that sends anything to anyone.
+- save_review and approve_review stay app-only (visibility ["app"]) and refuse any client that did not negotiate MCP Apps.
+- For this feature, never change the tax server, the harness, the prompts, the rules, or anything a published result depends on.
+- The view has no free-text inputs and no browser storage.
+- data/reviews/ holds Roanuk's labels: never edit a saved record by hand or by script, and before all 24 reviews are approved never show him any data/truth/review_*.json file (the key, the noted problems, the marked drafts), which drafts are marked or how many, or any draft's result.

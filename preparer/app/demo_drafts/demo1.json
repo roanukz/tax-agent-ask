@@ -1,0 +1,255 @@
+{
+  "draft_id": "demo1",
+  "client_name": "Demo Client 1",
+  "tax_year": 2026,
+  "prior_year_summary": {
+    "tax_year": 2025,
+    "filing_status": "single",
+    "dependents_count": 2,
+    "itemized": false,
+    "documents_on_file": [
+      {
+        "rule_id": "R001",
+        "label": "Form W-2",
+        "count": 2
+      },
+      {
+        "rule_id": "R006",
+        "label": "Form 1099-B",
+        "count": 1
+      },
+      {
+        "rule_id": "R020",
+        "label": "Schedule K-1",
+        "count": 1
+      }
+    ]
+  },
+  "documents": [
+    {
+      "rule_id": "R001",
+      "document": "Form W-2 from each employer (yours and, if filing jointly, your spouse's), including any employer you left during the year, plus any corrected Form W-2c",
+      "count": 1,
+      "client_reason": "You were paid wages, so we need the year-end wage statement from each employer, including any job you left.",
+      "source_url": "https://www.irs.gov/taxtopics/tc401",
+      "source_title": "Topic no. 401, Wages and salaries",
+      "triggered_by": [
+        {
+          "fact": "w2_employer_count",
+          "value": 1,
+          "evidence": "Just one employer"
+        }
+      ]
+    },
+    {
+      "rule_id": "R002",
+      "document": "Business income and expense records (income records, receipts, mileage logs, and bank or payment app statements), including any Forms 1099-NEC received",
+      "count": 1,
+      "client_reason": "You had freelance or business income, so we need your income and expense records and any year-end payment statements from clients.",
+      "source_url": "https://www.irs.gov/businesses/small-businesses-self-employed/manage-taxes-for-your-gig-work",
+      "source_title": "Manage taxes for your gig work",
+      "triggered_by": [
+        {
+          "fact": "self_employment",
+          "value": true,
+          "evidence": "did some freelance work"
+        }
+      ]
+    },
+    {
+      "rule_id": "R003",
+      "document": "Any Form 1099-K received from a payment app, online marketplace, or card processor (collect it even if you think it is wrong)",
+      "count": 1,
+      "client_reason": "If customers paid you through an app, an online marketplace, or a card processor, we need any year-end statement you received from it, even if you think it is wrong.",
+      "source_url": "https://www.irs.gov/businesses/understanding-your-form-1099-k",
+      "source_title": "Understanding your Form 1099-K",
+      "triggered_by": [
+        {
+          "fact": "business_app_payments",
+          "value": true,
+          "evidence": "paid me through an app or online marketplace"
+        }
+      ]
+    },
+    {
+      "rule_id": "R006",
+      "document": "Form 1099-B (or the broker's consolidated or substitute statement) from each brokerage or fund company, plus purchase and sale records for any sale not reported on a form or with basis not reported",
+      "count": 1,
+      "client_reason": "You sold investments, so we need the year-end statement from your brokerage.",
+      "source_url": "https://www.irs.gov/publications/p550",
+      "source_title": "Publication 550 (2025), Investment Income and Expenses",
+      "triggered_by": [
+        {
+          "fact": "sold_investments",
+          "value": true,
+          "evidence": "sold some investments"
+        }
+      ]
+    },
+    {
+      "rule_id": "R020",
+      "document": "Schedule K-1 from each partnership, S corporation, estate, or trust in which the client held an interest or was a beneficiary at any time during 2026 (a separate K-1 for each entity), plus any Schedule K-3 a partnership or S corporation sends",
+      "count": 1,
+      "client_reason": "You have a share in a partnership, company, estate, or trust, so we need the year-end statement from each one.",
+      "source_url": "https://www.irs.gov/pub/irs-dft/i1040se--dft.pdf",
+      "source_title": "2026 Instructions for Schedule E (Form 1040), Supplemental Income and Loss (early release draft, posted 09/24/2026)",
+      "triggered_by": [
+        {
+          "fact": "k1_count",
+          "value": 1,
+          "evidence": "I have one"
+        }
+      ]
+    }
+  ],
+  "custom_requests": [],
+  "no_document_needed": [],
+  "not_asked": [
+    "state_refund_received"
+  ],
+  "notes_for_preparer": [],
+  "facts_recorded": {
+    "filing_status": {
+      "value": "single",
+      "evidence": "still single"
+    },
+    "dependents_count": {
+      "value": 2,
+      "evidence": "2 dependents"
+    },
+    "new_dependent": {
+      "value": false,
+      "evidence": "Nobody new"
+    },
+    "itemized_last_year": {
+      "value": false,
+      "evidence": "prior_year:itemized"
+    },
+    "w2_employer_count": {
+      "value": 1,
+      "evidence": "Just one employer"
+    },
+    "sold_investments": {
+      "value": true,
+      "evidence": "sold some investments"
+    },
+    "k1_count": {
+      "value": 1,
+      "evidence": "I have one"
+    },
+    "self_employment": {
+      "value": true,
+      "evidence": "did some freelance work"
+    },
+    "business_app_payments": {
+      "value": true,
+      "evidence": "paid me through an app or online marketplace"
+    },
+    "interest_income": {
+      "value": false,
+      "evidence": "didn't earn any interest"
+    },
+    "dividend_income": {
+      "value": false,
+      "evidence": "or dividends"
+    },
+    "digital_asset_transactions": {
+      "value": false,
+      "evidence": "didn't deal"
+    },
+    "retirement_distribution": {
+      "value": false,
+      "evidence": "didn't take any money"
+    },
+    "social_security": {
+      "value": false,
+      "evidence": "didn't get Social Security"
+    },
+    "unemployment": {
+      "value": false,
+      "evidence": "Social Security or unemployment"
+    },
+    "estimated_payments_made": {
+      "value": false,
+      "evidence": "didn't send any separate"
+    },
+    "marketplace_coverage": {
+      "value": false,
+      "evidence": "we didn't buy"
+    },
+    "dependent_care_paid": {
+      "value": false,
+      "evidence": "didn't pay for child care"
+    },
+    "has_mortgage": {
+      "value": false,
+      "evidence": "don't have a mortgage"
+    },
+    "bought_home": {
+      "value": false,
+      "evidence": "didn't buy or sell"
+    },
+    "sold_home": {
+      "value": false,
+      "evidence": "didn't buy or sell"
+    },
+    "rental_property": {
+      "value": false,
+      "evidence": "didn't rent out"
+    },
+    "student_loan_interest": {
+      "value": false,
+      "evidence": "didn't pay any student loan interest"
+    },
+    "tuition_paid": {
+      "value": false,
+      "evidence": "nobody I support paid college tuition"
+    },
+    "hsa_withdrawal": {
+      "value": false,
+      "evidence": "didn't take money out"
+    },
+    "hsa_direct_contribution": {
+      "value": false,
+      "evidence": "didn't put any in myself"
+    },
+    "charitable_giving": {
+      "value": false,
+      "evidence": "didn't give to charity"
+    },
+    "gambling_winnings": {
+      "value": false,
+      "evidence": "didn't win any"
+    },
+    "tips_income": {
+      "value": false,
+      "evidence": "didn't get any tips"
+    },
+    "overtime_pay": {
+      "value": false,
+      "evidence": "didn't get paid overtime"
+    },
+    "new_vehicle_loan": {
+      "value": false,
+      "evidence": "didn't buy a new vehicle"
+    },
+    "ev_purchased": {
+      "value": false,
+      "evidence": "didn't buy an electric"
+    },
+    "clean_energy_installed": {
+      "value": false,
+      "evidence": "didn't install any solar panels"
+    },
+    "efficiency_improvements": {
+      "value": false,
+      "evidence": "didn't make any energy-saving upgrades"
+    },
+    "ip_pin_enrolled": {
+      "value": false,
+      "evidence": "don't have one"
+    }
+  },
+  "agent_note": "I submitted household Demo Client 1's draft list for your review (status: pending_review). I haven't sent anything to the client.\n\n**Draft list**\n1. Form W-2 from each employer. Count: 1.\n2. Business income and expense records, including any 1099-NEC.\n3. Any Form 1099-K received. The client said some customers paid through an app or online marketplace.\n4. Form 1099-B or the consolidated brokerage statement. The client sold investments.\n5. Schedule K-1 from each. Count: 1. The client has a share in a partnership or small company.\n\n**Notes**\n- **Unchanged from last year:** The client is still single with 2 dependents and has no new dependents. They didn't itemize last year, which I carried over from the 2025 summary.\n- **Everything else was \"no\":** I asked about all the other fact topics, and the client said no to each one. I recorded those as false, so they add no documents.\n- **Not asked:** I didn't ask about a state refund. Its rule also requires that they itemized last year, and they didn't.\n- **No custom requests or preparer notes.** The client asked no tax questions.\n- **K-1 and 1099-B:** The K-1 and the sale of investments both match last year's documents. I didn't ask what kind of partnership it is or which brokerage they used.\n- **Draft guidance:** The K-1 rule cites draft 2026 instructions, so you may want to verify it.",
+  "draft_sha256": "482f48598b1fc0f0dc9b697480a1ab88a02fb22085b8ec7e22bb68761a950893"
+}

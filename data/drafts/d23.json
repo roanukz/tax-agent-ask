@@ -1,0 +1,185 @@
+{
+  "draft_id": "d23",
+  "client_name": "Client 23",
+  "tax_year": 2026,
+  "prior_year_summary": {
+    "tax_year": 2025,
+    "filing_status": "head_of_household",
+    "dependents_count": 1,
+    "itemized": false,
+    "documents_on_file": [
+      {
+        "rule_id": "R001",
+        "label": "Form W-2",
+        "count": 2
+      }
+    ]
+  },
+  "documents": [
+    {
+      "rule_id": "R001",
+      "document": "Form W-2 from each employer (yours and, if filing jointly, your spouse's), including any employer you left during the year, plus any corrected Form W-2c",
+      "count": 1,
+      "client_reason": "You were paid wages, so we need the year-end wage statement from each employer, including any job you left.",
+      "source_url": "https://www.irs.gov/taxtopics/tc401",
+      "source_title": "Topic no. 401, Wages and salaries",
+      "triggered_by": [
+        {
+          "fact": "w2_employer_count",
+          "value": 1,
+          "evidence": "Just one employer paid me wages this year"
+        }
+      ]
+    }
+  ],
+  "custom_requests": [],
+  "no_document_needed": [],
+  "not_asked": [
+    "business_app_payments"
+  ],
+  "notes_for_preparer": [],
+  "facts_recorded": {
+    "filing_status": {
+      "value": "head_of_household",
+      "evidence": "with the same filing status and the same one dependent"
+    },
+    "dependents_count": {
+      "value": 1,
+      "evidence": "with the same filing status and the same one dependent"
+    },
+    "new_dependent": {
+      "value": false,
+      "evidence": "Honestly, nothing has changed."
+    },
+    "w2_employer_count": {
+      "value": 1,
+      "evidence": "Just one employer paid me wages this year"
+    },
+    "self_employment": {
+      "value": false,
+      "evidence": "I didn't do any freelance or gig work and I didn't run a business this year."
+    },
+    "interest_income": {
+      "value": false,
+      "evidence": "no interest from banks or bonds"
+    },
+    "dividend_income": {
+      "value": false,
+      "evidence": "no dividends from stocks or funds this year"
+    },
+    "sold_investments": {
+      "value": false,
+      "evidence": "I didn't sell any stocks, bonds, or funds"
+    },
+    "digital_asset_transactions": {
+      "value": false,
+      "evidence": "I didn't touch any crypto or digital assets this year."
+    },
+    "retirement_distribution": {
+      "value": false,
+      "evidence": "No retirement withdrawals or pension for me"
+    },
+    "social_security": {
+      "value": false,
+      "evidence": "no Social Security, no unemployment"
+    },
+    "unemployment": {
+      "value": false,
+      "evidence": "no Social Security, no unemployment"
+    },
+    "gambling_winnings": {
+      "value": false,
+      "evidence": "and no gambling winnings either."
+    },
+    "tips_income": {
+      "value": false,
+      "evidence": "I didn't get any tips or overtime pay at my job this year"
+    },
+    "overtime_pay": {
+      "value": false,
+      "evidence": "I didn't get any tips or overtime pay at my job this year"
+    },
+    "dependent_care_paid": {
+      "value": false,
+      "evidence": "and I didn't pay for child care so I could work."
+    },
+    "has_mortgage": {
+      "value": false,
+      "evidence": "No mortgage for me"
+    },
+    "bought_home": {
+      "value": false,
+      "evidence": "I didn't buy or sell a home"
+    },
+    "sold_home": {
+      "value": false,
+      "evidence": "I didn't buy or sell a home"
+    },
+    "rental_property": {
+      "value": false,
+      "evidence": "I don't rent out any property."
+    },
+    "marketplace_coverage": {
+      "value": false,
+      "evidence": "No marketplace insurance for us"
+    },
+    "hsa_withdrawal": {
+      "value": false,
+      "evidence": "I didn't take any money out of a health savings account this year."
+    },
+    "student_loan_interest": {
+      "value": false,
+      "evidence": "No student loan interest for me"
+    },
+    "tuition_paid": {
+      "value": false,
+      "evidence": "no college tuition or fees paid this year either."
+    },
+    "charitable_giving": {
+      "value": false,
+      "evidence": "I didn't give any money or goods to charity this year"
+    },
+    "state_refund_received": {
+      "value": false,
+      "evidence": "I didn't get a state or local tax refund."
+    },
+    "itemized_last_year": {
+      "value": false,
+      "evidence": "prior_year:itemized"
+    },
+    "hsa_direct_contribution": {
+      "value": false,
+      "evidence": "No, I didn't put any money into a health savings account on my own"
+    },
+    "estimated_payments_made": {
+      "value": false,
+      "evidence": "I didn't send the IRS any payments outside my paycheck this year."
+    },
+    "new_vehicle_loan": {
+      "value": false,
+      "evidence": "No car loan interest for me"
+    },
+    "ev_purchased": {
+      "value": false,
+      "evidence": "I didn't buy an electric or plug-in hybrid."
+    },
+    "clean_energy_installed": {
+      "value": false,
+      "evidence": "No solar panels or energy-saving upgrades to the house either."
+    },
+    "efficiency_improvements": {
+      "value": false,
+      "evidence": "No solar panels or energy-saving upgrades to the house either."
+    },
+    "k1_count": {
+      "value": 0,
+      "evidence": "No partnership or estate income for me"
+    },
+    "ip_pin_enrolled": {
+      "value": false,
+      "evidence": "I don't have an Identity Protection PIN from the IRS."
+    }
+  },
+  "agent_note": "The intake for household Client 23 is submitted for preparer review. I couldn't add a note to the intake because it was already frozen, so these are my notes for you:\n\n**Draft request list (intake in_5f669c)**\n- Form W-2 from the one employer, including any corrected W-2c (count: 1, rule R001).\n- No other documents were triggered. There are no custom requests.\n\n**Points to check**\n- **W-2 count:** Last year's summary showed two W-2s. The client says only one employer paid wages this year, so please confirm.\n- **Filing status and dependents:** The client said nothing has changed. That means head of household, one dependent, and no new dependent. These were confirmed by the client, not just carried over.\n- **Itemizing:** The client was not asked directly about itemizing this year. I carried over \"not itemized\" from last year's summary.\n- **Not asked:** The business payment-app question was not asked. It only matters if the client had self-employment income, and they said no.\n- **Answered no:** Every other topic was answered no. That covers self-employment, interest, dividends, investment sales, crypto, retirement, Social Security, unemployment, gambling, tips, overtime, child care, mortgage, home purchase or sale, rental, marketplace insurance, HSA activity, student loans, tuition, charity, state refund, estimated payments, car loan, EV, energy upgrades, partnership or trust income, and IP PIN.\n\nThe client did not ask any tax questions. I cannot send anything to the client. The preparer needs to review and send the list.",
+  "draft_sha256": "d46076418888e9f8d20ddd6447eb65936f2dca8fd32b23f3f45eb4739a7a261c"
+}

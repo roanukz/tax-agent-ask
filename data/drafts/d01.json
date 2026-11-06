@@ -1,0 +1,210 @@
+{
+  "draft_id": "d01",
+  "client_name": "Client 01",
+  "tax_year": 2026,
+  "prior_year_summary": {
+    "tax_year": 2025,
+    "filing_status": "married_joint",
+    "dependents_count": 1,
+    "itemized": false,
+    "documents_on_file": [
+      {
+        "rule_id": "R001",
+        "label": "Form W-2",
+        "count": 1
+      },
+      {
+        "rule_id": "R002",
+        "label": "Business income and expense records",
+        "count": 1
+      },
+      {
+        "rule_id": "R003",
+        "label": "Form 1099-K",
+        "count": 1
+      }
+    ]
+  },
+  "documents": [
+    {
+      "rule_id": "R001",
+      "document": "Form W-2 from each employer (yours and, if filing jointly, your spouse's), including any employer you left during the year, plus any corrected Form W-2c",
+      "count": 2,
+      "client_reason": "You were paid wages, so we need the year-end wage statement from each employer, including any job you left.",
+      "source_url": "https://www.irs.gov/taxtopics/tc401",
+      "source_title": "Topic no. 401, Wages and salaries",
+      "triggered_by": [
+        {
+          "fact": "w2_employer_count",
+          "value": 2,
+          "evidence": "Just one W-2 job for me this year, and I think my spouse only had one job too, so that's two employers total"
+        }
+      ]
+    },
+    {
+      "rule_id": "R010",
+      "document": "Form 1099-G, Certain Government Payments, from each agency that paid unemployment (state unemployment agency or Railroad Retirement Board) showing unemployment compensation and any federal income tax withheld",
+      "count": 1,
+      "client_reason": "You received unemployment benefits, so we need the year-end statement from the state.",
+      "source_url": "https://www.irs.gov/taxtopics/tc418",
+      "source_title": "Topic no. 418, Unemployment compensation",
+      "triggered_by": [
+        {
+          "fact": "unemployment",
+          "value": true,
+          "evidence": "This year I'm getting unemployment benefits"
+        }
+      ]
+    }
+  ],
+  "custom_requests": [],
+  "no_document_needed": [],
+  "not_asked": [
+    "itemized_last_year"
+  ],
+  "notes_for_preparer": [],
+  "facts_recorded": {
+    "unemployment": {
+      "value": true,
+      "evidence": "This year I'm getting unemployment benefits"
+    },
+    "new_dependent": {
+      "value": false,
+      "evidence": "Everything else at home and with the family is about the same."
+    },
+    "filing_status": {
+      "value": "married_joint",
+      "evidence": "prior_year:filing_status"
+    },
+    "dependents_count": {
+      "value": 1,
+      "evidence": "prior_year:dependents_count"
+    },
+    "w2_employer_count": {
+      "value": 2,
+      "evidence": "Just one W-2 job for me this year, and I think my spouse only had one job too, so that's two employers total"
+    },
+    "self_employment": {
+      "value": false,
+      "evidence": "No, I didn't do any freelance or gig work this year."
+    },
+    "business_app_payments": {
+      "value": false,
+      "evidence": "so no app payments for me this year."
+    },
+    "tips_income": {
+      "value": false,
+      "evidence": "No tips at my job, and no overtime pay either."
+    },
+    "overtime_pay": {
+      "value": false,
+      "evidence": "No tips at my job, and no overtime pay either."
+    },
+    "rental_property": {
+      "value": false,
+      "evidence": "No, I didn't rent out anything this year."
+    },
+    "estimated_payments_made": {
+      "value": false,
+      "evidence": "No, I didn't send any extra payments on my own."
+    },
+    "retirement_distribution": {
+      "value": false,
+      "evidence": "No, I didn't take anything out of a retirement account or pension, and I didn't roll one over."
+    },
+    "social_security": {
+      "value": false,
+      "evidence": "I also didn't get any Social Security benefits this year."
+    },
+    "gambling_winnings": {
+      "value": false,
+      "evidence": "No, I didn't win anything gambling this year."
+    },
+    "interest_income": {
+      "value": false,
+      "evidence": "No, we didn't get any interest from the bank or dividends from stocks this year."
+    },
+    "dividend_income": {
+      "value": false,
+      "evidence": "No, we didn't get any interest from the bank or dividends from stocks this year."
+    },
+    "sold_investments": {
+      "value": false,
+      "evidence": "No, we didn't sell any stocks, bonds, or mutual funds"
+    },
+    "digital_asset_transactions": {
+      "value": false,
+      "evidence": "no crypto or digital currency either."
+    },
+    "bought_home": {
+      "value": false,
+      "evidence": "No, we didn't buy or sell a home this year"
+    },
+    "sold_home": {
+      "value": false,
+      "evidence": "No, we didn't buy or sell a home this year"
+    },
+    "has_mortgage": {
+      "value": false,
+      "evidence": "and we don't have a mortgage."
+    },
+    "marketplace_coverage": {
+      "value": false,
+      "evidence": "No, we didn't get health insurance through the marketplace this year"
+    },
+    "hsa_withdrawal": {
+      "value": false,
+      "evidence": "I didn't touch a health savings account either."
+    },
+    "hsa_direct_contribution": {
+      "value": false,
+      "evidence": "No, I didn't put any money into a health savings account on my own"
+    },
+    "student_loan_interest": {
+      "value": false,
+      "evidence": "we didn't pay any student loan interest this year."
+    },
+    "dependent_care_paid": {
+      "value": false,
+      "evidence": "No, we didn't pay anyone for child care or dependent care this year."
+    },
+    "new_vehicle_loan": {
+      "value": false,
+      "evidence": "And we didn't take out a loan for a new car, truck, or motorcycle either."
+    },
+    "charitable_giving": {
+      "value": false,
+      "evidence": "We didn't give anything to charity this year."
+    },
+    "ip_pin_enrolled": {
+      "value": false,
+      "evidence": "no, we don't have an IP PIN from the IRS."
+    },
+    "clean_energy_installed": {
+      "value": false,
+      "evidence": "No, we didn't put in solar panels or any energy upgrades at the house"
+    },
+    "efficiency_improvements": {
+      "value": false,
+      "evidence": "we didn't put in solar panels or any energy upgrades at the house"
+    },
+    "ev_purchased": {
+      "value": false,
+      "evidence": "we didn't buy an electric or plug-in hybrid car either."
+    },
+    "tuition_paid": {
+      "value": false,
+      "evidence": "No, nobody paid college tuition or fees this year."
+    },
+    "k1_count": {
+      "value": 0,
+      "evidence": "We don't own a share of any partnership or small company"
+    },
+    "state_refund_received": {
+      "value": false,
+      "evidence": "we didn't get a state tax refund either."
+    }
+  },
+  "agent_note": "Intake in_99c34e for household Client 01 is submitted for preparer review. I haven't sent anything to the client.\n\n**Draft document list:**\n1. **Form W-2 from each employer, count 2.** One from the client and one from the spouse, per the client's account. Include corrected W-2c if any.\n2. **Form 1099-G from the state unemployment agency, count 1.** The client is receiving unemployment benefits this year.\n\n**Notes for preparer:**\n- **Carried over from last year:** filing status (married filing jointly) and one dependent. The client said the family situation is about the same, but I didn't ask about the dependent directly. Please confirm.\n- **Gig work:** Last year's summary had business records and a 1099-K. The client said the gig work stopped before 2026 and no app payments came in this year, so those documents are not on the list. Please confirm this against any 1099-K that may still arrive.\n- **Spouse's job:** The client thinks the spouse had one job but was not certain. Please confirm the spouse's employer count.\n- **Answered no:** The client answered no to all other topics in the plan. This covers tips, overtime, rentals, extra IRS payments, retirement, Social Security, gambling, interest, dividends, investment sales, crypto, home purchase or sale, mortgage, marketplace insurance, HSA activity, student loan interest, child care, new car loans, charitable gifts, IP PIN, clean energy, home efficiency upgrades, EV purchase, tuition, partnership income, and state refunds.\n- **Client's question:** The client asked about the Identity Protection PIN and said they don't know what it is. They have none on file. No tax question was raised.",
+  "draft_sha256": "c1673a9c5bf3f70f06ab19020c33c4d8c5f3850742f590273c22d3e70240e6a9"
+}

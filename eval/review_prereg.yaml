@@ -1,0 +1,68 @@
+# Preregistration for the preparer review screen's blind catch check (PRD-preparer-review.md, sections 5 and 7).
+# Roanuk sets locked_on and commits this file before he opens the first of the 24 drafts;
+# eval/review_catch.py refuses to score unless the lock commit predates the first opening of any draft (lock_check).
+locked_on: null
+drafts: 24
+problem_drafts: 12      # a missed required document or a wrong fact
+show_drafts: 4          # PRD aimed for 6; only 4 households have one (DECISIONS.md, 2026-11-05)
+hide_drafts: 8
+clean_drafts: 12        # passed, with nothing missed, no wrong fact and no unnecessary request
+seed: 11
+source: "the 480 A-config test runs under prereg commit 449776a, one draft per household (data/truth/review_key.json)"
+class_rule: >-
+  A missed document shows when the dropped flag names its rule. A wrong fact shows when the carried flag names it,
+  or when a dropped flag for a missed document displays it. A draft shows when all its problems show and hides when
+  none do.
+caught_when: >-
+  A problem draft is caught when the approved list adds a missed document (at any count) or raises a missed
+  document's count to the required count, or a follow-up asks about a fact behind a missed document or about a
+  wrong fact. Each problem is also scored on its own: a missed document by the same test on its rule, and a wrong
+  fact by a follow-up on it or by the approved list fixing a missed document whose rule reads it.
+lock_check: "The lock commit predates the first opening of any draft, saved or not, in data/reviews/openings.jsonl."
+harmful_edit: >-
+  Removing a required document, lowering a required document's count below the required count, adding a document
+  the household does not need, or raising a count above the required count. Keeping or removing an agent's custom
+  request is never scored as harmful.
+hypothesis: "Review catches most problems the draft shows and few it hides, and harmful edits on clean drafts are rare."
+noted_rule: >-
+  A problem is noted when a note for the preparer or the agent's closing message says something specific about the
+  same fact or document (data/truth/review_noted.json, annotated by two subagents and settled by a third before any
+  review existed). The report adds the catch rate on noted and on un-noted problems.
+reviewer_knew: >-
+  Before reviewing, the reviewer had read, in Claude Code's Block 0 report and in DECISIONS.md (2026-11-05), the
+  IDs of the four households with show-class runs, that every show-class problem is a dropped R001 beside a wrong W-2
+  count, that no show-class run is on A-opus, that no carried fact is wrong, and that the draw took 6 drafts from each
+  of the four A configs. In a progress note Claude Code posted while building, he had seen that the agent's own notes
+  or closing message mention 14 of the 17 problems, including 6 of the 9 hidden in drafts. He had read the PRD's
+  section 5 worked example, written before the draw, which gave the review-draft ID d07 an invented household, run,
+  class and edit; it says nothing about the real d07, and the example now uses d00. An uncommitted version of the
+  2026-11-05 DECISIONS.md entry also gave one example of how a hidden problem's note can read and named each demo
+  draft's source run, config included; both were cut before the first commit, and he may have read them. Tool results
+  in the Claude Code session where the marked drafts were chosen carried the analysts' counts, and he was asked not
+  to open them. The report gives, each on its own line, his actions summed over the drafts with a dropped:R001 flag
+  (W-2 count raised, W-2 employers asked about, neither) and his actions on example_draft.
+inferable_rule: >-
+  Committed text, read with what reviewer_knew lists, the design above (4, 8 and 12 drafts by class, one per
+  household, 6 per config) and each draft's own screen, could let a reader single out a draft's class. Committed text
+  means the files git tracks at the lock commit outside data/truth, data/profiles, eval/runs and ledger. A draft is
+  marked when that reading gives its class clearly better than the flags alone do (six drafts carry dropped:R001).
+  Elimination counts only when every step is itself reading. Running or reverse-engineering code to rebuild what those
+  four folders hold does not count, because reviewer_rule rules it out. Before the lock, two subagents working from
+  the answer key independently marked the drafts, a third settled their disagreement, and the marking was checked
+  again against everything this feature commits. The marked IDs are committed only as inferable_sha256, the SHA-256
+  of the salt, a colon, and the sorted IDs joined by commas; the salt and the IDs are in
+  data/truth/review_inferable.json, gitignored until scoring. If anything else is committed between the marking and
+  the lock, two analysts recheck the marks against the lock commit's tree, the salt is drawn again, and
+  inferable_sha256 is updated in the lock commit; the salt is drawn again every time, so a new hash says nothing about
+  whether the marks changed. The report gives the shows catch rate without the marked drafts beside the full rate.
+inferable_sha256: "c786eb041b562fe0b8011399870de2595c3dd46ca54f6089b1839ed6ae5b1432"
+example_draft: d07
+reviewer_opens_none_of: [data/truth, data/profiles, eval/runs, ledger]   # until all 24 are approved
+reviewer_runs_none_of: [the data generator, the eval harness, eval/export_drafts.py]
+reviewer_rule: >-
+  Until all 24 are approved, the reviewer opens none of the folders in reviewer_opens_none_of, runs none of the
+  programs in reviewer_runs_none_of, and does not rebuild what those folders hold by hand from their code. The offline
+  test suite, which rebuilds them only in temporary folders and prints no class, does not count.
+report: [catch_rate_shows, catch_rate_shows_unmarked, catch_rate_hides, catch_rate_noted, catch_rate_unnoted,
+         harmful_edits_clean, follow_ups_clean, median_minutes, dropped_r001_actions, example_draft_actions]
+intervals: {method: wilson, level: 0.95}

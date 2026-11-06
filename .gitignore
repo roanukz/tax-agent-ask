@@ -17,3 +17,10 @@ html/
 
 # OS
 .DS_Store
+
+# The preparer review screen: the answer key stays local until the 24 reviews are scored, and practice reviews never commit
+data/truth/review_key.json
+data/truth/review_noted.json
+data/truth/review_inferable.json
+preparer/app/demo_reviews/
+data/reviews/.lock

@@ -1,0 +1,266 @@
+{
+  "draft_id": "d17",
+  "client_name": "Client 17",
+  "tax_year": 2026,
+  "prior_year_summary": {
+    "tax_year": 2025,
+    "filing_status": "married_joint",
+    "dependents_count": 3,
+    "itemized": false,
+    "documents_on_file": [
+      {
+        "rule_id": "R001",
+        "label": "Form W-2",
+        "count": 1
+      },
+      {
+        "rule_id": "R014",
+        "label": "Form 1098",
+        "count": 1
+      },
+      {
+        "rule_id": "R020",
+        "label": "Schedule K-1",
+        "count": 1
+      }
+    ]
+  },
+  "documents": [
+    {
+      "rule_id": "R001",
+      "document": "Form W-2 from each employer (yours and, if filing jointly, your spouse's), including any employer you left during the year, plus any corrected Form W-2c",
+      "count": 1,
+      "client_reason": "You were paid wages, so we need the year-end wage statement from each employer, including any job you left.",
+      "source_url": "https://www.irs.gov/taxtopics/tc401",
+      "source_title": "Topic no. 401, Wages and salaries",
+      "triggered_by": [
+        {
+          "fact": "w2_employer_count",
+          "value": 1,
+          "evidence": "Just one job between the two of us"
+        }
+      ]
+    },
+    {
+      "rule_id": "R008",
+      "document": "Form 1099-R for each distribution, direct rollover, Roth conversion, or pension or annuity payment (RRB-1099-R for railroad retirement tier II), plus proof of the redeposit date and amount for any indirect (60-day) rollover",
+      "count": 1,
+      "client_reason": "You took money out of a retirement account or rolled one over, so we need the year-end distribution statement.",
+      "source_url": "https://www.irs.gov/instructions/i1099r",
+      "source_title": "Instructions for Forms 1099-R and 5498 (2026)",
+      "triggered_by": [
+        {
+          "fact": "retirement_distribution",
+          "value": true,
+          "evidence": "Yes, I took money out of a retirement account this year"
+        }
+      ]
+    },
+    {
+      "rule_id": "R009",
+      "document": "Form SSA-1099",
+      "count": 1,
+      "client_reason": "You received Social Security, so we need the yearly benefit statement.",
+      "source_url": "https://www.irs.gov/taxtopics/tc423",
+      "source_title": "Topic no. 423, Social Security and equivalent railroad retirement benefits",
+      "triggered_by": [
+        {
+          "fact": "social_security",
+          "value": true,
+          "evidence": "I also started getting Social Security this year."
+        }
+      ]
+    },
+    {
+      "rule_id": "R014",
+      "document": "Form 1098 from each lender",
+      "count": 1,
+      "client_reason": "You have a mortgage, so we need the year-end mortgage interest statement from your lender.",
+      "source_url": "https://www.irs.gov/instructions/i1098",
+      "source_title": "Instructions for Form 1098 (12/2026)",
+      "triggered_by": [
+        {
+          "fact": "has_mortgage",
+          "value": true,
+          "evidence": "yes, we still have a mortgage on our home"
+        }
+      ]
+    },
+    {
+      "rule_id": "R020",
+      "document": "Schedule K-1 from each partnership, S corporation, estate, or trust in which the client held an interest or was a beneficiary at any time during 2026 (a separate K-1 for each entity), plus any Schedule K-3 a partnership or S corporation sends",
+      "count": 1,
+      "client_reason": "You have a share in a partnership, company, estate, or trust, so we need the year-end statement from each one.",
+      "source_url": "https://www.irs.gov/pub/irs-dft/i1040se--dft.pdf",
+      "source_title": "2026 Instructions for Schedule E (Form 1040), Supplemental Income and Loss (early release draft, posted 09/24/2026)",
+      "triggered_by": [
+        {
+          "fact": "k1_count",
+          "value": 1,
+          "evidence": "I think I have one of those, a share in a partnership or small company"
+        }
+      ]
+    }
+  ],
+  "custom_requests": [],
+  "no_document_needed": [
+    {
+      "rule_id": "T002",
+      "reason": "No document needed: this credit ended",
+      "source_url": "https://www.irs.gov/newsroom/faqs-for-modification-of-sections-25c-25d-25e-30c-30d-45l-45w-and-179d-under-public-law-119-21-139-stat-72-july-4-2025-commonly-known-as-the-one-big-beautiful-bill-obbb",
+      "source_title": "IRS FS-2025-05, FAQs for modification of sections 25C, 25D, 25E, 30C, 30D, 45L, 45W, and 179D under Public Law 119-21"
+    }
+  ],
+  "not_asked": [
+    "itemized_last_year"
+  ],
+  "notes_for_preparer": [],
+  "facts_recorded": {
+    "filing_status": {
+      "value": "married_joint",
+      "evidence": "my husband and I still file together"
+    },
+    "dependents_count": {
+      "value": 3,
+      "evidence": "we still support the same three people"
+    },
+    "new_dependent": {
+      "value": false,
+      "evidence": "Nobody new has joined the household, no babies or adoptions."
+    },
+    "w2_employer_count": {
+      "value": 1,
+      "evidence": "Just one job between the two of us"
+    },
+    "bought_home": {
+      "value": false,
+      "evidence": "We didn't buy or sell a house this year"
+    },
+    "sold_home": {
+      "value": false,
+      "evidence": "We didn't buy or sell a house this year"
+    },
+    "has_mortgage": {
+      "value": true,
+      "evidence": "yes, we still have a mortgage on our home"
+    },
+    "self_employment": {
+      "value": false,
+      "evidence": "neither of us did any side work or ran our own business this year"
+    },
+    "business_app_payments": {
+      "value": false,
+      "evidence": "no payment apps or marketplaces either"
+    },
+    "k1_count": {
+      "value": 1,
+      "evidence": "I think I have one of those, a share in a partnership or small company"
+    },
+    "rental_property": {
+      "value": false,
+      "evidence": "We don't rent out any property."
+    },
+    "interest_income": {
+      "value": false,
+      "evidence": "No interest or dividends that I know of"
+    },
+    "dividend_income": {
+      "value": false,
+      "evidence": "No interest or dividends that I know of"
+    },
+    "sold_investments": {
+      "value": false,
+      "evidence": "we didn't sell any stocks, funds, or crypto this year"
+    },
+    "digital_asset_transactions": {
+      "value": false,
+      "evidence": "we didn't sell any stocks, funds, or crypto this year"
+    },
+    "retirement_distribution": {
+      "value": true,
+      "evidence": "Yes, I took money out of a retirement account this year"
+    },
+    "social_security": {
+      "value": true,
+      "evidence": "I also started getting Social Security this year."
+    },
+    "unemployment": {
+      "value": false,
+      "evidence": "Neither of us got unemployment."
+    },
+    "tips_income": {
+      "value": false,
+      "evidence": "No tips, no overtime, and no gambling or lottery winnings for either of us."
+    },
+    "overtime_pay": {
+      "value": false,
+      "evidence": "No tips, no overtime, and no gambling or lottery winnings for either of us."
+    },
+    "gambling_winnings": {
+      "value": false,
+      "evidence": "no gambling or lottery winnings for either of us."
+    },
+    "marketplace_coverage": {
+      "value": false,
+      "evidence": "we didn't get health insurance through the marketplace"
+    },
+    "hsa_withdrawal": {
+      "value": false,
+      "evidence": "we didn't use or put money into a health savings account this year"
+    },
+    "hsa_direct_contribution": {
+      "value": false,
+      "evidence": "we didn't use or put money into a health savings account this year"
+    },
+    "student_loan_interest": {
+      "value": false,
+      "evidence": "No student loan interest and no college tuition for anyone this year."
+    },
+    "tuition_paid": {
+      "value": false,
+      "evidence": "no college tuition for anyone this year."
+    },
+    "dependent_care_paid": {
+      "value": false,
+      "evidence": "We didn't pay for child care either."
+    },
+    "new_vehicle_loan": {
+      "value": false,
+      "evidence": "No new car or truck loan"
+    },
+    "charitable_giving": {
+      "value": false,
+      "evidence": "we didn't give to charity this year."
+    },
+    "clean_energy_installed": {
+      "value": false,
+      "evidence": "We didn't put in solar panels"
+    },
+    "efficiency_improvements": {
+      "value": true,
+      "evidence": "yes, we did make some energy-saving upgrades to the house this year"
+    },
+    "ev_purchased": {
+      "value": false,
+      "evidence": "We also didn't buy an electric or plug-in hybrid car."
+    },
+    "efficiency_improvements_year": {
+      "value": 2026,
+      "evidence": "They were finished this year, 2026."
+    },
+    "estimated_payments_made": {
+      "value": false,
+      "evidence": "we didn't send any extra payments to the IRS beyond what came out of our paychecks."
+    },
+    "ip_pin_enrolled": {
+      "value": false,
+      "evidence": "I don't have one of those identity PIN things from them."
+    },
+    "state_refund_received": {
+      "value": false,
+      "evidence": "no, we didn't get a state refund this year."
+    }
+  },
+  "agent_note": "Intake Client 17 (in_6367b6) is submitted for preparer review with status pending_review. I have not sent anything to the client.\n\n**Draft document list (5 items):**\n1. **Form W-2** from the one employer (the husband's job). Count: 1.\n2. **Form 1099-R** for the retirement account withdrawal. The client said they took money out this year. Count: 1.\n3. **Form SSA-1099** for Social Security. The client said they started receiving it this year. Count: 1.\n4. **Form 1098** from the mortgage lender. Count: 1.\n5. **Schedule K-1** from the one partnership or small company. Count: 1.\n\n**No document needed:** the energy-saving home upgrades were finished in 2026, so that credit has ended.\n\n**Things to check:**\n- **Retirement withdrawal and Social Security are new.** Last year's summary did not show either. The client volunteered the withdrawal (\"which I hadn't thought to mention before\"). Please confirm the amounts and whether any part was rolled over, since that changes what the 1099-R shows.\n- **K-1 count is uncertain.** The client said \"I think I have one of those,\" so please confirm it is exactly one entity.\n- **Filing status and dependents were carried over from last year.** The client confirmed them: joint filing, three people supported, no new dependents.\n- **Client's wording on filing status.** The client said they weren't sure what \"married filing jointly\" meant. They confirmed they still file together with their husband.\n- **Home upgrades.** The client made energy-saving upgrades in 2026 and said \"I think that's right\" about the year. No document is requested for that because the credit ended, but the preparer may want to confirm the year.\n- **Not asked:** whether they itemized last year. It only affects a state refund document, and the client said there was no state refund, so it did not change the list.\n- **Nothing outside the rules.** I added no custom requests and no tax questions for the preparer.",
+  "draft_sha256": "2bce5f8cbb73f0f0a7acbeb93d991f2d8afa984ba2385d9db91f749386fe0bc5"
+}

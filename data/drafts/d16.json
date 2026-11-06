@@ -1,0 +1,230 @@
+{
+  "draft_id": "d16",
+  "client_name": "Client 16",
+  "tax_year": 2026,
+  "prior_year_summary": {
+    "tax_year": 2025,
+    "filing_status": "married_joint",
+    "dependents_count": 2,
+    "itemized": false,
+    "documents_on_file": [
+      {
+        "rule_id": "R001",
+        "label": "Form W-2",
+        "count": 3
+      }
+    ]
+  },
+  "documents": [
+    {
+      "rule_id": "R001",
+      "document": "Form W-2 from each employer (yours and, if filing jointly, your spouse's), including any employer you left during the year, plus any corrected Form W-2c",
+      "count": 3,
+      "client_reason": "You were paid wages, so we need the year-end wage statement from each employer, including any job you left.",
+      "source_url": "https://www.irs.gov/taxtopics/tc401",
+      "source_title": "Topic no. 401, Wages and salaries",
+      "triggered_by": [
+        {
+          "fact": "w2_employer_count",
+          "value": 3,
+          "evidence": "I had three different employers on W-2s this year"
+        }
+      ]
+    },
+    {
+      "rule_id": "R002",
+      "document": "Business income and expense records (income records, receipts, mileage logs, and bank or payment app statements), including any Forms 1099-NEC received",
+      "count": 1,
+      "client_reason": "You had freelance or business income, so we need your income and expense records and any year-end payment statements from clients.",
+      "source_url": "https://www.irs.gov/businesses/small-businesses-self-employed/manage-taxes-for-your-gig-work",
+      "source_title": "Manage taxes for your gig work",
+      "triggered_by": [
+        {
+          "fact": "self_employment",
+          "value": true,
+          "evidence": "I did some freelance work on the side this year"
+        }
+      ]
+    },
+    {
+      "rule_id": "R003",
+      "document": "Any Form 1099-K received from a payment app, online marketplace, or card processor (collect it even if you think it is wrong)",
+      "count": 1,
+      "client_reason": "If customers paid you through an app, an online marketplace, or a card processor, we need any year-end statement you received from it, even if you think it is wrong.",
+      "source_url": "https://www.irs.gov/businesses/understanding-your-form-1099-k",
+      "source_title": "Understanding your Form 1099-K",
+      "triggered_by": [
+        {
+          "fact": "business_app_payments",
+          "value": true,
+          "evidence": "a lot of my clients paid me through an app"
+        }
+      ]
+    },
+    {
+      "rule_id": "R030",
+      "document": "Closing statement from the sale (settlement statement or Closing Disclosure), plus Form 1099-S (Proceeds From Real Estate Transactions) if received; also the closing statement from the original purchase and records of improvements, to figure basis",
+      "count": 1,
+      "client_reason": "You sold a home, so we need the closing statement and any sale statement you received.",
+      "source_url": "https://www.irs.gov/publications/p523",
+      "source_title": "Publication 523 (2025), Selling Your Home",
+      "triggered_by": [
+        {
+          "fact": "sold_home",
+          "value": true,
+          "evidence": "we also sold our house"
+        }
+      ]
+    }
+  ],
+  "custom_requests": [],
+  "no_document_needed": [],
+  "not_asked": [
+    "itemized_last_year"
+  ],
+  "notes_for_preparer": [],
+  "facts_recorded": {
+    "filing_status": {
+      "value": "married_joint",
+      "evidence": "we're still married and filing together"
+    },
+    "dependents_count": {
+      "value": 2,
+      "evidence": "we still have our two kids"
+    },
+    "new_dependent": {
+      "value": false,
+      "evidence": "No new baby this year."
+    },
+    "w2_employer_count": {
+      "value": 3,
+      "evidence": "I had three different employers on W-2s this year"
+    },
+    "sold_home": {
+      "value": true,
+      "evidence": "we also sold our house"
+    },
+    "bought_home": {
+      "value": false,
+      "evidence": "We didn't buy another place this year"
+    },
+    "has_mortgage": {
+      "value": false,
+      "evidence": "we don't have a mortgage on anything now"
+    },
+    "self_employment": {
+      "value": true,
+      "evidence": "I did some freelance work on the side this year"
+    },
+    "tips_income": {
+      "value": false,
+      "evidence": "Neither of us had tips or overtime pay."
+    },
+    "overtime_pay": {
+      "value": false,
+      "evidence": "Neither of us had tips or overtime pay."
+    },
+    "business_app_payments": {
+      "value": true,
+      "evidence": "a lot of my clients paid me through an app"
+    },
+    "interest_income": {
+      "value": false,
+      "evidence": "No interest or dividends"
+    },
+    "dividend_income": {
+      "value": false,
+      "evidence": "No interest or dividends"
+    },
+    "sold_investments": {
+      "value": false,
+      "evidence": "we didn't sell any stocks, bonds, or funds"
+    },
+    "digital_asset_transactions": {
+      "value": false,
+      "evidence": "I haven't bought or sold any crypto either."
+    },
+    "retirement_distribution": {
+      "value": false,
+      "evidence": "we didn't take anything out of a retirement account or pension"
+    },
+    "social_security": {
+      "value": false,
+      "evidence": "nobody here gets Social Security or unemployment"
+    },
+    "unemployment": {
+      "value": false,
+      "evidence": "nobody here gets Social Security or unemployment"
+    },
+    "marketplace_coverage": {
+      "value": false,
+      "evidence": "we didn't get insurance through a marketplace"
+    },
+    "hsa_withdrawal": {
+      "value": false,
+      "evidence": "didn't use a health savings account"
+    },
+    "hsa_direct_contribution": {
+      "value": false,
+      "evidence": "didn't use a health savings account"
+    },
+    "student_loan_interest": {
+      "value": false,
+      "evidence": "No student loan interest or tuition for us either."
+    },
+    "tuition_paid": {
+      "value": false,
+      "evidence": "No student loan interest or tuition for us either."
+    },
+    "dependent_care_paid": {
+      "value": false,
+      "evidence": "No child care costs for us this year"
+    },
+    "charitable_giving": {
+      "value": false,
+      "evidence": "we didn't give to charity either"
+    },
+    "rental_property": {
+      "value": false,
+      "evidence": "No rental property"
+    },
+    "clean_energy_installed": {
+      "value": false,
+      "evidence": "no solar or energy upgrades on the house"
+    },
+    "efficiency_improvements": {
+      "value": false,
+      "evidence": "no solar or energy upgrades on the house"
+    },
+    "ev_purchased": {
+      "value": false,
+      "evidence": "no electric car"
+    },
+    "new_vehicle_loan": {
+      "value": false,
+      "evidence": "no new car loan"
+    },
+    "estimated_payments_made": {
+      "value": false,
+      "evidence": "we didn't send any extra estimated payments beyond what came out of our paychecks"
+    },
+    "state_refund_received": {
+      "value": false,
+      "evidence": "We didn't get a state refund"
+    },
+    "gambling_winnings": {
+      "value": false,
+      "evidence": "didn't win any gambling money"
+    },
+    "ip_pin_enrolled": {
+      "value": false,
+      "evidence": "I don't have an IP PIN"
+    },
+    "k1_count": {
+      "value": 0,
+      "evidence": "we don't own part of any partnership, small company, estate, or trust"
+    }
+  },
+  "agent_note": "Intake for Client 16 is submitted to the preparer for review (intake in_c74d89, status pending_review). I have not sent anything to the client.\n\n**Draft document list:**\n1. **Form W-2 from each employer (3)**, plus any corrected W-2c. This covers the three jobs this year, including any job they left.\n2. **Business income and expense records (1 set)**, plus any 1099-NEC received. The client did freelance work this year.\n3. **Form 1099-K from payment apps (1 set)**, collected even if the client thinks it is wrong. Clients paid them through an app.\n4. **Closing statement from the home sale (1)**, plus Form 1099-S if received, and the original purchase closing statement and improvement records for basis.\n\n**Notes for the preparer:**\n- **Prior-year carryover:** Filing status (married filing jointly) and two dependents were confirmed by the client, not just carried over from last year.\n- **Not asked:** The client was not asked whether they itemized last year. This has no effect on the list, because the rule that depends on it only applies if there was a state refund, and the client said there was none.\n- **Unsure items:**\n  - The client did not understand the partnership/trust question at first. They then said they own no partnership, small company, estate, or trust interest, so I recorded 0.\n  - The 1099-K item depends on the client's answer that clients paid \"through an app.\" I did not confirm which app or whether the total is over any reporting threshold.\n  - The sale of the home is recorded, but the client did not say whether a 1099-S was received.\n- **Nothing else claimed:** No new dependents, no mortgage, no retirement, Social Security, unemployment, marketplace coverage, HSA, education, child care, charitable, rental, energy, EV, vehicle loan, gambling, estimated payment, or IP PIN items were reported.\n- **No client tax questions** came up, so no notes were left on that front.",
+  "draft_sha256": "fa37f726cffd9c437f5254a87765dc7fa300846850be69144bfe36859c4ee8a3"
+}

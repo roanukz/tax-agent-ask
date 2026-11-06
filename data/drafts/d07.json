@@ -1,0 +1,193 @@
+{
+  "draft_id": "d07",
+  "client_name": "Client 07",
+  "tax_year": 2026,
+  "prior_year_summary": {
+    "tax_year": 2025,
+    "filing_status": "single",
+    "dependents_count": 0,
+    "itemized": false,
+    "documents_on_file": [
+      {
+        "rule_id": "R001",
+        "label": "Form W-2",
+        "count": 4
+      },
+      {
+        "rule_id": "R004",
+        "label": "Form 1099-INT",
+        "count": 1
+      }
+    ]
+  },
+  "documents": [
+    {
+      "rule_id": "R001",
+      "document": "Form W-2 from each employer (yours and, if filing jointly, your spouse's), including any employer you left during the year, plus any corrected Form W-2c",
+      "count": 3,
+      "client_reason": "You were paid wages, so we need the year-end wage statement from each employer, including any job you left.",
+      "source_url": "https://www.irs.gov/taxtopics/tc401",
+      "source_title": "Topic no. 401, Wages and salaries",
+      "triggered_by": [
+        {
+          "fact": "w2_employer_count",
+          "value": 3,
+          "evidence": "Three employers paid me this year"
+        }
+      ]
+    },
+    {
+      "rule_id": "R004",
+      "document": "Form 1099-INT from each payer",
+      "count": 1,
+      "client_reason": "You earned interest, so we need the year-end interest statement from each bank or payer.",
+      "source_url": "https://www.irs.gov/taxtopics/tc403",
+      "source_title": "Topic no. 403, Interest received",
+      "triggered_by": [
+        {
+          "fact": "interest_income",
+          "value": true,
+          "evidence": "I earned some interest from a bank this year"
+        }
+      ]
+    }
+  ],
+  "custom_requests": [],
+  "no_document_needed": [],
+  "not_asked": [
+    "business_app_payments",
+    "state_refund_received",
+    "dependent_care_paid",
+    "clean_energy_installed",
+    "efficiency_improvements"
+  ],
+  "notes_for_preparer": [],
+  "facts_recorded": {
+    "filing_status": {
+      "value": "single",
+      "evidence": "I'm still single"
+    },
+    "dependents_count": {
+      "value": 0,
+      "evidence": "prior_year:dependents_count"
+    },
+    "new_dependent": {
+      "value": false,
+      "evidence": "I don't have anyone new depending on me"
+    },
+    "w2_employer_count": {
+      "value": 3,
+      "evidence": "Three employers paid me this year"
+    },
+    "tips_income": {
+      "value": false,
+      "evidence": "no tips and no overtime"
+    },
+    "overtime_pay": {
+      "value": false,
+      "evidence": "no tips and no overtime"
+    },
+    "self_employment": {
+      "value": false,
+      "evidence": "I didn't do any freelance or side work"
+    },
+    "interest_income": {
+      "value": true,
+      "evidence": "I earned some interest from a bank this year"
+    },
+    "dividend_income": {
+      "value": false,
+      "evidence": "No dividends"
+    },
+    "sold_investments": {
+      "value": false,
+      "evidence": "I didn't sell any stocks or funds"
+    },
+    "digital_asset_transactions": {
+      "value": false,
+      "evidence": "I didn't trade any crypto"
+    },
+    "k1_count": {
+      "value": 0,
+      "evidence": "I don't have a share in a partnership"
+    },
+    "rental_property": {
+      "value": false,
+      "evidence": "I don't rent out any property"
+    },
+    "unemployment": {
+      "value": false,
+      "evidence": "I didn't get any unemployment"
+    },
+    "social_security": {
+      "value": false,
+      "evidence": "unemployment, Social Security, or retirement money"
+    },
+    "retirement_distribution": {
+      "value": false,
+      "evidence": "unemployment, Social Security, or retirement money"
+    },
+    "gambling_winnings": {
+      "value": false,
+      "evidence": "I didn't win any gambling or lottery money"
+    },
+    "marketplace_coverage": {
+      "value": false,
+      "evidence": "I got my coverage through my jobs"
+    },
+    "hsa_withdrawal": {
+      "value": false,
+      "evidence": "I don't have a health savings account"
+    },
+    "hsa_direct_contribution": {
+      "value": false,
+      "evidence": "I don't have a health savings account"
+    },
+    "has_mortgage": {
+      "value": false,
+      "evidence": "No mortgage"
+    },
+    "bought_home": {
+      "value": false,
+      "evidence": "I didn't buy or sell a home"
+    },
+    "sold_home": {
+      "value": false,
+      "evidence": "I didn't buy or sell a home"
+    },
+    "new_vehicle_loan": {
+      "value": false,
+      "evidence": "I didn't take out a loan for a new vehicle"
+    },
+    "ev_purchased": {
+      "value": false,
+      "evidence": "I didn't buy an electric or plug-in hybrid"
+    },
+    "student_loan_interest": {
+      "value": false,
+      "evidence": "No student loan interest"
+    },
+    "tuition_paid": {
+      "value": false,
+      "evidence": "no tuition for me"
+    },
+    "charitable_giving": {
+      "value": false,
+      "evidence": "I didn't give any money or goods to charity"
+    },
+    "estimated_payments_made": {
+      "value": false,
+      "evidence": "I didn't send any tax payments myself"
+    },
+    "ip_pin_enrolled": {
+      "value": false,
+      "evidence": "I don't have one of those PIN things"
+    },
+    "itemized_last_year": {
+      "value": false,
+      "evidence": "prior_year:itemized"
+    }
+  },
+  "agent_note": "The intake for Client 07 (tax year 2026) is done. It's frozen as **pending_review** under intake in_fd08e9, and nothing has gone to the client yet. You'll need to review the list and send it.\n\n**What's on the draft list:**\n1. **W-2 wage statements: 3.** One from each employer, including the job the client left partway through the year, plus any corrected versions. That's down from 4 last year.\n2. **Bank interest statement (1099-INT): 1.**\n\nThere are no custom requests and the client asked no tax questions, so I left no notes.\n\n**What changed from last year:** one fewer employer. Everything else matches. The client is still single with no dependents, rents their home, and did not itemize last year.\n\n**Everything else was a no:** side work, dividends, investment or crypto sales, partnerships or trusts, rental property, unemployment, Social Security, retirement withdrawals, gambling, Marketplace insurance (coverage came through their jobs), health savings accounts, mortgage, buying or selling a home, a new-vehicle loan or electric vehicle, student loans, tuition, charity, payments they sent the IRS themselves, and an IRS identity PIN.\n\n**Things I wasn't sure about:**\n- **Interest statement count:** I set it to 1 because the client said \"a bank.\" I didn't confirm whether more than one bank paid interest.\n- **Topics I didn't ask about:**\n  - Payment-app income: the client said they did no side work.\n  - State tax refund: it doesn't matter because they didn't itemize last year.\n  - Dependent care costs: they have no dependents.\n  - Clean energy and energy-saving home upgrades: they rent, and no document rule depends on these.\n- **Rollovers:** the client said they got \"no retirement money,\" which I recorded as no withdrawals or rollovers. With three jobs this year, including one they left, it may be worth checking that no old workplace retirement plan was rolled over.",
+  "draft_sha256": "762ad346c09d456dc33eb2794efcd4c1d5edbac15344d16a801daf11f14f3751"
+}

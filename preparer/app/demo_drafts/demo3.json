@@ -1,0 +1,305 @@
+{
+  "draft_id": "demo3",
+  "client_name": "Demo Client 3",
+  "tax_year": 2026,
+  "prior_year_summary": {
+    "tax_year": 2025,
+    "filing_status": "married_separate",
+    "dependents_count": 0,
+    "itemized": false,
+    "documents_on_file": [
+      {
+        "rule_id": "R001",
+        "label": "Form W-2",
+        "count": 1
+      },
+      {
+        "rule_id": "R005",
+        "label": "Form 1099-DIV",
+        "count": 1
+      },
+      {
+        "rule_id": "R021",
+        "label": "Rental income and expense records",
+        "count": 1
+      },
+      {
+        "rule_id": "R028",
+        "label": "Vehicle loan interest statement",
+        "count": 1
+      }
+    ]
+  },
+  "documents": [
+    {
+      "rule_id": "R001",
+      "document": "Form W-2 from each employer (yours and, if filing jointly, your spouse's), including any employer you left during the year, plus any corrected Form W-2c",
+      "count": 2,
+      "client_reason": "You were paid wages, so we need the year-end wage statement from each employer, including any job you left.",
+      "source_url": "https://www.irs.gov/taxtopics/tc401",
+      "source_title": "Topic no. 401, Wages and salaries",
+      "triggered_by": [
+        {
+          "fact": "w2_employer_count",
+          "value": 2,
+          "evidence": "Two employers paid me wages this year"
+        }
+      ]
+    },
+    {
+      "rule_id": "R005",
+      "document": "Form 1099-DIV from each payer",
+      "count": 1,
+      "client_reason": "You received dividends, so we need the year-end dividend statement from each payer.",
+      "source_url": "https://www.irs.gov/taxtopics/tc404",
+      "source_title": "Topic no. 404, Dividends",
+      "triggered_by": [
+        {
+          "fact": "dividend_income",
+          "value": true,
+          "evidence": "Yes, I got dividends."
+        }
+      ]
+    },
+    {
+      "rule_id": "R007",
+      "document": "Form 1099-DA (if received), plus the client's own records for every digital asset sold, exchanged, spent, or used to pay fees: date and time acquired, cost basis, date disposed, and proceeds or fair market value in U.S. dollars",
+      "count": 1,
+      "client_reason": "You sold or traded digital assets, so we need any year-end statement from the platform and your own transaction records.",
+      "source_url": "https://www.irs.gov/filing/digital-assets",
+      "source_title": "Digital assets (IRS.gov)",
+      "triggered_by": [
+        {
+          "fact": "digital_asset_transactions",
+          "value": true,
+          "evidence": "I did buy, sell, or trade cryptocurrency this year"
+        }
+      ]
+    },
+    {
+      "rule_id": "R010",
+      "document": "Form 1099-G, Certain Government Payments, from each agency that paid unemployment (state unemployment agency or Railroad Retirement Board) showing unemployment compensation and any federal income tax withheld",
+      "count": 1,
+      "client_reason": "You received unemployment benefits, so we need the year-end statement from the state.",
+      "source_url": "https://www.irs.gov/taxtopics/tc418",
+      "source_title": "Topic no. 418, Unemployment compensation",
+      "triggered_by": [
+        {
+          "fact": "unemployment",
+          "value": true,
+          "evidence": "I got unemployment benefits this year"
+        }
+      ]
+    },
+    {
+      "rule_id": "R014",
+      "document": "Form 1098 from each lender",
+      "count": 1,
+      "client_reason": "You have a mortgage, so we need the year-end mortgage interest statement from your lender.",
+      "source_url": "https://www.irs.gov/instructions/i1098",
+      "source_title": "Instructions for Form 1098 (12/2026)",
+      "triggered_by": [
+        {
+          "fact": "has_mortgage",
+          "value": true,
+          "evidence": "I have a mortgage on the home I bought"
+        }
+      ]
+    },
+    {
+      "rule_id": "R015",
+      "document": "Closing statement from the home purchase (settlement statement, Closing Disclosure, ALTA statement, or HUD-1), including the buyer's side showing points, prorated property taxes, any mortgage insurance or VA funding fee paid at closing, and settlement costs",
+      "count": 1,
+      "client_reason": "You bought a home, so we need the closing statement from the purchase.",
+      "source_url": "https://www.irs.gov/publications/p530",
+      "source_title": "Publication 530 (2025), Tax Information for Homeowners",
+      "triggered_by": [
+        {
+          "fact": "bought_home",
+          "value": true,
+          "evidence": "I bought a home this year"
+        }
+      ]
+    },
+    {
+      "rule_id": "R021",
+      "document": "For each rental real estate property: rents and other amounts received (including the fair market value of any property or services received as rent), expenses paid, the number of days rented at a fair rental price and the number of days of personal use, purchase, improvement, and prior depreciation records, a dated mileage log if car expenses are claimed, and any Forms 1099-MISC or 1099-K received",
+      "count": 1,
+      "client_reason": "You rented out a home, a room, or other real estate, so we need your rental income and expense records.",
+      "source_url": "https://www.irs.gov/pub/irs-dft/i1040se--dft.pdf",
+      "source_title": "2026 Instructions for Schedule E (Form 1040), Supplemental Income and Loss (draft, September 2026)",
+      "triggered_by": [
+        {
+          "fact": "rental_property",
+          "value": true,
+          "evidence": "I still rent out that property"
+        }
+      ]
+    },
+    {
+      "rule_id": "R028",
+      "document": "Lender's interest statement",
+      "count": 1,
+      "client_reason": "You paid interest on a loan for a new vehicle, so we need the lender's statement of interest paid.",
+      "source_url": "https://www.irs.gov/instructions/i1098vli",
+      "source_title": "Instructions for Form 1098-VLI (Rev. December 2026), for calendar year 2026",
+      "triggered_by": [
+        {
+          "fact": "new_vehicle_loan",
+          "value": true,
+          "evidence": "I still have a loan on a new vehicle"
+        }
+      ]
+    }
+  ],
+  "custom_requests": [],
+  "no_document_needed": [],
+  "not_asked": [
+    "state_refund_received"
+  ],
+  "notes_for_preparer": [],
+  "facts_recorded": {
+    "filing_status": {
+      "value": "married_separate",
+      "evidence": "still married filing separately"
+    },
+    "new_dependent": {
+      "value": false,
+      "evidence": "No new baby or dependents this year."
+    },
+    "dependents_count": {
+      "value": 0,
+      "evidence": "prior_year:dependents_count"
+    },
+    "w2_employer_count": {
+      "value": 2,
+      "evidence": "Two employers paid me wages this year"
+    },
+    "tips_income": {
+      "value": false,
+      "evidence": "No tips or overtime at either."
+    },
+    "overtime_pay": {
+      "value": false,
+      "evidence": "No tips or overtime at either."
+    },
+    "rental_property": {
+      "value": true,
+      "evidence": "I still rent out that property"
+    },
+    "bought_home": {
+      "value": true,
+      "evidence": "I bought a home this year"
+    },
+    "sold_home": {
+      "value": false,
+      "evidence": "I didn't sell any"
+    },
+    "has_mortgage": {
+      "value": true,
+      "evidence": "I have a mortgage on the home I bought"
+    },
+    "clean_energy_installed": {
+      "value": false,
+      "evidence": "I didn't install solar, batteries"
+    },
+    "efficiency_improvements": {
+      "value": false,
+      "evidence": "or energy-saving upgrades this year"
+    },
+    "new_vehicle_loan": {
+      "value": true,
+      "evidence": "I still have a loan on a new vehicle"
+    },
+    "ev_purchased": {
+      "value": false,
+      "evidence": "I didn't buy an electric or plug-in hybrid"
+    },
+    "dividend_income": {
+      "value": true,
+      "evidence": "Yes, I got dividends."
+    },
+    "interest_income": {
+      "value": false,
+      "evidence": "No interest from banks or bonds"
+    },
+    "sold_investments": {
+      "value": false,
+      "evidence": "I didn't sell any stocks, bonds, or funds"
+    },
+    "digital_asset_transactions": {
+      "value": true,
+      "evidence": "I did buy, sell, or trade cryptocurrency this year"
+    },
+    "unemployment": {
+      "value": true,
+      "evidence": "I got unemployment benefits this year"
+    },
+    "self_employment": {
+      "value": false,
+      "evidence": "No freelance, business, partnership, estate, or gambling income."
+    },
+    "k1_count": {
+      "value": 0,
+      "evidence": "No freelance, business, partnership, estate, or gambling income."
+    },
+    "gambling_winnings": {
+      "value": false,
+      "evidence": "No freelance, business, partnership, estate, or gambling income."
+    },
+    "business_app_payments": {
+      "value": false,
+      "evidence": "No freelance, business"
+    },
+    "retirement_distribution": {
+      "value": false,
+      "evidence": "I didn't take money out of a retirement account"
+    },
+    "social_security": {
+      "value": false,
+      "evidence": "I didn't get Social Security"
+    },
+    "marketplace_coverage": {
+      "value": false,
+      "evidence": "nobody in my household bought insurance through the marketplace"
+    },
+    "hsa_withdrawal": {
+      "value": false,
+      "evidence": "no HSA for me"
+    },
+    "hsa_direct_contribution": {
+      "value": false,
+      "evidence": "no HSA for me"
+    },
+    "student_loan_interest": {
+      "value": false,
+      "evidence": "No student loan interest or tuition"
+    },
+    "tuition_paid": {
+      "value": false,
+      "evidence": "No student loan interest or tuition"
+    },
+    "dependent_care_paid": {
+      "value": false,
+      "evidence": "no paid care for anyone"
+    },
+    "itemized_last_year": {
+      "value": false,
+      "evidence": "prior_year:itemized"
+    },
+    "charitable_giving": {
+      "value": false,
+      "evidence": "No charitable gifts this year."
+    },
+    "estimated_payments_made": {
+      "value": false,
+      "evidence": "I didn't send the IRS any payments"
+    },
+    "ip_pin_enrolled": {
+      "value": false,
+      "evidence": "I don't have an Identity Protection PIN"
+    }
+  },
+  "agent_note": "I finished the intake for Demo Client 3 (tax year 2026) and submitted the draft request list for your review. It's waiting as `in_3e4452` with status pending_review. Nothing has gone to the client yet.\n\n**Draft list (8 items):**\n1. Form W-2 from each employer: **2** (one is from a job they left; last year there was 1)\n2. Form 1099-DIV: 1\n3. Form 1099-DA if they get one, plus their own crypto transaction records (crypto is new this year)\n4. Form 1099-G for unemployment benefits (new this year)\n5. Form 1098 mortgage interest statement (new: they have a mortgage on the home they bought)\n6. Closing statement from the home purchase (new)\n7. Rental income and expense records (same rental as last year)\n8. Lender's interest statement for the new-vehicle loan (still paying it)\n\nThere are no custom requests. The client didn't ask any tax questions, so I left no notes.\n\n**Things to check:**\n- **Household:** Filing status is still married filing separately. They said nobody new joined the household, so I carried over last year's count of 0 dependents.\n- **Never asked: state or local tax refund.** That document is only needed if they itemized last year, and last year's summary says they didn't.\n- **Count of 1 is only a placeholder** for the dividend statements, crypto records and mortgage statement. I didn't ask how many payers, platforms or lenders there are, so ask the client for every one they have.\n- **Retirement rollovers:** The client said they took no money out of a retirement account or pension, but didn't mention rollovers directly. I recorded no.\n- **Cost of the new home:** The client didn't say whether they bought it as a main home or as another rental, so check that when you review the closing statement.\n- **Every rule on this list is still marked \"to verify.\"** Several cite draft 2026 instructions, including the rental rule.",
+  "draft_sha256": "d3d4438c9e35f17fbfd6aaf225170d4774574c27048a8385c28b2dd8802ca874"
+}

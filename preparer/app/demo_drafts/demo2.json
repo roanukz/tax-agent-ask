@@ -1,0 +1,189 @@
+{
+  "draft_id": "demo2",
+  "client_name": "Demo Client 2",
+  "tax_year": 2026,
+  "prior_year_summary": {
+    "tax_year": 2025,
+    "filing_status": "single",
+    "dependents_count": 2,
+    "itemized": false,
+    "documents_on_file": [
+      {
+        "rule_id": "R001",
+        "label": "Form W-2",
+        "count": 2
+      }
+    ]
+  },
+  "documents": [
+    {
+      "rule_id": "R001",
+      "document": "Form W-2 from each employer (yours and, if filing jointly, your spouse's), including any employer you left during the year, plus any corrected Form W-2c",
+      "count": 2,
+      "client_reason": "You were paid wages, so we need the year-end wage statement from each employer, including any job you left.",
+      "source_url": "https://www.irs.gov/taxtopics/tc401",
+      "source_title": "Topic no. 401, Wages and salaries",
+      "triggered_by": [
+        {
+          "fact": "w2_employer_count",
+          "value": 2,
+          "evidence": "I did work for two different companies this year"
+        }
+      ]
+    }
+  ],
+  "custom_requests": [],
+  "no_document_needed": [],
+  "not_asked": [
+    "business_app_payments"
+  ],
+  "notes_for_preparer": [
+    {
+      "text": "Client asked: \"Will I owe money this year?\" Tax advice, so not answered. Preparer to respond."
+    }
+  ],
+  "facts_recorded": {
+    "filing_status": {
+      "value": "single",
+      "evidence": "I'm still single"
+    },
+    "dependents_count": {
+      "value": 2,
+      "evidence": "I still have two dependents"
+    },
+    "w2_employer_count": {
+      "value": 2,
+      "evidence": "I did work for two different companies this year"
+    },
+    "new_dependent": {
+      "value": false,
+      "evidence": "No, nobody new."
+    },
+    "self_employment": {
+      "value": false,
+      "evidence": "nothing on the side or my own business."
+    },
+    "interest_income": {
+      "value": false,
+      "evidence": "No, I don't have any bank interest or stock dividends that I know of."
+    },
+    "dividend_income": {
+      "value": false,
+      "evidence": "No, I don't have any bank interest or stock dividends that I know of."
+    },
+    "sold_investments": {
+      "value": false,
+      "evidence": "I didn't sell any stocks, bonds, funds, or crypto this year."
+    },
+    "digital_asset_transactions": {
+      "value": false,
+      "evidence": "I didn't sell any stocks, bonds, funds, or crypto this year."
+    },
+    "retirement_distribution": {
+      "value": false,
+      "evidence": "I didn't take anything out of a retirement account or pension"
+    },
+    "social_security": {
+      "value": false,
+      "evidence": "I didn't get Social Security or unemployment either."
+    },
+    "unemployment": {
+      "value": false,
+      "evidence": "I didn't get Social Security or unemployment either."
+    },
+    "has_mortgage": {
+      "value": false,
+      "evidence": "No, I don't have a mortgage"
+    },
+    "bought_home": {
+      "value": false,
+      "evidence": "I didn't buy or sell a home"
+    },
+    "sold_home": {
+      "value": false,
+      "evidence": "I didn't buy or sell a home"
+    },
+    "rental_property": {
+      "value": false,
+      "evidence": "I don't rent out any property."
+    },
+    "student_loan_interest": {
+      "value": false,
+      "evidence": "I don't have any student loans"
+    },
+    "tuition_paid": {
+      "value": false,
+      "evidence": "I didn't pay for college for me or the kids."
+    },
+    "dependent_care_paid": {
+      "value": false,
+      "evidence": "I also didn't pay for child care so I could work."
+    },
+    "marketplace_coverage": {
+      "value": false,
+      "evidence": "I didn't buy insurance through the marketplace"
+    },
+    "hsa_withdrawal": {
+      "value": false,
+      "evidence": "I didn't put money into or take money out of a health savings account."
+    },
+    "hsa_direct_contribution": {
+      "value": false,
+      "evidence": "I didn't put money into or take money out of a health savings account."
+    },
+    "gambling_winnings": {
+      "value": false,
+      "evidence": "I didn't win any gambling money"
+    },
+    "tips_income": {
+      "value": false,
+      "evidence": "I didn't get tips"
+    },
+    "overtime_pay": {
+      "value": false,
+      "evidence": "I didn't get overtime pay this year."
+    },
+    "charitable_giving": {
+      "value": false,
+      "evidence": "I didn't give money or goods to charity this year."
+    },
+    "new_vehicle_loan": {
+      "value": false,
+      "evidence": "I don't have a car loan"
+    },
+    "ev_purchased": {
+      "value": false,
+      "evidence": "I didn't buy an electric or plug-in hybrid."
+    },
+    "estimated_payments_made": {
+      "value": false,
+      "evidence": "I didn't send the IRS any extra payments on my own"
+    },
+    "state_refund_received": {
+      "value": false,
+      "evidence": "I didn't get a state tax refund this year."
+    },
+    "k1_count": {
+      "value": 0,
+      "evidence": "I'm not in any partnership, company, estate, or trust as far as I know."
+    },
+    "ip_pin_enrolled": {
+      "value": false,
+      "evidence": "no, I've never been given an IRS PIN number."
+    },
+    "itemized_last_year": {
+      "value": false,
+      "evidence": "prior_year:itemized"
+    },
+    "clean_energy_installed": {
+      "value": false,
+      "evidence": "No, I didn't put in solar panels or make any energy upgrades to the house."
+    },
+    "efficiency_improvements": {
+      "value": false,
+      "evidence": "No, I didn't put in solar panels or make any energy upgrades to the house."
+    }
+  },
+  "agent_note": "Intake Demo Client 2 (intake ID in_ab8e76) is submitted for preparer review. I did not send anything to the client.\n\n**Draft request list (1 item):**\n- **Form W-2 from each employer: 2 copies.** The client worked for two companies this year. The client said they weren't sure what a W-2 is, so they may need help finding them.\n\n**Facts recorded:**\n- Single filer with 2 dependents, both carried over from last year and confirmed by the client. No new dependents.\n- Not self-employed and no payment-app income, so the 1099-K question was not asked.\n- No interest, dividends, investment sales, or crypto. No retirement distributions, Social Security, or unemployment.\n- No mortgage, home purchase, home sale, or rental. The client says they rent their home.\n- No student loan interest, tuition, dependent care, Marketplace coverage, or HSA activity.\n- No gambling winnings, tips, overtime, charitable gifts, car loan, or EV purchase.\n- No extra IRS payments, no state refund, no solar or energy upgrades.\n- Not itemized last year.\n\n**Items for the preparer:**\n- **Tax question:** The client asked, \"Will I owe money this year?\" I did not answer it. This is logged as a note for you.\n- **Email request:** The client asked me to email them the list. I can't send anything, so you'll need to send it.\n- **K-1 answer:** The client was unsure about partnerships and trusts and said \"as far as I know.\" I recorded no K-1s, so it's worth a quick confirmation.\n- **Unlogged note:** I tried to add a note about the client's email request after submission, but the intake was already locked, so that note was not recorded. The email request is only in this message.",
+  "draft_sha256": "57f92b8299f1d3a1208524ed785c1a6b986d0c3b05f921771e92582418b00635"
+}

@@ -1,0 +1,194 @@
+{
+  "draft_id": "d11",
+  "client_name": "Client 11",
+  "tax_year": 2026,
+  "prior_year_summary": {
+    "tax_year": 2025,
+    "filing_status": "single",
+    "dependents_count": 2,
+    "itemized": false,
+    "documents_on_file": [
+      {
+        "rule_id": "R001",
+        "label": "Form W-2",
+        "count": 2
+      }
+    ]
+  },
+  "documents": [
+    {
+      "rule_id": "R001",
+      "document": "Form W-2 from each employer (yours and, if filing jointly, your spouse's), including any employer you left during the year, plus any corrected Form W-2c",
+      "count": 1,
+      "client_reason": "You were paid wages, so we need the year-end wage statement from each employer, including any job you left.",
+      "source_url": "https://www.irs.gov/taxtopics/tc401",
+      "source_title": "Topic no. 401, Wages and salaries",
+      "triggered_by": [
+        {
+          "fact": "w2_employer_count",
+          "value": 1,
+          "evidence": "Just one employer paid me wages this year."
+        }
+      ]
+    },
+    {
+      "rule_id": "R017",
+      "document": "Form 1098-T",
+      "count": 1,
+      "client_reason": "You paid college tuition, so we need the tuition statement from the school.",
+      "source_url": "https://www.irs.gov/credits-deductions/individuals/education-credits-aotc-llc",
+      "source_title": "Education credits: AOTC and LLC",
+      "triggered_by": [
+        {
+          "fact": "tuition_paid",
+          "value": true,
+          "evidence": "I paid tuition this year for a class, yes."
+        }
+      ]
+    }
+  ],
+  "custom_requests": [],
+  "no_document_needed": [],
+  "not_asked": [
+    "state_refund_received",
+    "clean_energy_installed",
+    "efficiency_improvements"
+  ],
+  "notes_for_preparer": [],
+  "facts_recorded": {
+    "new_dependent": {
+      "value": false,
+      "evidence": "No, nobody new."
+    },
+    "dependents_count": {
+      "value": 2,
+      "evidence": "Same people as last year."
+    },
+    "w2_employer_count": {
+      "value": 1,
+      "evidence": "Just one employer paid me wages this year."
+    },
+    "self_employment": {
+      "value": false,
+      "evidence": "No, I just have my regular job."
+    },
+    "business_app_payments": {
+      "value": false,
+      "evidence": "I didn't do any side work or run a business."
+    },
+    "tips_income": {
+      "value": false,
+      "evidence": "No tips."
+    },
+    "overtime_pay": {
+      "value": false,
+      "evidence": "I didn't get any overtime pay either."
+    },
+    "unemployment": {
+      "value": false,
+      "evidence": "No, no unemployment and no gambling winnings."
+    },
+    "gambling_winnings": {
+      "value": false,
+      "evidence": "No, no unemployment and no gambling winnings."
+    },
+    "bought_home": {
+      "value": false,
+      "evidence": "No, I didn't buy or sell a home"
+    },
+    "sold_home": {
+      "value": false,
+      "evidence": "No, I didn't buy or sell a home"
+    },
+    "has_mortgage": {
+      "value": false,
+      "evidence": "I don't have a mortgage"
+    },
+    "rental_property": {
+      "value": false,
+      "evidence": "I don't rent out any property."
+    },
+    "interest_income": {
+      "value": false,
+      "evidence": "No interest, no dividends, no stocks or funds sold, and no crypto."
+    },
+    "dividend_income": {
+      "value": false,
+      "evidence": "No interest, no dividends, no stocks or funds sold, and no crypto."
+    },
+    "sold_investments": {
+      "value": false,
+      "evidence": "no stocks or funds sold"
+    },
+    "digital_asset_transactions": {
+      "value": false,
+      "evidence": "and no crypto."
+    },
+    "k1_count": {
+      "value": 0,
+      "evidence": "No, I don't own any shares in a partnership, company, estate, or trust."
+    },
+    "retirement_distribution": {
+      "value": false,
+      "evidence": "I didn't take money out of a retirement account or pension"
+    },
+    "social_security": {
+      "value": false,
+      "evidence": "and I didn't get Social Security."
+    },
+    "marketplace_coverage": {
+      "value": false,
+      "evidence": "No, no marketplace insurance."
+    },
+    "hsa_withdrawal": {
+      "value": false,
+      "evidence": "I don't have a health savings account, so no withdrawals or contributions."
+    },
+    "hsa_direct_contribution": {
+      "value": false,
+      "evidence": "I don't have a health savings account, so no withdrawals or contributions."
+    },
+    "tuition_paid": {
+      "value": true,
+      "evidence": "I paid tuition this year for a class, yes."
+    },
+    "student_loan_interest": {
+      "value": false,
+      "evidence": "No student loan interest, and no child care costs."
+    },
+    "dependent_care_paid": {
+      "value": false,
+      "evidence": "No student loan interest, and no child care costs."
+    },
+    "new_vehicle_loan": {
+      "value": false,
+      "evidence": "No car loan, no electric vehicle"
+    },
+    "ev_purchased": {
+      "value": false,
+      "evidence": "No car loan, no electric vehicle"
+    },
+    "estimated_payments_made": {
+      "value": false,
+      "evidence": "no extra tax payments on my own."
+    },
+    "charitable_giving": {
+      "value": false,
+      "evidence": "No, I didn't give to charity this year."
+    },
+    "ip_pin_enrolled": {
+      "value": false,
+      "evidence": "And no, I don't have an IP PIN."
+    },
+    "filing_status": {
+      "value": "single",
+      "evidence": "Yes, still single."
+    },
+    "itemized_last_year": {
+      "value": false,
+      "evidence": "prior_year:itemized"
+    }
+  },
+  "agent_note": "Intake Client 11 (in_7369c9) is submitted for preparer review. Nothing has been sent to the client.\n\n**Draft document list:**\n1. **Form W-2** from your one employer, plus any corrected W-2c. Last year there were two W-2s, so the preparer may want to confirm the second job ended.\n2. **Form 1098-T** from the school. The client said they paid tuition for a class this year.\n\n**Facts recorded:**\n- Filing status: single, confirmed by the client.\n- Dependents: 2, carried over from last year. The client said \"same people as last year,\" and nobody new was added.\n- No self-employment, tips, overtime, unemployment, gambling, home purchase or sale, mortgage, rental, interest, dividends, investment sales, crypto, partnership or trust shares, retirement withdrawals, Social Security, Marketplace coverage, HSA, student loan interest, child care, car loan, EV, extra estimated payments, charitable giving, or IP PIN.\n- Last year did not itemize, so the state-refund document rule does not apply.\n\n**Not asked:**\n- Energy-efficiency and clean-energy home upgrades. These were not in the plan, and the rules only produce a document for upgrades made in 2026. Those credits ended, so no document is needed. If the client made upgrades in earlier years, no rule covers them, so the preparer may want to ask.\n- The client may have paid tuition for a class, so the preparer should confirm it was for an eligible school program.\n\n**Uncertain:** Nothing else. The client's answers were clear, and every \"no\" answer was recorded with their wording.",
+  "draft_sha256": "acd37106b2723b5876884b2e3d1973218f511f8e792cf99baef089623a2ebdce"
+}

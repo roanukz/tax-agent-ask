@@ -1,0 +1,230 @@
+{
+  "draft_id": "d05",
+  "client_name": "Client 05",
+  "tax_year": 2026,
+  "prior_year_summary": {
+    "tax_year": 2025,
+    "filing_status": "single",
+    "dependents_count": 2,
+    "itemized": false,
+    "documents_on_file": [
+      {
+        "rule_id": "R001",
+        "label": "Form W-2",
+        "count": 1
+      }
+    ]
+  },
+  "documents": [
+    {
+      "rule_id": "R001",
+      "document": "Form W-2 from each employer (yours and, if filing jointly, your spouse's), including any employer you left during the year, plus any corrected Form W-2c",
+      "count": 1,
+      "client_reason": "You were paid wages, so we need the year-end wage statement from each employer, including any job you left.",
+      "source_url": "https://www.irs.gov/taxtopics/tc401",
+      "source_title": "Topic no. 401, Wages and salaries",
+      "triggered_by": [
+        {
+          "fact": "w2_employer_count",
+          "value": 1,
+          "evidence": "Just one job paid me wages this year, including the one I left."
+        }
+      ]
+    },
+    {
+      "rule_id": "R010",
+      "document": "Form 1099-G, Certain Government Payments, from each agency that paid unemployment (state unemployment agency or Railroad Retirement Board) showing unemployment compensation and any federal income tax withheld",
+      "count": 1,
+      "client_reason": "You received unemployment benefits, so we need the year-end statement from the state.",
+      "source_url": "https://www.irs.gov/taxtopics/tc418",
+      "source_title": "Topic no. 418, Unemployment compensation",
+      "triggered_by": [
+        {
+          "fact": "unemployment",
+          "value": true,
+          "evidence": "I also started receiving unemployment benefits this year"
+        }
+      ]
+    },
+    {
+      "rule_id": "R019",
+      "document": "A copy of the new dependent's Social Security card (name and number as printed) and their date of birth; if the SSN has not been issued, the date it was applied for, or an ATIN (Form W-7A) for a pending adoption, or an ITIN for a dependent who cannot get an SSN; for a child born and died in 2026 without an SSN, a birth certificate, death certificate, or hospital record showing live birth",
+      "count": 1,
+      "client_reason": "You have a new dependent, so we need a copy of their Social Security card and their date of birth.",
+      "source_url": "https://www.irs.gov/individuals/checklist-for-free-tax-return-preparation",
+      "source_title": "Checklist for free tax return preparation",
+      "triggered_by": [
+        {
+          "fact": "new_dependent",
+          "value": true,
+          "evidence": "a new dependent joined my household this year"
+        }
+      ]
+    },
+    {
+      "rule_id": "R025",
+      "document": "Charitable gift records: for each cash gift, a bank or card record, canceled check, or receipt or letter from the charity showing its name, the date, and the amount; for any single gift of $250 or more, a written acknowledgment from the charity stating the amount and whether goods or services were given in return; for noncash gifts, records supporting Form 8283 when over $500 and a qualified appraisal when Form 8283 requires it",
+      "count": 1,
+      "client_reason": "You gave to charity, so we need your receipts and the written acknowledgments from the charities.",
+      "source_url": "https://www.irs.gov/taxtopics/tc506",
+      "source_title": "Topic no. 506, Charitable contributions",
+      "triggered_by": [
+        {
+          "fact": "charitable_giving",
+          "value": true,
+          "evidence": "I did give money to charity this year"
+        }
+      ]
+    }
+  ],
+  "custom_requests": [],
+  "no_document_needed": [],
+  "not_asked": [
+    "business_app_payments"
+  ],
+  "notes_for_preparer": [],
+  "facts_recorded": {
+    "filing_status": {
+      "value": "single",
+      "evidence": "I'm still single"
+    },
+    "dependents_count": {
+      "value": 3,
+      "evidence": "so I now have 3 dependents instead of 2"
+    },
+    "new_dependent": {
+      "value": true,
+      "evidence": "a new dependent joined my household this year"
+    },
+    "unemployment": {
+      "value": true,
+      "evidence": "I also started receiving unemployment benefits this year"
+    },
+    "w2_employer_count": {
+      "value": 1,
+      "evidence": "Just one job paid me wages this year, including the one I left."
+    },
+    "self_employment": {
+      "value": false,
+      "evidence": "No, I didn't do any freelance, contract, or gig work and didn't run a business this year."
+    },
+    "interest_income": {
+      "value": false,
+      "evidence": "No, I didn't get any interest from a bank, no dividends"
+    },
+    "dividend_income": {
+      "value": false,
+      "evidence": "no dividends, and I didn't sell any stocks"
+    },
+    "sold_investments": {
+      "value": false,
+      "evidence": "I didn't sell any stocks, bonds, funds, or crypto this year"
+    },
+    "digital_asset_transactions": {
+      "value": false,
+      "evidence": "I didn't sell any stocks, bonds, funds, or crypto this year"
+    },
+    "retirement_distribution": {
+      "value": false,
+      "evidence": "I didn't take any money out of a retirement account or pension"
+    },
+    "social_security": {
+      "value": false,
+      "evidence": "and I didn't get Social Security"
+    },
+    "tips_income": {
+      "value": false,
+      "evidence": "I also didn't get any tips or overtime pay."
+    },
+    "overtime_pay": {
+      "value": false,
+      "evidence": "I also didn't get any tips or overtime pay."
+    },
+    "has_mortgage": {
+      "value": false,
+      "evidence": "No, I didn't have a mortgage"
+    },
+    "bought_home": {
+      "value": false,
+      "evidence": "I didn't buy or sell a home"
+    },
+    "sold_home": {
+      "value": false,
+      "evidence": "I didn't buy or sell a home"
+    },
+    "rental_property": {
+      "value": false,
+      "evidence": "and I didn't rent out any property this year"
+    },
+    "student_loan_interest": {
+      "value": false,
+      "evidence": "No, I didn't pay student loan interest, tuition, or child care"
+    },
+    "tuition_paid": {
+      "value": false,
+      "evidence": "No, I didn't pay student loan interest, tuition, or child care"
+    },
+    "dependent_care_paid": {
+      "value": false,
+      "evidence": "No, I didn't pay student loan interest, tuition, or child care"
+    },
+    "marketplace_coverage": {
+      "value": false,
+      "evidence": "nobody in my household got health insurance through a marketplace this year"
+    },
+    "charitable_giving": {
+      "value": true,
+      "evidence": "I did give money to charity this year"
+    },
+    "state_refund_received": {
+      "value": false,
+      "evidence": "but I didn't get a state tax refund"
+    },
+    "estimated_payments_made": {
+      "value": false,
+      "evidence": "I didn't pay any tax to the IRS outside my paycheck"
+    },
+    "itemized_last_year": {
+      "value": false,
+      "evidence": "prior_year:itemized"
+    },
+    "hsa_withdrawal": {
+      "value": false,
+      "evidence": "I had no HSA money in or out"
+    },
+    "hsa_direct_contribution": {
+      "value": false,
+      "evidence": "I had no HSA money in or out"
+    },
+    "gambling_winnings": {
+      "value": false,
+      "evidence": "no gambling or lottery winnings"
+    },
+    "new_vehicle_loan": {
+      "value": false,
+      "evidence": "no car loan"
+    },
+    "ev_purchased": {
+      "value": false,
+      "evidence": "no electric or plug-in hybrid purchase"
+    },
+    "efficiency_improvements": {
+      "value": false,
+      "evidence": "no energy-saving or clean energy upgrades at home"
+    },
+    "clean_energy_installed": {
+      "value": false,
+      "evidence": "no energy-saving or clean energy upgrades at home"
+    },
+    "k1_count": {
+      "value": 0,
+      "evidence": "I don't have any business or estate interest like that"
+    },
+    "ip_pin_enrolled": {
+      "value": false,
+      "evidence": "And I don't have an Identity Protection PIN from the IRS."
+    }
+  },
+  "agent_note": "The intake for Client 05 (intake ID in_c5d158) is submitted to the preparer for review. Nothing has been sent to the client.\n\n**Draft document list (4 items):**\n1. **Form W-2** from the one employer that paid wages this year, including the job the client left. Count: 1.\n2. **Form 1099-G** from the state unemployment agency. The client started receiving unemployment benefits this year. Count: 1.\n3. **New dependent's Social Security card and date of birth.** The client said a new dependent joined the household this year. Count: 1.\n4. **Charitable gift records** (receipts, bank or card records, and written acknowledgments for any single gift of $250 or more). The client gave to charity but has not yet given amounts. Count: 1.\n\n**Notes for the preparer:**\n- **Filing status and dependents:** Single, 3 dependents (up from 2 last year). The client confirmed the household change in their own words. The two dependents carried over from last year have no document rule attached.\n- **Unanswered or unclear:**\n  - The client was unsure what a partnership or trust share means. They said they have no business or estate interest, so I recorded zero.\n  - The client's answer covered both energy-efficiency upgrades and clean energy installs in one reply. I recorded both as no based on that single answer.\n  - Child care, tuition, and student loan interest were answered together as \"no,\" and I recorded all three as no.\n  - I did not ask about the business payment-app question because the client has no self-employment income.\n- **Carried over from last year:** Itemized deductions were recorded as no, based on last year's summary. I did not confirm this with the client directly.\n- **Not on the list:** The client has no estimated payments, HSA activity, IP PIN, mortgage, home sale or purchase, rental, retirement, Social Security, tips, overtime, marketplace coverage, or state refund. No credits were marked as ended for this household.",
+  "draft_sha256": "742f0c97a1df8a10bb3cc3818cde91735867ad28598fb391dd90f7f2d1082693"
+}

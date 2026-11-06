@@ -1,0 +1,89 @@
+{
+  "draft_id": "d12",
+  "client_name": "Client 12",
+  "tax_year": 2026,
+  "prior_year_summary": {
+    "tax_year": 2025,
+    "filing_status": "married_joint",
+    "dependents_count": 0,
+    "itemized": false,
+    "documents_on_file": [
+      {
+        "rule_id": "R001",
+        "label": "Form W-2",
+        "count": 2
+      }
+    ]
+  },
+  "documents": [
+    {
+      "rule_id": "R001",
+      "document": "Form W-2 from each employer (yours and, if filing jointly, your spouse's), including any employer you left during the year, plus any corrected Form W-2c",
+      "count": 2,
+      "client_reason": "You were paid wages, so we need the year-end wage statement from each employer, including any job you left.",
+      "source_url": "https://www.irs.gov/taxtopics/tc401",
+      "source_title": "Topic no. 401, Wages and salaries",
+      "triggered_by": [
+        {
+          "fact": "w2_employer_count",
+          "value": 2,
+          "evidence": "Two W-2 employers"
+        }
+      ]
+    }
+  ],
+  "custom_requests": [],
+  "no_document_needed": [],
+  "not_asked": [
+    "new_dependent",
+    "self_employment",
+    "business_app_payments",
+    "interest_income",
+    "dividend_income",
+    "sold_investments",
+    "digital_asset_transactions",
+    "retirement_distribution",
+    "social_security",
+    "unemployment",
+    "itemized_last_year",
+    "state_refund_received",
+    "marketplace_coverage",
+    "hsa_withdrawal",
+    "hsa_direct_contribution",
+    "has_mortgage",
+    "bought_home",
+    "sold_home",
+    "student_loan_interest",
+    "tuition_paid",
+    "dependent_care_paid",
+    "k1_count",
+    "rental_property",
+    "estimated_payments_made",
+    "gambling_winnings",
+    "ip_pin_enrolled",
+    "charitable_giving",
+    "tips_income",
+    "overtime_pay",
+    "new_vehicle_loan",
+    "clean_energy_installed",
+    "efficiency_improvements",
+    "ev_purchased"
+  ],
+  "notes_for_preparer": [],
+  "facts_recorded": {
+    "filing_status": {
+      "value": "married_joint",
+      "evidence": "still married filing jointly"
+    },
+    "dependents_count": {
+      "value": 0,
+      "evidence": "no dependents"
+    },
+    "w2_employer_count": {
+      "value": 2,
+      "evidence": "Two W-2 employers"
+    }
+  },
+  "agent_note": "I submitted the draft list for preparer review. It's pending review, and nothing has gone to the client.\n\n**On the draft list (one item):**\n- Form W-2 from each employer, count 2. This covers both spouses and any job that ended. It also covers any corrected W-2c.\n\n**Recorded facts:** Married filing jointly, no dependents, and two W-2 employers.\n\n**Things to know:**\n- The client answered no to every other topic I asked about, so those facts are unrecorded and count as no. The build tool lists them under \"not asked\" even though I did ask. The topics were:\n  - Self-employment, interest, dividends, investment or crypto sales, and retirement withdrawals.\n  - Social Security, unemployment, and home purchase, sale, mortgage or rental.\n  - Marketplace health coverage and HSAs, student loans, tuition, and state refunds.\n  - Tips, overtime, estimated payments, charity, and gambling.\n  - New or electric vehicles, vehicle loans, energy upgrades, IP PIN, dependent care, new dependents, and K-1s.\n- I didn't ask whether they itemized last year. Last year's summary says they didn't, and it only matters if they had a state refund, which they said they didn't.\n- The client's answers were bundled several topics at a time. I had no uncertainties beyond that, and there are no custom requests or preparer notes.",
+  "draft_sha256": "50f044743242309d9aef5ec7c63f2e5940c8a2484aeda6af97082a8877b0554b"
+}

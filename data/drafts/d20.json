@@ -1,0 +1,256 @@
+{
+  "draft_id": "d20",
+  "client_name": "Client 20",
+  "tax_year": 2026,
+  "prior_year_summary": {
+    "tax_year": 2025,
+    "filing_status": "single",
+    "dependents_count": 1,
+    "itemized": false,
+    "documents_on_file": [
+      {
+        "rule_id": "R001",
+        "label": "Form W-2",
+        "count": 1
+      },
+      {
+        "rule_id": "R012",
+        "label": "Form 1095-A",
+        "count": 1
+      },
+      {
+        "rule_id": "R013",
+        "label": "Form 1099-SA",
+        "count": 1
+      },
+      {
+        "rule_id": "R018",
+        "label": "Dependent care provider information",
+        "count": 1
+      }
+    ]
+  },
+  "documents": [
+    {
+      "rule_id": "R001",
+      "document": "Form W-2 from each employer (yours and, if filing jointly, your spouse's), including any employer you left during the year, plus any corrected Form W-2c",
+      "count": 1,
+      "client_reason": "You were paid wages, so we need the year-end wage statement from each employer, including any job you left.",
+      "source_url": "https://www.irs.gov/taxtopics/tc401",
+      "source_title": "Topic no. 401, Wages and salaries",
+      "triggered_by": [
+        {
+          "fact": "w2_employer_count",
+          "value": 1,
+          "evidence": "just one employer paid me a W-2 paycheck, including the whole year"
+        }
+      ]
+    },
+    {
+      "rule_id": "R013",
+      "document": "Form 1099-SA from each HSA, Archer MSA, or Medicare Advantage MSA that paid out any money in 2026 (including debit card payments and payments sent straight to a provider)",
+      "count": 1,
+      "client_reason": "You took money out of your health savings account, so we need the year-end distribution statement.",
+      "source_url": "https://www.irs.gov/instructions/i1099sa",
+      "source_title": "Instructions for Forms 1099-SA and 5498-SA (12/2026)",
+      "triggered_by": [
+        {
+          "fact": "hsa_withdrawal",
+          "value": true,
+          "evidence": "Yes, I took money out of my health savings account this year."
+        }
+      ]
+    },
+    {
+      "rule_id": "R018",
+      "document": "Provider name, address, taxpayer ID, and amount paid",
+      "count": 1,
+      "client_reason": "You paid for care, so we need each provider's name, address, taxpayer ID number, and how much you paid.",
+      "source_url": "https://www.irs.gov/pub/irs-dft/i2441--dft.pdf",
+      "source_title": "2026 Instructions for Form 2441, Child and Dependent Care Expenses (draft, August 21, 2026)",
+      "triggered_by": [
+        {
+          "fact": "dependent_care_paid",
+          "value": true,
+          "evidence": "Yes, I paid for child care so I could work this year."
+        }
+      ]
+    },
+    {
+      "rule_id": "R030",
+      "document": "Closing statement from the sale (settlement statement or Closing Disclosure), plus Form 1099-S (Proceeds From Real Estate Transactions) if received; also the closing statement from the original purchase and records of improvements, to figure basis",
+      "count": 1,
+      "client_reason": "You sold a home, so we need the closing statement and any sale statement you received.",
+      "source_url": "https://www.irs.gov/publications/p523",
+      "source_title": "Publication 523 (2025), Selling Your Home",
+      "triggered_by": [
+        {
+          "fact": "sold_home",
+          "value": true,
+          "evidence": "I sold my home this year"
+        }
+      ]
+    }
+  ],
+  "custom_requests": [],
+  "no_document_needed": [
+    {
+      "rule_id": "T002",
+      "reason": "No document needed: this credit ended",
+      "source_url": "https://www.irs.gov/newsroom/faqs-for-modification-of-sections-25c-25d-25e-30c-30d-45l-45w-and-179d-under-public-law-119-21-139-stat-72-july-4-2025-commonly-known-as-the-one-big-beautiful-bill-obbb",
+      "source_title": "IRS FS-2025-05, FAQs for modification of sections 25C, 25D, 25E, 30C, 30D, 45L, 45W, and 179D under Public Law 119-21"
+    }
+  ],
+  "not_asked": [
+    "business_app_payments"
+  ],
+  "notes_for_preparer": [],
+  "facts_recorded": {
+    "sold_home": {
+      "value": true,
+      "evidence": "I sold my home this year"
+    },
+    "marketplace_coverage": {
+      "value": false,
+      "evidence": "I'm not on a HealthCare.gov or state marketplace health plan anymore"
+    },
+    "efficiency_improvements": {
+      "value": true,
+      "evidence": "I also did some energy-saving upgrades to the place"
+    },
+    "efficiency_improvements_year": {
+      "value": 2026,
+      "evidence": "The energy upgrades were finished in 2026, this year."
+    },
+    "bought_home": {
+      "value": false,
+      "evidence": "no, I didn't buy a new place"
+    },
+    "has_mortgage": {
+      "value": false,
+      "evidence": "I don't have a mortgage on anything anymore since I sold the old house"
+    },
+    "w2_employer_count": {
+      "value": 1,
+      "evidence": "just one employer paid me a W-2 paycheck, including the whole year"
+    },
+    "tips_income": {
+      "value": false,
+      "evidence": "No tips or overtime at that job"
+    },
+    "overtime_pay": {
+      "value": false,
+      "evidence": "No tips or overtime at that job"
+    },
+    "self_employment": {
+      "value": false,
+      "evidence": "I didn't do any freelance, gig, or side business work this year"
+    },
+    "interest_income": {
+      "value": false,
+      "evidence": "No interest from banks or bonds"
+    },
+    "dividend_income": {
+      "value": false,
+      "evidence": "no dividends"
+    },
+    "sold_investments": {
+      "value": false,
+      "evidence": "I didn't sell any stocks, funds, or crypto this year"
+    },
+    "digital_asset_transactions": {
+      "value": false,
+      "evidence": "I didn't sell any stocks, funds, or crypto this year"
+    },
+    "filing_status": {
+      "value": "single",
+      "evidence": "Yes, I'm still filing by myself as single."
+    },
+    "dependents_count": {
+      "value": 1,
+      "evidence": "I still support the same one person I supported last year"
+    },
+    "new_dependent": {
+      "value": false,
+      "evidence": "I didn't have a baby, adopt, or take on anyone new"
+    },
+    "dependent_care_paid": {
+      "value": true,
+      "evidence": "Yes, I paid for child care so I could work this year."
+    },
+    "retirement_distribution": {
+      "value": false,
+      "evidence": "I didn't take money out of a retirement account or pension"
+    },
+    "social_security": {
+      "value": false,
+      "evidence": "I didn't get Social Security or unemployment."
+    },
+    "unemployment": {
+      "value": false,
+      "evidence": "I didn't get Social Security or unemployment."
+    },
+    "hsa_withdrawal": {
+      "value": true,
+      "evidence": "Yes, I took money out of my health savings account this year."
+    },
+    "hsa_direct_contribution": {
+      "value": false,
+      "evidence": "I didn't put any of my own money into one outside my paycheck."
+    },
+    "student_loan_interest": {
+      "value": false,
+      "evidence": "No student loan interest or tuition this year"
+    },
+    "tuition_paid": {
+      "value": false,
+      "evidence": "No student loan interest or tuition this year"
+    },
+    "charitable_giving": {
+      "value": false,
+      "evidence": "no charitable giving either"
+    },
+    "rental_property": {
+      "value": false,
+      "evidence": "No renting out anything"
+    },
+    "k1_count": {
+      "value": 0,
+      "evidence": "no partnership or company shares"
+    },
+    "gambling_winnings": {
+      "value": false,
+      "evidence": "no gambling winnings this year"
+    },
+    "estimated_payments_made": {
+      "value": false,
+      "evidence": "No extra tax payments beyond my paycheck withholding"
+    },
+    "state_refund_received": {
+      "value": false,
+      "evidence": "no state refund this year"
+    },
+    "ip_pin_enrolled": {
+      "value": false,
+      "evidence": "I don't have an Identity Protection PIN"
+    },
+    "new_vehicle_loan": {
+      "value": false,
+      "evidence": "I didn't buy a new vehicle with a loan"
+    },
+    "ev_purchased": {
+      "value": false,
+      "evidence": "I didn't buy a new vehicle with a loan or an electric car either"
+    },
+    "itemized_last_year": {
+      "value": false,
+      "evidence": "prior_year:itemized"
+    },
+    "clean_energy_installed": {
+      "value": false,
+      "evidence": "I didn't put in any solar panels, solar water heater, or home battery"
+    }
+  },
+  "agent_note": "The intake for household Client 20 is submitted to the preparer for review (status: pending_review). I did not send anything to the client.\n\n**Draft document list (4 items):**\n1. **Form W-2** from the one employer, plus any corrected W-2c.\n2. **Form 1099-SA** from the HSA, since the client took money out in 2026.\n3. **Dependent care provider information** (name, address, taxpayer ID, and amount paid), since the client paid for child care so they could work.\n4. **Home sale closing statement**, plus Form 1099-S if one was received.\n\n**No document needed:** the energy-efficiency upgrades finished in 2026. The rule for that credit shows it has ended.\n\n**Things I was unsure about, for the preparer to check:**\n- **Marketplace coverage:** the client says they are no longer on a Marketplace plan, so last year's Form 1095-A is not on the list. Please confirm.\n- **Carried-over items:** last year's HSA and dependent care documents were not confirmed by the client for 2026. They appear on the list because of this year's answers, not because of last year's file.\n- **Form 1099-S:** the client did not say whether they received one. The list asks for it only \"if received.\"\n- **Home sale questions:** the client did not ask for tax advice, but the preparer may want to follow up on basis or gain from the sale and the upgrades.\n- **Not answered:** I did not record the business payment app question because the client has no self-employment income.\n\n**Note not saved:** I tried to add a separate note for the preparer, but the intake was already frozen by the submission, so it was rejected. The points above are the only preparer notes, and they are in this message rather than in the intake record. Please pass them along.",
+  "draft_sha256": "f84b58af50f0a9f3dd769060139ed95bf5e174a15a6410df2be67d1bca56edb0"
+}

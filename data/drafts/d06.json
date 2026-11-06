@@ -1,0 +1,244 @@
+{
+  "draft_id": "d06",
+  "client_name": "Client 06",
+  "tax_year": 2026,
+  "prior_year_summary": {
+    "tax_year": 2025,
+    "filing_status": "married_joint",
+    "dependents_count": 0,
+    "itemized": false,
+    "documents_on_file": [
+      {
+        "rule_id": "R001",
+        "label": "Form W-2",
+        "count": 1
+      },
+      {
+        "rule_id": "R005",
+        "label": "Form 1099-DIV",
+        "count": 1
+      },
+      {
+        "rule_id": "R025",
+        "label": "Charitable contribution receipts",
+        "count": 1
+      }
+    ]
+  },
+  "documents": [
+    {
+      "rule_id": "R001",
+      "document": "Form W-2 from each employer (yours and, if filing jointly, your spouse's), including any employer you left during the year, plus any corrected Form W-2c",
+      "count": 2,
+      "client_reason": "You were paid wages, so we need the year-end wage statement from each employer, including any job you left.",
+      "source_url": "https://www.irs.gov/taxtopics/tc401",
+      "source_title": "Topic no. 401, Wages and salaries",
+      "triggered_by": [
+        {
+          "fact": "w2_employer_count",
+          "value": 2,
+          "evidence": "Just one job for me this year, and my spouse had one job too, so that's two W-2 jobs total between us."
+        }
+      ]
+    },
+    {
+      "rule_id": "R005",
+      "document": "Form 1099-DIV from each payer",
+      "count": 1,
+      "client_reason": "You received dividends, so we need the year-end dividend statement from each payer.",
+      "source_url": "https://www.irs.gov/taxtopics/tc404",
+      "source_title": "Topic no. 404, Dividends",
+      "triggered_by": [
+        {
+          "fact": "dividend_income",
+          "value": true,
+          "evidence": "yes, we got some dividends from our investment funds this year."
+        }
+      ]
+    },
+    {
+      "rule_id": "R012",
+      "document": "Form 1095-A, Health Insurance Marketplace Statement",
+      "count": 1,
+      "client_reason": "You had a Marketplace plan, so we need the statement the Marketplace sends.",
+      "source_url": "https://www.irs.gov/individuals/reconciling-your-advance-payments-of-the-premium-tax-credit",
+      "source_title": "Reconciling your advance payments of the Premium Tax Credit",
+      "triggered_by": [
+        {
+          "fact": "marketplace_coverage",
+          "value": true,
+          "evidence": "Yes, we got our health plan through the marketplace"
+        }
+      ]
+    },
+    {
+      "rule_id": "R025",
+      "document": "Charitable gift records: for each cash gift, a bank or card record, canceled check, or receipt or letter from the charity showing its name, the date, and the amount; for any single gift of $250 or more, a written acknowledgment from the charity stating the amount and whether goods or services were given in return; for noncash gifts, records supporting Form 8283 when over $500 and a qualified appraisal when Form 8283 requires it",
+      "count": 1,
+      "client_reason": "You gave to charity, so we need your receipts and the written acknowledgments from the charities.",
+      "source_url": "https://www.irs.gov/taxtopics/tc506",
+      "source_title": "Topic no. 506, Charitable contributions",
+      "triggered_by": [
+        {
+          "fact": "charitable_giving",
+          "value": true,
+          "evidence": "Yes, we gave to some charities this year."
+        }
+      ]
+    }
+  ],
+  "custom_requests": [],
+  "no_document_needed": [],
+  "not_asked": [
+    "ev_acquired_date"
+  ],
+  "notes_for_preparer": [],
+  "facts_recorded": {
+    "new_dependent": {
+      "value": false,
+      "evidence": "nobody new is living with us or depending on us"
+    },
+    "filing_status": {
+      "value": "married_joint",
+      "evidence": "We're still married"
+    },
+    "ev_purchased": {
+      "value": true,
+      "evidence": "we bought an electric car this year"
+    },
+    "w2_employer_count": {
+      "value": 2,
+      "evidence": "Just one job for me this year, and my spouse had one job too, so that's two W-2 jobs total between us."
+    },
+    "self_employment": {
+      "value": false,
+      "evidence": "No, neither of us did any freelance or side work, and we don't run a business."
+    },
+    "business_app_payments": {
+      "value": false,
+      "evidence": "Nothing came through a payment app or marketplace."
+    },
+    "dividend_income": {
+      "value": true,
+      "evidence": "yes, we got some dividends from our investment funds this year."
+    },
+    "interest_income": {
+      "value": false,
+      "evidence": "No interest that I know of"
+    },
+    "sold_investments": {
+      "value": false,
+      "evidence": "we didn't sell any stocks, bonds, or funds this year"
+    },
+    "digital_asset_transactions": {
+      "value": false,
+      "evidence": "we didn't deal in any crypto or digital assets either."
+    },
+    "retirement_distribution": {
+      "value": false,
+      "evidence": "No retirement withdrawals or rollovers"
+    },
+    "social_security": {
+      "value": false,
+      "evidence": "no Social Security"
+    },
+    "unemployment": {
+      "value": false,
+      "evidence": "no unemployment benefits for either of us this year."
+    },
+    "overtime_pay": {
+      "value": false,
+      "evidence": "No overtime for either of us"
+    },
+    "tips_income": {
+      "value": false,
+      "evidence": "no tips"
+    },
+    "gambling_winnings": {
+      "value": false,
+      "evidence": "no gambling or lottery winnings this year."
+    },
+    "rental_property": {
+      "value": false,
+      "evidence": "we didn't rent out any property this year."
+    },
+    "bought_home": {
+      "value": false,
+      "evidence": "We didn't buy or sell a home"
+    },
+    "sold_home": {
+      "value": false,
+      "evidence": "We didn't buy or sell a home"
+    },
+    "has_mortgage": {
+      "value": false,
+      "evidence": "we don't have a mortgage."
+    },
+    "marketplace_coverage": {
+      "value": true,
+      "evidence": "Yes, we got our health plan through the marketplace"
+    },
+    "hsa_withdrawal": {
+      "value": false,
+      "evidence": "We didn't take any money out of an HSA"
+    },
+    "hsa_direct_contribution": {
+      "value": false,
+      "evidence": "or put money into one."
+    },
+    "student_loan_interest": {
+      "value": false,
+      "evidence": "No student loan interest"
+    },
+    "dependent_care_paid": {
+      "value": false,
+      "evidence": "no child care payments since we don't have kids or dependents."
+    },
+    "new_vehicle_loan": {
+      "value": false,
+      "evidence": "We didn't take out a loan for a new car either"
+    },
+    "charitable_giving": {
+      "value": true,
+      "evidence": "Yes, we gave to some charities this year."
+    },
+    "estimated_payments_made": {
+      "value": false,
+      "evidence": "We didn't make any separate payments to the IRS during the year"
+    },
+    "ip_pin_enrolled": {
+      "value": false,
+      "evidence": "No, we don't have one of those IP PIN things from the IRS."
+    },
+    "state_refund_received": {
+      "value": true,
+      "evidence": "yes, we got a state tax refund this year."
+    },
+    "itemized_last_year": {
+      "value": false,
+      "evidence": "prior_year:itemized"
+    },
+    "dependents_count": {
+      "value": 0,
+      "evidence": "prior_year:dependents_count"
+    },
+    "tuition_paid": {
+      "value": false,
+      "evidence": "No tuition or school fees for either of us this year."
+    },
+    "clean_energy_installed": {
+      "value": false,
+      "evidence": "No solar panels or clean energy equipment"
+    },
+    "efficiency_improvements": {
+      "value": false,
+      "evidence": "no energy-saving upgrades like new windows or a furnace this year."
+    },
+    "k1_count": {
+      "value": 0,
+      "evidence": "we don't own a share of any partnership or small company, and we don't get income from an estate or trust. So that's zero."
+    }
+  },
+  "agent_note": "The intake for household Client 06 is submitted for preparer review (intake in_b3b075). I could not add the note to the preparer because the intake was already frozen when I tried, so the notes are below instead.\n\n**Draft document list (5 items):**\n1. **Form W-2 from each employer, 2 total.** One for the client and one for the spouse, plus any corrected W-2c.\n2. **Form 1099-DIV, 1 total.** From the investment funds that paid dividends.\n3. **Form 1095-A (Health Insurance Marketplace Statement), 1.** The household bought a marketplace health plan this year.\n4. **Charitable gift records.** Receipts and written acknowledgments for gifts of $250 or more.\n\nNothing was added as a custom request, and nothing was marked as \"no document needed.\"\n\n**Items for the preparer to check:**\n- **Electric car:** The client bought an EV this year but could not give the contract or first-payment date. They said they \"took delivery on December 6, 2026,\" which is after today's date (2026-11-02). I did not record a date, so the EV credit rule did not apply and no EV document is on the list. Please confirm the actual contract and payment dates.\n- **State tax refund:** The client received one. The 1099-G rule only applies if the household itemized last year, and last year's summary says they did not, so nothing was added. Please check whether a 1099-G came with the refund.\n- **Dividends:** The client said \"investment funds,\" and only one 1099-DIV is on the list. Please confirm whether there is more than one payer.\n- **Charitable gifts:** The client gave to \"some charities.\" The number of gifts is unknown.\n- **Mistake on my part:** I tried to record a clean-energy fact using a prior-year reference that did not exist. The tool rejected it, and I then asked the client directly and recorded their answer. No bad fact was saved.\n\n**Confirmed with the client:** married filing jointly, no dependents, no new dependents, no self-employment, no interest income, no investment sales or crypto, no retirement or Social Security or unemployment income, no overtime or tips, no gambling, no rental property, no home purchase or sale, no mortgage, no HSA activity, no student loan interest, no child care costs, no new-vehicle loan, no tuition, no estimated tax payments, no IP PIN, no clean energy or efficiency upgrades, and no partnership or trust income.",
+  "draft_sha256": "770a35243b51c0077e53881651437208bbf5a3b5cdfa73994166c8e48f2bfe76"
+}

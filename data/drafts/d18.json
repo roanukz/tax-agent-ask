@@ -1,0 +1,213 @@
+{
+  "draft_id": "d18",
+  "client_name": "Client 18",
+  "tax_year": 2026,
+  "prior_year_summary": {
+    "tax_year": 2025,
+    "filing_status": "married_joint",
+    "dependents_count": 0,
+    "itemized": false,
+    "documents_on_file": [
+      {
+        "rule_id": "R001",
+        "label": "Form W-2",
+        "count": 3
+      }
+    ]
+  },
+  "documents": [
+    {
+      "rule_id": "R001",
+      "document": "Form W-2 from each employer (yours and, if filing jointly, your spouse's), including any employer you left during the year, plus any corrected Form W-2c",
+      "count": 2,
+      "client_reason": "You were paid wages, so we need the year-end wage statement from each employer, including any job you left.",
+      "source_url": "https://www.irs.gov/taxtopics/tc401",
+      "source_title": "Topic no. 401, Wages and salaries",
+      "triggered_by": [
+        {
+          "fact": "w2_employer_count",
+          "value": 2,
+          "evidence": "Two employers paid us wages"
+        }
+      ]
+    },
+    {
+      "rule_id": "R007",
+      "document": "Form 1099-DA (if received), plus the client's own records for every digital asset sold, exchanged, spent, or used to pay fees: date and time acquired, cost basis, date disposed, and proceeds or fair market value in U.S. dollars",
+      "count": 1,
+      "client_reason": "You sold or traded digital assets, so we need any year-end statement from the platform and your own transaction records.",
+      "source_url": "https://www.irs.gov/filing/digital-assets",
+      "source_title": "Digital assets (IRS.gov)",
+      "triggered_by": [
+        {
+          "fact": "digital_asset_transactions",
+          "value": true,
+          "evidence": "sell some cryptocurrency"
+        }
+      ]
+    }
+  ],
+  "custom_requests": [],
+  "no_document_needed": [
+    {
+      "rule_id": "T001",
+      "reason": "No document needed: this credit ended",
+      "source_url": "https://www.irs.gov/newsroom/faqs-for-modification-of-sections-25c-25d-25e-30c-30d-45l-45w-and-179d-under-public-law-119-21-139-stat-72-july-4-2025-commonly-known-as-the-one-big-beautiful-bill-obbb",
+      "source_title": "IRS FS-2025-05, FAQs for modification of sections 25C, 25D, 25E, 30C, 30D, 45L, 45W, and 179D under Public Law 119-21"
+    }
+  ],
+  "not_asked": [],
+  "notes_for_preparer": [],
+  "facts_recorded": {
+    "filing_status": {
+      "value": "married_joint",
+      "evidence": "still married filing jointly"
+    },
+    "dependents_count": {
+      "value": 0,
+      "evidence": "no dependents"
+    },
+    "new_dependent": {
+      "value": false,
+      "evidence": "Nobody new has joined the household"
+    },
+    "itemized_last_year": {
+      "value": false,
+      "evidence": "prior_year:itemized"
+    },
+    "w2_employer_count": {
+      "value": 2,
+      "evidence": "Two employers paid us wages"
+    },
+    "self_employment": {
+      "value": false,
+      "evidence": "neither of us did freelance"
+    },
+    "business_app_payments": {
+      "value": false,
+      "evidence": "no payment app or marketplace payments"
+    },
+    "interest_income": {
+      "value": false,
+      "evidence": "we didn't earn any interest"
+    },
+    "dividend_income": {
+      "value": false,
+      "evidence": "or dividends this year"
+    },
+    "sold_investments": {
+      "value": false,
+      "evidence": "didn't sell any stocks"
+    },
+    "digital_asset_transactions": {
+      "value": true,
+      "evidence": "sell some cryptocurrency"
+    },
+    "retirement_distribution": {
+      "value": false,
+      "evidence": "No retirement withdrawals"
+    },
+    "social_security": {
+      "value": false,
+      "evidence": "no Social Security"
+    },
+    "unemployment": {
+      "value": false,
+      "evidence": "no unemployment"
+    },
+    "marketplace_coverage": {
+      "value": false,
+      "evidence": "didn't buy insurance through the marketplace"
+    },
+    "hsa_withdrawal": {
+      "value": false,
+      "evidence": "didn't use or put money into a health savings account"
+    },
+    "hsa_direct_contribution": {
+      "value": false,
+      "evidence": "didn't use or put money into a health savings account"
+    },
+    "has_mortgage": {
+      "value": false,
+      "evidence": "No mortgage"
+    },
+    "bought_home": {
+      "value": false,
+      "evidence": "didn't buy or sell a home"
+    },
+    "sold_home": {
+      "value": false,
+      "evidence": "didn't buy or sell a home"
+    },
+    "student_loan_interest": {
+      "value": false,
+      "evidence": "didn't pay any student loan interest"
+    },
+    "tuition_paid": {
+      "value": false,
+      "evidence": "or college tuition this year"
+    },
+    "k1_count": {
+      "value": 0,
+      "evidence": "No K-1s this year"
+    },
+    "rental_property": {
+      "value": false,
+      "evidence": "didn't rent out any property"
+    },
+    "estimated_payments_made": {
+      "value": false,
+      "evidence": "No estimated payments"
+    },
+    "gambling_winnings": {
+      "value": false,
+      "evidence": "no gambling or lottery winnings"
+    },
+    "ip_pin_enrolled": {
+      "value": false,
+      "evidence": "no IP PIN"
+    },
+    "charitable_giving": {
+      "value": false,
+      "evidence": "No charitable gifts"
+    },
+    "state_refund_received": {
+      "value": false,
+      "evidence": "no state tax refund"
+    },
+    "dependent_care_paid": {
+      "value": false,
+      "evidence": "no child or dependent care payments"
+    },
+    "tips_income": {
+      "value": false,
+      "evidence": "neither of us earned tips"
+    },
+    "overtime_pay": {
+      "value": false,
+      "evidence": "or overtime pay"
+    },
+    "new_vehicle_loan": {
+      "value": false,
+      "evidence": "didn't take a loan for a new car"
+    },
+    "ev_purchased": {
+      "value": false,
+      "evidence": "didn't buy an electric or plug-in hybrid"
+    },
+    "clean_energy_installed": {
+      "value": true,
+      "evidence": "we put in a clean energy system this year"
+    },
+    "efficiency_improvements": {
+      "value": false,
+      "evidence": "didn't do any energy-saving upgrades"
+    },
+    "clean_energy_install_year": {
+      "value": 2026,
+      "evidence": "finished this year, 2026"
+    }
+  },
+  "agent_note": "I submitted the draft list for preparer review. It has not been sent to the client. The intake is Client 18, in_7e0285, and its status is pending_review.\n\n**Documents on the draft list**\n1. **Form W-2, 2 of them.** One from each employer, including any job that ended, plus any corrected W-2c. The client said two employers paid wages this year.\n2. **Form 1099-DA, if received, plus the client's own crypto records.** The records should cover each sale: when it was acquired, cost basis, date sold, and proceeds in dollars. The client said they sold cryptocurrency.\n\n**No document needed**\n- **Solar or clean energy credit:** The client said the system was finished in 2026. The rules say this credit ended, so nothing is requested.\n\n**Things to check**\n- **Crypto details:** I didn't ask which spouse sold the crypto, how many sales there were, or which platform was used. The preparer may want to follow up.\n- **Solar installation:** The client confirmed 2026 as the year the installation was finished. The preparer may want to confirm it was on their main home and what it cost.\n- **W-2 count:** The client gave one combined count of two employers for both spouses. I didn't ask how many belong to each.\n- **Everything else:** The client answered no to every other question. That covers self-employment, interest and dividends, retirement, Social Security, unemployment, marketplace insurance, HSA, home and mortgage, education, K-1s, rentals, estimated payments, gambling, IP PIN, charity, state refund, dependent care, tips, overtime, vehicle loan, EV and efficiency upgrades.\n- **Carried from last year:** Filing status and dependents were confirmed by the client. \"Did not itemize last year\" comes from last year's summary.\n- **Questions for the preparer:** The client asked no tax questions, so there are no preparer notes.",
+  "draft_sha256": "75fb1f70d1091994e8b87689c6ffc1658396c1b740d10fef6a684502e342db2f"
+}

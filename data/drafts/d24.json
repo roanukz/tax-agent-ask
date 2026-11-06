@@ -1,0 +1,213 @@
+{
+  "draft_id": "d24",
+  "client_name": "Client 24",
+  "tax_year": 2026,
+  "prior_year_summary": {
+    "tax_year": 2025,
+    "filing_status": "married_joint",
+    "dependents_count": 1,
+    "itemized": false,
+    "documents_on_file": [
+      {
+        "rule_id": "R001",
+        "label": "Form W-2",
+        "count": 1
+      }
+    ]
+  },
+  "documents": [
+    {
+      "rule_id": "R001",
+      "document": "Form W-2 from each employer (yours and, if filing jointly, your spouse's), including any employer you left during the year, plus any corrected Form W-2c",
+      "count": 2,
+      "client_reason": "You were paid wages, so we need the year-end wage statement from each employer, including any job you left.",
+      "source_url": "https://www.irs.gov/taxtopics/tc401",
+      "source_title": "Topic no. 401, Wages and salaries",
+      "triggered_by": [
+        {
+          "fact": "w2_employer_count",
+          "value": 2,
+          "evidence": "we each have one job"
+        }
+      ]
+    },
+    {
+      "rule_id": "R002",
+      "document": "Business income and expense records (income records, receipts, mileage logs, and bank or payment app statements), including any Forms 1099-NEC received",
+      "count": 1,
+      "client_reason": "You had freelance or business income, so we need your income and expense records and any year-end payment statements from clients.",
+      "source_url": "https://www.irs.gov/businesses/small-businesses-self-employed/manage-taxes-for-your-gig-work",
+      "source_title": "Manage taxes for your gig work",
+      "triggered_by": [
+        {
+          "fact": "self_employment",
+          "value": true,
+          "evidence": "I do some freelance side work"
+        }
+      ]
+    },
+    {
+      "rule_id": "R004",
+      "document": "Form 1099-INT from each payer",
+      "count": 1,
+      "client_reason": "You earned interest, so we need the year-end interest statement from each bank or payer.",
+      "source_url": "https://www.irs.gov/taxtopics/tc403",
+      "source_title": "Topic no. 403, Interest received",
+      "triggered_by": [
+        {
+          "fact": "interest_income",
+          "value": true,
+          "evidence": "We did have a savings account"
+        }
+      ]
+    }
+  ],
+  "custom_requests": [],
+  "no_document_needed": [],
+  "not_asked": [
+    "state_refund_received",
+    "clean_energy_installed",
+    "efficiency_improvements"
+  ],
+  "notes_for_preparer": [
+    {
+      "text": "Items to check: (1) W-2 count recorded as 2. The client first said \"Just one employer for wages,\" then said \"we each have one job\" but isn't sure if both work for the same company. Each spouse gets their own W-2 either way, so we requested 2. Neither changed jobs. (2) Interest marked yes because they have a savings account, but the client said \"I don't think it earned much interest.\" There may be no 1099-INT if it earned under $10. (3) Freelance work is new this year, and the client made no estimated payments (\"just what came out of my paychecks\"). (4) The client wasn't sure about an IP PIN (\"I'm not sure what that is... I don't think we have one\"), so it's recorded as no. (5) Clean energy and home efficiency weren't asked because they rent."
+    }
+  ],
+  "facts_recorded": {
+    "filing_status": {
+      "value": "married_joint",
+      "evidence": "still filing together"
+    },
+    "dependents_count": {
+      "value": 1,
+      "evidence": "just the one dependent"
+    },
+    "new_dependent": {
+      "value": false,
+      "evidence": "nobody new we support"
+    },
+    "w2_employer_count": {
+      "value": 2,
+      "evidence": "we each have one job"
+    },
+    "tips_income": {
+      "value": false,
+      "evidence": "neither of us got tips or overtime pay"
+    },
+    "overtime_pay": {
+      "value": false,
+      "evidence": "neither of us got tips or overtime pay"
+    },
+    "self_employment": {
+      "value": true,
+      "evidence": "I do some freelance side work"
+    },
+    "unemployment": {
+      "value": false,
+      "evidence": "No unemployment, Social Security, retirement withdrawals, or gambling winnings"
+    },
+    "social_security": {
+      "value": false,
+      "evidence": "No unemployment, Social Security, retirement withdrawals, or gambling winnings"
+    },
+    "retirement_distribution": {
+      "value": false,
+      "evidence": "No unemployment, Social Security, retirement withdrawals, or gambling winnings"
+    },
+    "gambling_winnings": {
+      "value": false,
+      "evidence": "No unemployment, Social Security, retirement withdrawals, or gambling winnings"
+    },
+    "business_app_payments": {
+      "value": false,
+      "evidence": "my clients paid me directly"
+    },
+    "estimated_payments_made": {
+      "value": false,
+      "evidence": "just what came out of my paychecks"
+    },
+    "interest_income": {
+      "value": true,
+      "evidence": "We did have a savings account"
+    },
+    "dividend_income": {
+      "value": false,
+      "evidence": "we didn't get any dividends"
+    },
+    "sold_investments": {
+      "value": false,
+      "evidence": "We didn't sell any stocks or funds"
+    },
+    "digital_asset_transactions": {
+      "value": false,
+      "evidence": "no crypto either"
+    },
+    "k1_count": {
+      "value": 0,
+      "evidence": "we don't have any shares in a partnership"
+    },
+    "rental_property": {
+      "value": false,
+      "evidence": "didn't rent out any property"
+    },
+    "has_mortgage": {
+      "value": false,
+      "evidence": "No mortgage"
+    },
+    "bought_home": {
+      "value": false,
+      "evidence": "we didn't buy or sell a home"
+    },
+    "sold_home": {
+      "value": false,
+      "evidence": "we didn't buy or sell a home"
+    },
+    "new_vehicle_loan": {
+      "value": false,
+      "evidence": "didn't get a new car or any vehicle loan"
+    },
+    "ev_purchased": {
+      "value": false,
+      "evidence": "didn't get a new car"
+    },
+    "dependent_care_paid": {
+      "value": false,
+      "evidence": "didn't pay for any child care"
+    },
+    "student_loan_interest": {
+      "value": false,
+      "evidence": "didn't pay any student loan interest"
+    },
+    "tuition_paid": {
+      "value": false,
+      "evidence": "no college tuition or fees"
+    },
+    "marketplace_coverage": {
+      "value": false,
+      "evidence": "we didn't buy insurance through the marketplace"
+    },
+    "hsa_withdrawal": {
+      "value": false,
+      "evidence": "no money going in or out of one"
+    },
+    "hsa_direct_contribution": {
+      "value": false,
+      "evidence": "no money going in or out of one"
+    },
+    "charitable_giving": {
+      "value": false,
+      "evidence": "didn't give any money or goods"
+    },
+    "itemized_last_year": {
+      "value": false,
+      "evidence": "prior_year:itemized"
+    },
+    "ip_pin_enrolled": {
+      "value": false,
+      "evidence": "I don't think we have one"
+    }
+  },
+  "agent_note": "I've finished the intake for Client 24 and submitted the draft list for your review. Its status is pending_review, and nothing has been sent to the client.\n\n**On the draft list (3 items):**\n1. **Wage statements (W-2): 2.** One for the client and one for the spouse.\n2. **Freelance income and expense records,** plus any 1099-NEC forms from clients. The client started freelancing this year.\n3. **Bank interest statement (1099-INT): 1,** for their savings account.\n\nThere are no custom requests and nothing in the \"credit ended, no document needed\" group.\n\n**Things I wasn't sure about:**\n- **Number of wage statements:** The client first said \"Just one employer,\" then said \"we each have one job\" but doesn't know whether it's the same company. Each spouse gets their own wage statement either way, so I recorded 2. Neither of them changed jobs.\n- **Interest:** I recorded yes because they have a savings account, but the client said \"I don't think it earned much interest.\" If it earned under $10, the bank may not send a statement.\n- **Freelance tax payments:** The client didn't seem to know what these were and made none (\"just what came out of my paychecks\"). You may want to talk with them about that for next year.\n- **Identity PIN:** The client didn't know what it was and said \"I don't think we have one,\" so I recorded no.\n- **Health savings account:** The client said \"I don't have a health savings account.\" That may only cover the client, not the spouse.\n- **Not asked:** State refund, because they didn't itemize last year, so no document would be needed. Clean energy and home upgrades, because they rent.\n\nI left a note on the intake with these same points.",
+  "draft_sha256": "e80bca7c97c0a3110cb590dce8556294a59f4400b49b5ad88915ea7f22526e25"
+}

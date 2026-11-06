@@ -1,0 +1,185 @@
+{
+  "draft_id": "d21",
+  "client_name": "Client 21",
+  "tax_year": 2026,
+  "prior_year_summary": {
+    "tax_year": 2025,
+    "filing_status": "married_joint",
+    "dependents_count": 1,
+    "itemized": false,
+    "documents_on_file": [
+      {
+        "rule_id": "R001",
+        "label": "Form W-2",
+        "count": 1
+      }
+    ]
+  },
+  "documents": [
+    {
+      "rule_id": "R001",
+      "document": "Form W-2 from each employer (yours and, if filing jointly, your spouse's), including any employer you left during the year, plus any corrected Form W-2c",
+      "count": 1,
+      "client_reason": "You were paid wages, so we need the year-end wage statement from each employer, including any job you left.",
+      "source_url": "https://www.irs.gov/taxtopics/tc401",
+      "source_title": "Topic no. 401, Wages and salaries",
+      "triggered_by": [
+        {
+          "fact": "w2_employer_count",
+          "value": 1,
+          "evidence": "Just one employer paid wages"
+        }
+      ]
+    }
+  ],
+  "custom_requests": [],
+  "no_document_needed": [],
+  "not_asked": [
+    "state_refund_received"
+  ],
+  "notes_for_preparer": [],
+  "facts_recorded": {
+    "filing_status": {
+      "value": "married_joint",
+      "evidence": "still filing jointly with my spouse"
+    },
+    "dependents_count": {
+      "value": 1,
+      "evidence": "same one dependent"
+    },
+    "new_dependent": {
+      "value": false,
+      "evidence": "Nothing has changed."
+    },
+    "w2_employer_count": {
+      "value": 1,
+      "evidence": "Just one employer paid wages"
+    },
+    "overtime_pay": {
+      "value": false,
+      "evidence": "neither of us got overtime"
+    },
+    "tips_income": {
+      "value": false,
+      "evidence": "overtime or tips at that job"
+    },
+    "self_employment": {
+      "value": false,
+      "evidence": "neither of us did any freelance, contract, or gig work"
+    },
+    "business_app_payments": {
+      "value": false,
+      "evidence": "we didn't run a business this year"
+    },
+    "unemployment": {
+      "value": false,
+      "evidence": "we didn't get any unemployment"
+    },
+    "social_security": {
+      "value": false,
+      "evidence": "unemployment, Social Security, or retirement"
+    },
+    "retirement_distribution": {
+      "value": false,
+      "evidence": "retirement account or pension money"
+    },
+    "interest_income": {
+      "value": false,
+      "evidence": "we didn't earn any bank or bond interest"
+    },
+    "dividend_income": {
+      "value": false,
+      "evidence": "or stock dividends"
+    },
+    "sold_investments": {
+      "value": false,
+      "evidence": "we didn't sell any stocks, funds"
+    },
+    "digital_asset_transactions": {
+      "value": false,
+      "evidence": "funds, or cryptocurrency this year"
+    },
+    "k1_count": {
+      "value": 0,
+      "evidence": "neither of us owns a share of a partnership"
+    },
+    "rental_property": {
+      "value": false,
+      "evidence": "or rents out any property"
+    },
+    "gambling_winnings": {
+      "value": false,
+      "evidence": "we didn't win any money gambling"
+    },
+    "has_mortgage": {
+      "value": false,
+      "evidence": "we don't have a mortgage"
+    },
+    "bought_home": {
+      "value": false,
+      "evidence": "we didn't buy or sell a home"
+    },
+    "sold_home": {
+      "value": false,
+      "evidence": "we didn't buy or sell a home"
+    },
+    "dependent_care_paid": {
+      "value": false,
+      "evidence": "we didn't pay anyone for child care"
+    },
+    "marketplace_coverage": {
+      "value": false,
+      "evidence": "we didn't buy insurance through the marketplace"
+    },
+    "hsa_withdrawal": {
+      "value": false,
+      "evidence": "we didn't use or put money into a health savings account"
+    },
+    "hsa_direct_contribution": {
+      "value": false,
+      "evidence": "we didn't use or put money into a health savings account"
+    },
+    "student_loan_interest": {
+      "value": false,
+      "evidence": "we didn't pay any student loan interest"
+    },
+    "tuition_paid": {
+      "value": false,
+      "evidence": "nobody in our household paid college tuition"
+    },
+    "charitable_giving": {
+      "value": false,
+      "evidence": "we didn't give any money or goods"
+    },
+    "itemized_last_year": {
+      "value": false,
+      "evidence": "prior_year:itemized"
+    },
+    "new_vehicle_loan": {
+      "value": false,
+      "evidence": "we have no vehicle loan"
+    },
+    "ev_purchased": {
+      "value": false,
+      "evidence": "we didn't buy a car, truck, or motorcycle"
+    },
+    "clean_energy_installed": {
+      "value": false,
+      "evidence": "we didn't install solar panels"
+    },
+    "efficiency_improvements": {
+      "value": false,
+      "evidence": "any energy-saving upgrades like windows"
+    },
+    "estimated_payments_made": {
+      "value": false,
+      "evidence": "we didn't send the IRS any separate payments"
+    },
+    "ip_pin_enrolled": {
+      "value": false,
+      "evidence": "neither of us has an Identity Protection PIN"
+    }
+  },
+  "agent_note": "The intake for household Client 21 (tax year 2026) is ready for your review. The draft list has one document. It hasn't gone to the client; you need to review it and send it.\n\n**On the draft list**\n1. **Form W-2 (1)** from the household's one employer, plus any corrected W-2c. The client said \"Just one employer paid wages to us this year, same as last year.\" Source: IRS Topic 401.\n\nThere are no custom requests, no notes with tax questions from the client, and no ended credits that apply.\n\n**What the client confirmed**\n- The household hasn't changed: still married filing jointly, with the same one dependent and no new dependents.\n- There's no other income: no overtime, tips, side work or business, unemployment, Social Security, retirement withdrawals, interest, dividends, investment or crypto sales, partnership or trust income, rentals, or gambling winnings.\n- They have no mortgage and didn't buy or sell a home.\n- They had none of the following: child care costs, Marketplace health insurance, health savings account activity, student loan interest, tuition, gifts to charity, vehicle purchase or vehicle loan, solar or energy-saving upgrades, payments sent to the IRS during the year, or an Identity Protection PIN.\n\n**Things you may want to check**\n- **State or local tax refund:** I didn't ask about this. That document is only needed if they also itemized last year, and last year's summary shows they took the standard deduction, so I carried that over.\n- **Payment apps:** I didn't ask about this directly. It only matters for business income, and they said they had none.\n- **Loosely worded answers:** I asked about several things in one question each time (tips with overtime; Social Security with unemployment and retirement withdrawals). The client said no to each group as a whole, so the quotes I recorded as evidence for tips and Social Security come from those combined answers.\n- **One W-2 for a joint return:** \"Just one employer paid wages to us\" suggests only one spouse worked. If both spouses worked, the count would be 2.",
+  "draft_sha256": "161b15404502c7d57f8b441cd3e080c82f547f3b272049b843903d6e452c77f2"
+}

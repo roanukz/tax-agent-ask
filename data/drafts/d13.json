@@ -1,0 +1,189 @@
+{
+  "draft_id": "d13",
+  "client_name": "Client 13",
+  "tax_year": 2026,
+  "prior_year_summary": {
+    "tax_year": 2025,
+    "filing_status": "married_joint",
+    "dependents_count": 2,
+    "itemized": false,
+    "documents_on_file": [
+      {
+        "rule_id": "R001",
+        "label": "Form W-2",
+        "count": 2
+      }
+    ]
+  },
+  "documents": [
+    {
+      "rule_id": "R001",
+      "document": "Form W-2 from each employer (yours and, if filing jointly, your spouse's), including any employer you left during the year, plus any corrected Form W-2c",
+      "count": 3,
+      "client_reason": "You were paid wages, so we need the year-end wage statement from each employer, including any job you left.",
+      "source_url": "https://www.irs.gov/taxtopics/tc401",
+      "source_title": "Topic no. 401, Wages and salaries",
+      "triggered_by": [
+        {
+          "fact": "w2_employer_count",
+          "value": 3,
+          "evidence": "It's three employers in total"
+        }
+      ]
+    }
+  ],
+  "custom_requests": [],
+  "no_document_needed": [],
+  "not_asked": [
+    "business_app_payments"
+  ],
+  "notes_for_preparer": [
+    {
+      "text": "Client asked: \"Will I owe money this year?\" Needs preparer answer."
+    }
+  ],
+  "facts_recorded": {
+    "filing_status": {
+      "value": "married_joint",
+      "evidence": "We're still married filing jointly"
+    },
+    "dependents_count": {
+      "value": 2,
+      "evidence": "we still have our two dependents"
+    },
+    "new_dependent": {
+      "value": false,
+      "evidence": "no new baby or dependent this year"
+    },
+    "itemized_last_year": {
+      "value": false,
+      "evidence": "prior_year:itemized"
+    },
+    "w2_employer_count": {
+      "value": 3,
+      "evidence": "It's three employers in total"
+    },
+    "self_employment": {
+      "value": false,
+      "evidence": "neither of us did any freelance"
+    },
+    "interest_income": {
+      "value": false,
+      "evidence": "we didn't get any interest"
+    },
+    "dividend_income": {
+      "value": false,
+      "evidence": "no dividends from stocks"
+    },
+    "sold_investments": {
+      "value": false,
+      "evidence": "we didn't sell any stocks"
+    },
+    "digital_asset_transactions": {
+      "value": false,
+      "evidence": "or cryptocurrency this year"
+    },
+    "retirement_distribution": {
+      "value": false,
+      "evidence": "we didn't take any money out of a retirement account"
+    },
+    "social_security": {
+      "value": false,
+      "evidence": "we didn't get Social Security"
+    },
+    "unemployment": {
+      "value": false,
+      "evidence": "or unemployment this year"
+    },
+    "marketplace_coverage": {
+      "value": false,
+      "evidence": "we didn't buy health insurance through HealthCare.gov"
+    },
+    "hsa_withdrawal": {
+      "value": false,
+      "evidence": "we didn't use a health savings account"
+    },
+    "hsa_direct_contribution": {
+      "value": false,
+      "evidence": "we didn't use a health savings account"
+    },
+    "has_mortgage": {
+      "value": false,
+      "evidence": "we don't have a mortgage"
+    },
+    "bought_home": {
+      "value": false,
+      "evidence": "we didn't buy or sell a home"
+    },
+    "sold_home": {
+      "value": false,
+      "evidence": "we didn't buy or sell a home"
+    },
+    "student_loan_interest": {
+      "value": false,
+      "evidence": "we didn't pay any student loan interest"
+    },
+    "tuition_paid": {
+      "value": false,
+      "evidence": "tuition, or child care"
+    },
+    "dependent_care_paid": {
+      "value": false,
+      "evidence": "child care costs"
+    },
+    "state_refund_received": {
+      "value": false,
+      "evidence": "we didn't get a state or local tax refund"
+    },
+    "estimated_payments_made": {
+      "value": false,
+      "evidence": "didn't make any direct payments"
+    },
+    "gambling_winnings": {
+      "value": false,
+      "evidence": "didn't win any gambling money"
+    },
+    "charitable_giving": {
+      "value": false,
+      "evidence": "we didn't give to charity"
+    },
+    "tips_income": {
+      "value": false,
+      "evidence": "had tips or overtime pay"
+    },
+    "overtime_pay": {
+      "value": false,
+      "evidence": "had tips or overtime pay"
+    },
+    "ev_purchased": {
+      "value": false,
+      "evidence": "we didn't buy an electric"
+    },
+    "new_vehicle_loan": {
+      "value": false,
+      "evidence": "we don't have a loan on a new vehicle"
+    },
+    "clean_energy_installed": {
+      "value": false,
+      "evidence": "we didn't put in solar"
+    },
+    "efficiency_improvements": {
+      "value": false,
+      "evidence": "energy-saving upgrades to the house"
+    },
+    "ip_pin_enrolled": {
+      "value": false,
+      "evidence": "we're not enrolled"
+    },
+    "k1_count": {
+      "value": 0,
+      "evidence": "we don't own a share"
+    },
+    "rental_property": {
+      "value": false,
+      "evidence": "don't rent out any property"
+    }
+  },
+  "agent_note": "I submitted the draft list for Client 13 for your review (status: pending_review). Nothing has gone to the client.\n\n**On the draft list (1 item):**\n- Form W-2 from each employer, 3 in total: two jobs for the client and one for the spouse. The request also asks for any corrected W-2c.\n\nThere are no custom requests. No credit that ended applies.\n\n**Things to check:**\n- **Employer count:** The client's answers on this changed several times. They first said one employer for them plus the spouse's, then \"two in total.\" Then they said they have two jobs and the spouse has one. On a direct follow-up they confirmed three in total, so I recorded 3. You may want to check that when you send the list.\n- **Client's tax question:** They asked, \"Will I owe money this year?\" I told them you would answer it, and I left a note on the intake.\n- **Not asked:** I didn't ask about payment-app or marketplace payments (`business_app_payments`). The client said they had no freelance or business income, so I left it unrecorded, which counts as no.\n- **Shared answers:** The client answered some topics together, so a few \"no\" facts rest on a combined answer. Examples are tuition and child care, HSA withdrawals and contributions, and tips and overtime.\n- **Carried over:** Last year's return didn't itemize, and I carried that over from the prior-year summary.\n- **Other facts:** Filing status is still married filing jointly and dependents are still 2, both confirmed by the client. Every other topic was answered \"no.\"",
+  "draft_sha256": "9bdf0aa56445f980fc443e82b0d88567a55a293fa509081efbcbaf98a10fdfb4"
+}

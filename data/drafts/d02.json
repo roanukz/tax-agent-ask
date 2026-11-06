@@ -1,0 +1,316 @@
+{
+  "draft_id": "d02",
+  "client_name": "Client 02",
+  "tax_year": 2026,
+  "prior_year_summary": {
+    "tax_year": 2025,
+    "filing_status": "married_joint",
+    "dependents_count": 0,
+    "itemized": false,
+    "documents_on_file": [
+      {
+        "rule_id": "R001",
+        "label": "Form W-2",
+        "count": 2
+      },
+      {
+        "rule_id": "R004",
+        "label": "Form 1099-INT",
+        "count": 1
+      },
+      {
+        "rule_id": "R005",
+        "label": "Form 1099-DIV",
+        "count": 1
+      },
+      {
+        "rule_id": "R020",
+        "label": "Schedule K-1",
+        "count": 2
+      },
+      {
+        "rule_id": "R022",
+        "label": "Estimated tax payment records",
+        "count": 1
+      }
+    ]
+  },
+  "documents": [
+    {
+      "rule_id": "R001",
+      "document": "Form W-2 from each employer (yours and, if filing jointly, your spouse's), including any employer you left during the year, plus any corrected Form W-2c",
+      "count": 1,
+      "client_reason": "You were paid wages, so we need the year-end wage statement from each employer, including any job you left.",
+      "source_url": "https://www.irs.gov/taxtopics/tc401",
+      "source_title": "Topic no. 401, Wages and salaries",
+      "triggered_by": [
+        {
+          "fact": "w2_employer_count",
+          "value": 1,
+          "evidence": "Just one employer paid wages this year"
+        }
+      ]
+    },
+    {
+      "rule_id": "R004",
+      "document": "Form 1099-INT from each payer",
+      "count": 1,
+      "client_reason": "You earned interest, so we need the year-end interest statement from each bank or payer.",
+      "source_url": "https://www.irs.gov/taxtopics/tc403",
+      "source_title": "Topic no. 403, Interest received",
+      "triggered_by": [
+        {
+          "fact": "interest_income",
+          "value": true,
+          "evidence": "we still earned interest and dividends"
+        }
+      ]
+    },
+    {
+      "rule_id": "R005",
+      "document": "Form 1099-DIV from each payer",
+      "count": 1,
+      "client_reason": "You received dividends, so we need the year-end dividend statement from each payer.",
+      "source_url": "https://www.irs.gov/taxtopics/tc404",
+      "source_title": "Topic no. 404, Dividends",
+      "triggered_by": [
+        {
+          "fact": "dividend_income",
+          "value": true,
+          "evidence": "we still earned interest and dividends"
+        }
+      ]
+    },
+    {
+      "rule_id": "R008",
+      "document": "Form 1099-R for each distribution, direct rollover, Roth conversion, or pension or annuity payment (RRB-1099-R for railroad retirement tier II), plus proof of the redeposit date and amount for any indirect (60-day) rollover",
+      "count": 1,
+      "client_reason": "You took money out of a retirement account or rolled one over, so we need the year-end distribution statement.",
+      "source_url": "https://www.irs.gov/instructions/i1099r",
+      "source_title": "Instructions for Forms 1099-R and 5498 (2026)",
+      "triggered_by": [
+        {
+          "fact": "retirement_distribution",
+          "value": true,
+          "evidence": "I took money out of a retirement account this year"
+        }
+      ]
+    },
+    {
+      "rule_id": "R017",
+      "document": "Form 1098-T",
+      "count": 1,
+      "client_reason": "You paid college tuition, so we need the tuition statement from the school.",
+      "source_url": "https://www.irs.gov/credits-deductions/individuals/education-credits-aotc-llc",
+      "source_title": "Education credits: AOTC and LLC",
+      "triggered_by": [
+        {
+          "fact": "tuition_paid",
+          "value": true,
+          "evidence": "We paid college tuition this year"
+        }
+      ]
+    },
+    {
+      "rule_id": "R020",
+      "document": "Schedule K-1 from each partnership, S corporation, estate, or trust in which the client held an interest or was a beneficiary at any time during 2026 (a separate K-1 for each entity), plus any Schedule K-3 a partnership or S corporation sends",
+      "count": 2,
+      "client_reason": "You have a share in a partnership, company, estate, or trust, so we need the year-end statement from each one.",
+      "source_url": "https://www.irs.gov/pub/irs-dft/i1040se--dft.pdf",
+      "source_title": "2026 Instructions for Schedule E (Form 1040), Supplemental Income and Loss (early release draft, posted 09/24/2026)",
+      "triggered_by": [
+        {
+          "fact": "k1_count",
+          "value": 2,
+          "evidence": "We still have two of those statements"
+        }
+      ]
+    },
+    {
+      "rule_id": "R022",
+      "document": "Date and amount of each federal estimated tax payment for tax year 2026 (including the payment made in January 2027, any 2025 overpayment applied to 2026, and any estimated tax credited by a trust), and the name and SSN each payment was made under, for example from the Record of Estimated Tax Payments, Direct Pay or EFTPS confirmations, or IRS Online Account payment history",
+      "count": 1,
+      "client_reason": "You made estimated tax payments, so we need the date and amount of each payment.",
+      "source_url": "https://www.irs.gov/pub/irs-prior/f1040es--2026.pdf",
+      "source_title": "Form 1040-ES (2026), Estimated Tax for Individuals (Record of Estimated Tax Payments)",
+      "triggered_by": [
+        {
+          "fact": "estimated_payments_made",
+          "value": true,
+          "evidence": "we made payments to the IRS during the year again"
+        }
+      ]
+    }
+  ],
+  "custom_requests": [],
+  "no_document_needed": [
+    {
+      "rule_id": "T003",
+      "reason": "No document needed: this credit ended",
+      "source_url": "https://www.irs.gov/newsroom/faqs-for-modification-of-sections-25c-25d-25e-30c-30d-45l-45w-and-179d-under-public-law-119-21-139-stat-72-july-4-2025-commonly-known-as-the-one-big-beautiful-bill-obbb",
+      "source_title": "IRS FS-2025-05, FAQs for modification of sections 25C, 25D, 25E, 30C, 30D, 45L, 45W, and 179D under Public Law 119-21"
+    }
+  ],
+  "not_asked": [
+    "business_app_payments"
+  ],
+  "notes_for_preparer": [
+    {
+      "text": "Client asked: \"Would we save money filing separately?\" (Currently married filing jointly, no dependents.)"
+    },
+    {
+      "text": "W-2 count is uncertain. Client said one employer paid wages in 2026 (two in 2025). They're not sure when the second job ended: \"I don't think it paid us anything this year. I'd have to check the paperwork to be certain.\" If that employer paid anything in 2026, a second W-2 is needed."
+    },
+    {
+      "text": "Tuition: the client paid college tuition in 2026 (new this year) but reports no dependents. I didn't ask whose tuition it was, so please confirm the student. EV: bought November 2026 with no loan. I recorded the date as 2026-11-01 because the client gave only the month; any day in 2026 gives the same result (credit ended, no document needed)."
+    }
+  ],
+  "facts_recorded": {
+    "filing_status": {
+      "value": "married_joint",
+      "evidence": "still married filing jointly"
+    },
+    "dependents_count": {
+      "value": 0,
+      "evidence": "we still have no dependents"
+    },
+    "new_dependent": {
+      "value": false,
+      "evidence": "we still have no dependents"
+    },
+    "w2_employer_count": {
+      "value": 1,
+      "evidence": "Just one employer paid wages this year"
+    },
+    "overtime_pay": {
+      "value": false,
+      "evidence": "neither of us got overtime pay or tips"
+    },
+    "tips_income": {
+      "value": false,
+      "evidence": "neither of us got overtime pay or tips"
+    },
+    "k1_count": {
+      "value": 2,
+      "evidence": "We still have two of those statements"
+    },
+    "interest_income": {
+      "value": true,
+      "evidence": "we still earned interest and dividends"
+    },
+    "dividend_income": {
+      "value": true,
+      "evidence": "we still earned interest and dividends"
+    },
+    "sold_investments": {
+      "value": false,
+      "evidence": "We didn't sell any stocks, bonds, mutual funds, or crypto"
+    },
+    "digital_asset_transactions": {
+      "value": false,
+      "evidence": "We didn't sell any stocks, bonds, mutual funds, or crypto"
+    },
+    "estimated_payments_made": {
+      "value": true,
+      "evidence": "we made payments to the IRS during the year again"
+    },
+    "retirement_distribution": {
+      "value": true,
+      "evidence": "I took money out of a retirement account this year"
+    },
+    "self_employment": {
+      "value": false,
+      "evidence": "Nobody in the house has freelance or business income"
+    },
+    "rental_property": {
+      "value": false,
+      "evidence": "rental property, unemployment, Social Security, or gambling winnings"
+    },
+    "unemployment": {
+      "value": false,
+      "evidence": "rental property, unemployment, Social Security, or gambling winnings"
+    },
+    "social_security": {
+      "value": false,
+      "evidence": "rental property, unemployment, Social Security, or gambling winnings"
+    },
+    "gambling_winnings": {
+      "value": false,
+      "evidence": "rental property, unemployment, Social Security, or gambling winnings"
+    },
+    "has_mortgage": {
+      "value": false,
+      "evidence": "we don't have a mortgage"
+    },
+    "bought_home": {
+      "value": false,
+      "evidence": "we didn't buy or sell a home"
+    },
+    "sold_home": {
+      "value": false,
+      "evidence": "we didn't buy or sell a home"
+    },
+    "marketplace_coverage": {
+      "value": false,
+      "evidence": "we didn't buy health insurance through HealthCare.gov"
+    },
+    "hsa_withdrawal": {
+      "value": false,
+      "evidence": "didn't take money out of or put money into a health savings account"
+    },
+    "hsa_direct_contribution": {
+      "value": false,
+      "evidence": "didn't take money out of or put money into a health savings account"
+    },
+    "tuition_paid": {
+      "value": true,
+      "evidence": "We paid college tuition this year"
+    },
+    "student_loan_interest": {
+      "value": false,
+      "evidence": "We didn't pay student loan interest"
+    },
+    "dependent_care_paid": {
+      "value": false,
+      "evidence": "or for care for someone so we could work"
+    },
+    "charitable_giving": {
+      "value": false,
+      "evidence": "we didn't give to charity"
+    },
+    "state_refund_received": {
+      "value": false,
+      "evidence": "we didn't get a state or local tax refund"
+    },
+    "itemized_last_year": {
+      "value": false,
+      "evidence": "prior_year:itemized"
+    },
+    "ev_purchased": {
+      "value": true,
+      "evidence": "we bought an electric vehicle this year"
+    },
+    "new_vehicle_loan": {
+      "value": false,
+      "evidence": "We didn't take out a loan for it"
+    },
+    "ev_acquired_date": {
+      "value": "2026-11-01",
+      "evidence": "November 2026, so November 2026"
+    },
+    "clean_energy_installed": {
+      "value": false,
+      "evidence": "we didn't install solar panels, a battery"
+    },
+    "efficiency_improvements": {
+      "value": false,
+      "evidence": "any energy-saving upgrades like windows, insulation"
+    },
+    "ip_pin_enrolled": {
+      "value": false,
+      "evidence": "neither of us has an Identity Protection PIN"
+    }
+  },
+  "agent_note": "I've finished the intake for Client 02 and submitted it for your review as intake in_ee330d. Nothing has gone to the client; the list goes out only after you review it.\n\n**Documents on the draft list (7):**\n1. Form W-2: 1 (down from 2 last year)\n2. Form 1099-INT: 1\n3. Form 1099-DIV: 1\n4. Form 1099-R: 1 (new this year, retirement account withdrawal)\n5. Form 1098-T: 1 (new this year, college tuition paid)\n6. Schedule K-1: 2, plus any K-3s\n7. Estimated tax payment records for 2026, including the January 2027 payment\n\n**No document needed:** They bought an electric vehicle in November 2026 with no loan. That credit has ended (rule T003), so nothing is requested.\n\nThere are no custom requests. The household is still married filing jointly with no dependents.\n\n**Things I was unsure about (also in the notes on the intake):**\n- **W-2 count:** One of last year's two jobs ended. The client thinks it paid nothing in 2026 but wasn't certain. If it paid anything this year, the list needs a second W-2.\n- **Tuition:** They paid college tuition but have no dependents, and I didn't ask whose tuition it was. Please confirm who the student is.\n- **EV date:** The client gave only \"November 2026,\" so I recorded 2026-11-01. Any day in November gives the same result.\n- **Self-employment follow-up:** The question about payments through apps or online marketplaces was skipped because nobody in the household has business income.\n\n**Client question for you:** \"Would we save money filing separately?\" I told them you would answer it.",
+  "draft_sha256": "1858aa68d7d006ab31aefdf743c7eabd498bbdfd290813e94abddffa09b2888d"
+}

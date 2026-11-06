@@ -1,0 +1,187 @@
+{
+  "draft_id": "d08",
+  "client_name": "Client 08",
+  "tax_year": 2026,
+  "prior_year_summary": {
+    "tax_year": 2025,
+    "filing_status": "single",
+    "dependents_count": 2,
+    "itemized": false,
+    "documents_on_file": [
+      {
+        "rule_id": "R001",
+        "label": "Form W-2",
+        "count": 1
+      }
+    ]
+  },
+  "documents": [
+    {
+      "rule_id": "R001",
+      "document": "Form W-2 from each employer (yours and, if filing jointly, your spouse's), including any employer you left during the year, plus any corrected Form W-2c",
+      "count": 1,
+      "client_reason": "You were paid wages, so we need the year-end wage statement from each employer, including any job you left.",
+      "source_url": "https://www.irs.gov/taxtopics/tc401",
+      "source_title": "Topic no. 401, Wages and salaries",
+      "triggered_by": [
+        {
+          "fact": "w2_employer_count",
+          "value": 1,
+          "evidence": "I had one job this year, so one employer paid me a W-2 paycheck."
+        }
+      ]
+    }
+  ],
+  "custom_requests": [],
+  "no_document_needed": [],
+  "not_asked": [],
+  "notes_for_preparer": [],
+  "facts_recorded": {
+    "filing_status": {
+      "value": "single",
+      "evidence": "prior_year:filing_status"
+    },
+    "dependents_count": {
+      "value": 2,
+      "evidence": "prior_year:dependents_count"
+    },
+    "new_dependent": {
+      "value": false,
+      "evidence": "Nothing really changed"
+    },
+    "itemized_last_year": {
+      "value": false,
+      "evidence": "prior_year:itemized"
+    },
+    "w2_employer_count": {
+      "value": 1,
+      "evidence": "I had one job this year, so one employer paid me a W-2 paycheck."
+    },
+    "self_employment": {
+      "value": false,
+      "evidence": "No, just the job."
+    },
+    "interest_income": {
+      "value": false,
+      "evidence": "No, none of that."
+    },
+    "dividend_income": {
+      "value": false,
+      "evidence": "No, none of that."
+    },
+    "sold_investments": {
+      "value": false,
+      "evidence": "No, none of that."
+    },
+    "digital_asset_transactions": {
+      "value": false,
+      "evidence": "No, none of that."
+    },
+    "retirement_distribution": {
+      "value": false,
+      "evidence": "No, none of those."
+    },
+    "social_security": {
+      "value": false,
+      "evidence": "No, none of those."
+    },
+    "unemployment": {
+      "value": false,
+      "evidence": "No, none of those."
+    },
+    "gambling_winnings": {
+      "value": false,
+      "evidence": "No, none of those."
+    },
+    "marketplace_coverage": {
+      "value": false,
+      "evidence": "No, none of those."
+    },
+    "hsa_withdrawal": {
+      "value": false,
+      "evidence": "No, none of those."
+    },
+    "hsa_direct_contribution": {
+      "value": false,
+      "evidence": "no HSA"
+    },
+    "student_loan_interest": {
+      "value": false,
+      "evidence": "no student loans or tuition"
+    },
+    "tuition_paid": {
+      "value": false,
+      "evidence": "no student loans or tuition"
+    },
+    "dependent_care_paid": {
+      "value": false,
+      "evidence": "no ... child care payments"
+    },
+    "has_mortgage": {
+      "value": false,
+      "evidence": "I don't have a mortgage."
+    },
+    "bought_home": {
+      "value": false,
+      "evidence": "I didn't buy, sell, or rent out a home"
+    },
+    "sold_home": {
+      "value": false,
+      "evidence": "I didn't buy, sell, or rent out a home"
+    },
+    "rental_property": {
+      "value": false,
+      "evidence": "I didn't buy, sell, or rent out a home"
+    },
+    "estimated_payments_made": {
+      "value": false,
+      "evidence": "I didn't make any extra IRS payments beyond my paycheck withholding"
+    },
+    "ip_pin_enrolled": {
+      "value": false,
+      "evidence": "I don't have an Identity Protection PIN."
+    },
+    "charitable_giving": {
+      "value": false,
+      "evidence": "No charity, no tips, no overtime"
+    },
+    "tips_income": {
+      "value": false,
+      "evidence": "No charity, no tips, no overtime"
+    },
+    "overtime_pay": {
+      "value": false,
+      "evidence": "No charity, no tips, no overtime"
+    },
+    "new_vehicle_loan": {
+      "value": false,
+      "evidence": "no new car loan, and no electric vehicle"
+    },
+    "ev_purchased": {
+      "value": false,
+      "evidence": "no new car loan, and no electric vehicle"
+    },
+    "state_refund_received": {
+      "value": false,
+      "evidence": "No state refund, and no solar panels"
+    },
+    "clean_energy_installed": {
+      "value": false,
+      "evidence": "no solar panels or energy upgrades to my home"
+    },
+    "efficiency_improvements": {
+      "value": false,
+      "evidence": "no solar panels or energy upgrades to my home"
+    },
+    "k1_count": {
+      "value": 0,
+      "evidence": "No partnership, small company, estate, or trust income."
+    },
+    "business_app_payments": {
+      "value": false,
+      "evidence": "No, just the job."
+    }
+  },
+  "agent_note": "Intake for Client 08 (intake in_41be6a) is submitted for preparer review with status pending_review. I have not sent anything to the client.\n\n**Draft document list (1 item):**\n- **Form W-2** from your one employer, plus any corrected W-2c. This is based on the client saying they had one job and one employer paid them wages (R001).\n\n**Nothing else was requested.** The client said nothing changed from last year and answered no to every other topic I asked about: freelance or gig work, investment income or sales, crypto, retirement withdrawals, Social Security, unemployment, gambling, Marketplace insurance, HSA activity, student loans or tuition, child care, home purchase, sale, mortgage or rental, extra IRS payments, IP PIN, charitable gifts, tips, overtime, car loans, EV purchase, state refund, and energy upgrades. They also reported no partnership, estate, or trust income.\n\n**For the preparer to check:**\n- **Carried over from last year without a fresh answer:** filing status (single), 2 dependents, and not itemizing. I recorded these from last year's summary. The client's only confirmation was \"Nothing really changed.\" Please confirm the dependent count, since the client never named them.\n- **Dependents:** the client said there was no new dependent, but I did not ask whether the two dependents from last year still live with them or still qualify.\n- **Evidence wording:** a few facts were recorded on the client's broader answers, not on a direct yes or no. Examples are the child care answer (\"no ... child care payments,\" with an ellipsis) and the HSA answer (\"no HSA\"). The client did say no to each of these.\n- **Not asked:** I did not ask whether a spouse or anyone else had income this year, since filing status is single.\n- **No tax questions** came up from the client.",
+  "draft_sha256": "0bf88c738283669b5d3d1bd2b2a7049d4fba76dd54efbf20556fdab65b2de7c4"
+}

@@ -1,0 +1,876 @@
+<!doctype html>
+<!-- Built by preparer/build.py from preparer/app/review.html, source sha256 9d9c8d77631fec4e20f42626fd7db35b89bf9ebeb8aa3f171bed4d8ca9313da6. Edit the source, then rebuild. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Preparer review</title>
+<style>
+/* Colors come from the host's style variables when it sends them, with these fallbacks in light and dark. */
+:root {
+  color-scheme: light;
+  --fb-bg: #ffffff;
+  --fb-bg-2: #f5f4f0;
+  --fb-bg-3: #ebe9e3;
+  --fb-text: #1d1c19;
+  --fb-text-2: #57534b;
+  --fb-border: #d9d5cc;
+  --fb-ring: #2c5d8a;
+  --fb-info-bg: #e8f0f7;
+  --fb-info: #1f4f78;
+  --fb-danger-bg: #f8e9e6;
+  --fb-danger: #9a3226;
+  --fb-success-bg: #e7f2ea;
+  --fb-success: #2a6439;
+  --fb-warning-bg: #f8efdc;
+  --fb-warning: #7c5300;
+  --sai-top: 0px; --sai-right: 0px; --sai-bottom: 0px; --sai-left: 0px;
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --fb-bg: #1b1a18; --fb-bg-2: #24231f; --fb-bg-3: #2f2d28; --fb-text: #f1eee7; --fb-text-2: #b5afa3; --fb-border: #3d3a34;
+  --fb-ring: #8db6dc; --fb-info-bg: #1d2c3a; --fb-info: #a9c9e6; --fb-danger-bg: #3a221e; --fb-danger: #eb9a8e;
+  --fb-success-bg: #1d3124; --fb-success: #96cfa3; --fb-warning-bg: #3a2e17; --fb-warning: #e6c07a;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --fb-bg: #1b1a18; --fb-bg-2: #24231f; --fb-bg-3: #2f2d28; --fb-text: #f1eee7; --fb-text-2: #b5afa3; --fb-border: #3d3a34;
+    --fb-ring: #8db6dc; --fb-info-bg: #1d2c3a; --fb-info: #a9c9e6; --fb-danger-bg: #3a221e; --fb-danger: #eb9a8e;
+    --fb-success-bg: #1d3124; --fb-success: #96cfa3; --fb-warning-bg: #3a2e17; --fb-warning: #e6c07a;
+  }
+}
+:root {
+  --bg: var(--color-background-primary, var(--fb-bg));
+  --bg-2: var(--color-background-secondary, var(--fb-bg-2));
+  --bg-3: var(--color-background-tertiary, var(--fb-bg-3));
+  --text: var(--color-text-primary, var(--fb-text));
+  --text-2: var(--color-text-secondary, var(--fb-text-2));
+  --border: var(--color-border-primary, var(--fb-border));
+  --ring: var(--color-ring-primary, var(--fb-ring));
+  --info-bg: var(--color-background-info, var(--fb-info-bg));
+  --info: var(--color-text-info, var(--fb-info));
+  --danger-bg: var(--color-background-danger, var(--fb-danger-bg));
+  --danger: var(--color-text-danger, var(--fb-danger));
+  --success-bg: var(--color-background-success, var(--fb-success-bg));
+  --success: var(--color-text-success, var(--fb-success));
+  --warning-bg: var(--color-background-warning, var(--fb-warning-bg));
+  --warning: var(--color-text-warning, var(--fb-warning));
+  --radius: var(--border-radius-md, 8px);
+  --radius-lg: var(--border-radius-lg, 12px);
+  --font: var(--font-sans, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif);
+  --mono: var(--font-mono, ui-monospace, "SF Mono", Menlo, monospace);
+  --sm: var(--font-text-sm-size, 0.875rem);
+  --md: var(--font-text-md-size, 1rem);
+  --lg: var(--font-heading-sm-size, 1.125rem);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--font); font-size: var(--md); line-height: 1.45; }
+body {
+  padding-top: max(var(--sai-top), env(safe-area-inset-top, 0px));
+  padding-right: max(var(--sai-right), env(safe-area-inset-right, 0px));
+  padding-bottom: max(var(--sai-bottom), env(safe-area-inset-bottom, 0px));
+  padding-left: max(var(--sai-left), env(safe-area-inset-left, 0px));
+}
+button, a.button {
+  font: inherit; color: inherit; min-height: 44px; min-width: 44px; padding: 0 14px; border-radius: var(--radius);
+  border: 1px solid var(--border); background: var(--bg); cursor: pointer; display: inline-flex; align-items: center;
+  justify-content: center; gap: 6px; text-decoration: none;
+}
+button:hover:not(:disabled) { background: var(--bg-2); }
+button:focus-visible, a:focus-visible, [tabindex]:focus-visible, summary:focus-visible {
+  outline: 3px solid var(--ring); outline-offset: 2px;
+}
+button:disabled, button[aria-disabled="true"] { opacity: 0.5; cursor: not-allowed; }
+html { scroll-padding-bottom: var(--bar-height, 0px); }
+button.primary { background: var(--text); color: var(--bg); border-color: var(--text); font-weight: var(--font-weight-semibold, 600); }
+button.primary:hover:not(:disabled) { background: var(--text); opacity: 0.9; }
+button[aria-pressed="true"] { background: var(--info-bg); color: var(--info); border-color: var(--info); font-weight: var(--font-weight-semibold, 600); }
+button.remove[aria-pressed="true"] { background: var(--danger-bg); color: var(--danger); border-color: var(--danger); }
+button.link { border: none; background: none; padding: 0 4px; color: var(--info); text-decoration: underline; min-height: 44px; }
+h1, h2, h3 { margin: 0; line-height: 1.25; text-wrap: balance; }
+h1 { font-size: var(--lg); }
+h2 { font-size: var(--md); }
+h3 { font-size: var(--sm); font-weight: var(--font-weight-semibold, 600); }
+p { margin: 0; }
+.muted { color: var(--text-2); }
+.small { font-size: var(--sm); }
+.wrap { padding: 16px; max-width: 980px; margin: 0 auto; display: grid; gap: 16px; }
+.banner { background: var(--warning-bg); color: var(--warning); padding: 10px 16px; font-size: var(--sm); }
+.banner .row { max-width: 980px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.banner .fine { margin-top: 6px; }
+.card { border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px; display: grid; gap: 12px; background: var(--bg); }
+.facts-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; margin: 0; }
+.facts-row div { background: var(--bg-2); border-radius: var(--radius); padding: 8px 10px; }
+.facts-row dt { font-size: var(--sm); color: var(--text-2); }
+.facts-row dd { margin: 0; font-weight: var(--font-weight-semibold, 600); }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: center; }
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); overflow-x: auto; }
+.tabs button { border: none; border-bottom: 3px solid transparent; border-radius: 0; background: none; }
+.tabs button[aria-selected="true"] { border-bottom-color: var(--text); font-weight: var(--font-weight-semibold, 600); }
+.tabs button:focus-visible { outline-offset: -3px; }
+.list { display: grid; gap: 12px; }
+.item { border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 14px; display: grid; gap: 10px; }
+.item.done { border-color: var(--success); }
+.kind { font-size: var(--sm); font-weight: var(--font-weight-semibold, 600); text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-2); }
+.evidence { margin: 0; padding-left: 0; list-style: none; display: grid; gap: 6px; }
+.evidence li { background: var(--bg-2); border-radius: var(--radius); padding: 8px 10px; font-size: var(--sm); }
+.quote { font-style: italic; }
+.carried { color: var(--warning); font-weight: var(--font-weight-semibold, 600); }
+.code { font-family: var(--mono); font-size: var(--sm); }
+.stepper { display: inline-flex; align-items: center; gap: 4px; }
+.stepper output { min-width: 2.5em; text-align: center; font-weight: var(--font-weight-semibold, 600); }
+.group-label { font-size: var(--sm); color: var(--text-2); }
+.bar {
+  position: sticky; bottom: 0; background: var(--bg); border-top: 1px solid var(--border);
+  padding: 10px 16px calc(10px + max(var(--sai-bottom), env(safe-area-inset-bottom, 0px)));
+}
+.bar .row { max-width: 980px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
+.status { min-height: 1.4em; font-size: var(--sm); }
+.status.error { color: var(--danger); font-weight: var(--font-weight-semibold, 600); }
+.status.ok { color: var(--success); }
+.note { white-space: pre-wrap; background: var(--bg-2); border-radius: var(--radius); padding: 12px; font-size: var(--sm); overflow-wrap: anywhere; }
+pre.approved { white-space: pre-wrap; font-family: var(--font); background: var(--bg-2); border-radius: var(--radius); padding: 12px; margin: 0; overflow-wrap: anywhere; }
+details > summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; font-weight: var(--font-weight-semibold, 600); }
+.skeleton { display: grid; gap: 10px; }
+.skeleton div { height: 18px; border-radius: 6px; background: var(--bg-3); animation: pulse 1.4s ease-in-out infinite; }
+.skeleton div:nth-child(1) { width: 40%; height: 24px; } .skeleton div:nth-child(2) { width: 85%; } .skeleton div:nth-child(3) { width: 70%; }
+@keyframes pulse { 50% { opacity: 0.5; } }
+@media (prefers-reduced-motion: reduce) { .skeleton div { animation: none; } }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+@media (max-width: 480px) { .wrap { padding: 12px; } .item { padding: 12px; } }
+</style>
+</head>
+<body>
+<div id="root" aria-busy="true">
+  <div class="wrap"><div class="card skeleton" aria-label="Loading the draft"><div></div><div></div><div></div></div></div>
+</div>
+<script type="module">
+"use strict";
+
+// The preparer's review screen (PRD-preparer-review.md, section 6.2). Inside an MCP Apps host it loads the
+// view client and talks to the preparer server. With demo data embedded by preparer/build.py it runs a fake
+// tool layer in memory instead, and never touches the network. It has no text fields and no browser storage.
+
+const APP_VERSION = "0.1.0";
+const CLIENT_URL = "https://unpkg.com/@modelcontextprotocol/ext-apps@1.7.5/dist/src/app-with-deps.js";
+const REASONS = { not_needed: "Not needed", duplicate: "Duplicate", client_said_no: "Client said no" };
+const KINDS = {
+  dropped: "Dropped since last year",
+  carried: "Carried from last year",
+  custom: "Custom request",
+  client_question: "Note for the preparer",
+  ended_credit: "Credit ended",
+};
+const TABS = ["flags", "documents", "facts", "notes"];
+const TAB_NAMES = { flags: "Flags", documents: "Documents", facts: "Facts", notes: "Notes" };
+
+const S = {
+  phase: "loading",      // loading, ready, error, nohost
+  display: "inline",     // inline, fullscreen, expanded (full review in place when the host has no full screen)
+  data: null,            // what open_review returned in structuredContent
+  d: null,               // the preparer's decisions on screen
+  tab: "flags",
+  dirty: false,
+  busy: false,
+  status: null,          // {kind: "ok" | "error", text}
+  error: null,
+  readOnly: false,
+  clipboard: false,
+  host: null,
+  modes: [],
+  draftId: null,
+  open: new Set(),       // the collapsible sections the preparer has open
+  canceled: false,
+};
+let tools = null;        // {call(name, args) -> CallToolResult}
+let app = null;          // the view client's App, inside a host
+let demo = null;         // the in-memory demo layer
+
+// DOM helpers. Text always goes in through textContent, never as markup.
+
+function h(tag, props, ...kids) {
+  const el = document.createElement(tag);
+  for (const [k, v] of Object.entries(props || {})) {
+    if (v === null || v === undefined || v === false) continue;
+    if (k === "on") for (const [ev, fn] of Object.entries(v)) el.addEventListener(ev, fn);
+    else if (k === "class") el.className = v;
+    else if (k === "key") el.dataset.k = v;
+    else if (k === "text") el.textContent = v;
+    else el.setAttribute(k, v === true ? "" : String(v));
+  }
+  for (const kid of kids.flat(Infinity)) {
+    if (kid === null || kid === undefined || kid === false) continue;
+    el.append(kid instanceof Node ? kid : document.createTextNode(String(kid)));
+  }
+  return el;
+}
+
+function plural(n, one, many) { return `${n} ${n === 1 ? one : (many || one + "s")}`; }
+function show(v) { return typeof v === "string" ? v : JSON.stringify(v); }
+function isCarried(evidence) { return typeof evidence === "string" && evidence.startsWith("prior_year:"); }
+
+// Decisions.
+
+function freshDecisions(data) {
+  const d = { docs: new Map(), custom: new Map(), added: new Map(), follow: new Set(), checked: new Set() };
+  const saved = data.record && data.record.decisions;
+  if (saved) {
+    for (const x of saved.documents) d.docs.set(x.rule_id, { action: x.action, reason: x.reason || null, count: x.count ?? null });
+    for (const x of saved.custom_requests) d.custom.set(x.index, { action: x.action, reason: x.reason || null });
+    for (const x of saved.added) d.added.set(x.rule_id, { count: x.count ?? null });
+    for (const x of saved.follow_ups) d.follow.add(x.fact);
+    for (const x of saved.flags_checked) d.checked.add(x);
+  }
+  return d;
+}
+
+function counted(ruleId) { return S.data.count_rules[ruleId] || null; }
+
+function serialize() {
+  const { draft, flags, facts, addable } = S.data;
+  const d = S.d;
+  const documents = [];
+  for (const doc of draft.documents) {
+    const x = d.docs.get(doc.rule_id);
+    if (!x) continue;
+    if (x.action === "keep") {
+      const item = { rule_id: doc.rule_id, action: "keep" };
+      if (counted(doc.rule_id)) item.count = x.count ?? doc.count;
+      documents.push(item);
+    } else if (x.reason) {
+      documents.push({ rule_id: doc.rule_id, action: "remove", reason: x.reason });
+    }
+  }
+  const custom_requests = [];
+  draft.custom_requests.forEach((_, i) => {
+    const x = d.custom.get(i);
+    if (!x) return;
+    if (x.action === "keep") custom_requests.push({ index: i, action: "keep" });
+    else if (x.reason) custom_requests.push({ index: i, action: "remove", reason: x.reason });
+  });
+  const added = addable.filter(r => d.added.has(r.rule_id)).map(r => {
+    const item = { rule_id: r.rule_id };
+    if (counted(r.rule_id)) item.count = d.added.get(r.rule_id).count ?? 1;
+    return item;
+  });
+  const follow_ups = Object.keys(facts).filter(k => d.follow.has(k)).map(fact => ({ fact }));
+  const flags_checked = flags.map(f => f.id).filter(id => d.checked.has(id));
+  return { documents, custom_requests, added, follow_ups, flags_checked };
+}
+
+function missing() {
+  const { draft, flags } = S.data;
+  const d = S.d;
+  const undecided = x => !x || (x.action === "remove" && !x.reason);
+  return {
+    docs: draft.documents.filter(doc => undecided(d.docs.get(doc.rule_id))).length,
+    custom: draft.custom_requests.filter((_, i) => undecided(d.custom.get(i))).length,
+    flags: flags.filter(f => !d.checked.has(f.id)).length,
+  };
+}
+
+function missingText(m) {
+  const parts = [];
+  if (m.docs) parts.push(`decide ${plural(m.docs, "document")}`);
+  if (m.custom) parts.push(`decide ${plural(m.custom, "custom request")}`);
+  if (m.flags) parts.push(`check ${plural(m.flags, "flag")}`);
+  return parts.length ? `To approve: ${parts.join(", ")}.` : "Ready to approve.";
+}
+
+function change(fn) {
+  if (S.readOnly || approved()) return;
+  fn(S.d);
+  S.dirty = true;
+  S.status = null;
+  render();
+}
+
+function approved() { return S.data && S.data.record && S.data.record.status === "approved"; }
+
+// Talking to the server (or the demo layer).
+
+function resultText(result) {
+  const first = result && Array.isArray(result.content) ? result.content.find(c => c.type === "text") : null;
+  return first ? first.text : "";
+}
+
+function isOpenResult(result) {
+  const sc = result && result.structuredContent;
+  return !!(result && !result.isError && sc && sc.review_token && sc.draft);
+}
+
+function receiveOpen(result) {
+  if (!result) return;
+  if (result.isError) { S.phase = "error"; S.error = resultText(result) || "The draft could not be opened."; render(); return; }
+  const sc = result.structuredContent;
+  if (!isOpenResult(result)) {
+    S.phase = "error";
+    S.error = "The server did not send the review data. " + (resultText(result) ? "Its summary: " + resultText(result) : "");
+    render();
+    return;
+  }
+  const same = S.phase === "ready" && S.data && S.data.draft.draft_id === sc.draft.draft_id && S.data.draft_sha256 === sc.draft_sha256;
+  const keep = same && S.dirty ? S.d : null;
+  S.data = sc;
+  S.draftId = sc.draft.draft_id;
+  S.d = keep || freshDecisions(sc);
+  S.dirty = !!keep;
+  if (!same) { S.status = null; S.open = new Set(); }
+  S.phase = "ready";
+  if (!TABS.includes(S.tab)) S.tab = "flags";
+  render();
+}
+
+async function openDraft(draftId) {
+  if (!tools) return;
+  S.phase = "loading";
+  render();
+  try { receiveOpen(await tools.call("open_review", { draft_id: draftId })); }
+  catch (e) { S.phase = "error"; S.error = "The draft could not be opened: " + (e && e.message ? e.message : e); render(); }
+}
+
+async function store(approve) {
+  if (S.busy || S.readOnly || !tools) return;
+  S.busy = true;
+  S.status = { kind: "ok", text: approve ? "Approving..." : "Saving..." };
+  render();
+  const args = {
+    draft_id: S.data.draft.draft_id,
+    review_token: S.data.review_token,
+    draft_sha256: S.data.draft_sha256,
+    decisions: serialize(),
+  };
+  if (S.host) args.host = S.host;
+  let result;
+  try { result = await tools.call(approve ? "approve_review" : "save_review", args); }
+  catch (e) { result = { isError: true, content: [{ type: "text", text: "The request failed: " + (e && e.message ? e.message : e) }] }; }
+  S.busy = false;
+  if (result.isError) {
+    S.status = { kind: "error", text: resultText(result) || "Refused." };
+  } else {
+    const record = result.structuredContent && result.structuredContent.record;
+    if (record) { S.data.record = record; S.data.status = record.status; }
+    S.dirty = false;
+    if (approve) {
+      S.status = { kind: "ok", text: "Approved. The list is stored for you; nothing was sent to the client." };
+      tellModel(record);
+    } else {
+      S.status = { kind: "ok", text: `Saved at ${record ? record.saved_at[record.saved_at.length - 1] : "now"}.` };
+    }
+  }
+  render();
+  const target = document.querySelector(approve && !result.isError ? "#approved-text" : "#status");
+  if (target) target.focus();
+}
+
+function tellModel(record) {
+  if (!record || !app || !hostCan("updateModelContext")) return;
+  const c = record.changes;
+  const text = `The preparer approved the list for draft ${record.draft_id}: ${plural(record.approved_list.length, "document")}, ` +
+    `${c.removed} removed, ${c.added} added, ${c.count_changed} count changed, ${plural(c.follow_ups, "follow-up question")}. ` +
+    "The list is stored with the preparer; nothing was sent to the client.";
+  app.updateModelContext({ content: [{ type: "text", text }] }).catch(() => {});
+}
+
+function hostCan(name) {
+  const caps = app && app.getHostCapabilities ? app.getHostCapabilities() : null;
+  return !!(caps && caps[name]);
+}
+
+async function openLink(url) {
+  if (!/^https?:\/\//.test(url)) return;
+  if (app) {
+    try {
+      const r = await app.openLink({ url });
+      if (r && r.isError) { S.status = { kind: "error", text: `The host did not open the link. It is ${url}` }; render(); }
+    } catch (e) { S.status = { kind: "error", text: `The link could not be opened. It is ${url}` }; render(); }
+  }
+}
+
+async function setDisplay(mode) {
+  if (app && S.modes.includes(mode)) {
+    try {
+      const r = await app.requestDisplayMode({ mode });
+      const got = r && r.mode;
+      S.display = got === mode ? mode : (mode === "fullscreen" ? "expanded" : (got || "inline"));
+    } catch (e) { S.display = mode === "fullscreen" ? "expanded" : "inline"; }
+  } else {
+    S.display = mode === "fullscreen" ? "expanded" : "inline";
+  }
+  render();
+  const first = document.querySelector('[role="tab"][aria-selected="true"]') || document.querySelector("#review-button");
+  if (first) first.focus();
+}
+
+// Rendering.
+
+function render() {
+  const root = document.getElementById("root");
+  // A details element's toggle event fires after the key press that opened it, so read the open state now.
+  for (const d of root.querySelectorAll("details[data-section]")) {
+    d.open ? S.open.add(d.dataset.section) : S.open.delete(d.dataset.section);
+  }
+  const active = document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.k : null;
+  const y = window.scrollY;
+  root.replaceChildren(...view());
+  root.setAttribute("aria-busy", S.phase === "loading" ? "true" : "false");
+  if (active) {
+    const again = root.querySelector(`[data-k="${CSS.escape(active)}"]`);
+    if (again) again.focus({ preventScroll: true });
+  }
+  window.scrollTo(0, y);
+  const bar = root.querySelector(".bar");
+  document.documentElement.style.setProperty("--bar-height", bar ? `${bar.offsetHeight + 8}px` : "0px");
+}
+
+// Keep the sticky bar from covering a control that has keyboard focus. A click or tap never scrolls, so it lands where
+// it was aimed, and an element taller than the room above the bar (a whole tab panel) is left where it is.
+document.addEventListener("focusin", e => {
+  const bar = document.querySelector(".bar");
+  if (!bar || bar.contains(e.target) || !e.target.matches(":focus-visible")) return;
+  const r = e.target.getBoundingClientRect();
+  const top = bar.getBoundingClientRect().top;
+  if (r.bottom > top && r.height < top) window.scrollBy(0, r.bottom - top + 12);
+});
+
+function view() {
+  const out = [];
+  if (demo) out.push(demoBanner());
+  if (S.phase === "loading") {
+    out.push(h("div", { class: "wrap" }, h("div", { class: "card skeleton", "aria-label": "Loading the draft" }, h("div"), h("div"), h("div"))));
+  } else if (S.phase === "nohost") {
+    out.push(h("div", { class: "wrap" }, h("div", { class: "card" },
+      h("h1", { text: "Preparer review" }),
+      h("p", { text: "This screen opens inside Claude, when you ask it to open a draft for review." }))));
+  } else if (S.phase === "error") {
+    out.push(h("div", { class: "wrap" }, h("div", { class: "card", role: "alert" },
+      h("h1", { text: "This draft can't be shown" }), h("p", { text: S.error || "" }))));
+  } else if (S.display === "inline") {
+    out.push(card());
+  } else {
+    out.push(...full());
+  }
+  return out;
+}
+
+function notesToRead(draft) {
+  return draft.notes_for_preparer.length + (draft.agent_note && draft.agent_note.trim() ? 1 : 0);
+}
+
+function card() {
+  const { draft, flags, record } = S.data;
+  const done = approved();
+  const points = [
+    ["Tax year", String(draft.tax_year)],
+    ["Documents requested", String(draft.documents.length + draft.custom_requests.length)],
+    ["Flags to check", String(flags.length)],
+    ["Notes to read", String(notesToRead(draft))],
+    ["Status", done ? "Approved" : (record ? "In review" : "Not reviewed")],
+  ];
+  if (done) {
+    const c = record.changes;
+    points.splice(1, 3, ["Approved", record.approved_at], ["Changes", String(c.removed + c.added + c.count_changed)],
+      ["Follow-ups", String(c.follow_ups)]);
+  }
+  return h("div", { class: "wrap" }, h("section", { class: "card", "aria-labelledby": "card-title" },
+    h("div", { class: "head" },
+      h("h1", { id: "card-title" }, `${draft.client_name}: draft document list`),
+      h("span", { class: "muted small", text: draft.draft_id })),
+    h("dl", { class: "facts-row" }, points.map(([k, v]) => h("div", {}, h("dt", { text: k }), h("dd", { text: v })))),
+    h("div", { class: "actions" },
+      h("button", { id: "review-button", class: "primary", key: "review", on: { click: () => setDisplay("fullscreen") } },
+        done ? "View approved list" : "Review"))));
+}
+
+function full() {
+  const { draft } = S.data;
+  const done = approved();
+  const head = h("div", { class: "head" },
+    h("div", {},
+      h("h1", { id: "title" }, `${draft.client_name}, tax year ${draft.tax_year}`),
+      h("p", { class: "muted small" }, `Draft ${draft.draft_id}. ${done ? "Approved " + S.data.record.approved_at + "." : "Pending your review."}`)),
+    h("button", { key: "summary", on: { click: () => setDisplay("inline") } }, "Summary"));
+  const parts = [h("div", { class: "wrap" }, head, S.readOnly ? h("p", { class: "status error", role: "note" },
+    "This host can't call the preparer server's tools, so the draft is shown read-only. Approval needs a host that can call server tools.") : null,
+    done ? approvedPanel() : tabs())];
+  if (!done) parts.push(bar());
+  else parts.push(h("div", { class: "wrap" }, statusLine()));
+  return parts;
+}
+
+function statusLine() {
+  return h("p", { id: "status", class: `status ${S.status ? S.status.kind : ""}`, role: "status", "aria-live": "polite", tabindex: "-1" },
+    S.status ? S.status.text : "");
+}
+
+function bar() {
+  const m = missing();
+  const ready = !m.docs && !m.custom && !m.flags;
+  return h("div", { class: "bar" }, h("div", { class: "row" },
+    h("div", {}, h("p", { id: "missing", class: "small" }, S.readOnly ? "Read-only." : missingText(m)), statusLine()),
+    h("div", { class: "actions" },
+      h("button", { key: "save", disabled: S.busy || S.readOnly || !S.dirty, on: { click: () => store(false) } }, "Save"),
+      h("button", { key: "approve", class: "primary", disabled: S.busy || S.readOnly || !ready, "aria-describedby": "missing",
+        on: { click: () => store(true) } }, "Approve list"))));
+}
+
+function tabs() {
+  const { draft, flags } = S.data;
+  const counts = {
+    flags: flags.length,
+    documents: draft.documents.length + draft.custom_requests.length,
+    facts: Object.keys(draft.facts_recorded).length,
+    notes: notesToRead(draft),
+  };
+  const list = h("div", { class: "tabs", role: "tablist", "aria-label": "Review sections" }, TABS.map(t => h("button", {
+    role: "tab", id: `tab-${t}`, key: `tab-${t}`, "aria-selected": String(S.tab === t), "aria-controls": `panel-${t}`,
+    tabindex: S.tab === t ? "0" : "-1",
+    on: { click: () => { S.tab = t; render(); }, keydown: e => tabKey(e, t) },
+  }, `${TAB_NAMES[t]} (${counts[t]})`)));
+  const panel = h("section", { id: `panel-${S.tab}`, role: "tabpanel", "aria-labelledby": `tab-${S.tab}`, tabindex: "0", key: `panel-${S.tab}` },
+    { flags: flagsPanel, documents: documentsPanel, facts: factsPanel, notes: notesPanel }[S.tab]());
+  return [list, panel];
+}
+
+function tabKey(e, t) {
+  const i = TABS.indexOf(t);
+  let next = null;
+  if (e.key === "ArrowRight") next = TABS[(i + 1) % TABS.length];
+  else if (e.key === "ArrowLeft") next = TABS[(i + TABS.length - 1) % TABS.length];
+  else if (e.key === "Home") next = TABS[0];
+  else if (e.key === "End") next = TABS[TABS.length - 1];
+  if (!next) return;
+  e.preventDefault();
+  S.tab = next;
+  render();
+  document.getElementById(`tab-${next}`).focus();
+}
+
+function toggle(label, pressed, key, onClick, extraClass) {
+  return h("button", { key, class: extraClass || null, "aria-pressed": String(!!pressed), disabled: S.readOnly || S.busy, on: { click: onClick } }, label);
+}
+
+function checkButton(flagId) {
+  const on = S.d.checked.has(flagId);
+  return toggle(on ? "Checked" : "Mark checked", on, `check-${flagId}`, () => change(d => { on ? d.checked.delete(flagId) : d.checked.add(flagId); }));
+}
+
+function askButton(fact) {
+  const on = S.d.follow.has(fact);
+  return toggle(on ? "Will ask the client" : "Ask the client again", on, `ask-${fact}`, () => change(d => { on ? d.follow.delete(fact) : d.follow.add(fact); }));
+}
+
+function factLine(fact, value, evidence, recorded) {
+  if (!recorded) return h("li", {}, h("span", { class: "code" }, fact), ": not recorded. The agent never asked.");
+  return h("li", {}, h("span", { class: "code" }, fact), ` = ${show(value)}. `,
+    isCarried(evidence)
+      ? h("span", { class: "carried" }, `Carried from last year (${evidence}), not confirmed by the client.`)
+      : ["Client said: ", h("span", { class: "quote" }, `"${evidence}"`)]);
+}
+
+function flagsPanel() {
+  const { flags } = S.data;
+  if (!flags.length) return h("p", { class: "muted" }, "No flags on this draft. The documents tab still needs a decision on each document.");
+  return h("div", { class: "list" }, h("h2", { class: "sr", text: "Flags" }), flags.map(f => {
+    const body = [];
+    if (f.kind === "dropped") {
+      body.push(h("p", {}, `${f.label}: last year's file had ${f.last_year_count}; this draft requests ${f.this_year_count}.`));
+      body.push(h("ul", { class: "evidence", "aria-label": "Facts behind this document" },
+        f.facts.map(x => factLine(x.fact, x.value, x.evidence, x.recorded))));
+      body.push(h("div", { class: "actions" }, f.facts.map(x => askButton(x.fact)), checkButton(f.id)));
+    } else if (f.kind === "carried") {
+      body.push(h("ul", { class: "evidence" }, factLine(f.fact, f.value, f.evidence, true)));
+      body.push(h("div", { class: "actions" }, askButton(f.fact), checkButton(f.id)));
+    } else if (f.kind === "custom") {
+      body.push(h("p", {}, f.document), h("p", { class: "muted small" }, `The agent's reason: ${f.reason}`));
+      body.push(h("div", { class: "actions" }, checkButton(f.id)));
+    } else if (f.kind === "client_question") {
+      body.push(h("p", { class: "note" }, f.text));
+      body.push(h("div", { class: "actions" }, checkButton(f.id)));
+    } else {
+      body.push(h("p", {}, `${f.rule_id}: no document needed, because the credit ended.`));
+      body.push(h("div", { class: "actions" }, sourceButton(f.source_url, f.source_title, `src-${f.id}`), checkButton(f.id)));
+    }
+    return h("article", { class: `item ${S.d.checked.has(f.id) ? "done" : ""}`, "aria-label": `${KINDS[f.kind]}: ${f.id}` },
+      h("div", { class: "kind" }, KINDS[f.kind]), body);
+  }));
+}
+
+function sourceButton(url, title, key) {
+  if (demo) return h("a", { class: "button", href: url, target: "_blank", rel: "noopener noreferrer", key }, `Source: ${title}`);
+  return h("button", { class: "link", key, on: { click: () => openLink(url) } }, `Source: ${title}`);
+}
+
+function stepper(value, min, max, key, set) {
+  // At a limit the button stays focusable and says it is unavailable, so focus never drops to the page.
+  const step = (label, text, next, ok) => h("button", {
+    key: `${key}-${text === "-" ? "less" : "more"}`, "aria-label": label, "aria-disabled": String(!ok), disabled: S.readOnly || S.busy,
+    on: { click: () => { if (ok) change(() => set(next)); } },
+  }, text);
+  return h("span", { class: "stepper", role: "group", "aria-label": "Count" },
+    step("One fewer", "-", value - 1, value > min),
+    h("output", { "aria-live": "polite" }, String(value)),
+    step("One more", "+", value + 1, value < max));
+}
+
+function decisionControls(current, key, setAction, setReason) {
+  const keep = current && current.action === "keep";
+  const remove = current && current.action === "remove";
+  const out = [h("div", { class: "actions", role: "group", "aria-label": "Decision" },
+    toggle("Keep", keep, `${key}-keep`, () => { if (!keep) change(() => setAction("keep")); }),
+    toggle("Remove", remove, `${key}-remove`, () => { if (!remove) change(() => setAction("remove")); }, "remove"))];
+  if (remove) {
+    out.push(h("div", { class: "actions", role: "group", "aria-label": "Reason for removing" },
+      h("span", { class: "group-label" }, current.reason ? "Reason:" : "Pick a reason:"),
+      Object.entries(REASONS).map(([value, label]) =>
+        toggle(label, current.reason === value, `${key}-why-${value}`, () => change(() => setReason(value))))));
+  }
+  return out;
+}
+
+function documentsPanel() {
+  const { draft, addable } = S.data;
+  const d = S.d;
+  const docs = draft.documents.map(doc => {
+    const x = d.docs.get(doc.rule_id);
+    const rule = counted(doc.rule_id);
+    const count = x && x.count != null ? x.count : doc.count;
+    return h("article", { class: `item ${x && (x.action === "keep" || x.reason) ? "done" : ""}`, "aria-label": `${doc.rule_id}: ${doc.document}` },
+      h("div", { class: "kind" }, `${doc.rule_id}, count ${doc.count}`),
+      h("p", {}, doc.document),
+      h("p", { class: "muted small" }, `Why the client needs it: ${doc.client_reason}`),
+      h("ul", { class: "evidence", "aria-label": "Facts that triggered it" }, doc.triggered_by.map(t => factLine(t.fact, t.value, t.evidence, true))),
+      h("div", { class: "actions" }, sourceButton(doc.source_url, doc.source_title, `src-${doc.rule_id}`)),
+      decisionControls(x, `doc-${doc.rule_id}`,
+        a => d.docs.set(doc.rule_id, { action: a, reason: null, count: x ? x.count : null }),
+        r => d.docs.set(doc.rule_id, { action: "remove", reason: r, count: null })),
+      rule && x && x.action === "keep" ? h("div", { class: "actions" }, h("span", { class: "group-label" }, "Count to request:"),
+        stepper(count, rule.min, rule.max, `count-${doc.rule_id}`, n => d.docs.set(doc.rule_id, { action: "keep", reason: null, count: n }))) : null);
+  });
+  const customs = draft.custom_requests.map((req, i) => {
+    const x = d.custom.get(i);
+    return h("article", { class: `item ${x && (x.action === "keep" || x.reason) ? "done" : ""}`, "aria-label": `Custom request ${i + 1}` },
+      h("div", { class: "kind" }, "Custom request the agent added"),
+      h("p", {}, req.document), h("p", { class: "muted small" }, `The agent's reason: ${req.reason}`),
+      decisionControls(x, `custom-${i}`, a => d.custom.set(i, { action: a, reason: null }), r => d.custom.set(i, { action: "remove", reason: r })));
+  });
+  const adds = addable.map(r => {
+    const on = d.added.has(r.rule_id);
+    const rule = counted(r.rule_id);
+    return h("div", { class: "actions" },
+      toggle(`${on ? "Added" : "Add"} ${r.rule_id}: ${r.document.length > 70 ? r.document.slice(0, 67) + "..." : r.document}`, on, `add-${r.rule_id}`,
+        () => change(dd => { on ? dd.added.delete(r.rule_id) : dd.added.set(r.rule_id, { count: rule ? 1 : null }); })),
+      on && rule ? stepper(d.added.get(r.rule_id).count || 1, rule.min, rule.max, `addcount-${r.rule_id}`,
+        n => d.added.set(r.rule_id, { count: n })) : null);
+  });
+  return h("div", { class: "list" },
+    h("h2", {}, "Documents on the draft"), docs,
+    customs.length ? [h("h2", {}, "Custom requests"), customs] : null,
+    section("add", h("summary", { key: "add-summary" }, `Add a document (${addable.length} rules not on the draft, ${d.added.size} added)`),
+      h("div", { class: "list" }, adds)));
+}
+
+function section(name, ...kids) {
+  const id = `${S.data.draft.draft_id}:${name}`;
+  return h("details", { "data-section": id, open: S.open.has(id), on: { toggle: e => { e.target.open ? S.open.add(id) : S.open.delete(id); } } }, ...kids);
+}
+
+function factsPanel() {
+  const { draft, facts } = S.data;
+  const recorded = Object.entries(draft.facts_recorded);
+  return h("div", { class: "list" },
+    h("h2", {}, "Facts the agent recorded"),
+    recorded.map(([key, e]) => h("article", { class: "item", "aria-label": key },
+      h("div", { class: "kind" }, facts[key] ? facts[key].topic : ""),
+      h("ul", { class: "evidence" }, factLine(key, e.value, e.evidence, true)),
+      h("div", { class: "actions" }, askButton(key)))),
+    section("not-asked", h("summary", { key: "not-asked" }, `Not asked (${draft.not_asked.length})`),
+      h("div", { class: "list" }, draft.not_asked.map(key => h("article", { class: "item", "aria-label": key },
+        h("p", {}, h("span", { class: "code" }, key), `: ${facts[key] ? facts[key].question : ""}`),
+        h("div", { class: "actions" }, askButton(key)))))));
+}
+
+function notesPanel() {
+  const { draft } = S.data;
+  return h("div", { class: "list" },
+    h("h2", {}, "Notes for the preparer"),
+    draft.notes_for_preparer.length ? draft.notes_for_preparer.map(n => h("p", { class: "note" }, n.text)) : h("p", { class: "muted" }, "None."),
+    draft.no_document_needed.length ? [h("h2", {}, "No document needed"),
+      h("ul", { class: "evidence" }, draft.no_document_needed.map(e => h("li", {}, `${e.rule_id}: ${e.reason}.`)))] : null,
+    h("h2", {}, "The agent's closing message"),
+    h("p", { class: "note" }, draft.agent_note || "None."));
+}
+
+function approvedText(record) {
+  const lines = [`Documents to request from ${S.data.draft.client_name} for tax year ${S.data.draft.tax_year}:`];
+  record.approved_list.forEach((item, i) => lines.push(`${i + 1}. ${item.document}${item.count > 1 ? ` (${item.count})` : ""}`));
+  if (record.follow_up_questions.length) {
+    lines.push("", "Questions to ask the client:");
+    for (const q of record.follow_up_questions) lines.push(`- ${q.question}`);
+  }
+  return lines.join("\n");
+}
+
+function approvedPanel() {
+  const record = S.data.record;
+  const c = record.changes;
+  return h("section", { class: "card", "aria-labelledby": "approved-title" },
+    h("h2", { id: "approved-title" }, "Approved list"),
+    h("p", { class: "muted small" },
+      `Approved ${record.approved_at}. ${c.removed} removed, ${c.added} added, ${c.count_changed} count changed, ${plural(c.follow_ups, "follow-up question")}. ` +
+      "It is stored for you to pass on through your own system; nothing was sent to the client."),
+    h("pre", { id: "approved-text", class: "approved", tabindex: "0", "aria-label": "Approved list as text" }, approvedText(record)),
+    h("div", { class: "actions" }, h("button", { key: "copy", class: "primary", on: { click: copyList } }, S.clipboard ? "Copy" : "Select the text")));
+}
+
+async function copyList() {
+  const el = document.getElementById("approved-text");
+  if (S.clipboard && navigator.clipboard) {
+    try { await navigator.clipboard.writeText(el.textContent); S.status = { kind: "ok", text: "Copied." }; render(); return; }
+    catch (e) { /* fall through to selecting the text */ }
+  }
+  const range = document.createRange();
+  range.selectNodeContents(el);
+  const sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+  S.status = { kind: "ok", text: "Selected. Press Command+C (or Ctrl+C) to copy." };
+  const status = document.getElementById("status");
+  if (status) { status.className = "status ok"; status.textContent = S.status.text; }
+}
+
+// Inside an MCP Apps host.
+
+function applyContext(ctx, helpers) {
+  if (!ctx) return;
+  if (ctx.theme) helpers.applyDocumentTheme(ctx.theme);
+  if (ctx.styles && ctx.styles.variables) helpers.applyHostStyleVariables(ctx.styles.variables);
+  if (ctx.styles && ctx.styles.css && ctx.styles.css.fonts) helpers.applyHostFonts(ctx.styles.css.fonts);
+  if (ctx.safeAreaInsets) {
+    for (const side of ["top", "right", "bottom", "left"]) {
+      document.documentElement.style.setProperty(`--sai-${side}`, `${ctx.safeAreaInsets[side] || 0}px`);
+    }
+  }
+  if (Array.isArray(ctx.availableDisplayModes)) S.modes = ctx.availableDisplayModes;
+  if (ctx.displayMode) S.display = ctx.displayMode === "fullscreen" ? "fullscreen" : (S.display === "expanded" ? "expanded" : "inline");
+}
+
+async function startHost() {
+  let helpers;
+  try { helpers = await import(CLIENT_URL); }
+  catch (e) { S.phase = "error"; S.error = "The review screen's client could not load from unpkg.com."; render(); return; }
+  app = new helpers.App({ name: "preparer-review", version: APP_VERSION }, { availableDisplayModes: ["inline", "fullscreen"] });
+  let gotResult = false;
+  app.ontoolinput = p => { if (p && p.arguments && typeof p.arguments.draft_id === "string") S.draftId = p.arguments.draft_id; };
+  app.ontoolresult = r => {
+    // Once a draft is on screen, only a newer opening of the same draft replaces its token: the host's own open_review
+    // can run after the fallback's and retire its token. An echo of the screen's own save or approval, or an older
+    // opening arriving late, changes nothing. Unsaved decisions stay either way.
+    if (S.phase === "ready") {
+      const sc = isOpenResult(r) ? r.structuredContent : null;
+      const newer = sc && S.data && sc.draft.draft_id === S.data.draft.draft_id && sc.draft_sha256 === S.data.draft_sha256 &&
+        (sc.open_number || 0) > (S.data.open_number || 0);
+      if (newer) receiveOpen(r);
+      return;
+    }
+    gotResult = true;
+    receiveOpen(r);
+  };
+  app.ontoolcancelled = () => {
+    S.canceled = true;
+    if (S.phase !== "ready") { S.phase = "error"; S.error = "Opening this draft was canceled. Ask Claude to open it again."; render(); }
+  };
+  app.onhostcontextchanged = ctx => { applyContext(ctx, helpers); if (S.phase === "ready") render(); };
+  app.onteardown = async () => ({});
+  try { await app.connect(); }
+  catch (e) { S.phase = "error"; S.error = "The review screen could not connect to Claude."; render(); return; }
+  applyContext(app.getHostContext(), helpers);
+  const caps = app.getHostCapabilities() || {};
+  S.readOnly = !caps.serverTools;
+  S.clipboard = !!(caps.sandbox && caps.sandbox.permissions && caps.sandbox.permissions.clipboardWrite);
+  const v = app.getHostVersion();
+  if (v && typeof v.name === "string" && v.name) S.host = { name: v.name.slice(0, 200), version: String(v.version || "").slice(0, 100) };
+  tools = { call: (name, args) => app.callServerTool({ name, arguments: args }) };
+  if (S.phase === "ready") render();
+  // Fall back to asking for the draft when the host never delivered the tool result, as when an old conversation reopens.
+  setTimeout(() => {
+    if (gotResult || S.canceled || S.phase !== "loading") return;
+    if (S.draftId && !S.readOnly) { openDraft(S.draftId); return; }
+    S.phase = "error";
+    S.error = "The draft didn't arrive from Claude. Ask Claude to open it again.";
+    render();
+  }, 4000);
+}
+
+// The static demo, from data preparer/build.py embeds. Nothing leaves the page and nothing is saved.
+
+const DISCLAIMER = "Not tax advice. All households are synthetic. Not affiliated with any tax software vendor.";
+
+function demoBanner() {
+  return h("div", { class: "banner", role: "note" }, h("div", { class: "row" },
+    h("strong", {}, "Demo: nothing is saved."),
+    h("span", {}, "Three drafts from the project's dev runs, with a fake server in this page. Pick one:"),
+    demo.payloads.map((p, i) => h("button", { key: `demo-${i}`, "aria-pressed": String(S.draftId === p.draft.draft_id),
+      on: { click: () => { S.display = "inline"; S.tab = "flags"; openDraft(p.draft.draft_id); } } }, p.draft.client_name))),
+    h("div", { class: "row fine" }, h("span", {}, DISCLAIMER)));
+}
+
+function demoLayer(payloads) {
+  const records = {};
+  const now = () => new Date().toISOString().replace(/\.\d+Z$/, "Z");
+  const text = t => ({ content: [{ type: "text", text: t }] });
+  const find = id => payloads.find(p => p.draft.draft_id === id);
+  function call(name, args) {
+    const p = find(args.draft_id);
+    if (!p) return { isError: true, ...text(`Refused: no draft ${args.draft_id}`) };
+    if (name === "open_review") {
+      const record = records[p.draft.draft_id] || null;
+      return { ...text("demo"), structuredContent: { ...JSON.parse(JSON.stringify(p)), record, status: record ? record.status : "pending_review" } };
+    }
+    const existing = records[p.draft.draft_id];
+    if (existing && existing.status === "approved") return { isError: true, ...text("Refused: this draft is already approved, and approval is final.") };
+    const dec = args.decisions;
+    const approve = name === "approve_review";
+    const record = { draft_id: p.draft.draft_id, status: approve ? "approved" : "in_review", decisions: dec,
+      saved_at: (existing ? existing.saved_at : []).concat(approve ? [] : [now()]), approved_at: approve ? now() : null };
+    if (approve) {
+      const counts = Object.fromEntries(p.draft.documents.map(d => [d.rule_id, d.count]));
+      const docText = Object.fromEntries(p.draft.documents.concat(p.addable).map(d => [d.rule_id, d.document]));
+      const kept = dec.documents.filter(x => x.action === "keep").map(x => [x.rule_id, x.count ?? counts[x.rule_id]])
+        .concat(dec.added.map(x => [x.rule_id, x.count ?? 1])).sort((a, b) => a[0] < b[0] ? -1 : 1);
+      record.approved_list = kept.map(([rule_id, count]) => ({ rule_id, document: docText[rule_id], count }))
+        .concat(dec.custom_requests.filter(x => x.action === "keep").map(x => ({ rule_id: null, document: p.draft.custom_requests[x.index].document, count: 1 })));
+      record.follow_up_questions = dec.follow_ups.map(f => ({ fact: f.fact, question: p.facts[f.fact].question }));
+      record.changes = {
+        removed: dec.documents.filter(x => x.action === "remove").length + dec.custom_requests.filter(x => x.action === "remove").length,
+        added: dec.added.length,
+        count_changed: dec.documents.filter(x => x.action === "keep" && x.count != null && x.count !== counts[x.rule_id]).length,
+        follow_ups: dec.follow_ups.length,
+      };
+    }
+    records[p.draft.draft_id] = record;
+    return { ...text("demo"), structuredContent: { record } };
+  }
+  return { payloads, call: async (name, args) => call(name, args) };
+}
+
+function start() {
+  const embedded = document.getElementById("demo-data");
+  if (embedded) {
+    demo = demoLayer(JSON.parse(embedded.textContent));
+    tools = demo;
+    S.clipboard = !!(navigator.clipboard && window.isSecureContext);
+    S.modes = [];
+    openDraft(demo.payloads[0].draft.draft_id);
+    return;
+  }
+  if (window.self === window.top) { S.phase = "nohost"; render(); return; }
+  startHost();
+}
+
+start();
+</script>
+</body>
+</html>
