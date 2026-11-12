@@ -1,7 +1,7 @@
 # Preregistration for the preparer review screen's blind catch check (PRD-preparer-review.md, sections 5 and 7).
 # Roanuk sets locked_on to the lock date (YYYY-MM-DD) and commits this file before he opens the first of the 24 drafts;
 # eval/review_catch.py refuses to score unless the lock commit predates the first opening of any draft (lock_check).
-locked_on: null
+locked_on: 2026-11-12
 drafts: 24
 problem_drafts: 12      # a missed required document or a wrong fact
 show_drafts: 4          # PRD aimed for 6; only 4 households have one (DECISIONS.md, 2026-11-05)
@@ -63,7 +63,7 @@ inferable_rule: >-
   the lock, two analysts recheck the marks against the lock commit's tree, the salt is drawn again, and
   inferable_sha256 is updated in the lock commit; the salt is drawn again every time, so a new hash says nothing about
   whether the marks changed. The report gives the shows catch rate without the marked drafts beside the full rate.
-inferable_sha256: "c786eb041b562fe0b8011399870de2595c3dd46ca54f6089b1839ed6ae5b1432"
+inferable_sha256: "33853ed25179c3033c8f29ea73ad65901c55e6fa9fe8dcbd7464214c46db65ce"
 example_draft: d07
 reviewer_opens_none_of: [data/truth, data/profiles, eval/runs, ledger]   # until all 24 are approved
 reviewer_runs_none_of: [the data generator, the eval harness, eval/export_drafts.py]
