@@ -14,15 +14,15 @@ def page() -> str:
     return PAGE.read_text(encoding="utf-8")
 
 
-def test_title_hero_and_six_steps():
+def test_title_hero_and_seven_steps():
     text = page()
     assert "<title>What Should My Tax Agent Ask? The Build, Step by Step</title>" in text
     assert '<p class="eyebrow">Build walkthrough</p>' in text
     assert 'id="status"' in text
     steps = re.findall(r'<section id="step-(\d)">([\s\S]*?)</section>', text)
-    assert [n for n, _ in steps] == ["1", "2", "3", "4", "5", "6"]
+    assert [n for n, _ in steps] == ["1", "2", "3", "4", "5", "6", "7"]
     for n, body in steps:
-        assert f"Step {n} of 6" in body
+        assert f"Step {n} of 7" in body
         assert body.count("<h2>") == 1
         assert '<div class="who">' in body and '<div class="thread">' in body
 

@@ -4,7 +4,9 @@ An AI intake agent that asks each tax client only what their return needs, then 
 
 This repo measures the questions, not just the list: how many questions the agent asks, and which documents it misses, compared with a full organizer and two other baselines. The agent only learns facts. Code turns facts into the document list through a rules table in which every rule cites an official source, so every miss traces to a fact the conversation didn't learn or a rule that was wrong. The agent can draft a list but has no way to send one.
 
-**Status, November 4, 2026:** the test run is done, on all 40 test households. Blocks 0 to 10 are done: Block 7's judge fix is in, though the judge still misses its advice and summary bars, and the pages went public on November 2. Roanuk verified all 33 rules, labeled 60 judge transcripts and noted every failing dev run, and `eval/prereg.yaml` was locked and committed before the test run. The run scored the first 25 test households on November 2 and, once the last 4 rules were verified, the other 15 on November 4, in a run declared in a commit before it started. The teardown, [docs/index.html](docs/index.html), explains the purpose, the design decisions and the results. The design is in [PRD-tax-agent-ask.md](PRD-tax-agent-ask.md), the rules and their sources in [docs/rules.md](docs/rules.md), and the decision log in [DECISIONS.md](DECISIONS.md).
+The pages are live: the teardown at [roanukz.github.io/tax-agent-ask](https://roanukz.github.io/tax-agent-ask/) and a step by step walkthrough of the build at [roanukz.github.io/tax-agent-ask/demo.html](https://roanukz.github.io/tax-agent-ask/demo.html).
+
+**Status, November 12, 2026:** the test run is done, on all 40 test households. Blocks 0 to 10 are done: Block 7's judge fix is in, though the judge still misses its advice and summary bars, and the pages went public on November 2. Roanuk verified all 33 rules, labeled 60 judge transcripts and noted every failing dev run, and `eval/prereg.yaml` was locked and committed before the test run. The run scored the first 25 test households on November 2 and, once the last 4 rules were verified, the other 15 on November 4, in a run declared in a commit before it started. The preparer's review screen is built ([PRD-preparer-review.md](PRD-preparer-review.md), [live demo](https://roanukz.github.io/tax-agent-ask/review-demo.html)), and in its blind check Roanuk reviewed 24 test-run drafts at a median of 10.5 seconds each and caught none of the 12 with a problem, so the preregistered hypothesis, that review catches most problems a draft shows, is not supported ([docs/review-check.md](docs/review-check.md)). The teardown, [docs/index.html](docs/index.html), explains the purpose, the design decisions and the results. The design is in [PRD-tax-agent-ask.md](PRD-tax-agent-ask.md), the rules and their sources in [docs/rules.md](docs/rules.md), and the decision log in [DECISIONS.md](DECISIONS.md).
 
 ## Results
 
@@ -54,7 +56,7 @@ uv run pytest
 uv run python -m agent.ping --dry-run
 ```
 
-`pytest` runs offline with network sockets disabled. The dry-run ping starts the agent harness with a placeholder key against a closed local port, so it spends nothing.
+`pytest` runs offline with network sockets disabled. It includes Playwright browser tests of the preparer's review screen, which drive the installed Google Chrome and skip with a message where Chrome is missing. The dry-run ping starts the agent harness with a placeholder key against a closed local port, so it spends nothing.
 
 Other checks that spend nothing:
 
@@ -66,6 +68,8 @@ uv run python -m sim.fidelity --dry-run          # the simulator's scoring, with
 uv run python -m eval.baselines prior-year --split train --split dev
 uv run python -m eval.report                     # regenerates docs/results.md from eval/runs
 uv run python -m eval.report index               # regenerates the rules table in docs/rules.md
+uv run python -m preparer.build --check          # the review screen and docs/review-demo.html match a fresh build
+uv run python -m eval.review_catch               # rescores the 24 reviews and rewrites docs/review-check.md
 uv run mutmut run && uv run mutmut results       # mutation testing of the scorer
 ```
 
@@ -80,6 +84,27 @@ uv run python -m eval.run --split dev --configs A-haiku,A-sonnet,B1,B2 --trials 
 ```
 
 The test split is locked until `eval/prereg.yaml` is committed with `locked_on`, `primary_config`, and `run_cap_usd` (the dev sweeps' `RUN_CAP_USD`, which the test sweep must match); then `uv run python -m eval.run --split test --prereg eval/prereg.yaml` runs exactly the preregistered configs and trials.
+
+## The preparer's review screen
+
+Every agent run ends with a draft list waiting for the preparer's approval, and this screen is where the preparer gives it: the preparer's own server, separate from the agent's, shows each draft with flags that code computes (such as documents dropped since last year and facts carried over without confirmation), each beside its evidence, and lists the facts the agent never asked. Only a click on the screen can approve: the save and approve tools are app-only, so a host that follows the MCP Apps spec offers them to the screen and never to a model, and the server refuses them from any client that did not negotiate MCP Apps. Nothing sends the list; an approved list is only stored, for the preparer to pass on. The requirements are in [PRD-preparer-review.md](PRD-preparer-review.md), the blind check's result is in [docs/review-check.md](docs/review-check.md), and a [working demo](https://roanukz.github.io/tax-agent-ask/review-demo.html) runs three demo drafts in the browser and saves nothing.
+
+`uv run python -m preparer.local_review` opens the screen on the local review page. The screen is an MCP App, a small web view that the server ships for a Model Context Protocol host to show beside a conversation, and the page is such a host on 127.0.0.1: it runs the same server and screen unchanged and has no review logic of its own. The page was built when Claude Desktop 4.23118.0 and 4.23118.1 drew no screen for a local MCP App, and the 24 reviews stayed on it after a later version did, so that no model's reply sat beside the screen. Nothing in the feature calls a model, so it spends $0 of the API credit.
+
+```bash
+uv run python -m preparer.local_review --practice   # the three demo drafts, reviews to a new practice folder
+uv run python -m preparer.local_review              # the 24 drafts in data/drafts, only after the prereg lock
+uv run python -m preparer.build --check             # the review screen and docs/review-demo.html match a fresh build
+uv run python -m eval.review_catch                  # rescores the 24 reviews and rewrites docs/review-check.md
+```
+
+The page needs macOS and Google Chrome. It opens Chrome on a profile of its own (`~/Library/Application Support/tax-agent-ask/review-chrome-profile`), with no extensions and no sync, so no extension from your usual profile can reach the tab; it never falls back to another browser, and if Chrome won't start it prints the command to run. Run it in Terminal.app, not in an editor's or Claude's terminal panel, which a Claude session can read. Each link carries a single-use launch code, so a reload needs a fresh link: press Enter in that Terminal window for one. Ctrl+C stops the page.
+
+It listens on 127.0.0.1:8766 only. Each run writes a server log and a page log under `~/Library/Logs/tax-agent-ask/`, and neither holds the page token, a launch code or a review token. Practice reviews go to a new timestamped folder under `preparer/app/demo_reviews/`, which is gitignored. During real reviews, keep Chrome's DevTools closed on the page, because the screen's MCP Apps client (version 1.7.5) echoes its messages, the review token among them, to the console.
+
+Without `--practice`, the page reviews `data/drafts` into `data/reviews` and offers only the lowest-numbered draft not yet approved. It refuses to start from a shell where Claude Code's `CLAUDECODE` variable is set, in a shallow clone, until `eval/review_prereg.yaml` is committed with `locked_on`, if `preparer/` or `data/drafts` changed since that lock commit, if the built screen is stale, or if `data/drafts` holds a `.json` file git ignores, so the screen and the drafts are the ones the preregistration fixed before the first review. The terminal pane in Claude Desktop's Code tab does not set `CLAUDECODE`, so that check does not stop a run there; run the page in Terminal.app. All 24 drafts are already approved, so in a copy of this repo only `--practice` has anything to review, and `eval.review_catch` rescores the committed reviews offline.
+
+Optionally, Claude Desktop can run the same server on the demo folders, from an entry in `claude_desktop_config.json` that runs `uv run --directory <repo> python -m preparer.server --drafts preparer/app/demo_drafts --reviews preparer/app/demo_reviews`. Claude Desktop 4.23118.0 and 4.23118.1 drew no screen; in 5.1231.2 the Code tab drew it and a click there saved and approved a demo draft, though full screen and clipboard writes were not checked there. Asked to approve a demo draft in that app, Claude could not, since its preparer tools were only `list_drafts`, `open_review` and `approved_list`. Edit `claude_desktop_config.json` only while Claude Desktop is quit, because while it runs it writes its own copy back over the file. Never point the entry at `data/drafts`, where every Claude Code session in the app would be offered `open_review` on the real drafts, and remove it, again with the app quit, when you are done.
 
 ## Disclaimer
 

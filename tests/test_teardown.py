@@ -2,8 +2,8 @@
 
 The front of the page is layered: the lede says why to care, the TL;DR says what was found, the Summary argues
 it in scientific method order, and the numbered parts show it. Each layer's length and shape is held here. The
-numbers the page draws from the data are recomputed here from the data, the rules, the labels, the generated
-report or the decision log, so the page cannot drift from what it reports. These tests read files only.
+numbers the page draws from the data are recomputed here from the data, the rules, the labels, the review records,
+the generated report or the decision log, so the page cannot drift from what it reports. These tests read files only.
 """
 
 from __future__ import annotations
@@ -14,15 +14,19 @@ import html
 import json
 import re
 from collections import Counter
+from datetime import datetime, timezone
 from html.parser import HTMLParser
 from pathlib import Path
 
 import yaml
 
 from agent.env import load_settings
+from eval import review_catch
 from eval.baselines import run_prior_year_split
 from generator import labels
 from generator.files import DATA_DIR, load_truths
+from preparer.drafts import Reference
+from preparer.reviews import parse_stamp
 from rules.engine import STATUSES_FOR_SPLIT, load_facts, load_ignore_aliases, load_rules, triggered_traps
 from server.tax_server import TOOLS
 
@@ -359,6 +363,70 @@ def test_the_page_carries_what_prd_6_8_asks_of_the_teardown():
     assert "Two cases near the traps are never generated" in limits
     assert "September 30, 2025" in text and "June 30, 2026" in text and "Form 5695" in text
     assert "uv run pytest" in page() and "Not tax advice. All households are synthetic." in text
+
+
+CATCH_ROWS = (
+    ("Problem drafts caught, problem shown by a flag", "catch_rate_shows"),
+    ("Problem drafts caught, problem hidden from the flags", "catch_rate_hides"),
+    ("Problems caught, noted by the agent", "catch_rate_noted"),
+    ("Problems caught, not noted by the agent", "catch_rate_unnoted"),
+    ("Clean drafts with a harmful edit", "harmful_edits_clean"),
+    ("Clean drafts with a follow-up question", "follow_ups_clean"),
+)
+
+
+def catch_numbers() -> dict:
+    """The catch check's numbers the page quotes, scored from the committed prereg, key, drafts and reviews as
+    eval/review_catch.py scores them. The scorer checks the lock against git, and tests/test_review_catch.py tests that
+    check; here the start of the lock day stands in for the lock commit, so this test reads files only. Scored inside
+    a helper, so a failure under pytest -l prints only these numbers."""
+    prereg = yaml.safe_load((REPO / "eval" / "review_prereg.yaml").read_text(encoding="utf-8"))
+    lock_day = datetime.combine(prereg["locked_on"], datetime.min.time(), tzinfo=timezone.utc)
+    ref = Reference.load()
+    inputs = review_catch.load(lock_time=lambda path: lock_day, ref=ref)
+    scored = review_catch.score(inputs, ref)
+    pct = review_catch.pct
+    elapsed = (max(parse_stamp(r["approved_at"]) for r in inputs.records.values())
+               - min(parse_stamp(r["opened_at"]) for r in inputs.records.values()))
+    shows = {r["draft_id"] for r in scored["rows"] if r["class"] == "shows"}
+    dropped = scored["dropped_r001_actions"]
+    return {
+        "rows": [(label, f"{scored[key]['k']} of {scored[key]['n']}", f"{pct(scored[key]['low'])} to {pct(scored[key]['high'])}")
+                 for label, key in CATCH_ROWS],
+        "problems": len(scored["problems"]),
+        "caught": sum(p["caught"] for p in scored["problems"]),
+        "drafts": len(scored["rows"]),
+        "unchanged": scored["documents_unchanged"],
+        "median": f"{scored['median_seconds']:g}",
+        "elapsed": divmod(int(elapsed.total_seconds()), 60),
+        "dropped": dropped["drafts"],
+        "raised_or_asked": dropped["raised_count"] + dropped["asked_w2"],
+        "design": (prereg["show_drafts"], prereg["hide_drafts"], prereg["clean_drafts"]),
+        "marked": len(scored["marked"]),
+        "shows_all_marked": shows <= set(scored["marked"]),
+        "locked_on": f"{prereg['locked_on']:%B} {prereg['locked_on'].day}, {prereg['locked_on'].year}",
+    }
+
+
+def test_the_catch_check_numbers_are_recomputed_from_the_reviews():
+    """Part 7 quotes the blind catch check; the counts, intervals and times come from scoring the committed reviews."""
+    n = catch_numbers()
+    review = section("review")
+    for label, count, interval in n["rows"]:
+        assert f'<tr><td>{label}</td><td class="num">{count}</td><td class="num">{interval}</td></tr>' in review, label
+    text, whole = text_of(review), page_text()
+    assert f"I caught {n['caught']} of the {n['problems']} problems in them" in text
+    assert set(re.findall(r"of the (\d+) problems", whole)) == {str(n["problems"])}
+    assert ("caught none of" in whole) == (n["caught"] == 0)
+    assert set(re.findall(r"median of ([\d.]+) seconds", whole)) == {n["median"]}
+    minutes, seconds = n["elapsed"]
+    assert f"in {minutes} minutes {seconds} seconds from the first opening to the last approval" in text
+    assert n["unchanged"] == n["drafts"] and f"On all {n['drafts']} drafts the approved list kept every document" in text
+    assert n["raised_or_asked"] == 0 and f"On the {n['dropped']} drafts with a dropped W-2 flag" in text
+    shows, hides, clean = n["design"]
+    assert f"{shows} whose problem a flag shows, {hides} whose problem the flags hide, and {clean} clean" in text
+    assert n["shows_all_marked"] and f"({n['marked']} of them, including all {shows} shown drafts)" in text
+    assert f"it locked on {n['locked_on']}, before the first review" in text
 
 
 def test_the_test_count_matches_the_decision_log():

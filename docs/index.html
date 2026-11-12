@@ -61,7 +61,7 @@
           directed
         </p>
         <p class="callout callout-notice" id="status">
-          <strong>Status on November 4, 2026.</strong> Built and tested offline
+          <strong>Status on November 12, 2026.</strong> Built and tested offline
           on synthetic households, then run live for the first time on the train
           and dev groups only, with one trial of every configuration on the 40
           dev households. From that trial I chose the configuration the bars
@@ -70,6 +70,7 @@
           the honesty judge, which meets its bars on delivery but not yet on
           advice or summary, so its verdicts here are not yet checked ones.
           The test run is done: on all 40 test households, 3 trials each, the agent on Claude Opus 5.5 passed 92.5% of 120 runs (interval 85.8% to 98.3%) and missed 0.5% of required documents, at $0.40 a household, against 86.7% for the full organizer and 32.5% for last year's list. Advice verdicts in that rate come from a judge my labels have not yet validated on advice.
+          On November 12 I reviewed 24 of the test run's drafts blind on a new review screen for the preparer, against a hypothesis locked first, and caught none of the 17 problems in them, approving every draft with its documents unchanged in a median of 10.5 seconds. The hypothesis is not supported, and the lesson I draw, from one reviewer, is to make each flag demand an answer before approval.
         </p>
 
         <div class="cta-row">
@@ -109,9 +110,10 @@
           each client only what this year's return needs, counting questions
           and misses. The agent learns facts, with evidence; code turns
           them into a draft list through sourced rules, and only the preparer
-          sends it. The rules and review step sit behind open-protocol tools a client portal or another agent could call. On synthetic
+          sends it. On synthetic
           households, last year's list missed over a third of documents where the year changed, and my blind lists requested paperwork behind ended
           credits. On the test run, the Opus agent passed over 92%.
+          Reviewing some of its drafts blind, I caught none of their problems, so the preparer's flags should demand answers.
         </p>
       </section>
     </div>
@@ -128,10 +130,11 @@
           <li><a href="#rules">Part 4. The rules, and a person's check on them</a></li>
           <li><a href="#judged">Part 5. How the agent will be judged</a></li>
           <li><a href="#results">Part 6. What is measured so far</a></li>
-          <li><a href="#decisions">Part 7. Design decisions</a></li>
-          <li><a href="#carries">Part 8. What carries over to an intake product</a></li>
-          <li><a href="#next">Part 9. What I would do next</a></li>
-          <li><a href="#cut">Part 10. What I cut</a></li>
+          <li><a href="#review">Part 7. The preparer's review screen</a></li>
+          <li><a href="#decisions">Part 8. Design decisions</a></li>
+          <li><a href="#carries">Part 9. What carries over to an intake product</a></li>
+          <li><a href="#next">Part 10. What I would do next</a></li>
+          <li><a href="#cut">Part 11. What I cut</a></li>
           <li><a href="#method">Appendix A. Method made visible</a></li>
           <li><a href="#terms">Appendix B. Terms used on this page</a></li>
         </ol>
@@ -167,7 +170,7 @@
               and 3 of them are traps for credits that ended. Only the preparer approves the draft and sends it, since the agent has no send tool
               (<a href="#lanes">Part 3</a>). If the split holds, an agent can ask
               far fewer questions than a full organizer while missing about as
-              few documents, and every miss traces to a fact the conversation did not learn in time or a rule that was wrong. The rules and the review step sit behind eight tools on an open protocol rather than inside a prompt. Because of that, the same tools could serve another agent, a client portal or a partner's system, once the evidence check moves in with them (<a href="#carries">Part 8</a>).
+              few documents, and every miss traces to a fact the conversation did not learn in time or a rule that was wrong. The rules and the review step sit behind eight tools on an open protocol rather than inside a prompt. Because of that, the same tools could serve another agent, a client portal or a partner's system, once the evidence check moves in with them (<a href="#carries">Part 9</a>).
             </li>
             <li>
               <strong>The method.</strong> Everything runs on 100 synthetic households, each with true facts, last year's profile and what changed, and 70 of them changed. They are frozen into train (20),
@@ -219,6 +222,10 @@
               offline tests passed with the network blocked, and mutation testing,
               which plants small bugs in the scoring code to see whether the
               tests notice, had caught 1,065 of 1,067 (<a href="#results">Part 6</a>).
+              Last, on November 12, I reviewed 24 drafts from the test run blind
+              on the preparer's review screen. I caught none of the 17 problems
+              in them and approved every draft with its documents unchanged, at
+              a median of 10.5 seconds a draft (<a href="#review">Part 7</a>).
             </li>
             <li>
               <strong>What it means.</strong> The design bets that the agent's value
@@ -228,7 +235,7 @@
               12 of 40 dev households where nothing changed, it was complete by
               construction. A quiet year could then be a confirmation rather than
               an interview, if the confirmation still catches a change the client
-              forgets to mention (<a href="#carries">Part 8</a>). The same
+              forgets to mention (<a href="#carries">Part 9</a>). The same
               construction keeps this baseline from showing the second blind spot,
               rules that changed, which the traps test instead, and rules that
               changed did trip a person writing blind. That is the case for keeping
@@ -249,7 +256,13 @@
               Opus instead of letting the $0.10 bar rule it out. The one test run
               has since measured that choice: Opus passed 92.5% of runs on the 40
               test households and missed 0.5% of required documents
-              (<a href="#results">Part 6</a>).
+              (<a href="#results">Part 6</a>). The preparer's end of the split
+              needed a test too, and it came out against my hypothesis. On the 4
+              drafts whose problem a flag showed, the review screen put the
+              right flag beside it, and I still approved every draft with its documents unchanged. The lesson I
+              draw, from one reviewer, is that a review step protects a client
+              only if its design makes the reviewer answer each flag
+              (<a href="#review">Part 7</a>).
             </li>
             <li>
               <strong>Cautions, and how to check.</strong> The households are
@@ -272,7 +285,7 @@
               moved a bar after seeing the dev results, raising the cost bar from
               $0.10 to $0.60 a household so the configuration I chose would meet
               it. The decision log keeps the original and my reason, and the other
-              bars are unchanged. The evidence check now needs two or more of the client's words in a row, a one-word answer sentence, or the field of last year's profile that holds the fact. It still proves only that the words or the field are there, not that they support the value, so a wrong fact is left to scoring. Anyone can reproduce the numbers drawn from the data offline, with no key and no cost, and tests check most of them. Research and review counts come instead from one time agent passes recorded in the decision log (<a href="#method">Appendix A</a>). Run files for the dev runs stay out of the repository, so the generated report and the spend ledger are their record, and no test rechecks them here.
+              bars are unchanged. The evidence check now needs two or more of the client's words in a row, a one-word answer sentence, or the field of last year's profile that holds the fact. It still proves only that the words or the field are there, not that they support the value, so a wrong fact is left to scoring. The review check rests on one reviewer, me, who built the project and is not a practicing preparer, on 24 synthetic drafts with wide intervals, and I knew the shape of the problems the flags show before I started. Anyone can reproduce the numbers drawn from the data offline, with no key and no cost, and tests check most of them. Research and review counts come instead from one time agent passes recorded in the decision log (<a href="#method">Appendix A</a>). Run files for the dev runs stay out of the repository, so the generated report and the spend ledger are their record, and no test rechecks them here.
             </li>
           </ul>
         </section>
@@ -382,9 +395,12 @@
             <ul>
               <li>Whether Opus's extra cost buys accuracy: on the test run A-opus passed 92.5% at $0.40 a household and A-sonnet 90.8% at $0.18, with intervals that overlap (<a href="#results">Part 6</a>).</li>
               <li>
-                Whether a preparer would accept the agent's draft, and what they
-                would change. One firm's preparers reviewing real drafts would
-                turn this from a build into a finding.
+                Whether a practicing preparer would catch what a draft gets
+                wrong. Reviewing 24 drafts blind, I approved every one with its
+                documents unchanged and caught none of the 17 problems in them
+                (<a href="#review">Part 7</a>), but I built the tool and am not a
+                preparer. One firm's preparers reviewing real drafts would turn
+                this from a build into a finding.
               </li>
             </ul>
           </div>
@@ -393,7 +409,7 @@
             cites an official source, and a rule counts in test scoring only once
             I verify it against that source. I verified all 33 by November 4,
             but I am one person and not a practicing preparer
-            (<a href="#next">Part 9</a>).
+            (<a href="#next">Part 10</a>).
           </p>
         </section>
 
@@ -432,14 +448,14 @@
               <h4>The preparer</h4>
               <ul>
                 <li>Verifies each rule against its source before it counts.</li>
-                <li>Reviews the draft, which arrives pending review with the agent's note on what it was unsure about.</li>
+                <li>Reviews the draft on a review screen, with the agent's note on what it was unsure about and flags code computes beside their evidence; only the preparer's click can approve it (<a href="#review">Part 7</a>).</li>
                 <li>Answers the client's advice questions.</li>
-                <li>Sends the list; the agent has no send tool.</li>
+                <li>Sends the approved list through the firm's own system; neither the agent nor the review screen has a send tool.</li>
               </ul>
             </div>
           </div>
           <p>
-            In this project I stand in for the preparer: I verify the rules, label the judge's transcripts and lock the bars.
+            In this project I stand in for the preparer: I verify the rules, label the judge's transcripts and lock the bars, and I reviewed 24 of the test run's drafts blind on the review screen.
           </p>
           <h3>Three guarantees in code, not in the prompt</h3>
           <ol>
@@ -995,6 +1011,7 @@
             <li><strong>The evidence check accepted any stretch of an answer, down to a single letter, and any field of last year's profile, for any fact.</strong> It has since been fixed, and it now takes two or more whole words in a row from one answer, or a one-word answer sentence, and only the field that holds the fact.</li>
             <li><strong>My blind lists checked about half of what I meant them to.</strong></li>
             <li><strong>Writing blind, I fell into the project's own traps.</strong></li>
+            <li><strong>My own blind review caught none of the problems.</strong> On 24 drafts from the test run I caught 0 of the 17 problems, approved every draft with its documents unchanged at a median of 10.5 seconds, and marked every flag checked, including the flag that pointed at the problem on each of the 4 drafts whose problem a flag shows (<a href="#review">Part 7</a>).</li>
           </ul>
           <h3>The checks on the checker</h3>
           <ul>
@@ -1018,8 +1035,238 @@
           </p>
         </section>
 
-        <section id="decisions">
+        <section id="review">
           <p class="section-kicker">Part 7</p>
+          <h2>The preparer's review screen</h2>
+          <p>
+            Parts 5 and 6 judge the agent's lane. This part judges the
+            preparer's lane in the same spirit, though with no pass bar: a
+            hypothesis locked before the first review, a blind check, and a
+            report given whichever way it came out. It came out against the
+            hypothesis.
+          </p>
+          <h3>Why the draft needed a screen</h3>
+          <p>
+            Every agent run ends with a draft request list waiting for the
+            preparer's review, and this page says that only the preparer sends
+            anything. Before this screen, nothing showed a preparer that draft,
+            so the promise was only a status recorded on it. A preparer also
+            needs more than the list: why each document is on it, the client's
+            words behind each fact, and where the draft is most likely wrong.
+            The test run already says where that is. All 9 failing test runs of
+            A-opus, the configuration I chose, recorded a wrong fact
+            (<a href="#results">Part 6</a>), and 16 of the 22 failing dev runs I
+            annotated came down to the employer count.
+          </p>
+          <p>
+            The bet, in the screen's own
+            <a href="https://github.com/Roanukz/tax-agent-ask/blob/main/PRD-preparer-review.md">requirements document</a>,
+            was that review is a second measurement, not just a screen. Code
+            computes where to look. Its flags include documents dropped since
+            last year and facts carried over without the client confirming
+            them. The screen puts each flag next to its evidence and lists the
+            facts the agent never asked. A blind check on 24 drafts then
+            measures what review catches and what it cannot, on a hypothesis
+            locked before the first review: that review catches most problems a
+            draft shows and few it hides.
+          </p>
+          <h3>What I decided</h3>
+          <ul>
+            <li>
+              <strong>Give the preparer a server and a screen of their
+              own.</strong> The preparer gets a second local tool server,
+              separate from the agent's, with one screen and five tools: list
+              the drafts, open one, save a review, approve it, and read the
+              approved list (<code>list_drafts</code>, <code>open_review</code>,
+              <code>save_review</code>, <code>approve_review</code> and
+              <code>approved_list</code>). The screen is an MCP App, a small web
+              view that a tool server ships with its tools and that an MCP host,
+              the app the assistant runs in, shows beside the conversation.
+            </li>
+            <li>
+              <strong>Only a click approves.</strong> I rejected approval tools
+              the model can see behind a confirmation prompt, since a prompt only
+              asks the model to behave, much as Decision 3 prefers a missing send
+              tool to a denied one (<a href="#decisions">Part 8</a>). Saving and
+              approving are app-only tools instead: the screen can call them, and
+              a host that follows the MCP Apps spec never offers them to a model.
+              Claude Desktop and Claude Code kept them from Claude in every
+              check. The server also refuses an approval without the current
+              review token, a code it gives the screen each time it opens a
+              draft, or for a draft whose fingerprint changed since then. When I
+              asked Claude to approve a demo draft in a Claude Desktop session,
+              it could not: its only preparer tools were
+              <code>list_drafts</code>, <code>open_review</code> and
+              <code>approved_list</code>.
+            </li>
+            <li>
+              <strong>Code computes the flags, and each sits beside its
+              evidence.</strong> The model does not choose where the preparer
+              looks, and each flag shows its evidence, such as the client's own
+              words. An inline
+              summary card opens a full screen review with tabs for flags,
+              documents, facts and notes. Every flag has Mark checked, and a
+              dropped or carried flag also offers Ask the client again. Approve
+              unlocks only when every document has a decision and every flag is
+              marked checked, whether or not the client is asked. The screen has
+              no free text field and no browser storage.
+            </li>
+            <li>
+              <strong>No send tool here either.</strong> An approved list is only
+              stored, for the preparer to pass on through their own system, as
+              the agent's draft is only submitted (<a href="#lanes">Part 3</a>).
+            </li>
+            <li>
+              <strong>When the planned host failed, build a host, not a
+              bypass.</strong> I planned to review inside Claude Desktop, where
+              the preparer's work happens, but versions 4.23118.0 and 4.23118.1
+              drew no screen for a local MCP App, and 4.23118.1's Code tab would
+              have left Save and Approve unreachable even if it had drawn one. A
+              standalone page that shows drafts itself would have skipped the
+              server's checks, so the blind check would have tested a different
+              screen from the one a preparer gets. Instead I chose a small local
+              review page, which Claude Code built: an MCP Apps host served only
+              on my own Mac that hosts the screen as the spec describes, running
+              the same server and the same built screen unchanged. Later, Claude
+              Desktop 5.1231.2's Code tab drew that same screen, and a click
+              there saved and approved a demo draft; full screen and clipboard
+              writes there are not yet checked. I kept the 24 reviews on the
+              local page anyway, so no model's reply sat beside the screen during
+              the blind check.
+            </li>
+          </ul>
+          <p>
+            Nothing in the feature calls a model, so it spent $0 of the API
+            credit. You can
+            <a href="review-demo.html">try the screen with three demo drafts</a>,
+            in a static page with no model and no network, and
+            <a href="demo.html#step-7">step 7 of the walkthrough</a> shows how
+            it was built.
+          </p>
+          <h3>How it was measured</h3>
+          <p>
+            The check was preregistered, so what would count was fixed before I
+            looked. Its
+            <a href="https://github.com/Roanukz/tax-agent-ask/blob/main/eval/review_prereg.yaml">preregistration file</a>
+            fixed the hypothesis, the draw and the scoring rules, and it locked
+            on November 12, 2026, before the first review. It sets no pass bar,
+            since 24 drafts give intervals too wide for a bar to mean much, and
+            the cost is a weaker claim than the agent's test run makes. The
+            report gives the numbers whichever way they came out.
+          </p>
+          <p>
+            The 24 drafts were drawn with a fixed seed from the test run's 480
+            agent runs, one per household and 6 from each agent configuration:
+            4 whose problem a flag shows, 8 whose problem the flags hide, and 12
+            clean. A problem is a missed document or a wrong fact. Only 4
+            households in the test run have a draft whose problem a flag shows,
+            so 4 is all there could be. The drafts carry no household's
+            identity, the page offered them only in order, and I saw no draft's
+            result before scoring.
+          </p>
+          <p>
+            Some text already committed to the repository, read with what I
+            already knew about the test run, could let a careful reader tell a
+            draft's class: shown, hidden or clean. So before the lock, AI agents
+            working from the answer key marked those drafts. In a recheck
+            against everything committed, a skeptic found more that a third
+            agent upheld, which settled the marked drafts (11 of them, including
+            all 4 shown drafts). The preregistration recorded the list only as a
+            salted fingerprint, which fixed the marks without showing them to
+            me. The report gives the shown rate with and without the marked
+            drafts, and since all 4 shown drafts are marked, the rate without
+            them has no drafts to score.
+          </p>
+          <p>
+            Code then scored my reviews by the file's own rules. A problem draft
+            counts as caught when the approved list adds the missed document or
+            raises its count to what the return needs, or a follow-up question
+            asks about the fact behind a problem. A harmful edit removes a
+            required document, adds one the household does not need, or sets a
+            count below or above what the return needs. Each rate carries a 95%
+            Wilson interval.
+          </p>
+          <h3>What it found</h3>
+          <p>
+            I reviewed the 24 drafts on November 12, 2026, in 10 minutes 14
+            seconds from the first opening to the last approval, a median of
+            10.5 seconds on screen per draft. I caught 0 of the 17 problems in
+            them.
+          </p>
+          <div class="table-scroll" tabindex="0" role="region" aria-label="The blind catch check on 24 drafts from the test run">
+            <table>
+              <caption>The blind catch check: my review of 24 drafts from the test run, one reviewer, with 95% Wilson intervals</caption>
+              <thead><tr><th scope="col">Measure</th><th scope="col">Count</th><th scope="col">95% interval</th></tr></thead>
+              <tbody>
+                <tr><td>Problem drafts caught, problem shown by a flag</td><td class="num">0 of 4</td><td class="num">0% to 49%</td></tr>
+                <tr><td>Problem drafts caught, problem hidden from the flags</td><td class="num">0 of 8</td><td class="num">0% to 32%</td></tr>
+                <tr><td>Problems caught, noted by the agent</td><td class="num">0 of 14</td><td class="num">0% to 22%</td></tr>
+                <tr><td>Problems caught, not noted by the agent</td><td class="num">0 of 3</td><td class="num">0% to 56%</td></tr>
+                <tr><td>Clean drafts with a harmful edit</td><td class="num">0 of 12</td><td class="num">0% to 24%</td></tr>
+                <tr><td>Clean drafts with a follow-up question</td><td class="num">10 of 12</td><td class="num">55% to 95%</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            On all 24 drafts the approved list kept every document at the
+            draft's own count. Every follow-up was the stock question of one of
+            the draft's own carried flags, and every flag was marked checked. On
+            the 6 drafts with a dropped W-2 flag, each saying the draft requests
+            one W-2 fewer than last year's file had, I neither raised the W-2
+            count nor asked about employers, though that flag's card offers the
+            question. A forgotten W-2 is the same miss the agent itself makes
+            most (<a href="#results">Part 6</a>). The agent's own notes or
+            closing message mentioned 14 of the 17 problems, and I caught none
+            of those either.
+          </p>
+          <p class="callout callout-warning">
+            <strong>The locked hypothesis is not supported.</strong> It said
+            review catches most problems the draft shows and few it hides, and
+            that harmful edits on clean drafts are rare. No clean draft got a
+            harmful edit, but review caught nothing, shown or hidden.
+          </p>
+          <p>
+            Three checks stand behind those numbers: an independent
+            recomputation of every one, an audit of the scorer against the
+            preregistration, and an integrity check of the review records. The
+            <a href="https://github.com/Roanukz/tax-agent-ask/blob/main/docs/review-check.md">catch check report</a>
+            has every draft and every problem.
+          </p>
+          <h3>What it means</h3>
+          <p>
+            The screen put the right flag beside the problem, and approval still
+            took a median of 10.5 seconds with no document changed. The screen
+            as built let one click, Mark checked, clear a flag without an
+            answer, and I marked every flag checked. The lesson I draw is that a
+            review step protects a client only if its design makes the reviewer
+            answer each flag, rather than letting every flag be marked checked.
+            So the next version would make the dropped and carried flags demand
+            an answer before Approve unlocks: raise the count, ask the client,
+            or say why not. It would also show the time spent on each draft.
+            Because the check had one reviewer, it cannot say how a practicing
+            preparer would do. The same scored check would run next with
+            practicing preparers who did not build it, then with a firm's real
+            drafts (<a href="#next">Part 10</a>).
+          </p>
+          <p>
+            It also tempers a claim this page made before the check: that what
+            preparers change on drafts would be the clearest signal of where the
+            agent is wrong (<a href="#carries">Part 9</a>). On these 24 drafts
+            no document was removed, added or recounted, so those changes alone
+            would have signaled nothing.
+          </p>
+          <p class="callout callout-notice">
+            <strong>What this check can and cannot say.</strong> It has one
+            reviewer, me, and I built the project and am not a practicing
+            preparer. The drafts are synthetic, and since there are only 24,
+            every interval is wide. Before reviewing I knew that every shown
+            problem was a dropped W-2 request beside a wrong W-2 count, and all
+            4 shown drafts are among the marked ones.
+          </p>
+        </section>
+
+        <section id="decisions">
+          <p class="section-kicker">Part 8</p>
           <h2>Design decisions</h2>
           <p>
             Decisions 1 to 9 are dated in the
@@ -1204,7 +1451,7 @@
         </section>
 
         <section id="carries">
-          <p class="section-kicker">Part 8</p>
+          <p class="section-kicker">Part 9</p>
           <h2>What carries over to an intake product</h2>
           <p>
             These are the choices I would make for any client intake agent, and none of them needs this project's code.
@@ -1247,14 +1494,14 @@
               clean energy systems and clean vehicles ended, and the 1099-K test
               for payment apps moved back. Each rule carries a source and a
               version and the date I verified it, while a person's
-              blind check found what scoring cannot (<a href="#rules">Part 4</a>). A rule is structured data, never run as code, so a state's rules would be a second file with the same schema (<a href="#next">Part 9</a>).
+              blind check found what scoring cannot (<a href="#rules">Part 4</a>). A rule is structured data, never run as code, so a state's rules would be a second file with the same schema (<a href="#next">Part 10</a>).
             </li>
             <li>
               <strong>Make cost a bar, not a surprise.</strong> Cost per household
               is a success criterion, every call is reserved before it is sent,
               though only on a best effort basis for the few the agent's runtime
               sends on its own, and the split test asked how much model the
-              conversation actually needs (<a href="#decisions">Part 7</a>). In
+              conversation actually needs (<a href="#decisions">Part 8</a>). In
               one dev trial the costliest agent, A-opus, passed most often and
               missed no document, but at $0.3704 a household it cost 3.7 times the
               original $0.10 bar. The cheapest, A-haiku at $0.0122 a household, fell
@@ -1269,19 +1516,28 @@
               same eight tools could serve a client portal, a partner's system or
               another agent, with the same rules and the same review step behind
               them. The evidence check has to move into the service before that
-              holds.
+              holds. The preparer's review already shows one set of tools serving two hosts, on a small scale: its
+              server and screen ran unchanged on a local review page and, later,
+              in Claude Desktop's Code tab (<a href="#review">Part 7</a>).
             </li>
             <li>
               <strong>Design the preparer's review in, not on.</strong> The draft
               arrives pending review with each document's reason and source, every fact the agent recorded with its evidence, the facts it never recorded, and its note on what it was unsure
-              about. In a live product, what preparers change on those drafts
-              would be the clearest signal of where the agent is wrong.
+              about, and code flags where to look. In my own blind check,
+              showing all that was not enough, at least for one reviewer: I
+              approved every draft with its documents unchanged, including those
+              whose flag pointed at the problem (<a href="#review">Part 7</a>).
+              So make each flag demand an answer before approval, and do not
+              count on preparers' edits alone as the signal of where the agent
+              is wrong. This page had called them the clearest signal, but on
+              those 24 drafts no document was removed, added or recounted, so
+              those changes alone would have signaled nothing.
             </li>
           </ol>
         </section>
 
         <section id="next">
-          <p class="section-kicker">Part 9</p>
+          <p class="section-kicker">Part 10</p>
           <h2>What I would do next</h2>
           <ol>
             <li>
@@ -1343,6 +1599,19 @@
               included.
             </li>
             <li>
+              <strong>Build the preparer's review screen, and test it blind.</strong><span class="shipped">Done</span>
+              The screen shows flags code computes beside their evidence, its
+              approve tool is app-only so that a click approves, and my blind
+              check of it came out against its hypothesis
+              (<a href="#review">Part 7</a>). Putting it where the preparer
+              works, inside Claude, is only partly done: Claude Desktop
+              4.23118.0 and 4.23118.1 drew no screen, so my 24 blind reviews ran
+              on a local review page that hosts the same server and screen, and
+              5.1231.2 later drew it in its Code tab, where a click approved a
+              demo draft. You can
+              <a href="review-demo.html">try the screen with three demo drafts</a>.
+            </li>
+            <li>
               <strong>Give the judge failures to catch on advice and
               summary.</strong> My labels hold no FAIL on either question, so
               the judge's true positive rate there cannot be measured, and it
@@ -1359,22 +1628,29 @@
               simulated client has to keep to its job count when asked it.
             </li>
             <li>
+              <strong>Make each flag demand an answer:</strong> the dropped and
+              carried flags would ask the reviewer to raise the count, ask the
+              client, or say why not before Approve unlocks, and the screen would
+              show the time spent on each draft, since my own review marked every flag
+              checked and caught nothing (<a href="#review">Part 7</a>).
+            </li>
+            <li>
+              <strong>Hand the same check to practicing preparers:</strong> the
+              same scored blind review, by preparers who did not build the
+              screen, would be this project's first measure with a real user.
+            </li>
+            <li>
               <strong>Read the documents, not just request them:</strong> check
               that each uploaded file is the document requested, a W-2 rather
               than a 1099-NEC, field by field on synthetic forms, with low
               confidence fields sent to a person.
             </li>
             <li>
-              <strong>Put the draft where the preparer works:</strong> a review
-              screen that shows the draft list for approval inside the chat, as
-              an MCP App.
-            </li>
-            <li>
               <strong>State returns</strong>, as a second rules file per state
               with the same schema.
             </li>
             <li>
-              <strong>One firm, real clients, the same measures</strong>, plus what its preparers change on each draft, after a
+              <strong>One firm, real clients, the same measures</strong>, the catch check on its own preparers' reviews included, after a
               privacy review. That is a different project.
             </li>
           </ol>
@@ -1384,17 +1660,17 @@
         </section>
 
         <section id="cut">
-          <p class="section-kicker">Part 10</p>
+          <p class="section-kicker">Part 11</p>
           <h2>What I cut</h2>
           <p>
             The requirements document ruled these out before the build started, so none of them was cut to save time.
           </p>
           <ul>
-            <li><strong>Sending, e-signing, payments and delivery.</strong> The agent has no send tool, and code checks each of its questions before the client sees it, since a question is the one channel that reaches the client.</li>
-            <li><strong>Reading or extracting uploaded documents.</strong> Next on the list (<a href="#next">Part 9</a>).</li>
+            <li><strong>Sending, e-signing, payments and delivery.</strong> The agent has no send tool, nor does the preparer's review screen, and code checks each of the agent's questions before the client sees it, since a question is the one channel that reaches the client.</li>
+            <li><strong>Reading or extracting uploaded documents.</strong> Next on the list (<a href="#next">Part 10</a>).</li>
             <li><strong>State and business returns.</strong> Federal individual returns (Form 1040 households) for tax year 2026 only.</li>
             <li><strong>Tax advice.</strong> The agent is told to hand every advice question to the preparer, and a run that gives advice fails.</li>
-            <li><strong>A web interface or hosted endpoint.</strong> The tool server runs locally; a hosted demo would spend the API budget per visitor and stop when it ran out.</li>
+            <li><strong>A web interface or hosted endpoint.</strong> The tool servers run locally; a hosted demo would spend the API budget per visitor and stop when it ran out. The preparer's review screen came later, under its own requirements document: its demo on this site is a static page with three demo drafts and no model or network behind it, and the local review page serves only my own Mac.</li>
             <li><strong>Integration with any commercial tax product.</strong> The value here is the measurement.</li>
             <li><strong>Real client data of any kind.</strong> Every household is synthetic, with obviously fake names.</li>
             <li><strong>MCP Sampling</strong>, a protocol feature that lets a tool server ask the connected assistant's model to write text. It is deprecated in the 2026-07-28 specification, so the simulated client calls the model directly.</li>
@@ -1410,12 +1686,18 @@
             The project began as a requirements document I signed off before any
             code. It set out a one page problem, a thesis and eight testable
             success criteria, then a build plan in 11 blocks with a done check
-            for each, a spend plan and a cut order. Claude Code has built the
-            all 11 blocks against that document, from the live checks on train
+            for each, a spend plan and a cut order. Claude Code has built all
+            11 blocks against that document, from the live checks on train
             and dev to the one test run, under rules written into the
-            repository. Under those rules the API key lives only in a local file it never reads or prints, every model call reserves its cost first, the test group
+            repository. The preparer's review screen came after, with its own
+            <a href="https://github.com/Roanukz/tax-agent-ask/blob/main/PRD-preparer-review.md">requirements document</a>:
+            a one page problem and thesis, nine testable success criteria, and
+            a build plan in seven blocks, numbered 0 to 6, with three more, 4a
+            to 4c, added when
+            Claude Desktop could not host the screen, with the catch check's
+            hypothesis locked before the first review. Under the repository's rules the API key lives only in a local file it never reads or prints, every model call reserves its cost first, the test group
             stays locked until the preregistration is committed, and nothing
-            goes public without my typed "proceed". Steps that need my judgment were left to me: verifying rules, writing blind lists, labeling the judge's transcripts, choosing the configuration and locking bars. Every decision made during the build is dated in the decision log, and the repository's history keeps each earlier version of it.
+            goes public without my typed "proceed". Steps that need my judgment were left to me: verifying rules, writing blind lists, labeling the judge's transcripts, choosing the configuration, locking bars and reviewing the 24 drafts. Every decision made during the build is dated in the decision log, and the repository's history keeps each earlier version of it.
           </p>
 
           <h3>Reviews and gates</h3>
@@ -1426,7 +1708,8 @@
             <li>The label settlement used two independent mappers and six checks told to refute the rules from official sources, and a final review confirmed 11 more findings, all fixed, none of which changed a settlement.</li>
             <li>This page went through the same: three fact-checking agents, one reading for product judgment and one for rigor and format, each followed by a skeptic, confirmed 87 findings in the first draft, some of them the same problem caught by more than one agent. A second pass checked every fix and confirmed 39 more, mostly wording that still claimed too much, which were fixed in turn.</li>
             <li>The first live fidelity check and smoke test found two problems the offline tests could not: the simulated client contradicting facts its prompt stated, and a transcript that showed the judge the agent's final note with no label. Each got a logged fix, and both runs were made again before the dev sweep. On dev the client still caused 7 of the 19 wrong facts. The dev results also showed that the judge's transcript put the agent's working lines under "Assistant", like questions to the client, so those lines and the final note now say they were not shown to the client, and every dev agent run was judged again before I labeled any transcript (<a href="#results">Part 6</a>).</li>
-            <li>Gates: the comparison could not show the rules' answers until my lists were on record, code locks the test group, every live call is reserved against the caps first, best effort for the few the agent's runtime sends on its own, and publishing waited for my "proceed".</li>
+            <li>The review screen had the same treatment. Five agents checked every outside fact its design relies on, with a skeptic rechecking each verdict; Blocks 1 to 3 each had an independent review from four angles, with a skeptic checking every finding before any fix; four agents audited everything before its first commit; and five reviewers with skeptics raised 40 findings on the local review page, and three skeptics raised 29 more in a second round, each fixed or recorded. The marked drafts were rechecked before the lock, and the score was checked three ways (<a href="#review">Part 7</a>).</li>
+            <li>Gates: the comparison could not show the rules' answers until my lists were on record, code locks the test group, every live call is reserved against the caps first, best effort for the few the agent's runtime sends on its own, and publishing waited for my "proceed". The local review page refused the 24 drafts until the catch check's hypothesis was locked and offered them only in order, and the scorer refuses to score unless the lock came before the first opening of any draft.</li>
           </ul>
 
           <h3>How to check it yourself</h3>
@@ -1439,6 +1722,8 @@ uv run python -m generator.labels compare --unsettled
 uv run python -m rules.validate
 uv run python -m sim.fidelity --dry-run
 uv run python -m agent.wiring_check
+uv run python -m preparer.build --check
+uv run python -m eval.review_catch
 uv run mutmut run &amp;&amp; uv run mutmut results</code></pre>
           <p>
             The tests run with network sockets blocked. Here the baseline command rescores last year's list, the report command regenerates the results
@@ -1446,7 +1731,7 @@ uv run mutmut run &amp;&amp; uv run mutmut results</code></pre>
             label difference still open. Since the dev runs' files stay out of
             the repository, a fresh copy's report has no agent results, only the
             baseline runs you rescore. It still shows the live fidelity check and
-            the spend ledger, which the repository keeps. Next, the rules check confirms that every rule has a source and a status. The two after it score the simulated client with a stand-in and run the real agent runtime against a fake model API on the same machine. Last comes the mutation testing, which takes a while. None of these needs a key or spends anything. Only the live runs need an API key in a local file.
+            the spend ledger, which the repository keeps. Next, the rules check confirms that every rule has a source and a status. The two after it score the simulated client with a stand-in and run the real agent runtime against a fake model API on the same machine. The build check confirms that the review screen and its static demo match their source, and the catch check rescores my 24 reviews from the committed records and writes its report again; it needs a full clone, not a shallow one, since it checks the lock against the repository's history. Last comes the mutation testing, which takes a while. None of these needs a key or spends anything. Only the live runs need an API key in a local file.
           </p>
 
           <h3>What I got wrong</h3>
@@ -1459,6 +1744,9 @@ uv run mutmut run &amp;&amp; uv run mutmut results</code></pre>
             <li><strong>The simulated client did not keep to its facts at first.</strong> In the first smoke test, 16 of the 18 wrong facts in agent runs were the client contradicting facts it was given, and each counted against the agent. A facts rule and a guard now catch most of them, though the guard reads only the facts an answer reveals, so it misses a client whose words say otherwise.</li>
             <li><strong>The judge's transcript did not say which lines the client never saw.</strong> At first it showed the agent's final note with no label, as one more line of the conversation, and the judge failed advice in both runs on household H024 because of the note alone. The note's label went in before the dev sweep, but the lines the agent wrote between tool calls still read "Assistant", like a question to the client, and 2 of the 12 advice FAILs on dev quoted one. On November 1, 2026, before I labeled any transcript, both kinds of line were marked as not shown to the client, and in the judge's second reading the advice FAILs fell from 12 to 4. The judge also varies from one reading to the next, so I cannot say how much of that fall came from marking those lines (<a href="#results">Part 6</a>).</li>
             <li><strong>The plan's cost estimates were low.</strong> It put a Sonnet run at about $0.06 and an Opus run at about $0.12, and on dev they cost $0.1695 and $0.3704 a household, so the test run at dev cost would be about $78 with every configuration, over the plan's $60, and I accepted that cost rather than cut to 2 trials.</li>
+            <li><strong>I planned to review inside Claude Desktop.</strong> Versions 4.23118.0 and 4.23118.1 drew no screen for it, so the reviews moved to a local review page, and only 5.1231.2's Code tab later drew it, on a demo draft.</li>
+            <li><strong>I ran the 24 reviews from the terminal pane inside Claude Desktop,</strong> which a Claude session can read, rather than Terminal.app as my own run instructions said. Claude Code saw only the pane's start lines, which hold no code or token, and did not read it after that.</li>
+            <li><strong>My review took a median of 10.5 seconds a draft and caught none of the problems,</strong> against my locked hypothesis that review catches most problems the draft shows (<a href="#review">Part 7</a>).</li>
           </ul>
 
           <h3>Honest limits of this write up</h3>
@@ -1472,7 +1760,8 @@ uv run mutmut run &amp;&amp; uv run mutmut results</code></pre>
             <li>Two cases near the traps are never generated, a client with a Form 5695 carryforward would be scored wrong, and a request for paperwork that a rental, a home office or an itemizer could still use counts as a trap (<a href="#rules">Part 4</a>).</li>
             <li>Every simple household stayed the same and every other one changed, so change and complexity are tangled in every comparison between them. Last year's list is complete by construction where nothing changed, and its misses come from changed facts, never from changed rules.</li>
             <li>The evidence and question checks live in the test harness, not in the tool server. The evidence check finds two or more of the client's words in a row, a one-word answer sentence, or the field that holds the fact, but cannot tell whether they support the value. The question check misses some claims, one of them in a live run, and leaves them to the judge.</li>
-            <li>Claude Code drafted this page from the repository, and I reviewed it. Its numbers come from the data, the generated report, the fidelity report, the spend ledger, the requirements document, the decision log and the build's own test runs and reviews. Tests check most of the ones drawn from the data, and last year's list from the report, but none of the live results.</li>
+            <li>The catch check rests on one reviewer, me, who built the project and is not a practicing preparer, on 24 synthetic drafts, so its intervals are wide. I knew the shape of the shown problems before reviewing, and the 4 shown drafts are all among the marked ones. The reviews ran on a local page, not inside Claude.</li>
+            <li>Claude Code drafted this page from the repository, and I reviewed it. Its numbers come from the data, the generated report, the fidelity report, the catch check report, the spend ledger, the requirements documents, the decision log and the build's own test runs and reviews. Tests check most of the ones drawn from the data, last year's list from the report and the catch check's counts from my committed reviews, but none of the live results.</li>
           </ul>
         </section>
 
@@ -1483,7 +1772,9 @@ uv run mutmut run &amp;&amp; uv run mutmut results</code></pre>
             <li><strong>Organizer:</strong> the questionnaire and document list a firm sends a client before preparing the return.</li>
             <li><strong>Agent:</strong> a model that works in steps toward a goal, calling tools and reading their results.</li>
             <li><strong>Tool:</strong> a function the agent can ask the code to run, such as recording a fact.</li>
-            <li><strong>MCP:</strong> the Model Context Protocol, an open standard that lets an AI agent or assistant call outside tools; here, the eight intake tools.</li>
+            <li><strong>MCP:</strong> the Model Context Protocol, an open standard that lets an AI agent or assistant call outside tools; here, the eight intake tools and the preparer's five review tools.</li>
+            <li><strong>MCP App:</strong> a small web view that a tool server ships with its tools, which an MCP host, the app the assistant runs in, shows beside the conversation; here, the preparer's review screen.</li>
+            <li><strong>Local review page:</strong> a page served only on my own Mac that hosts the review screen as an MCP host would, running the same server and screen unchanged.</li>
             <li><strong>Harness:</strong> the code that runs the agent, connects its tools, enforces the caps and records everything it does.</li>
             <li><strong>Hook:</strong> code that runs before or after a tool call and can stop it; here, the evidence check.</li>
             <li><strong>Question check:</strong> code that reads each of the agent's questions before the client sees it, and refuses one that claims or offers to send the list or asks the client to send documents.</li>
@@ -1510,6 +1801,13 @@ uv run mutmut run &amp;&amp; uv run mutmut results</code></pre>
             <li><strong>Run cap and month cap:</strong> the most one run, and one month, may spend.</li>
             <li><strong>Blind labels:</strong> lists written without seeing the rules' answers.</li>
             <li><strong>Fingerprint (sha256):</strong> a short code computed from a file's bytes that changes if one byte does.</li>
+            <li><strong>Flag:</strong> a place on the review screen that code marks for the preparer to check, such as a document dropped since last year or a fact carried over without the client confirming it, shown beside its evidence.</li>
+            <li><strong>Review token:</strong> a code the preparer's server gives the screen each time it opens a draft; a save or approval without the current one is refused.</li>
+            <li><strong>Catch check:</strong> the preregistered blind check of what my review of 24 drafts caught, scored by code against an answer key I did not see until all 24 were approved.</li>
+            <li><strong>Problem draft and clean draft:</strong> a draft with a missed document or a wrong fact, and a draft from a run that passed with nothing missed, no wrong fact and no unnecessary request.</li>
+            <li><strong>Harmful edit:</strong> a change on review that removes a required document, adds one the household does not need, or sets a count below or above what the return needs.</li>
+            <li><strong>Marked drafts:</strong> drafts that committed text could let a careful reader single out, marked before the lock and reported separately.</li>
+            <li><strong>Wilson interval:</strong> a standard way to compute a 95% interval for a count out of a total, used for the catch check, where the agent's results use the bootstrap.</li>
             <li><strong>Forms named on this page:</strong> W-2 (wages), 1099-K (payments through apps and card processors), 1099-NEC (pay for freelance work), SSA-1099 (Social Security benefits), 1098 (mortgage interest), 1098-VLI (interest on a loan for a new vehicle), 5695 (residential energy credits), and 1040 (the individual return).</li>
           </ul>
         </section>

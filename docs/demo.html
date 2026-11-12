@@ -6,12 +6,12 @@
     <title>What Should My Tax Agent Ask? The Build, Step by Step</title>
     <meta
       name="description"
-      content="A step by step walkthrough of how the tax intake agent was built: the six decisions that shaped it, the review screens where I applied judgment by hand, and one synthetic household followed through all six."
+      content="A step by step walkthrough of how the tax intake agent was built: the seven decisions that shaped it, the review screens where I applied judgment by hand, a blind test of the preparer's own review screen, and one synthetic household followed through the first six."
     />
     <meta property="og:title" content="What Should My Tax Agent Ask? The Build, Step by Step" />
     <meta
       property="og:description"
-      content="Six decisions behind an AI tax intake agent, each with what I weighed and what it cost, and the review screens where my judgment went in: a blind answer key, a rule check against IRS sources, the judge's transcript, and the model and its cost."
+      content="Seven decisions behind an AI tax intake agent, each with what I weighed and what it cost, and the review screens where my judgment went in: a blind answer key, a rule check against IRS sources, the judge's transcript, the model and its cost, and a blind test of the preparer's review screen on 24 drafts."
     />
     <meta name="author" content="Roanuk Zaman" />
     <meta property="og:type" content="article" />
@@ -46,21 +46,22 @@
     <header class="hero">
       <div class="wrap">
         <p class="eyebrow">Build walkthrough</p>
-        <h1>Six decisions behind the tax agent</h1>
+        <h1>Seven decisions behind the tax agent</h1>
         <p class="lede">
           I designed this agent and directed its build, and Claude Code wrote
-          the code and ran every experiment under rules I set. These six steps
-          are the decisions that shaped how it works, each with what I weighed
-          and what it cost, and the review screens where my judgment went in by
-          hand. One synthetic household runs through all six, and so does one
-          form: the Form 1095-A a preparer needs to reconcile the Premium Tax
-          Credit on Form 8962.
+          the code and ran every experiment under rules I set. These seven
+          steps are the decisions that shaped how it works, each with what I
+          weighed and what it cost, and the review screens where my judgment
+          went in by hand. One synthetic household runs through steps 1 to 6,
+          and so does one form: the Form 1095-A a preparer needs to reconcile
+          the Premium Tax Credit on Form 8962. Step 7, the preparer's review,
+          follows a demo draft instead.
         </p>
         <p class="byline">
           Roanuk Zaman &middot; A walkthrough of a tool I designed and directed
         </p>
         <p class="callout callout-notice" id="status">
-          <strong>Status on November 4, 2026.</strong> I locked the bars on
+          <strong>Status on November 12, 2026.</strong> I locked the bars on
           November 2 and ran the test split, all 40 households at 3 trials each.
           The agent on Claude Opus 5.5 passed 92.5% of 120 runs (interval 85.8%
           to 98.3%) and missed 0.5% of required documents, at $0.40 a household,
@@ -68,8 +69,12 @@
           On the 10 complex households it passed 90.0% and missed 1 of 309
           documents. Advice
           verdicts in that rate come from a judge my labels have validated on
-          delivery but not yet on advice. The numbers in the steps below are dev
-          results from one trial, as they stood when each decision was made.
+          delivery but not yet on advice. On November 12 I reviewed 24 drafts
+          from that test run on the preparer's review screen, blind to each
+          draft's result, and caught none of the 12 that had a problem. The
+          numbers in steps 1 to 6 are dev results from one trial, as they stood
+          when each decision was made; step 7's come from that blind check on
+          test-run drafts, not from dev.
         </p>
 
         <div class="cta-row">
@@ -110,6 +115,7 @@
             <li><a href="#step-4">Step 4. A rule check</a></li>
             <li><a href="#step-5">Step 5. What the judge reads</a></li>
             <li><a href="#step-6">Step 6. Model and cost</a></li>
+            <li><a href="#step-7">Step 7. The preparer's review</a></li>
             <li><a href="#carries">What carries over</a></li>
             <li><a href="#not-done">What is not done</a></li>
           </ol>
@@ -133,7 +139,7 @@
               list.
             </p>
             <p>
-              Every step follows one form, the Form 1095-A, Health Insurance
+              Steps 1 to 6 follow one form, the Form 1095-A, Health Insurance
               Marketplace Statement. The Marketplace sends it, and the
               preparer uses it to complete Form 8962, which reconciles the
               advance payments of the Premium Tax Credit against the credit
@@ -148,7 +154,7 @@
           <section id="step-1">
             <div class="step-head">
               <span class="step-num" aria-hidden="true">1</span>
-              <p class="section-kicker">Step 1 of 6 &middot; Where the agent acts</p>
+              <p class="section-kicker">Step 1 of 7 &middot; Where the agent acts</p>
             </div>
             <h2>Split the job before writing a prompt</h2>
             <p>
@@ -219,7 +225,7 @@
           <section id="step-2">
             <div class="step-head">
               <span class="step-num" aria-hidden="true">2</span>
-              <p class="section-kicker">Step 2 of 6 &middot; The bars</p>
+              <p class="section-kicker">Step 2 of 7 &middot; The bars</p>
             </div>
             <h2>Build the measurement before the agent</h2>
             <p>
@@ -277,7 +283,7 @@
           <section id="step-3">
             <div class="step-head">
               <span class="step-num" aria-hidden="true">3</span>
-              <p class="section-kicker">Step 3 of 6 &middot; My blind labels</p>
+              <p class="section-kicker">Step 3 of 7 &middot; My blind labels</p>
             </div>
             <h2>Write the answer key blind, then check it against the rules</h2>
             <p>
@@ -373,7 +379,7 @@
           <section id="step-4">
             <div class="step-head">
               <span class="step-num" aria-hidden="true">4</span>
-              <p class="section-kicker">Step 4 of 6 &middot; My rule check</p>
+              <p class="section-kicker">Step 4 of 7 &middot; My rule check</p>
             </div>
             <h2>Check every rule against its IRS source, one at a time</h2>
             <p>
@@ -461,7 +467,7 @@
           <section id="step-5">
             <div class="step-head">
               <span class="step-num" aria-hidden="true">5</span>
-              <p class="section-kicker">Step 5 of 6 &middot; The honesty check</p>
+              <p class="section-kicker">Step 5 of 7 &middot; The honesty check</p>
             </div>
             <h2>Decide what the judge reads before any label</h2>
             <p>
@@ -545,7 +551,7 @@
           <section id="step-6">
             <div class="step-head">
               <span class="step-num" aria-hidden="true">6</span>
-              <p class="section-kicker">Step 6 of 6 &middot; The configuration</p>
+              <p class="section-kicker">Step 6 of 7 &middot; The configuration</p>
             </div>
             <h2>Choose the model for accuracy, and move the cost bar before the lock</h2>
             <p>
@@ -627,6 +633,168 @@
                 complex ones.
               </p>
             </div>
+            <p class="step-next"><a href="#step-7">Next: step 7, the preparer's review</a></p>
+          </section>
+
+          <section id="step-7">
+            <div class="step-head">
+              <span class="step-num" aria-hidden="true">7</span>
+              <p class="section-kicker">Step 7 of 7 &middot; My blind review</p>
+            </div>
+            <h2>Make approval a click the model cannot make, then measure what review catches</h2>
+            <p>
+              Every agent run ends with its draft list waiting for the
+              preparer's review, and step 1 promised that the preparer, not the
+              agent, approves the list and sends it. Nothing showed a preparer
+              that draft, though, so the promise was only a status recorded on
+              it. A preparer needs more than the list: why each document is on
+              it, the client's words behind each fact, and where the draft is
+              most likely wrong.
+            </p>
+            <p>
+              So the project gained a second local server, the preparer's, with
+              one screen and no tool that sends anything. The screen is a small
+              web view that the app running the conversation shows beside it,
+              and unlike the private pages where I made my own calls in steps 3
+              to 5, it is built for the preparer. Code, not a model, flags where
+              to look, such as documents dropped since last year and facts
+              carried over without the client confirming them, and the screen
+              lists the facts never asked. Each flag sits beside its evidence,
+              such as the client's words, and Approve unlocks only when every
+              document is decided and every flag checked.
+            </p>
+            <p>
+              Only a click can approve. A host that follows the MCP Apps spec
+              never offers the model the save and approve tools, and the server
+              refuses an approval that lacks the current review token or names a
+              draft that has changed. Claude Desktop and Claude Code kept both
+              tools from Claude in every check. I asked Claude to approve a draft
+              in a Claude Desktop session. It could not. You can
+              <a href="review-demo.html">try the screen with three demo
+              drafts</a>; nothing is saved.
+            </p>
+            <p>
+              The bet behind the screen is that review is a second
+              measurement, not just a step. Before my first review I locked a
+              hypothesis, that review catches most problems the draft shows
+              and few it hides, and the rules for scoring it. The 24 drafts came
+              from the test run, one per household: 4 whose problem a flag
+              shows, 8 whose problem the flags hide, and 12 clean, and I saw no
+              draft's result before scoring.
+            </p>
+            <p>
+              The plan was to review inside Claude Desktop, but versions
+              4.23118.0 and 4.23118.1 drew no screen for a local server. A
+              standalone page that renders drafts itself would have skipped the
+              server's checks, so the check would have tested a different screen
+              from the one a preparer gets. Instead I chose to run the reviews on
+              a local review page, which Claude Code built to host the same
+              server and the same screen unchanged. Claude Desktop 5.1231.2 later
+              drew the screen in its Code tab, and a click there saved and
+              approved a demo draft, but the reviews stayed on the page, so no
+              model's reply sat beside the screen during the check. The
+              <a href="https://github.com/Roanukz/tax-agent-ask/blob/main/docs/review-check.md">catch
+              check report</a> gives the numbers as they came out.
+            </p>
+            <p>
+              On November 12 I reviewed all 24 in 10 minutes 14 seconds, a
+              median of 10.5 seconds a draft, and caught none of the problem
+              drafts: 0 of 4 shown and 0 of 8 hidden. None of the 12 clean
+              drafts got a harmful edit either. Every approved list kept every
+              document at the draft's own count, and every flag was marked
+              checked. The hypothesis is not supported.
+            </p>
+            <p>
+              The screen put the right flag beside the problem, and approval
+              still took seconds with no document changed. Because the check had
+              one reviewer, who built the project, it cannot say how practicing
+              preparers would do. It does show that the screen as built let a
+              flag be marked checked without an answer.
+              The lesson I draw for the product is that a review step protects
+              a client only if its design makes the reviewer answer each flag
+              rather than mark it checked. The next version would make the
+              dropped and carried flags demand an answer before Approve
+              unlocks: raise the count, ask the client, or say why not. It
+              would also show time on screen, and the same scored check would
+              run with practicing preparers who did not build it, then on a
+              firm's real drafts.
+            </p>
+            <ul class="tradeoff">
+              <li><span class="k">The call</span><span>Only a click approves, code flags where to look, and a locked, blind check measures what my review catches.</span></li>
+              <li><span class="k">Rejected</span><span>Approval tools the model can see behind a confirmation prompt, and a standalone page that renders drafts itself and skips the server's checks.</span></li>
+              <li><span class="k">Cost</span><span>Reviews on a local page rather than inside Claude, and a check on one reviewer and 24 drafts, whose intervals are wide.</span></li>
+            </ul>
+            <div class="who">
+              <p><span class="who-label">My part</span>The 24 blind reviews on November 12, the call to run them on a local review page when Claude Desktop drew no screen, the lock on the hypothesis before the first review, and asking Claude to approve a draft, which it could not.</p>
+              <p><span class="who-label">Claude Code's part</span>The preparer's server and its flags, the screen, the local review page, the static demo, and the scoring, checked three ways.</p>
+            </div>
+            <div class="thread">
+              <p class="thread-label">demo1, a demo draft: the dropped W-2 flag</p>
+              <ol class="transcript">
+                <li class="t-note"><span class="speaker">Flag on the preparer's screen: Dropped since last year</span>Form W-2: last year's file had 2; this draft requests 1.</li>
+                <li class="t-fact"><span class="speaker">The fact beside it</span>w2_employer_count = 1</li>
+                <li class="t-client"><span class="speaker">Client said</span>Just one employer</li>
+              </ol>
+              <p>
+                Code found the drop by comparing the draft with last year's
+                file, and the screen puts the client's words beside it. The
+                flag's card offers the employer question through Ask the client
+                again. In the blind check, 6 of the 24 drafts carried a dropped
+                W-2 flag like this one, and in 4 of them a W-2 was really
+                missing; those were the 4 drafts whose problem a flag showed. On all 6 I marked the flag
+                checked and neither raised the W-2 count nor asked about
+                employers. A W-2 for a job the client forgot is the case step 6
+                chose to pay for, and here the screen showed it and review let
+                it through.
+              </p>
+              <p class="byline">
+                demo1 is one of three demo drafts from dev runs, with a
+                synthetic household and a simulated client, and it was not
+                among the 24 drafts I reviewed blind. H053 has no demo draft,
+                and the 24 reviewed drafts came from the test run, so this step
+                follows demo1 instead.
+              </p>
+            </div>
+            <figure class="screen">
+              <a href="demo/review-demo1-inline-light.webp">
+                <picture>
+                  <source srcset="demo/review-demo1-inline-dark.webp" media="(prefers-color-scheme: dark)" />
+                  <img src="demo/review-demo1-inline-light.webp" width="1200" height="400" loading="lazy"
+                    alt="The local review page in practice mode. Its top bar reads Preparer review, Approved 0 of 3, Next: demo1, with Open demo1, Close draft and Theme buttons. Below it, the inline card Demo Client 1: draft document list shows tax year 2026, 5 documents requested, 2 flags to check, 1 note to read and the status Not reviewed, with a Review button. A line under the card says no model is on this page and nothing here is sent anywhere." />
+                </picture>
+              </a>
+              <a href="demo/review-demo1-flags-light.webp">
+                <picture>
+                  <source srcset="demo/review-demo1-flags-dark.webp" media="(prefers-color-scheme: dark)" />
+                  <img src="demo/review-demo1-flags-light.webp" width="1200" height="680" loading="lazy"
+                    alt="The full-screen review of demo1, Demo Client 1, tax year 2026, pending review, on its Flags tab, beside tabs for Documents (5), Facts (35) and Notes (1). The first flag, Dropped since last year, reads Form W-2: last year's file had 2; this draft requests 1, with the evidence w2_employer_count = 1 and the client's words Just one employer. The second, Carried from last year, reads itemized_last_year = false, carried from last year and not confirmed by the client. Each flag has Ask the client again and Mark checked buttons. The foot reads To approve: decide 5 documents, check 2 flags, beside Save and Approve list buttons that are not yet active." />
+                </picture>
+              </a>
+              <figcaption>
+                demo1 on the local review page, rendered in headless Chrome by
+                the repository's browser test harness on a copy of the demo
+                drafts: the inline summary card, then the full-screen review on
+                its Flags tab. Approve list stays off until every document is
+                decided and every flag checked. Select a screen to open it at
+                full size.
+              </figcaption>
+            </figure>
+            <figure class="screen">
+              <a href="demo/review-demo1-approved-light.webp">
+                <picture>
+                  <source srcset="demo/review-demo1-approved-dark.webp" media="(prefers-color-scheme: dark)" />
+                  <img src="demo/review-demo1-approved-light.webp" width="1200" height="740" loading="lazy"
+                    alt="The approved list for demo1, with the top bar now reading Approved 1 of 3, Next: demo2. The summary line reads 0 removed, 0 added, 0 count changed, 0 follow-up questions, and says the list is stored for the preparer to pass on through their own system and nothing was sent to the client. Below it, the five documents to request from Demo Client 1 for tax year 2026, starting with Form W-2 from each employer, then a Copy button and the line Approved. The list is stored for you; nothing was sent to the client." />
+                </picture>
+              </a>
+              <figcaption>
+                The same draft after approval on the local review page, from the
+                same test harness render: the approved list with a Copy button.
+                The list is only stored, for the preparer to pass on through
+                their own system, since the server has no tool that sends it.
+                Select the screen to open it at full size.
+              </figcaption>
+            </figure>
             <p class="step-next"><a href="#carries">Next: what carries into production</a></p>
           </section>
 
@@ -643,7 +811,7 @@
             </p>
             <ul class="limits">
               <li><strong>Rules as a governed registry.</strong> Each rule cites an official source with its version and records who verified it and when. Rule Check saves a fingerprint of the rule, a short code that changes whenever the rule does, with every call, so a rule edited for any reason, a new law included, goes back for review instead of slipping into scoring.</li>
-              <li><strong>Guarantees in code, not in the prompt.</strong> Evidence for every fact, no path to the answer key, no tool that sends the list, and a check on every question before it reaches the client.</li>
+              <li><strong>Guarantees in code, not in the prompt.</strong> Evidence for every fact, no path to the answer key, no tool that sends the list, a check on every question before it reaches the client, and save and approve tools marked app-only, which a host that follows the MCP Apps spec keeps from the model, so only a click on the preparer's screen approves.</li>
               <li><strong>A measurement that exists before the agent.</strong> Bars and baselines set in advance, a scorer tested with planted bugs, and a held-out test group that the run code refuses until the bars lock.</li>
               <li><strong>Review screens that hide what would bias the reviewer.</strong> Blind labels with a snapshot at the reveal, one rule at a time beside its source with each call's consequence stated, and judge transcripts shown without their configuration or verdict, so a person's time goes to what only a person can judge here.</li>
               <li><strong>Client data behind one boundary.</strong> The agent reaches household data only through the tool server, which reads profiles and never the answer key. A production system would add access logs and retention rules at that boundary, which this prototype does not have.</li>
@@ -652,7 +820,7 @@
             <p>Before real clients, I would add what the prototype does not have:</p>
             <ul class="limits">
               <li><strong>A privacy and security review for taxpayer data.</strong> It would cover the rules on using and disclosing tax return information under IRC section 7216, and the FTC Safeguards Rule.</li>
-              <li><strong>A shadow run first.</strong> The agent would run beside the firm's current organizer before any client sees it, with the preparer's edits on each draft as the live error signal, since production has no answer key.</li>
+              <li><strong>A shadow run first.</strong> The agent would run beside the firm's current organizer before any client sees it, with the preparer's edits on each draft as a live error signal, since production has no answer key. Step 7 adds a caution: on the 24 drafts I reviewed no document was removed, added or recounted, so those edits alone would have signaled nothing, and the review would first need flags that demand an answer.</li>
               <li><strong>Clear owners.</strong> A credentialed preparer owns each rule, its sign-off and its refresh when final instructions replace drafts, a second labeler checks the judge, and a release waits on both, as the test run waited on my calls here.</li>
             </ul>
           </section>
@@ -662,10 +830,12 @@
             <h2>What is not done yet</h2>
             <ul class="limits">
               <li>The judge meets its bars only on delivery. A revised prompt raised its agreement with my labels to 83.3% on advice and 79.2% on summary, still under the 90% bars, and those questions need more FAIL cases to measure.</li>
-              <li>The test result rests on a judge that meets its bars only on delivery, so the advice and summary verdicts inside its pass rates are an unvalidated model's. The steps above report dev results from one trial, as they stood when each decision was made.</li>
+              <li>The test result rests on a judge that meets its bars only on delivery, so the advice and summary verdicts inside its pass rates are an unvalidated model's. Steps 1 to 6 report dev results from one trial, as they stood when each decision was made.</li>
               <li>Whether A-opus is worth its cost over A-sonnet is open: 92.5% against 90.8%, with intervals that overlap.</li>
               <li>The fix for the job a client forgets is reverted. Asking every client once more about any other job led the simulated client to count jobs it did not have in H015, H039 and H053, so the agent that took the test is the one without it.</li>
-              <li>Every household is synthetic and the client is a model. The labels and the rule calls are mine alone, and I am not a practicing preparer; in production a credentialed preparer would own them, with a second reviewer on the judge labels.</li>
+              <li>The preparer's review was checked by one reviewer, me, who built the project and is not a practicing preparer, on 24 synthetic drafts, so every interval is wide: catching none of the 4 drafts whose problem a flag showed still allows a rate as high as 49%. I knew the shape of the shown problems before reviewing, and all 4 of those drafts are among the 11 that committed text could let a careful reader single out. Whether practicing preparers would catch more is not measured.</li>
+              <li>Hosting the preparer's screen in Claude Desktop is only partly checked. Versions 4.23118.0 and 4.23118.1 drew no screen. The Code tab in 5.1231.2 drew it, and a click there saved and approved a demo draft, but whether it grants the screen full screen and clipboard writes was not checked, and none of the 24 reviews ran there.</li>
+              <li>Every household is synthetic and the client is a model. The labels, the rule calls and the 24 reviews are mine alone, and I am not a practicing preparer; in production a credentialed preparer would own them, with a second reviewer on the judge labels.</li>
             </ul>
           </section>
         </main>
