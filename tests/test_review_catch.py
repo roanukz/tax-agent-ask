@@ -73,14 +73,15 @@ def setup(tmp_path):
     shutil.copytree(DEMO, drafts)
     reviews = rv.ReviewFolder(tmp_path / "reviews")
     prereg = yaml.safe_load((REPO / "eval" / "review_prereg.yaml").read_text())
-    prereg.update(locked_on="2026-11-07", drafts=3, show_drafts=1, example_draft="demo3",
+    prereg.update(locked_on="2026-11-07", drafts=3, show_drafts=1, hide_drafts=1, clean_drafts=1, example_draft="demo3",
                   inferable_sha256=rc.marked_digest("test-salt", ["demo1"]))
     (tmp_path / "marked.json").write_text(dump({"salt": "test-salt", "drafts": ["demo1"]}))
     (tmp_path / "prereg.yaml").write_text(yaml.safe_dump(prereg))
     (tmp_path / "key.json").write_text(dump({"drafts": key_entries()}))
     (tmp_path / "noted.json").write_text(dump({"drafts": [
-        {"draft_id": "demo1", "problems": [{"noted_in": ["agent_note"]}, {"noted_in": []}]},
-        {"draft_id": "demo2", "problems": [{"noted_in": []}]},
+        {"draft_id": "demo1", "problems": [{"kind": "missed", "rule_id": "R001", "noted_in": ["agent_note"]},
+                                           {"kind": "wrong_fact", "fact": "w2_employer_count", "noted_in": []}]},
+        {"draft_id": "demo2", "problems": [{"kind": "missed", "rule_id": "R017", "noted_in": []}]},
     ]}))
     paths = dict(prereg_path=tmp_path / "prereg.yaml", key_path=tmp_path / "key.json", noted_path=tmp_path / "noted.json",
                  marked_path=tmp_path / "marked.json",
@@ -348,7 +349,10 @@ def test_the_scores_and_the_report(setup):
     assert (scored["catch_rate_shows_unmarked"]["k"], scored["catch_rate_shows_unmarked"]["n"]) == (0, 0)
     assert scored["marked"] == ["demo1"] and scored["example_draft_actions"]["draft_id"] == "demo3"
     text = rc.render(scored, inputs)
-    assert "| The same, leaving out the marked drafts | 0 of 0 | n/a | n/a to n/a |" in text
+    assert "| The same, leaving out the marked drafts | 0 of 0 | n/a | n/a |" in text
+    assert "All 1 drafts whose problem a flag shows are among the 1 marked drafts" in text
+    assert "- W-2 count raised: 0\n- W-2 employers asked about: 1\n- Neither: 0" in text
+    assert "| 95% Wilson interval |" in text and "| Follow-ups | Seconds |" in text and "| 240 |" in text
     assert "Marked: demo1. Salt: `test-salt`" in text and rc.marked_digest("test-salt", ["demo1"]) in text
     assert "On demo3, the ID the PRD's worked example used, it was a clean draft; harmful edits: removed " in text
     assert "## What the reviewer knew, and the marked drafts (prereg text, as locked)" in text
@@ -356,4 +360,53 @@ def test_the_scores_and_the_report(setup):
     assert "| Problem drafts caught, problem shown by a flag | 1 of 1 | 100% |" in text
     assert "| demo3 | clean |  | removed " in text
     assert "| demo2 | missed R017 | nothing | no | no |" in text
-    assert "Median time on screen: 4.0 minutes per draft." in text
+    assert "Median time on screen: 240 seconds (4.00 minutes) per draft. On 2 of 3 drafts the approved list kept" in text
+    assert scored["median_seconds"] == 240 and scored["documents_unchanged"] == 2
+
+
+# The key's own checks.
+
+
+def _rewrite(path: Path, edit) -> None:
+    data = json.loads(path.read_text())
+    edit(data)
+    path.write_text(dump(data))
+
+
+@pytest.mark.parametrize("edit, reason", [
+    (lambda k: k["drafts"][0]["missed"][0].update(count=2), "inconsistent for R001"),
+    (lambda k: k["drafts"][1].update(problem_class="shows"), "doesn't follow class_rule"),
+    (lambda k: k["drafts"][0]["problems"][0].update(shows_because=None), "shows by None"),
+    (lambda k: k["drafts"][2].update(problem_class="hides", problems=[]), "doesn't follow class_rule"),
+])
+def test_a_key_that_disagrees_with_itself_or_the_flags_is_refused(setup, edit, reason):
+    paths, reviews = setup
+    write_all(reviews, demo1=record("demo1"), demo2=record("demo2"), demo3=record("demo3"))
+    _rewrite(paths["key_path"], lambda k: edit(k))
+    with pytest.raises(rc.CatchError, match=reason):
+        rc.load(**paths)
+
+
+def test_a_problem_without_its_noted_annotation_is_refused(setup):
+    paths, reviews = setup
+    write_all(reviews, demo1=record("demo1"), demo2=record("demo2"), demo3=record("demo3"))
+    _rewrite(paths["noted_path"], lambda n: n["drafts"][1].update(problems=[]))
+    with pytest.raises(rc.CatchError, match="no annotation for a problem on demo2"):
+        rc.load(**paths)
+
+
+def test_class_counts_other_than_the_prereg_s_and_another_interval_method_are_refused(setup):
+    paths, reviews = setup
+    write_all(reviews, demo1=record("demo1"), demo2=record("demo2"), demo3=record("demo3"))
+    prereg = yaml.safe_load(paths["prereg_path"].read_text())
+    paths["prereg_path"].write_text(yaml.safe_dump({**prereg, "hide_drafts": 2, "clean_drafts": 0}))
+    with pytest.raises(rc.CatchError, match="are not the prereg's"):
+        rc.load(**paths)
+    paths["prereg_path"].write_text(yaml.safe_dump({**prereg, "intervals": {"method": "wald", "level": 0.95}}))
+    with pytest.raises(rc.CatchError, match="other than wilson"):
+        rc.load(**paths)
+
+
+def test_minutes_round_half_up_in_decimal():
+    assert rc.minutes_text(10.5) == "0.18" and rc.minutes_text(240) == "4.00" and rc.minutes_text(9) == "0.15"
+    assert rc.seconds_text(10.5) == "10.5 seconds" and rc.seconds_text(240) == "240 seconds"

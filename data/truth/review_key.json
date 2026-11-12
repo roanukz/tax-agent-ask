@@ -1,0 +1,983 @@
+{
+  "seed": 11,
+  "source": "test split, every A config, the test run as completed on 2026-11-04 (40 households, 3 trials each), set-aside runs excluded",
+  "prereg_commit": "449776a50b488abd4bfc0274d7da9250d2935909",
+  "class_rule": "A missed document shows when the dropped flag names its rule. A wrong fact shows when the carried flag names it, or when a dropped flag for a missed document displays it. A draft shows when all its problems show, hides when none do, and is left out when some do.",
+  "pool": {
+    "clean": 425,
+    "failed_without_problem": 1,
+    "hides": 28,
+    "mixed": 1,
+    "passed_with_extras": 3,
+    "shows": 22
+  },
+  "drawn": {
+    "clean": 12,
+    "hides": 8,
+    "shows": 4
+  },
+  "drafts": [
+    {
+      "draft_id": "d01",
+      "run_id": "test-H028-A-split-t3",
+      "household_id": "H028",
+      "config": "A-split",
+      "scorer_pass": false,
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        },
+        {
+          "rule_id": "R010",
+          "count": 1
+        }
+      ],
+      "missed": [],
+      "unnecessary": [
+        {
+          "kind": "rule",
+          "rule_id": "R001",
+          "count": 1
+        }
+      ],
+      "wrong_facts": [
+        {
+          "fact": "w2_employer_count",
+          "recorded": 2,
+          "true": 1,
+          "evidence": "Just one W-2 job for me this year, and I think my spouse only had one job too, so that's two employers total"
+        }
+      ],
+      "problem_class": "hides",
+      "shows_because": [],
+      "problems": [
+        {
+          "kind": "wrong_fact",
+          "fact": "w2_employer_count",
+          "shows_because": null
+        }
+      ]
+    },
+    {
+      "draft_id": "d02",
+      "run_id": "test-H069-A-opus-t1",
+      "household_id": "H069",
+      "config": "A-opus",
+      "scorer_pass": false,
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        },
+        {
+          "rule_id": "R004",
+          "count": 1
+        },
+        {
+          "rule_id": "R005",
+          "count": 1
+        },
+        {
+          "rule_id": "R008",
+          "count": 1
+        },
+        {
+          "rule_id": "R017",
+          "count": 1
+        },
+        {
+          "rule_id": "R020",
+          "count": 2
+        },
+        {
+          "rule_id": "R022",
+          "count": 1
+        }
+      ],
+      "missed": [],
+      "unnecessary": [],
+      "wrong_facts": [
+        {
+          "fact": "ev_acquired_date",
+          "recorded": "2026-11-01",
+          "true": "2026-11-09",
+          "evidence": "November 2026, so November 2026"
+        }
+      ],
+      "problem_class": "hides",
+      "shows_because": [],
+      "problems": [
+        {
+          "kind": "wrong_fact",
+          "fact": "ev_acquired_date",
+          "shows_because": null
+        }
+      ]
+    },
+    {
+      "draft_id": "d03",
+      "run_id": "test-H096-A-split-t2",
+      "household_id": "H096",
+      "config": "A-split",
+      "scorer_pass": false,
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 2
+        }
+      ],
+      "missed": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        }
+      ],
+      "unnecessary": [],
+      "wrong_facts": [
+        {
+          "fact": "w2_employer_count",
+          "recorded": 1,
+          "true": 2,
+          "evidence": "Just one employer paid wages to either of us this year."
+        }
+      ],
+      "problem_class": "shows",
+      "shows_because": [
+        "dropped:R001"
+      ],
+      "problems": [
+        {
+          "kind": "missed",
+          "rule_id": "R001",
+          "count": 1,
+          "shows_because": "dropped:R001"
+        },
+        {
+          "kind": "wrong_fact",
+          "fact": "w2_employer_count",
+          "shows_because": "dropped:R001"
+        }
+      ]
+    },
+    {
+      "draft_id": "d04",
+      "run_id": "test-H037-A-split-t2",
+      "household_id": "H037",
+      "config": "A-split",
+      "scorer_pass": true,
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 2
+        },
+        {
+          "rule_id": "R002",
+          "count": 1
+        },
+        {
+          "rule_id": "R003",
+          "count": 1
+        },
+        {
+          "rule_id": "R009",
+          "count": 1
+        },
+        {
+          "rule_id": "R016",
+          "count": 1
+        },
+        {
+          "rule_id": "R028",
+          "count": 1
+        }
+      ],
+      "missed": [],
+      "unnecessary": [],
+      "wrong_facts": [],
+      "problem_class": "clean",
+      "shows_because": [],
+      "problems": []
+    },
+    {
+      "draft_id": "d05",
+      "run_id": "test-H099-A-haiku-t1",
+      "household_id": "H099",
+      "config": "A-haiku",
+      "scorer_pass": false,
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        },
+        {
+          "rule_id": "R010",
+          "count": 1
+        },
+        {
+          "rule_id": "R019",
+          "count": 1
+        }
+      ],
+      "missed": [],
+      "unnecessary": [
+        {
+          "kind": "rule",
+          "rule_id": "R025",
+          "count": 1
+        }
+      ],
+      "wrong_facts": [
+        {
+          "fact": "charitable_giving",
+          "recorded": true,
+          "true": false,
+          "evidence": "I did give money to charity this year"
+        }
+      ],
+      "problem_class": "hides",
+      "shows_because": [],
+      "problems": [
+        {
+          "kind": "wrong_fact",
+          "fact": "charitable_giving",
+          "shows_because": null
+        }
+      ]
+    },
+    {
+      "draft_id": "d06",
+      "run_id": "test-H064-A-split-t1",
+      "household_id": "H064",
+      "config": "A-split",
+      "scorer_pass": false,
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        },
+        {
+          "rule_id": "R005",
+          "count": 1
+        },
+        {
+          "rule_id": "R012",
+          "count": 1
+        },
+        {
+          "rule_id": "R025",
+          "count": 1
+        }
+      ],
+      "missed": [],
+      "unnecessary": [
+        {
+          "kind": "rule",
+          "rule_id": "R001",
+          "count": 1
+        }
+      ],
+      "wrong_facts": [
+        {
+          "fact": "w2_employer_count",
+          "recorded": 2,
+          "true": 1,
+          "evidence": "Just one job for me this year, and my spouse had one job too, so that's two W-2 jobs total between us."
+        }
+      ],
+      "problem_class": "hides",
+      "shows_because": [],
+      "problems": [
+        {
+          "kind": "wrong_fact",
+          "fact": "w2_employer_count",
+          "shows_because": null
+        }
+      ]
+    },
+    {
+      "draft_id": "d07",
+      "run_id": "test-H075-A-opus-t1",
+      "household_id": "H075",
+      "config": "A-opus",
+      "scorer_pass": true,
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 3
+        },
+        {
+          "rule_id": "R004",
+          "count": 1
+        }
+      ],
+      "missed": [],
+      "unnecessary": [],
+      "wrong_facts": [],
+      "problem_class": "clean",
+      "shows_because": [],
+      "problems": []
+    },
+    {
+      "draft_id": "d08",
+      "run_id": "test-H006-A-haiku-t2",
+      "household_id": "H006",
+      "config": "A-haiku",
+      "scorer_pass": true,
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        }
+      ],
+      "missed": [],
+      "unnecessary": [],
+      "wrong_facts": [],
+      "problem_class": "clean",
+      "shows_because": [],
+      "problems": []
+    },
+    {
+      "draft_id": "d09",
+      "run_id": "test-H014-A-opus-t3",
+      "household_id": "H014",
+      "config": "A-opus",
+      "scorer_pass": true,
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        },
+        {
+          "rule_id": "R005",
+          "count": 1
+        },
+        {
+          "rule_id": "R006",
+          "count": 1
+        },
+        {
+          "rule_id": "R007",
+          "count": 1
+        },
+        {
+          "rule_id": "R011",
+          "count": 1
+        },
+        {
+          "rule_id": "R014",
+          "count": 1
+        },
+        {
+          "rule_id": "R015",
+          "count": 1
+        },
+        {
+          "rule_id": "R020",
+          "count": 1
+        },
+        {
+          "rule_id": "R021",
+          "count": 1
+        },
+        {
+          "rule_id": "R027",
+          "count": 1
+        }
+      ],
+      "missed": [],
+      "unnecessary": [],
+      "wrong_facts": [],
+      "problem_class": "clean",
+      "shows_because": [],
+      "problems": []
+    },
+    {
+      "draft_id": "d10",
+      "run_id": "test-H057-A-sonnet-t1",
+      "household_id": "H057",
+      "config": "A-sonnet",
+      "scorer_pass": true,
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 2
+        }
+      ],
+      "missed": [],
+      "unnecessary": [],
+      "wrong_facts": [],
+      "problem_class": "clean",
+      "shows_because": [],
+      "problems": []
+    },
+    {
+      "draft_id": "d11",
+      "run_id": "test-H007-A-split-t3",
+      "household_id": "H007",
+      "config": "A-split",
+      "scorer_pass": false,
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 2
+        },
+        {
+          "rule_id": "R017",
+          "count": 1
+        }
+      ],
+      "missed": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        }
+      ],
+      "unnecessary": [],
+      "wrong_facts": [
+        {
+          "fact": "w2_employer_count",
+          "recorded": 1,
+          "true": 2,
+          "evidence": "Just one employer paid me wages this year."
+        }
+      ],
+      "problem_class": "shows",
+      "shows_because": [
+        "dropped:R001"
+      ],
+      "problems": [
+        {
+          "kind": "missed",
+          "rule_id": "R001",
+          "count": 1,
+          "shows_because": "dropped:R001"
+        },
+        {
+          "kind": "wrong_fact",
+          "fact": "w2_employer_count",
+          "shows_because": "dropped:R001"
+        }
+      ]
+    },
+    {
+      "draft_id": "d12",
+      "run_id": "test-H033-A-sonnet-t2",
+      "household_id": "H033",
+      "config": "A-sonnet",
+      "scorer_pass": true,
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 2
+        }
+      ],
+      "missed": [],
+      "unnecessary": [],
+      "wrong_facts": [],
+      "problem_class": "clean",
+      "shows_because": [],
+      "problems": []
+    },
+    {
+      "draft_id": "d13",
+      "run_id": "test-H023-A-sonnet-t2",
+      "household_id": "H023",
+      "config": "A-sonnet",
+      "scorer_pass": false,
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 2
+        }
+      ],
+      "missed": [],
+      "unnecessary": [
+        {
+          "kind": "rule",
+          "rule_id": "R001",
+          "count": 1
+        }
+      ],
+      "wrong_facts": [
+        {
+          "fact": "w2_employer_count",
+          "recorded": 3,
+          "true": 2,
+          "evidence": "It's three employers in total"
+        }
+      ],
+      "problem_class": "hides",
+      "shows_because": [],
+      "problems": [
+        {
+          "kind": "wrong_fact",
+          "fact": "w2_employer_count",
+          "shows_because": null
+        }
+      ]
+    },
+    {
+      "draft_id": "d14",
+      "run_id": "test-H009-A-sonnet-t1",
+      "household_id": "H009",
+      "config": "A-sonnet",
+      "scorer_pass": true,
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        },
+        {
+          "rule_id": "R004",
+          "count": 1
+        },
+        {
+          "rule_id": "R008",
+          "count": 1
+        },
+        {
+          "rule_id": "R010",
+          "count": 1
+        },
+        {
+          "rule_id": "R012",
+          "count": 1
+        },
+        {
+          "rule_id": "R014",
+          "count": 1
+        },
+        {
+          "rule_id": "R015",
+          "count": 1
+        },
+        {
+          "rule_id": "R018",
+          "count": 1
+        },
+        {
+          "rule_id": "R019",
+          "count": 1
+        },
+        {
+          "rule_id": "R021",
+          "count": 1
+        },
+        {
+          "rule_id": "R024",
+          "count": 1
+        }
+      ],
+      "missed": [],
+      "unnecessary": [],
+      "wrong_facts": [],
+      "problem_class": "clean",
+      "shows_because": [],
+      "problems": []
+    },
+    {
+      "draft_id": "d15",
+      "run_id": "test-H041-A-haiku-t1",
+      "household_id": "H041",
+      "config": "A-haiku",
+      "scorer_pass": false,
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        },
+        {
+          "rule_id": "R021",
+          "count": 1
+        },
+        {
+          "rule_id": "R030",
+          "count": 1
+        }
+      ],
+      "missed": [],
+      "unnecessary": [
+        {
+          "kind": "rule",
+          "rule_id": "R001",
+          "count": 1
+        }
+      ],
+      "wrong_facts": [
+        {
+          "fact": "w2_employer_count",
+          "recorded": 2,
+          "true": 1,
+          "evidence": "They had one employer this year, counting any job they left."
+        }
+      ],
+      "problem_class": "hides",
+      "shows_because": [],
+      "problems": [
+        {
+          "kind": "wrong_fact",
+          "fact": "w2_employer_count",
+          "shows_because": null
+        }
+      ]
+    },
+    {
+      "draft_id": "d16",
+      "run_id": "test-H005-A-haiku-t3",
+      "household_id": "H005",
+      "config": "A-haiku",
+      "scorer_pass": false,
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 3
+        },
+        {
+          "rule_id": "R002",
+          "count": 1
+        },
+        {
+          "rule_id": "R030",
+          "count": 1
+        }
+      ],
+      "missed": [],
+      "unnecessary": [
+        {
+          "kind": "rule",
+          "rule_id": "R003",
+          "count": 1
+        }
+      ],
+      "wrong_facts": [
+        {
+          "fact": "business_app_payments",
+          "recorded": true,
+          "true": false,
+          "evidence": "a lot of my clients paid me through an app"
+        }
+      ],
+      "problem_class": "hides",
+      "shows_because": [],
+      "problems": [
+        {
+          "kind": "wrong_fact",
+          "fact": "business_app_payments",
+          "shows_because": null
+        }
+      ]
+    },
+    {
+      "draft_id": "d17",
+      "run_id": "test-H083-A-split-t1",
+      "household_id": "H083",
+      "config": "A-split",
+      "scorer_pass": true,
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        },
+        {
+          "rule_id": "R008",
+          "count": 1
+        },
+        {
+          "rule_id": "R009",
+          "count": 1
+        },
+        {
+          "rule_id": "R014",
+          "count": 1
+        },
+        {
+          "rule_id": "R020",
+          "count": 1
+        }
+      ],
+      "missed": [],
+      "unnecessary": [],
+      "wrong_facts": [],
+      "problem_class": "clean",
+      "shows_because": [],
+      "problems": []
+    },
+    {
+      "draft_id": "d18",
+      "run_id": "test-H074-A-sonnet-t1",
+      "household_id": "H074",
+      "config": "A-sonnet",
+      "scorer_pass": false,
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 3
+        },
+        {
+          "rule_id": "R007",
+          "count": 1
+        }
+      ],
+      "missed": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        }
+      ],
+      "unnecessary": [],
+      "wrong_facts": [
+        {
+          "fact": "w2_employer_count",
+          "recorded": 2,
+          "true": 3,
+          "evidence": "Two employers paid us wages"
+        }
+      ],
+      "problem_class": "shows",
+      "shows_because": [
+        "dropped:R001"
+      ],
+      "problems": [
+        {
+          "kind": "missed",
+          "rule_id": "R001",
+          "count": 1,
+          "shows_because": "dropped:R001"
+        },
+        {
+          "kind": "wrong_fact",
+          "fact": "w2_employer_count",
+          "shows_because": "dropped:R001"
+        }
+      ]
+    },
+    {
+      "draft_id": "d19",
+      "run_id": "test-H008-A-sonnet-t1",
+      "household_id": "H008",
+      "config": "A-sonnet",
+      "scorer_pass": true,
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        },
+        {
+          "rule_id": "R002",
+          "count": 1
+        },
+        {
+          "rule_id": "R003",
+          "count": 1
+        },
+        {
+          "rule_id": "R007",
+          "count": 1
+        },
+        {
+          "rule_id": "R018",
+          "count": 1
+        },
+        {
+          "rule_id": "R025",
+          "count": 1
+        }
+      ],
+      "missed": [],
+      "unnecessary": [],
+      "wrong_facts": [],
+      "problem_class": "clean",
+      "shows_because": [],
+      "problems": []
+    },
+    {
+      "draft_id": "d20",
+      "run_id": "test-H025-A-haiku-t2",
+      "household_id": "H025",
+      "config": "A-haiku",
+      "scorer_pass": true,
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        },
+        {
+          "rule_id": "R013",
+          "count": 1
+        },
+        {
+          "rule_id": "R018",
+          "count": 1
+        },
+        {
+          "rule_id": "R030",
+          "count": 1
+        }
+      ],
+      "missed": [],
+      "unnecessary": [],
+      "wrong_facts": [],
+      "problem_class": "clean",
+      "shows_because": [],
+      "problems": []
+    },
+    {
+      "draft_id": "d21",
+      "run_id": "test-H100-A-opus-t1",
+      "household_id": "H100",
+      "config": "A-opus",
+      "scorer_pass": true,
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        }
+      ],
+      "missed": [],
+      "unnecessary": [],
+      "wrong_facts": [],
+      "problem_class": "clean",
+      "shows_because": [],
+      "problems": []
+    },
+    {
+      "draft_id": "d22",
+      "run_id": "test-H034-A-opus-t1",
+      "household_id": "H034",
+      "config": "A-opus",
+      "scorer_pass": true,
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        },
+        {
+          "rule_id": "R020",
+          "count": 2
+        },
+        {
+          "rule_id": "R021",
+          "count": 1
+        },
+        {
+          "rule_id": "R023",
+          "count": 1
+        },
+        {
+          "rule_id": "R028",
+          "count": 1
+        }
+      ],
+      "missed": [],
+      "unnecessary": [],
+      "wrong_facts": [],
+      "problem_class": "clean",
+      "shows_because": [],
+      "problems": []
+    },
+    {
+      "draft_id": "d23",
+      "run_id": "test-H045-A-haiku-t2",
+      "household_id": "H045",
+      "config": "A-haiku",
+      "scorer_pass": false,
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 2
+        }
+      ],
+      "missed": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        }
+      ],
+      "unnecessary": [],
+      "wrong_facts": [
+        {
+          "fact": "w2_employer_count",
+          "recorded": 1,
+          "true": 2,
+          "evidence": "Just one employer paid me wages this year"
+        }
+      ],
+      "problem_class": "shows",
+      "shows_because": [
+        "dropped:R001"
+      ],
+      "problems": [
+        {
+          "kind": "missed",
+          "rule_id": "R001",
+          "count": 1,
+          "shows_because": "dropped:R001"
+        },
+        {
+          "kind": "wrong_fact",
+          "fact": "w2_employer_count",
+          "shows_because": "dropped:R001"
+        }
+      ]
+    },
+    {
+      "draft_id": "d24",
+      "run_id": "test-H060-A-opus-t1",
+      "household_id": "H060",
+      "config": "A-opus",
+      "scorer_pass": false,
+      "required": [
+        {
+          "rule_id": "R001",
+          "count": 1
+        },
+        {
+          "rule_id": "R002",
+          "count": 1
+        }
+      ],
+      "missed": [],
+      "unnecessary": [
+        {
+          "kind": "rule",
+          "rule_id": "R001",
+          "count": 1
+        },
+        {
+          "kind": "rule",
+          "rule_id": "R004",
+          "count": 1
+        }
+      ],
+      "wrong_facts": [
+        {
+          "fact": "w2_employer_count",
+          "recorded": 2,
+          "true": 1,
+          "evidence": "we each have one job"
+        },
+        {
+          "fact": "interest_income",
+          "recorded": true,
+          "true": false,
+          "evidence": "We did have a savings account"
+        }
+      ],
+      "problem_class": "hides",
+      "shows_because": [],
+      "problems": [
+        {
+          "kind": "wrong_fact",
+          "fact": "w2_employer_count",
+          "shows_because": null
+        },
+        {
+          "kind": "wrong_fact",
+          "fact": "interest_income",
+          "shows_because": null
+        }
+      ]
+    }
+  ]
+}

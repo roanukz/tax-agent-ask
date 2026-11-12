@@ -1,0 +1,122 @@
+{
+  "draft_id": "d02",
+  "draft_sha256": "1858aa68d7d006ab31aefdf743c7eabd498bbdfd290813e94abddffa09b2888d",
+  "status": "approved",
+  "decisions": {
+    "documents": [
+      {
+        "rule_id": "R001",
+        "action": "keep",
+        "count": 1
+      },
+      {
+        "rule_id": "R004",
+        "action": "keep"
+      },
+      {
+        "rule_id": "R005",
+        "action": "keep"
+      },
+      {
+        "rule_id": "R008",
+        "action": "keep"
+      },
+      {
+        "rule_id": "R017",
+        "action": "keep"
+      },
+      {
+        "rule_id": "R020",
+        "action": "keep",
+        "count": 2
+      },
+      {
+        "rule_id": "R022",
+        "action": "keep"
+      }
+    ],
+    "custom_requests": [],
+    "added": [],
+    "follow_ups": [
+      {
+        "fact": "itemized_last_year"
+      }
+    ],
+    "flags_checked": [
+      "dropped:R001",
+      "carried:itemized_last_year",
+      "client_question:0",
+      "client_question:1",
+      "client_question:2",
+      "ended_credit:T003"
+    ]
+  },
+  "approved_list": [
+    {
+      "rule_id": "R001",
+      "document": "Form W-2 from each employer (yours and, if filing jointly, your spouse's), including any employer you left during the year, plus any corrected Form W-2c",
+      "count": 1
+    },
+    {
+      "rule_id": "R004",
+      "document": "Form 1099-INT from each payer",
+      "count": 1
+    },
+    {
+      "rule_id": "R005",
+      "document": "Form 1099-DIV from each payer",
+      "count": 1
+    },
+    {
+      "rule_id": "R008",
+      "document": "Form 1099-R for each distribution, direct rollover, Roth conversion, or pension or annuity payment (RRB-1099-R for railroad retirement tier II), plus proof of the redeposit date and amount for any indirect (60-day) rollover",
+      "count": 1
+    },
+    {
+      "rule_id": "R017",
+      "document": "Form 1098-T",
+      "count": 1
+    },
+    {
+      "rule_id": "R020",
+      "document": "Schedule K-1 from each partnership, S corporation, estate, or trust in which the client held an interest or was a beneficiary at any time during 2026 (a separate K-1 for each entity), plus any Schedule K-3 a partnership or S corporation sends",
+      "count": 2
+    },
+    {
+      "rule_id": "R022",
+      "document": "Date and amount of each federal estimated tax payment for tax year 2026 (including the payment made in January 2027, any 2025 overpayment applied to 2026, and any estimated tax credited by a trust), and the name and SSN each payment was made under, for example from the Record of Estimated Tax Payments, Direct Pay or EFTPS confirmations, or IRS Online Account payment history",
+      "count": 1
+    }
+  ],
+  "follow_up_questions": [
+    {
+      "fact": "itemized_last_year",
+      "question": "Did you itemize deductions on last year's return instead of taking the standard deduction?"
+    }
+  ],
+  "changes": {
+    "removed": 0,
+    "added": 0,
+    "count_changed": 0,
+    "follow_ups": 1
+  },
+  "opened_at": "2026-11-12T17:35:00Z",
+  "saved_at": [],
+  "approved_at": "2026-11-12T17:35:41Z",
+  "seconds_on_screen": 41,
+  "screen_time": [
+    {
+      "opened_at": "2026-11-12T17:35:00Z",
+      "last_at": "2026-11-12T17:35:41Z"
+    }
+  ],
+  "host": {
+    "name": "preparer-local-host",
+    "version": "0.1.0"
+  },
+  "client": {
+    "name": "preparer-local-host",
+    "version": "0.1.0"
+  },
+  "app_version": "0.1.0"
+}

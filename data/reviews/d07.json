@@ -1,0 +1,82 @@
+{
+  "draft_id": "d07",
+  "draft_sha256": "762ad346c09d456dc33eb2794efcd4c1d5edbac15344d16a801daf11f14f3751",
+  "status": "approved",
+  "decisions": {
+    "documents": [
+      {
+        "rule_id": "R001",
+        "action": "keep",
+        "count": 3
+      },
+      {
+        "rule_id": "R004",
+        "action": "keep"
+      }
+    ],
+    "custom_requests": [],
+    "added": [],
+    "follow_ups": [
+      {
+        "fact": "dependents_count"
+      },
+      {
+        "fact": "itemized_last_year"
+      }
+    ],
+    "flags_checked": [
+      "dropped:R001",
+      "carried:dependents_count",
+      "carried:itemized_last_year"
+    ]
+  },
+  "approved_list": [
+    {
+      "rule_id": "R001",
+      "document": "Form W-2 from each employer (yours and, if filing jointly, your spouse's), including any employer you left during the year, plus any corrected Form W-2c",
+      "count": 3
+    },
+    {
+      "rule_id": "R004",
+      "document": "Form 1099-INT from each payer",
+      "count": 1
+    }
+  ],
+  "follow_up_questions": [
+    {
+      "fact": "dependents_count",
+      "question": "How many children or other people do you support who live with you?"
+    },
+    {
+      "fact": "itemized_last_year",
+      "question": "Did you itemize deductions on last year's return instead of taking the standard deduction?"
+    }
+  ],
+  "changes": {
+    "removed": 0,
+    "added": 0,
+    "count_changed": 0,
+    "follow_ups": 2
+  },
+  "opened_at": "2026-11-12T17:36:55Z",
+  "saved_at": [
+    "2026-11-12T17:37:05Z"
+  ],
+  "approved_at": "2026-11-12T17:37:05Z",
+  "seconds_on_screen": 10,
+  "screen_time": [
+    {
+      "opened_at": "2026-11-12T17:36:55Z",
+      "last_at": "2026-11-12T17:37:05Z"
+    }
+  ],
+  "host": {
+    "name": "preparer-local-host",
+    "version": "0.1.0"
+  },
+  "client": {
+    "name": "preparer-local-host",
+    "version": "0.1.0"
+  },
+  "app_version": "0.1.0"
+}

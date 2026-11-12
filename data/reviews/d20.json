@@ -1,0 +1,94 @@
+{
+  "draft_id": "d20",
+  "draft_sha256": "f84b58af50f0a9f3dd769060139ed95bf5e174a15a6410df2be67d1bca56edb0",
+  "status": "approved",
+  "decisions": {
+    "documents": [
+      {
+        "rule_id": "R001",
+        "action": "keep",
+        "count": 1
+      },
+      {
+        "rule_id": "R013",
+        "action": "keep"
+      },
+      {
+        "rule_id": "R018",
+        "action": "keep"
+      },
+      {
+        "rule_id": "R030",
+        "action": "keep"
+      }
+    ],
+    "custom_requests": [],
+    "added": [],
+    "follow_ups": [
+      {
+        "fact": "itemized_last_year"
+      }
+    ],
+    "flags_checked": [
+      "dropped:R012",
+      "carried:itemized_last_year",
+      "ended_credit:T002"
+    ]
+  },
+  "approved_list": [
+    {
+      "rule_id": "R001",
+      "document": "Form W-2 from each employer (yours and, if filing jointly, your spouse's), including any employer you left during the year, plus any corrected Form W-2c",
+      "count": 1
+    },
+    {
+      "rule_id": "R013",
+      "document": "Form 1099-SA from each HSA, Archer MSA, or Medicare Advantage MSA that paid out any money in 2026 (including debit card payments and payments sent straight to a provider)",
+      "count": 1
+    },
+    {
+      "rule_id": "R018",
+      "document": "Provider name, address, taxpayer ID, and amount paid",
+      "count": 1
+    },
+    {
+      "rule_id": "R030",
+      "document": "Closing statement from the sale (settlement statement or Closing Disclosure), plus Form 1099-S (Proceeds From Real Estate Transactions) if received; also the closing statement from the original purchase and records of improvements, to figure basis",
+      "count": 1
+    }
+  ],
+  "follow_up_questions": [
+    {
+      "fact": "itemized_last_year",
+      "question": "Did you itemize deductions on last year's return instead of taking the standard deduction?"
+    }
+  ],
+  "changes": {
+    "removed": 0,
+    "added": 0,
+    "count_changed": 0,
+    "follow_ups": 1
+  },
+  "opened_at": "2026-11-12T17:40:15Z",
+  "saved_at": [
+    "2026-11-12T17:40:20Z",
+    "2026-11-12T17:40:28Z"
+  ],
+  "approved_at": "2026-11-12T17:40:29Z",
+  "seconds_on_screen": 14,
+  "screen_time": [
+    {
+      "opened_at": "2026-11-12T17:40:15Z",
+      "last_at": "2026-11-12T17:40:29Z"
+    }
+  ],
+  "host": {
+    "name": "preparer-local-host",
+    "version": "0.1.0"
+  },
+  "client": {
+    "name": "preparer-local-host",
+    "version": "0.1.0"
+  },
+  "app_version": "0.1.0"
+}

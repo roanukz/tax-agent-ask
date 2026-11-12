@@ -1,0 +1,125 @@
+{
+  "draft_id": "d04",
+  "draft_sha256": "f155025279bb6edbcc9f44a830e8bbcd02c7839ca0629d72dcf5b4306849a47b",
+  "status": "approved",
+  "decisions": {
+    "documents": [
+      {
+        "rule_id": "R001",
+        "action": "keep",
+        "count": 2
+      },
+      {
+        "rule_id": "R002",
+        "action": "keep"
+      },
+      {
+        "rule_id": "R003",
+        "action": "keep"
+      },
+      {
+        "rule_id": "R009",
+        "action": "keep"
+      },
+      {
+        "rule_id": "R016",
+        "action": "keep"
+      },
+      {
+        "rule_id": "R028",
+        "action": "keep"
+      }
+    ],
+    "custom_requests": [],
+    "added": [],
+    "follow_ups": [
+      {
+        "fact": "filing_status"
+      },
+      {
+        "fact": "dependents_count"
+      },
+      {
+        "fact": "itemized_last_year"
+      }
+    ],
+    "flags_checked": [
+      "carried:filing_status",
+      "carried:dependents_count",
+      "carried:itemized_last_year"
+    ]
+  },
+  "approved_list": [
+    {
+      "rule_id": "R001",
+      "document": "Form W-2 from each employer (yours and, if filing jointly, your spouse's), including any employer you left during the year, plus any corrected Form W-2c",
+      "count": 2
+    },
+    {
+      "rule_id": "R002",
+      "document": "Business income and expense records (income records, receipts, mileage logs, and bank or payment app statements), including any Forms 1099-NEC received",
+      "count": 1
+    },
+    {
+      "rule_id": "R003",
+      "document": "Any Form 1099-K received from a payment app, online marketplace, or card processor (collect it even if you think it is wrong)",
+      "count": 1
+    },
+    {
+      "rule_id": "R009",
+      "document": "Form SSA-1099",
+      "count": 1
+    },
+    {
+      "rule_id": "R016",
+      "document": "Form 1098-E, Student Loan Interest Statement, from each lender or servicer (or the lender's year-end statement or account summary showing interest paid, if no Form 1098-E was issued)",
+      "count": 1
+    },
+    {
+      "rule_id": "R028",
+      "document": "Lender's interest statement",
+      "count": 1
+    }
+  ],
+  "follow_up_questions": [
+    {
+      "fact": "filing_status",
+      "question": "Are you filing the same way as last year: single, married filing together, or something else?"
+    },
+    {
+      "fact": "dependents_count",
+      "question": "How many children or other people do you support who live with you?"
+    },
+    {
+      "fact": "itemized_last_year",
+      "question": "Did you itemize deductions on last year's return instead of taking the standard deduction?"
+    }
+  ],
+  "changes": {
+    "removed": 0,
+    "added": 0,
+    "count_changed": 0,
+    "follow_ups": 3
+  },
+  "opened_at": "2026-11-12T17:35:59Z",
+  "saved_at": [
+    "2026-11-12T17:36:20Z"
+  ],
+  "approved_at": "2026-11-12T17:36:20Z",
+  "seconds_on_screen": 21,
+  "screen_time": [
+    {
+      "opened_at": "2026-11-12T17:35:59Z",
+      "last_at": "2026-11-12T17:36:20Z"
+    }
+  ],
+  "host": {
+    "name": "preparer-local-host",
+    "version": "0.1.0"
+  },
+  "client": {
+    "name": "preparer-local-host",
+    "version": "0.1.0"
+  },
+  "app_version": "0.1.0"
+}

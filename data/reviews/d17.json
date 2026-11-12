@@ -1,0 +1,92 @@
+{
+  "draft_id": "d17",
+  "draft_sha256": "2bce5f8cbb73f0f0a7acbeb93d991f2d8afa984ba2385d9db91f749386fe0bc5",
+  "status": "approved",
+  "decisions": {
+    "documents": [
+      {
+        "rule_id": "R001",
+        "action": "keep",
+        "count": 1
+      },
+      {
+        "rule_id": "R008",
+        "action": "keep"
+      },
+      {
+        "rule_id": "R009",
+        "action": "keep"
+      },
+      {
+        "rule_id": "R014",
+        "action": "keep"
+      },
+      {
+        "rule_id": "R020",
+        "action": "keep",
+        "count": 1
+      }
+    ],
+    "custom_requests": [],
+    "added": [],
+    "follow_ups": [],
+    "flags_checked": [
+      "ended_credit:T002"
+    ]
+  },
+  "approved_list": [
+    {
+      "rule_id": "R001",
+      "document": "Form W-2 from each employer (yours and, if filing jointly, your spouse's), including any employer you left during the year, plus any corrected Form W-2c",
+      "count": 1
+    },
+    {
+      "rule_id": "R008",
+      "document": "Form 1099-R for each distribution, direct rollover, Roth conversion, or pension or annuity payment (RRB-1099-R for railroad retirement tier II), plus proof of the redeposit date and amount for any indirect (60-day) rollover",
+      "count": 1
+    },
+    {
+      "rule_id": "R009",
+      "document": "Form SSA-1099",
+      "count": 1
+    },
+    {
+      "rule_id": "R014",
+      "document": "Form 1098 from each lender",
+      "count": 1
+    },
+    {
+      "rule_id": "R020",
+      "document": "Schedule K-1 from each partnership, S corporation, estate, or trust in which the client held an interest or was a beneficiary at any time during 2026 (a separate K-1 for each entity), plus any Schedule K-3 a partnership or S corporation sends",
+      "count": 1
+    }
+  ],
+  "follow_up_questions": [],
+  "changes": {
+    "removed": 0,
+    "added": 0,
+    "count_changed": 0,
+    "follow_ups": 0
+  },
+  "opened_at": "2026-11-12T17:39:33Z",
+  "saved_at": [
+    "2026-11-12T17:39:43Z"
+  ],
+  "approved_at": "2026-11-12T17:39:44Z",
+  "seconds_on_screen": 11,
+  "screen_time": [
+    {
+      "opened_at": "2026-11-12T17:39:33Z",
+      "last_at": "2026-11-12T17:39:44Z"
+    }
+  ],
+  "host": {
+    "name": "preparer-local-host",
+    "version": "0.1.0"
+  },
+  "client": {
+    "name": "preparer-local-host",
+    "version": "0.1.0"
+  },
+  "app_version": "0.1.0"
+}

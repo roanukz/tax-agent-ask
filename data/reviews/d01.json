@@ -1,0 +1,84 @@
+{
+  "draft_id": "d01",
+  "draft_sha256": "c1673a9c5bf3f70f06ab19020c33c4d8c5f3850742f590273c22d3e70240e6a9",
+  "status": "approved",
+  "decisions": {
+    "documents": [
+      {
+        "rule_id": "R001",
+        "action": "keep",
+        "count": 2
+      },
+      {
+        "rule_id": "R010",
+        "action": "keep"
+      }
+    ],
+    "custom_requests": [],
+    "added": [],
+    "follow_ups": [
+      {
+        "fact": "filing_status"
+      },
+      {
+        "fact": "dependents_count"
+      }
+    ],
+    "flags_checked": [
+      "dropped:R002",
+      "dropped:R003",
+      "carried:filing_status",
+      "carried:dependents_count"
+    ]
+  },
+  "approved_list": [
+    {
+      "rule_id": "R001",
+      "document": "Form W-2 from each employer (yours and, if filing jointly, your spouse's), including any employer you left during the year, plus any corrected Form W-2c",
+      "count": 2
+    },
+    {
+      "rule_id": "R010",
+      "document": "Form 1099-G, Certain Government Payments, from each agency that paid unemployment (state unemployment agency or Railroad Retirement Board) showing unemployment compensation and any federal income tax withheld",
+      "count": 1
+    }
+  ],
+  "follow_up_questions": [
+    {
+      "fact": "filing_status",
+      "question": "Are you filing the same way as last year: single, married filing together, or something else?"
+    },
+    {
+      "fact": "dependents_count",
+      "question": "How many children or other people do you support who live with you?"
+    }
+  ],
+  "changes": {
+    "removed": 0,
+    "added": 0,
+    "count_changed": 0,
+    "follow_ups": 2
+  },
+  "opened_at": "2026-11-12T17:30:59Z",
+  "saved_at": [
+    "2026-11-12T17:31:38Z",
+    "2026-11-12T17:32:28Z"
+  ],
+  "approved_at": "2026-11-12T17:33:49Z",
+  "seconds_on_screen": 170,
+  "screen_time": [
+    {
+      "opened_at": "2026-11-12T17:30:59Z",
+      "last_at": "2026-11-12T17:33:49Z"
+    }
+  ],
+  "host": {
+    "name": "preparer-local-host",
+    "version": "0.1.0"
+  },
+  "client": {
+    "name": "preparer-local-host",
+    "version": "0.1.0"
+  },
+  "app_version": "0.1.0"
+}

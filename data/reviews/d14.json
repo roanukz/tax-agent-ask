@@ -1,0 +1,156 @@
+{
+  "draft_id": "d14",
+  "draft_sha256": "c08703b49ec687db3557161bdc94f7c89be91cd51a2b648e087275e1bf2eef1e",
+  "status": "approved",
+  "decisions": {
+    "documents": [
+      {
+        "rule_id": "R001",
+        "action": "keep",
+        "count": 1
+      },
+      {
+        "rule_id": "R004",
+        "action": "keep"
+      },
+      {
+        "rule_id": "R008",
+        "action": "keep"
+      },
+      {
+        "rule_id": "R010",
+        "action": "keep"
+      },
+      {
+        "rule_id": "R012",
+        "action": "keep"
+      },
+      {
+        "rule_id": "R014",
+        "action": "keep"
+      },
+      {
+        "rule_id": "R015",
+        "action": "keep"
+      },
+      {
+        "rule_id": "R018",
+        "action": "keep"
+      },
+      {
+        "rule_id": "R019",
+        "action": "keep"
+      },
+      {
+        "rule_id": "R021",
+        "action": "keep"
+      },
+      {
+        "rule_id": "R024",
+        "action": "keep"
+      }
+    ],
+    "custom_requests": [],
+    "added": [],
+    "follow_ups": [
+      {
+        "fact": "itemized_last_year"
+      }
+    ],
+    "flags_checked": [
+      "dropped:R017",
+      "carried:itemized_last_year",
+      "client_question:0"
+    ]
+  },
+  "approved_list": [
+    {
+      "rule_id": "R001",
+      "document": "Form W-2 from each employer (yours and, if filing jointly, your spouse's), including any employer you left during the year, plus any corrected Form W-2c",
+      "count": 1
+    },
+    {
+      "rule_id": "R004",
+      "document": "Form 1099-INT from each payer",
+      "count": 1
+    },
+    {
+      "rule_id": "R008",
+      "document": "Form 1099-R for each distribution, direct rollover, Roth conversion, or pension or annuity payment (RRB-1099-R for railroad retirement tier II), plus proof of the redeposit date and amount for any indirect (60-day) rollover",
+      "count": 1
+    },
+    {
+      "rule_id": "R010",
+      "document": "Form 1099-G, Certain Government Payments, from each agency that paid unemployment (state unemployment agency or Railroad Retirement Board) showing unemployment compensation and any federal income tax withheld",
+      "count": 1
+    },
+    {
+      "rule_id": "R012",
+      "document": "Form 1095-A, Health Insurance Marketplace Statement",
+      "count": 1
+    },
+    {
+      "rule_id": "R014",
+      "document": "Form 1098 from each lender",
+      "count": 1
+    },
+    {
+      "rule_id": "R015",
+      "document": "Closing statement from the home purchase (settlement statement, Closing Disclosure, ALTA statement, or HUD-1), including the buyer's side showing points, prorated property taxes, any mortgage insurance or VA funding fee paid at closing, and settlement costs",
+      "count": 1
+    },
+    {
+      "rule_id": "R018",
+      "document": "Provider name, address, taxpayer ID, and amount paid",
+      "count": 1
+    },
+    {
+      "rule_id": "R019",
+      "document": "A copy of the new dependent's Social Security card (name and number as printed) and their date of birth; if the SSN has not been issued, the date it was applied for, or an ATIN (Form W-7A) for a pending adoption, or an ITIN for a dependent who cannot get an SSN; for a child born and died in 2026 without an SSN, a birth certificate, death certificate, or hospital record showing live birth",
+      "count": 1
+    },
+    {
+      "rule_id": "R021",
+      "document": "For each rental real estate property: rents and other amounts received (including the fair market value of any property or services received as rent), expenses paid, the number of days rented at a fair rental price and the number of days of personal use, purchase, improvement, and prior depreciation records, a dated mileage log if car expenses are claimed, and any Forms 1099-MISC or 1099-K received",
+      "count": 1
+    },
+    {
+      "rule_id": "R024",
+      "document": "This year's IP PIN",
+      "count": 1
+    }
+  ],
+  "follow_up_questions": [
+    {
+      "fact": "itemized_last_year",
+      "question": "Did you itemize deductions on last year's return instead of taking the standard deduction?"
+    }
+  ],
+  "changes": {
+    "removed": 0,
+    "added": 0,
+    "count_changed": 0,
+    "follow_ups": 1
+  },
+  "opened_at": "2026-11-12T17:38:49Z",
+  "saved_at": [
+    "2026-11-12T17:39:09Z"
+  ],
+  "approved_at": "2026-11-12T17:39:10Z",
+  "seconds_on_screen": 21,
+  "screen_time": [
+    {
+      "opened_at": "2026-11-12T17:38:49Z",
+      "last_at": "2026-11-12T17:39:10Z"
+    }
+  ],
+  "host": {
+    "name": "preparer-local-host",
+    "version": "0.1.0"
+  },
+  "client": {
+    "name": "preparer-local-host",
+    "version": "0.1.0"
+  },
+  "app_version": "0.1.0"
+}

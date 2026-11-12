@@ -1,0 +1,78 @@
+{
+  "draft_id": "d16",
+  "draft_sha256": "fa37f726cffd9c437f5254a87765dc7fa300846850be69144bfe36859c4ee8a3",
+  "status": "approved",
+  "decisions": {
+    "documents": [
+      {
+        "rule_id": "R001",
+        "action": "keep",
+        "count": 3
+      },
+      {
+        "rule_id": "R002",
+        "action": "keep"
+      },
+      {
+        "rule_id": "R003",
+        "action": "keep"
+      },
+      {
+        "rule_id": "R030",
+        "action": "keep"
+      }
+    ],
+    "custom_requests": [],
+    "added": [],
+    "follow_ups": [],
+    "flags_checked": []
+  },
+  "approved_list": [
+    {
+      "rule_id": "R001",
+      "document": "Form W-2 from each employer (yours and, if filing jointly, your spouse's), including any employer you left during the year, plus any corrected Form W-2c",
+      "count": 3
+    },
+    {
+      "rule_id": "R002",
+      "document": "Business income and expense records (income records, receipts, mileage logs, and bank or payment app statements), including any Forms 1099-NEC received",
+      "count": 1
+    },
+    {
+      "rule_id": "R003",
+      "document": "Any Form 1099-K received from a payment app, online marketplace, or card processor (collect it even if you think it is wrong)",
+      "count": 1
+    },
+    {
+      "rule_id": "R030",
+      "document": "Closing statement from the sale (settlement statement or Closing Disclosure), plus Form 1099-S (Proceeds From Real Estate Transactions) if received; also the closing statement from the original purchase and records of improvements, to figure basis",
+      "count": 1
+    }
+  ],
+  "follow_up_questions": [],
+  "changes": {
+    "removed": 0,
+    "added": 0,
+    "count_changed": 0,
+    "follow_ups": 0
+  },
+  "opened_at": "2026-11-12T17:39:23Z",
+  "saved_at": [],
+  "approved_at": "2026-11-12T17:39:30Z",
+  "seconds_on_screen": 7,
+  "screen_time": [
+    {
+      "opened_at": "2026-11-12T17:39:23Z",
+      "last_at": "2026-11-12T17:39:30Z"
+    }
+  ],
+  "host": {
+    "name": "preparer-local-host",
+    "version": "0.1.0"
+  },
+  "client": {
+    "name": "preparer-local-host",
+    "version": "0.1.0"
+  },
+  "app_version": "0.1.0"
+}

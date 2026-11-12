@@ -1,0 +1,97 @@
+{
+  "draft_id": "d06",
+  "draft_sha256": "770a35243b51c0077e53881651437208bbf5a3b5cdfa73994166c8e48f2bfe76",
+  "status": "approved",
+  "decisions": {
+    "documents": [
+      {
+        "rule_id": "R001",
+        "action": "keep",
+        "count": 2
+      },
+      {
+        "rule_id": "R005",
+        "action": "keep"
+      },
+      {
+        "rule_id": "R012",
+        "action": "keep"
+      },
+      {
+        "rule_id": "R025",
+        "action": "keep"
+      }
+    ],
+    "custom_requests": [],
+    "added": [],
+    "follow_ups": [
+      {
+        "fact": "dependents_count"
+      },
+      {
+        "fact": "itemized_last_year"
+      }
+    ],
+    "flags_checked": [
+      "carried:dependents_count",
+      "carried:itemized_last_year"
+    ]
+  },
+  "approved_list": [
+    {
+      "rule_id": "R001",
+      "document": "Form W-2 from each employer (yours and, if filing jointly, your spouse's), including any employer you left during the year, plus any corrected Form W-2c",
+      "count": 2
+    },
+    {
+      "rule_id": "R005",
+      "document": "Form 1099-DIV from each payer",
+      "count": 1
+    },
+    {
+      "rule_id": "R012",
+      "document": "Form 1095-A, Health Insurance Marketplace Statement",
+      "count": 1
+    },
+    {
+      "rule_id": "R025",
+      "document": "Charitable gift records: for each cash gift, a bank or card record, canceled check, or receipt or letter from the charity showing its name, the date, and the amount; for any single gift of $250 or more, a written acknowledgment from the charity stating the amount and whether goods or services were given in return; for noncash gifts, records supporting Form 8283 when over $500 and a qualified appraisal when Form 8283 requires it",
+      "count": 1
+    }
+  ],
+  "follow_up_questions": [
+    {
+      "fact": "dependents_count",
+      "question": "How many children or other people do you support who live with you?"
+    },
+    {
+      "fact": "itemized_last_year",
+      "question": "Did you itemize deductions on last year's return instead of taking the standard deduction?"
+    }
+  ],
+  "changes": {
+    "removed": 0,
+    "added": 0,
+    "count_changed": 0,
+    "follow_ups": 2
+  },
+  "opened_at": "2026-11-12T17:36:38Z",
+  "saved_at": [],
+  "approved_at": "2026-11-12T17:36:52Z",
+  "seconds_on_screen": 14,
+  "screen_time": [
+    {
+      "opened_at": "2026-11-12T17:36:38Z",
+      "last_at": "2026-11-12T17:36:52Z"
+    }
+  ],
+  "host": {
+    "name": "preparer-local-host",
+    "version": "0.1.0"
+  },
+  "client": {
+    "name": "preparer-local-host",
+    "version": "0.1.0"
+  },
+  "app_version": "0.1.0"
+}

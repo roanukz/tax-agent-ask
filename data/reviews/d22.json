@@ -1,0 +1,100 @@
+{
+  "draft_id": "d22",
+  "draft_sha256": "5ddd074803557fefc0efd1a6038bedc4dc8849e4d38177488bf3606b065c4056",
+  "status": "approved",
+  "decisions": {
+    "documents": [
+      {
+        "rule_id": "R001",
+        "action": "keep",
+        "count": 1
+      },
+      {
+        "rule_id": "R020",
+        "action": "keep",
+        "count": 2
+      },
+      {
+        "rule_id": "R021",
+        "action": "keep"
+      },
+      {
+        "rule_id": "R023",
+        "action": "keep"
+      },
+      {
+        "rule_id": "R028",
+        "action": "keep"
+      }
+    ],
+    "custom_requests": [],
+    "added": [],
+    "follow_ups": [
+      {
+        "fact": "itemized_last_year"
+      }
+    ],
+    "flags_checked": [
+      "carried:itemized_last_year",
+      "client_question:0"
+    ]
+  },
+  "approved_list": [
+    {
+      "rule_id": "R001",
+      "document": "Form W-2 from each employer (yours and, if filing jointly, your spouse's), including any employer you left during the year, plus any corrected Form W-2c",
+      "count": 1
+    },
+    {
+      "rule_id": "R020",
+      "document": "Schedule K-1 from each partnership, S corporation, estate, or trust in which the client held an interest or was a beneficiary at any time during 2026 (a separate K-1 for each entity), plus any Schedule K-3 a partnership or S corporation sends",
+      "count": 2
+    },
+    {
+      "rule_id": "R021",
+      "document": "For each rental real estate property: rents and other amounts received (including the fair market value of any property or services received as rent), expenses paid, the number of days rented at a fair rental price and the number of days of personal use, purchase, improvement, and prior depreciation records, a dated mileage log if car expenses are claimed, and any Forms 1099-MISC or 1099-K received",
+      "count": 1
+    },
+    {
+      "rule_id": "R023",
+      "document": "Form W-2G, Certain Gambling Winnings, for each received, plus the client's own record of gambling winnings and losses (diary, tickets, receipts, casino win/loss statements, or betting account history)",
+      "count": 1
+    },
+    {
+      "rule_id": "R028",
+      "document": "Lender's interest statement",
+      "count": 1
+    }
+  ],
+  "follow_up_questions": [
+    {
+      "fact": "itemized_last_year",
+      "question": "Did you itemize deductions on last year's return instead of taking the standard deduction?"
+    }
+  ],
+  "changes": {
+    "removed": 0,
+    "added": 0,
+    "count_changed": 0,
+    "follow_ups": 1
+  },
+  "opened_at": "2026-11-12T17:40:40Z",
+  "saved_at": [],
+  "approved_at": "2026-11-12T17:40:50Z",
+  "seconds_on_screen": 10,
+  "screen_time": [
+    {
+      "opened_at": "2026-11-12T17:40:40Z",
+      "last_at": "2026-11-12T17:40:50Z"
+    }
+  ],
+  "host": {
+    "name": "preparer-local-host",
+    "version": "0.1.0"
+  },
+  "client": {
+    "name": "preparer-local-host",
+    "version": "0.1.0"
+  },
+  "app_version": "0.1.0"
+}

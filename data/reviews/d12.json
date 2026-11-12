@@ -1,0 +1,51 @@
+{
+  "draft_id": "d12",
+  "draft_sha256": "50f044743242309d9aef5ec7c63f2e5940c8a2484aeda6af97082a8877b0554b",
+  "status": "approved",
+  "decisions": {
+    "documents": [
+      {
+        "rule_id": "R001",
+        "action": "keep",
+        "count": 2
+      }
+    ],
+    "custom_requests": [],
+    "added": [],
+    "follow_ups": [],
+    "flags_checked": []
+  },
+  "approved_list": [
+    {
+      "rule_id": "R001",
+      "document": "Form W-2 from each employer (yours and, if filing jointly, your spouse's), including any employer you left during the year, plus any corrected Form W-2c",
+      "count": 2
+    }
+  ],
+  "follow_up_questions": [],
+  "changes": {
+    "removed": 0,
+    "added": 0,
+    "count_changed": 0,
+    "follow_ups": 0
+  },
+  "opened_at": "2026-11-12T17:38:34Z",
+  "saved_at": [],
+  "approved_at": "2026-11-12T17:38:39Z",
+  "seconds_on_screen": 5,
+  "screen_time": [
+    {
+      "opened_at": "2026-11-12T17:38:34Z",
+      "last_at": "2026-11-12T17:38:39Z"
+    }
+  ],
+  "host": {
+    "name": "preparer-local-host",
+    "version": "0.1.0"
+  },
+  "client": {
+    "name": "preparer-local-host",
+    "version": "0.1.0"
+  },
+  "app_version": "0.1.0"
+}

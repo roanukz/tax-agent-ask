@@ -1,0 +1,235 @@
+{
+  "annotated_on": "2026-11-05",
+  "annotated_by": "two independent Claude Code subagents and a third that settled their disagreements, before any review existed",
+  "rule": "A problem is NOTED when, on the review screen, a note for the preparer (a client_question flag, which is draft.notes_for_preparer[i] and has flag id client_question:i) or the agent's closing message (draft.agent_note) says something specific about the same fact or document as the problem: for a wrong fact, that the fact's value is uncertain, guessed, assumed, unconfirmed, or might be different; for a missed document, that the client may have that document or more of it, or that the fact behind it is uncertain. A generic sign-off (\"please review\", \"the preparer should confirm everything\") does not count. Merely listing the recorded value without doubt does not count. Judge by meaning, not keywords.",
+  "agreement": {
+    "sources_compared": 18,
+    "sources_agreed": 17
+  },
+  "drafts": [
+    {
+      "draft_id": "d01",
+      "problems": [
+        {
+          "kind": "wrong_fact",
+          "fact": "w2_employer_count",
+          "noted_in": [
+            "agent_note"
+          ],
+          "quotes": {
+            "agent_note": "The client thinks the spouse had one job but was not certain. Please confirm the spouse's employer count."
+          }
+        }
+      ]
+    },
+    {
+      "draft_id": "d02",
+      "problems": [
+        {
+          "kind": "wrong_fact",
+          "fact": "ev_acquired_date",
+          "noted_in": [
+            "client_question:2",
+            "agent_note"
+          ],
+          "quotes": {
+            "client_question:2": "I recorded the date as 2026-11-01 because the client gave only the month",
+            "agent_note": "The client gave only \"November 2026,\" so I recorded 2026-11-01."
+          }
+        }
+      ]
+    },
+    {
+      "draft_id": "d03",
+      "problems": [
+        {
+          "kind": "missed",
+          "rule_id": "R001",
+          "noted_in": [
+            "agent_note"
+          ],
+          "quotes": {
+            "agent_note": "Please confirm with the client that no second job was missed, including one they left during the year."
+          }
+        },
+        {
+          "kind": "wrong_fact",
+          "fact": "w2_employer_count",
+          "noted_in": [
+            "agent_note"
+          ],
+          "quotes": {
+            "agent_note": "Please confirm with the client that no second job was missed, including one they left during the year."
+          }
+        }
+      ]
+    },
+    {
+      "draft_id": "d05",
+      "problems": [
+        {
+          "kind": "wrong_fact",
+          "fact": "charitable_giving",
+          "noted_in": [],
+          "quotes": {}
+        }
+      ]
+    },
+    {
+      "draft_id": "d06",
+      "problems": [
+        {
+          "kind": "wrong_fact",
+          "fact": "w2_employer_count",
+          "noted_in": [],
+          "quotes": {}
+        }
+      ]
+    },
+    {
+      "draft_id": "d11",
+      "problems": [
+        {
+          "kind": "missed",
+          "rule_id": "R001",
+          "noted_in": [
+            "agent_note"
+          ],
+          "quotes": {
+            "agent_note": "Last year there were two W-2s, so the preparer may want to confirm the second job ended."
+          }
+        },
+        {
+          "kind": "wrong_fact",
+          "fact": "w2_employer_count",
+          "noted_in": [
+            "agent_note"
+          ],
+          "quotes": {
+            "agent_note": "Last year there were two W-2s, so the preparer may want to confirm the second job ended."
+          }
+        }
+      ]
+    },
+    {
+      "draft_id": "d13",
+      "problems": [
+        {
+          "kind": "wrong_fact",
+          "fact": "w2_employer_count",
+          "noted_in": [
+            "agent_note"
+          ],
+          "quotes": {
+            "agent_note": "The client's answers on this changed several times. They first said one employer for them plus the spouse's, then \"two in total.\""
+          }
+        }
+      ]
+    },
+    {
+      "draft_id": "d15",
+      "problems": [
+        {
+          "kind": "wrong_fact",
+          "fact": "w2_employer_count",
+          "noted_in": [],
+          "quotes": {}
+        }
+      ]
+    },
+    {
+      "draft_id": "d16",
+      "problems": [
+        {
+          "kind": "wrong_fact",
+          "fact": "business_app_payments",
+          "noted_in": [
+            "agent_note"
+          ],
+          "quotes": {
+            "agent_note": "The 1099-K item depends on the client's answer that clients paid \"through an app.\" I did not confirm which app"
+          }
+        }
+      ]
+    },
+    {
+      "draft_id": "d18",
+      "problems": [
+        {
+          "kind": "missed",
+          "rule_id": "R001",
+          "noted_in": [
+            "agent_note"
+          ],
+          "quotes": {
+            "agent_note": "The client gave one combined count of two employers for both spouses. I didn't ask how many belong to each."
+          }
+        },
+        {
+          "kind": "wrong_fact",
+          "fact": "w2_employer_count",
+          "noted_in": [
+            "agent_note"
+          ],
+          "quotes": {
+            "agent_note": "The client gave one combined count of two employers for both spouses. I didn't ask how many belong to each."
+          }
+        }
+      ]
+    },
+    {
+      "draft_id": "d23",
+      "problems": [
+        {
+          "kind": "missed",
+          "rule_id": "R001",
+          "noted_in": [
+            "agent_note"
+          ],
+          "quotes": {
+            "agent_note": "Last year's summary showed two W-2s. The client says only one employer paid wages this year, so please confirm."
+          }
+        },
+        {
+          "kind": "wrong_fact",
+          "fact": "w2_employer_count",
+          "noted_in": [
+            "agent_note"
+          ],
+          "quotes": {
+            "agent_note": "Last year's summary showed two W-2s. The client says only one employer paid wages this year, so please confirm."
+          }
+        }
+      ]
+    },
+    {
+      "draft_id": "d24",
+      "problems": [
+        {
+          "kind": "wrong_fact",
+          "fact": "w2_employer_count",
+          "noted_in": [
+            "client_question:0",
+            "agent_note"
+          ],
+          "quotes": {
+            "client_question:0": "W-2 count recorded as 2. The client first said \"Just one employer for wages,\" then said \"we each have one job\" but isn't sure",
+            "agent_note": "The client first said \"Just one employer,\" then said \"we each have one job\" but doesn't know whether it's the same company."
+          }
+        },
+        {
+          "kind": "wrong_fact",
+          "fact": "interest_income",
+          "noted_in": [
+            "client_question:0",
+            "agent_note"
+          ],
+          "quotes": {
+            "client_question:0": "Interest marked yes because they have a savings account, but the client said \"I don't think it earned much interest.\"",
+            "agent_note": "I recorded yes because they have a savings account, but the client said \"I don't think it earned much interest.\""
+          }
+        }
+      ]
+    }
+  ]
+}

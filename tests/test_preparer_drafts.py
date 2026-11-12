@@ -2,9 +2,9 @@
 
 The unit tests build drafts from synthetic runs written to tmp_path, checked against
 the repo's rules. The tests at the end check the committed drafts in data/drafts and
-preparer/app/demo_drafts; the answer key under data/truth is gitignored until scoring,
-so its checks skip where it is absent, and the check that a fresh export reproduces
-every file skips where eval/runs is absent. No assertion message prints a draft's class.
+preparer/app/demo_drafts; the answer key under data/truth was gitignored until the 24
+reviews were scored and is committed since, so its checks skip only where it is absent, and
+the check that a fresh export reproduces every file skips where eval/runs is absent. No assertion message prints a draft's class.
 """
 
 from __future__ import annotations
@@ -772,16 +772,17 @@ def _key_failures() -> list[str]:
     return failures
 
 
-@pytest.mark.skipif(not KEY.exists(), reason="the answer key is gitignored until scoring and is absent here")
+@pytest.mark.skipif(not KEY.exists(), reason="the answer key is absent here")
 def test_the_key_covers_every_draft_and_classes_every_problem():
     # A failure names the checks that failed, never a draft or its class, even under pytest -l.
     assert _key_failures() == []
 
 
-def test_the_key_is_gitignored():
+def test_practice_reviews_stay_ignored_and_the_key_is_committed_after_scoring():
     ignore = (REPO / ".gitignore").read_text().splitlines()
-    assert {"data/truth/review_key.json", "data/truth/review_noted.json", "data/truth/review_inferable.json",
-            "data/truth/review_window.json", "preparer/app/demo_reviews/"} <= set(ignore)
+    assert {"preparer/app/demo_reviews/", "data/reviews/.lock"} <= set(ignore)
+    key_files = ("review_key.json", "review_noted.json", "review_inferable.json", "review_window.json")
+    assert not {f"data/truth/{name}" for name in key_files} & set(ignore)  # kept local only until the 24 were scored
 
 
 @pytest.mark.skipif(not (REPO / "eval" / "runs").is_dir(), reason="eval/runs is gitignored and absent here")

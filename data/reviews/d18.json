@@ -1,0 +1,75 @@
+{
+  "draft_id": "d18",
+  "draft_sha256": "75fb1f70d1091994e8b87689c6ffc1658396c1b740d10fef6a684502e342db2f",
+  "status": "approved",
+  "decisions": {
+    "documents": [
+      {
+        "rule_id": "R001",
+        "action": "keep",
+        "count": 2
+      },
+      {
+        "rule_id": "R007",
+        "action": "keep"
+      }
+    ],
+    "custom_requests": [],
+    "added": [],
+    "follow_ups": [
+      {
+        "fact": "itemized_last_year"
+      }
+    ],
+    "flags_checked": [
+      "dropped:R001",
+      "carried:itemized_last_year",
+      "ended_credit:T001"
+    ]
+  },
+  "approved_list": [
+    {
+      "rule_id": "R001",
+      "document": "Form W-2 from each employer (yours and, if filing jointly, your spouse's), including any employer you left during the year, plus any corrected Form W-2c",
+      "count": 2
+    },
+    {
+      "rule_id": "R007",
+      "document": "Form 1099-DA (if received), plus the client's own records for every digital asset sold, exchanged, spent, or used to pay fees: date and time acquired, cost basis, date disposed, and proceeds or fair market value in U.S. dollars",
+      "count": 1
+    }
+  ],
+  "follow_up_questions": [
+    {
+      "fact": "itemized_last_year",
+      "question": "Did you itemize deductions on last year's return instead of taking the standard deduction?"
+    }
+  ],
+  "changes": {
+    "removed": 0,
+    "added": 0,
+    "count_changed": 0,
+    "follow_ups": 1
+  },
+  "opened_at": "2026-11-12T17:39:45Z",
+  "saved_at": [
+    "2026-11-12T17:39:54Z"
+  ],
+  "approved_at": "2026-11-12T17:39:55Z",
+  "seconds_on_screen": 10,
+  "screen_time": [
+    {
+      "opened_at": "2026-11-12T17:39:45Z",
+      "last_at": "2026-11-12T17:39:55Z"
+    }
+  ],
+  "host": {
+    "name": "preparer-local-host",
+    "version": "0.1.0"
+  },
+  "client": {
+    "name": "preparer-local-host",
+    "version": "0.1.0"
+  },
+  "app_version": "0.1.0"
+}

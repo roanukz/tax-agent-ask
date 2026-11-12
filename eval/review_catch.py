@@ -17,16 +17,20 @@ or an opening logged to another reviews folder; CLAUDE.md rules those out. It re
 numbers come out.
 
 The rules it applies are the prereg's own words. A problem draft is caught when the approved list
-adds a missed document or raises its count to the required count, or a follow-up asks about a fact
-behind a missed document or about a wrong fact. Each problem is also scored on its own. A harmful
-edit removes a required document, lowers a required count, adds a document the household doesn't
-need, or raises a count past what it needs; custom requests are never scored as harmful. Each rate
-gets a 95% Wilson interval.
+adds a missed document (at any count) or raises its count to the required count, or a follow-up asks
+about a fact behind a missed document or about a wrong fact. Each problem is also scored on its own. A
+harmful edit removes a required document, lowers a required document's count below the required count,
+adds a document the household doesn't need, or raises a count above the required count; custom
+requests are never scored as harmful. Each rate gets a Wilson interval at the prereg's level. Before
+scoring it also checks the key against itself and against the drafts' own flags: each missed document's
+drafted and missed counts add up to the required count, each problem's class follows class_rule from the
+flags the screen showed, the class counts are the prereg's, and every problem has its noted annotation.
 """
 
 from __future__ import annotations
 
 import argparse
+from decimal import ROUND_HALF_UP, Decimal
 import hashlib
 import json
 import math
@@ -92,7 +96,7 @@ def missed_fixed(rule_id: str, entry: Mapping[str, Any], record: Mapping[str, An
     """The approved list adds the missed document (at any count), or raises its count to the required count."""
     approved = approved_counts(record).get(rule_id, 0)
     added = any(item["rule_id"] == rule_id for item in record["decisions"]["added"])
-    return (added and approved >= 1) or approved >= required_counts(entry).get(rule_id, 1)
+    return (added and approved >= 1) or approved >= required_counts(entry)[rule_id]
 
 
 def problem_caught(problem: Mapping[str, Any], entry: Mapping[str, Any], record: Mapping[str, Any], ref: Reference) -> bool:
@@ -150,6 +154,60 @@ class Inputs:
     records: Mapping[str, Mapping[str, Any]]
     marked: tuple[str, ...] = ()
     salt: str = ""
+
+
+def problem_identity(problem: Mapping[str, Any]) -> tuple[str, str]:
+    """A problem's kind and its rule or fact, the same in the key and in the noted annotation."""
+    return problem["kind"], problem["rule_id"] if problem["kind"] == "missed" else problem["fact"]
+
+
+def noted_by_problem(noted: Mapping[str, Any]) -> dict[tuple[str, str, str], bool]:
+    return {(d["draft_id"], *problem_identity(p)): bool(p["noted_in"]) for d in noted["drafts"] for p in d["problems"]}
+
+
+def shown_by(problem: Mapping[str, Any], entry: Mapping[str, Any], flag_ids: set[str], ref: Reference) -> list[str]:
+    """The flags that show a problem under class_rule: a missed document shows when the dropped flag names its rule;
+    a wrong fact shows when the carried flag names it, or when a dropped flag for a missed document displays it."""
+    if problem["kind"] == "missed":
+        return [f"dropped:{problem['rule_id']}"] if f"dropped:{problem['rule_id']}" in flag_ids else []
+    fact = problem["fact"]
+    out = [f"carried:{fact}"] if f"carried:{fact}" in flag_ids else []
+    out += [f"dropped:{m['rule_id']}" for m in entry["missed"]
+            if f"dropped:{m['rule_id']}" in flag_ids and fact in rule_fact_keys(ref.rules[m["rule_id"]])]
+    return out
+
+
+def check_key(prereg: Mapping[str, Any], key: Mapping[str, Any], noted: Mapping[str, Any],
+              drafts: Mapping[str, Mapping[str, Any]], ref: Reference) -> None:
+    """Refuses a key that disagrees with itself, with the drafts' own flags, with the prereg's design or with the
+    noted annotation, and an interval method other than Wilson's."""
+    if prereg.get("intervals", {}).get("method") != "wilson":
+        raise CatchError("the prereg names an interval method other than wilson")
+    classes: dict[str, int] = {}
+    annotated = noted_by_problem(noted)
+    for entry in key["drafts"]:
+        draft_id, draft = entry["draft_id"], drafts[entry["draft_id"]]
+        required = required_counts(entry)
+        drafted = {d["rule_id"]: int(d["count"]) for d in draft["documents"]}
+        for m in entry["missed"]:
+            if m["rule_id"] not in required or drafted.get(m["rule_id"], 0) + int(m["count"]) != required[m["rule_id"]]:
+                raise CatchError(f"{draft_id}'s key entry is inconsistent for {m['rule_id']}")
+        flag_ids = {f["id"] for f in compute_flags(draft, ref)}
+        shown = []
+        for p in entry["problems"]:
+            flags = shown_by(p, entry, flag_ids, ref)
+            if bool(flags) != bool(p["shows_because"]) or (p["shows_because"] and p["shows_because"] not in flags):
+                raise CatchError(f"{draft_id}'s key says a problem shows by {p['shows_because']!r}, but its flags give {flags}")
+            if (draft_id, *problem_identity(p)) not in annotated:
+                raise CatchError(f"{NOTED.name} has no annotation for a problem on {draft_id}")
+            shown.append(bool(flags))
+        cls = "clean" if not shown else "shows" if all(shown) else "hides" if not any(shown) else None
+        if cls != entry["problem_class"]:
+            raise CatchError(f"{draft_id}'s class in the key doesn't follow class_rule from its flags")
+        classes[cls] = classes.get(cls, 0) + 1
+    want = {"shows": prereg["show_drafts"], "hides": prereg["hide_drafts"], "clean": prereg["clean_drafts"]}
+    if classes != {k: v for k, v in want.items() if v}:
+        raise CatchError(f"the key's classes {classes} are not the prereg's {want}")
 
 
 def git_lock_time(path: Path) -> datetime | None:
@@ -216,6 +274,7 @@ def load(
         if name != REVIEW_HOST:
             raise CatchError(f"{what} names {name!r} as its {role}, not {REVIEW_HOST!r}: "
                              "every opening and approval must come from the local review page")
+    check_key(prereg, key, noted, drafts, ref or Reference.load())
     return Inputs(prereg, key, noted, drafts, records, marked, salt)
 
 
@@ -229,15 +288,15 @@ def rate(k: int, n: int, level: float) -> dict[str, Any]:
 
 def score(inputs: Inputs, ref: Reference) -> dict[str, Any]:
     level = float(inputs.prereg["intervals"]["level"])
-    noted = {(d["draft_id"], i): bool(p["noted_in"]) for d in inputs.noted["drafts"] for i, p in enumerate(d["problems"])}
+    noted = noted_by_problem(inputs.noted)
     rows, problems = [], []
     for entry in inputs.key["drafts"]:
         draft_id = entry["draft_id"]
         draft, record = inputs.drafts[draft_id], inputs.records[draft_id]
         caught_each = [problem_caught(p, entry, record, ref) for p in entry["problems"]]
-        for i, (p, caught) in enumerate(zip(entry["problems"], caught_each)):
+        for p, caught in zip(entry["problems"], caught_each):
             problems.append({"draft_id": draft_id, "class": entry["problem_class"], "problem": p, "caught": caught,
-                             "noted": noted.get((draft_id, i), False)})
+                             "noted": noted[(draft_id, *problem_identity(p))]})
         flags = {f["id"] for f in compute_flags(draft, ref)}
         rows.append({
             "draft_id": draft_id,
@@ -245,6 +304,7 @@ def score(inputs: Inputs, ref: Reference) -> dict[str, Any]:
             "caught": any(caught_each) if entry["problems"] else None,
             "harmful": harmful_edits(draft, entry, record),
             "follow_ups": sorted(follow_ups(record)),
+            "seconds": record["seconds_on_screen"],
             "minutes": record["seconds_on_screen"] / 60,
             "dropped_r001": "dropped:R001" in flags,
             "r001_raised": approved_counts(record).get("R001", 0) > next(
@@ -273,6 +333,8 @@ def score(inputs: Inputs, ref: Reference) -> dict[str, Any]:
         "harmful_edits_clean": rate(sum(bool(r["harmful"]) for r in clean), len(clean), level),
         "follow_ups_clean": rate(sum(bool(r["follow_ups"]) for r in clean), len(clean), level),
         "median_minutes": statistics.median(r["minutes"] for r in rows),
+        "median_seconds": statistics.median(r["seconds"] for r in rows),
+        "documents_unchanged": sum(not (r["changes"]["removed"] or r["changes"]["added"] or r["changes"]["count_changed"]) for r in rows),
         "dropped_r001_actions": {
             "drafts": len(dropped),
             "raised_count": sum(r["r001_raised"] for r in dropped),
@@ -292,7 +354,18 @@ def pct(x: float | None) -> str:
 
 
 def rate_line(name: str, r: Mapping[str, Any]) -> str:
-    return f"| {name} | {r['k']} of {r['n']} | {pct(r['rate'])} | {pct(r['low'])} to {pct(r['high'])} |"
+    interval = "n/a" if not r["n"] else f"{pct(r['low'])} to {pct(r['high'])}"
+    return f"| {name} | {r['k']} of {r['n']} | {pct(r['rate'])} | {interval} |"
+
+
+def minutes_text(seconds: float) -> str:
+    """Seconds as minutes to two places, rounded half up in decimal, so 10.5 seconds reads 0.18, not 0.17."""
+    return str((Decimal(str(seconds)) / 60).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
+
+
+def seconds_text(seconds: float) -> str:
+    """Whole seconds as the server stamps them, or a half second for a median between two."""
+    return f"{seconds:g} seconds"
 
 
 def render(scored: Mapping[str, Any], inputs: Inputs) -> str:
@@ -308,7 +381,7 @@ def render(scored: Mapping[str, Any], inputs: Inputs) -> str:
         "",
         "## Results",
         "",
-        "| Measure | Count | Rate | 95% Wilson interval |",
+        f"| Measure | Count | Rate | {float(p['intervals']['level']):.0%} Wilson interval |",
         "|---|---|---|---|",
         rate_line("Problem drafts caught, problem shown by a flag", scored["catch_rate_shows"]),
         rate_line("The same, leaving out the marked drafts", scored["catch_rate_shows_unmarked"]),
@@ -318,15 +391,25 @@ def render(scored: Mapping[str, Any], inputs: Inputs) -> str:
         rate_line("Clean drafts with a harmful edit", scored["harmful_edits_clean"]),
         rate_line("Clean drafts with a follow-up question", scored["follow_ups_clean"]),
         "",
-        f"Median time on screen: {scored['median_minutes']:.1f} minutes per draft.",
+    ]
+    if not scored["catch_rate_shows_unmarked"]["n"]:
+        lines += [f"All {scored['catch_rate_shows']['n']} drafts whose problem a flag shows are among the "
+                  f"{len(scored['marked'])} marked drafts, so the shows rate without the marked drafts has no drafts to score.", ""]
+    lines += [
+        f"Median time on screen: {seconds_text(scored['median_seconds'])} ({minutes_text(scored['median_seconds'])} minutes) per draft. "
+        f"On {scored['documents_unchanged']} of {len(scored['rows'])} drafts the approved list kept every document at the "
+        "draft's own count, with none removed, added or recounted.",
         "",
     ]
     d = scored["dropped_r001_actions"]
     lines += [
         "## Drafts with a dropped W-2 flag",
         "",
-        f"On the {d['drafts']} drafts with a dropped:R001 flag, he raised the W-2 count on {d['raised_count']}, asked "
-        f"the client about W-2 employers on {d['asked_w2']}, and did neither on {d['neither']}.",
+        f"On the {d['drafts']} drafts with a dropped:R001 flag:",
+        "",
+        f"- W-2 count raised: {d['raised_count']}",
+        f"- W-2 employers asked about: {d['asked_w2']}",
+        f"- Neither: {d['neither']}",
         "",
     ]
     ex = scored["example_draft_actions"]
@@ -336,7 +419,9 @@ def render(scored: Mapping[str, Any], inputs: Inputs) -> str:
             "## The PRD's example ID",
             "",
             f"On {ex['draft_id']}, the ID the PRD's worked example used, it was {caught}; harmful edits: "
-            f"{'; '.join(ex['harmful']) or 'none'}; follow-ups: {', '.join(ex['follow_ups']) or 'none'}.",
+            f"{'; '.join(ex['harmful']) or 'none'}; documents removed {ex['changes']['removed']}, added "
+            f"{ex['changes']['added']}, recounted {ex['changes']['count_changed']}; follow-ups: "
+            f"{', '.join(ex['follow_ups']) or 'none'}.",
             "",
         ]
     lines += [
@@ -353,13 +438,13 @@ def render(scored: Mapping[str, Any], inputs: Inputs) -> str:
     lines += [
         "## Each draft",
         "",
-        "| Draft | Class | Caught | Harmful edits | Follow-ups | Minutes |",
+        "| Draft | Class | Caught | Harmful edits | Follow-ups | Seconds |",
         "|---|---|---|---|---|---|",
     ]
     for r in scored["rows"]:
         caught = "" if r["caught"] is None else ("yes" if r["caught"] else "no")
         lines.append(f"| {r['draft_id']} | {r['class']} | {caught} | {'; '.join(r['harmful']) or 'none'} | "
-                     f"{', '.join(r['follow_ups']) or 'none'} | {r['minutes']:.1f} |")
+                     f"{', '.join(r['follow_ups']) or 'none'} | {r['seconds']} |")
     lines += ["", "## Each problem", "", "| Draft | Problem | Shown by | Noted by the agent | Caught |", "|---|---|---|---|---|"]
     for q in scored["problems"]:
         prob = q["problem"]
@@ -373,7 +458,8 @@ def render(scored: Mapping[str, Any], inputs: Inputs) -> str:
         "- One reviewer, who also built the project, and 24 drafts, so every interval is wide.",
         f"- {p['show_drafts']} drafts show their problem, because only that many households in the test run have one.",
         "- The reviewer knew the shape of the shown problems before reviewing (above).",
-        "- Time on screen counts each opening that saved or approved, from opening to the last save or approval.",
+        "- Time on screen adds up, for each opening that saved or approved, the time from the server's opening, made once "
+        "the screen had loaded, to that opening's last save or approval. The server stamps whole seconds.",
         "",
     ]
     return "\n".join(lines)
