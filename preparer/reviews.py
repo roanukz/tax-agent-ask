@@ -353,9 +353,15 @@ class ReviewFolder:
     def ids(self) -> list[str]:
         return sorted(p.stem for p in self.folder.glob("*.json") if DRAFT_ID.fullmatch(p.stem))
 
-    def log_opening(self, draft_id: str, draft_sha256: str, at: datetime) -> None:
-        """Appends one line per opening, saved or not, so scoring can check the prereg lock against the first look."""
-        line = json.dumps({"draft_id": draft_id, "draft_sha256": draft_sha256, "opened_at": stamp(at)}) + "\n"
+    def log_opening(
+        self, draft_id: str, draft_sha256: str, at: datetime, client: dict[str, str] | None = None,
+    ) -> None:
+        """Appends one line per opening, saved or not, so scoring can check the prereg lock against the first look.
+        The line names the client that asked, so an opening from a Claude Code session inside Claude Desktop can be
+        told apart from the preparer's screen; any opening still counts for the lock."""
+        line = json.dumps(
+            {"draft_id": draft_id, "draft_sha256": draft_sha256, "opened_at": stamp(at), "client": client}
+        ) + "\n"
         with self.locked():
             fd = os.open(self.folder / self.OPENINGS_NAME, os.O_WRONLY | os.O_APPEND | os.O_CREAT | os.O_NOFOLLOW, 0o644)
             try:

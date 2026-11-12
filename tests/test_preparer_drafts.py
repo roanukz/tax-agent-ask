@@ -781,7 +781,7 @@ def test_the_key_covers_every_draft_and_classes_every_problem():
 def test_the_key_is_gitignored():
     ignore = (REPO / ".gitignore").read_text().splitlines()
     assert {"data/truth/review_key.json", "data/truth/review_noted.json", "data/truth/review_inferable.json",
-            "preparer/app/demo_reviews/"} <= set(ignore)
+            "data/truth/review_window.json", "preparer/app/demo_reviews/"} <= set(ignore)
 
 
 @pytest.mark.skipif(not (REPO / "eval" / "runs").is_dir(), reason="eval/runs is gitignored and absent here")

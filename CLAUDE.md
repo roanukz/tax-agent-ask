@@ -14,7 +14,9 @@
 - This is not tax advice. The agent never advises a client and never sends anything to a client.
 - For the preparer review screen, read PRD-preparer-review.md. Where it and PRD-tax-agent-ask.md disagree about that feature, it governs.
 - The preparer server reads its drafts folder and writes its reviews folder only. It never opens a truth folder, never calls a model, and has no tool that sends anything to anyone.
-- save_review and approve_review stay app-only (visibility ["app"]) and refuse any client that did not negotiate MCP Apps.
+- save_review and approve_review stay app-only (visibility ["app"]) and refuse any client that did not negotiate MCP Apps. The server returns the review token only in open_review's result `_meta`, never in content or structuredContent, and the local review page never displays or logs it.
+- The 24 reviews run only on the local review page (python -m preparer.local_review), which Roanuk starts in Terminal.app, not in Claude Desktop's terminal panel. No Claude Desktop or Claude Code config points the preparer at data/drafts or data/reviews. Never start the page or the server on data/drafts from a Claude Code session, never call a running page's API (its tests drive only their own instances on copies of the demo drafts), and never let a browser or desktop-control agent act on its window or read the Terminal window that runs it.
+- The local review page listens on 127.0.0.1 only, needs its page token on every API call except /api/claim, which takes only the single-use launch code, never puts the token on a command line, holds no review logic of its own, imports no preparer module besides the preparer package and its own, and opens nothing under data/.
 - For this feature, never change the tax server, the harness, the prompts, the rules, or anything a published result depends on.
-- The view has no free-text inputs and no browser storage.
+- The view and the local review page have no free-text inputs and no browser storage.
 - data/reviews/ holds Roanuk's labels: never edit a saved record by hand or by script, and before all 24 reviews are approved never show him any data/truth/review_*.json file (the key, the noted problems, the marked drafts), which drafts are marked or how many, or any draft's result.

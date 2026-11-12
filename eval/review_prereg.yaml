@@ -1,5 +1,5 @@
 # Preregistration for the preparer review screen's blind catch check (PRD-preparer-review.md, sections 5 and 7).
-# Roanuk sets locked_on and commits this file before he opens the first of the 24 drafts;
+# Roanuk sets locked_on to the lock date (YYYY-MM-DD) and commits this file before he opens the first of the 24 drafts;
 # eval/review_catch.py refuses to score unless the lock commit predates the first opening of any draft (lock_check).
 locked_on: null
 drafts: 24
@@ -37,9 +37,17 @@ reviewer_knew: >-
   section 5 worked example, written before the draw, which gave the review-draft ID d07 an invented household, run,
   class and edit; it says nothing about the real d07, and the example now uses d00. An uncommitted version of the
   2026-11-05 DECISIONS.md entry also gave one example of how a hidden problem's note can read and named each demo
-  draft's source run, config included; both were cut before the first commit, and he may have read them. Tool results
-  in the Claude Code session where the marked drafts were chosen carried the analysts' counts, and he was asked not
-  to open them. The report gives, each on its own line, his actions summed over the drafts with a dropped:R001 flag
+  draft's source run, config included; both were cut before the first commit, and he may have read them. He said on
+  2026-11-06 that before the re-export that day collapsed a doubled label in some agent notes, he had opened none of
+  the files in data/drafts or preparer/app/demo_drafts, eval/export_drafts.py or docs/review-demo.html, so the doubled
+  labels did not reach him. Between the re-export and the first commit, eval/export_drafts.py held a docstring that
+  tied the collapsed label to config, and its masker docstring and tests/test_preparer_drafts.py paired a review
+  draft's label or ID, as examples, with a real household number or with an invented household, config and run; all
+  were cut before the first commit. Asked about that window, he said he opened one or both of those files, so he is
+  taken to have read every version of both from the re-export to the first commit, as rebuilt in
+  data/truth/review_window.json. Tool results in the Claude Code session where the marked drafts were chosen carried
+  the analysts' counts, and one on 2026-11-06, during Block 4, printed how many drafts were marked; he was asked not
+  to open any of them. The report gives, each on its own line, his actions summed over the drafts with a dropped:R001 flag
   (W-2 count raised, W-2 employers asked about, neither) and his actions on example_draft.
 inferable_rule: >-
   Committed text, read with what reviewer_knew lists, the design above (4, 8 and 12 drafts by class, one per
@@ -63,6 +71,12 @@ reviewer_rule: >-
   Until all 24 are approved, the reviewer opens none of the folders in reviewer_opens_none_of, runs none of the
   programs in reviewer_runs_none_of, and does not rebuild what those folders hold by hand from their code. The offline
   test suite, which rebuilds them only in temporary folders and prints no class, does not count.
+review_host: >-
+  The local review page (python -m preparer.local_review at the lock commit), an MCP Apps host on 127.0.0.1 that runs
+  the preparer server over stdio as client preparer-local-host and frames the built view. It opens drafts only in ID
+  order, shows only the next ID and the approved count, and has no model beside the screen. Minutes per draft add up,
+  for each opening that saved or approved, the time from the server's opening, which the page makes once the screen has
+  loaded, to that opening's last save or approval, so no chat latency is in them.
 report: [catch_rate_shows, catch_rate_shows_unmarked, catch_rate_hides, catch_rate_noted, catch_rate_unnoted,
          harmful_edits_clean, follow_ups_clean, median_minutes, dropped_r001_actions, example_draft_actions]
 intervals: {method: wilson, level: 0.95}

@@ -24,6 +24,7 @@ REF = Reference.load()
 DEMO = REPO / "preparer" / "app" / "demo_drafts"
 DRAFTS = DraftFolder(DEMO, REF).load_all()
 T0 = datetime(2026, 11, 8, 15, 0, 0, tzinfo=timezone.utc)
+PAGE = {"name": "preparer-local-host", "version": "0.1.0"}
 
 
 def docs(draft_id: str) -> list[dict[str, Any]]:
@@ -63,7 +64,7 @@ def record(draft_id: str, minutes: int = 3, **changes: Any) -> dict[str, Any]:
     dec = rv.check_decisions(decisions(draft_id, **changes), DRAFTS[draft_id], compute_flags(DRAFTS[draft_id], REF), REF, final=True)
     opened = rv.OpenReview(draft_id, "t", DRAFTS[draft_id]["draft_sha256"], T0)
     return rv.build_record(draft=DRAFTS[draft_id], decisions=dec, opened=opened, existing=None,
-                           now=T0 + timedelta(minutes=minutes), approve=True, host=None, client=None, ref=REF)
+                           now=T0 + timedelta(minutes=minutes), approve=True, host=PAGE, client=PAGE, ref=REF)
 
 
 @pytest.fixture
@@ -176,7 +177,7 @@ def test_fixing_a_miss_is_not_harmful():
 def write_all(reviews, **records):
     for draft_id in ("demo1", "demo2", "demo3"):
         reviews.write(records.get(draft_id) or record(draft_id))
-        reviews.log_opening(draft_id, DRAFTS[draft_id]["draft_sha256"], T0)
+        reviews.log_opening(draft_id, DRAFTS[draft_id]["draft_sha256"], T0, client=PAGE)
 
 
 def test_scoring_refuses_an_unlocked_or_changed_prereg(setup):
@@ -195,10 +196,50 @@ def test_scoring_refuses_an_unlocked_or_changed_prereg(setup):
 
 def test_scoring_refuses_when_any_draft_was_opened_before_the_lock(setup):
     paths, reviews = setup
-    reviews.log_opening("demo2", DRAFTS["demo2"]["draft_sha256"], T0 - timedelta(days=2))
+    reviews.log_opening("demo2", DRAFTS["demo2"]["draft_sha256"], T0 - timedelta(days=2), client=PAGE)
     write_all(reviews)
     with pytest.raises(rc.CatchError, match="does not predate the first opening"):
         rc.load(**paths)
+
+
+CLAUDE_CODE = {"name": "claude-code", "version": "2.1.321"}
+
+
+@pytest.mark.parametrize("change", [
+    "opening_client", "opening_none", "record_client", "record_host", "record_host_none", "record_client_version_only",
+])
+def test_scoring_refuses_any_opening_or_record_not_from_the_local_review_page(setup, change):
+    paths, reviews = setup
+    write_all(reviews)
+    assert rc.load(**paths).records["demo1"]["host"] == PAGE
+    if change == "opening_client":
+        reviews.log_opening("demo2", DRAFTS["demo2"]["draft_sha256"], T0 + timedelta(hours=1), client=CLAUDE_CODE)
+        match = r"an opening of demo2 names 'claude-code' as its client"
+    elif change == "opening_none":
+        reviews.log_opening("demo3", DRAFTS["demo3"]["draft_sha256"], T0 + timedelta(hours=1))
+        match = r"an opening of demo3 names None as its client"
+    else:
+        rec = record("demo2")
+        if change == "record_client":
+            rec["client"] = CLAUDE_CODE
+            match = r"demo2's record names 'claude-code' as its client"
+        elif change == "record_host":
+            rec["host"] = {"name": "Claude", "version": "1"}
+            match = r"demo2's record names 'Claude' as its host"
+        elif change == "record_host_none":
+            rec["host"] = None
+            match = r"demo2's record names None as its host"
+        else:
+            rec["client"] = {"version": "0.1.0"}
+            match = r"demo2's record names None as its client"
+        (paths["reviews_dir"] / "demo2.json").write_text(dump(rec))
+    with pytest.raises(rc.CatchError, match=match):
+        rc.load(**paths)
+
+
+def test_the_page_and_the_check_agree_on_the_name():
+    from preparer import local_review
+    assert rc.REVIEW_HOST == local_review.NAME == PAGE["name"]
 
 
 def test_scoring_refuses_without_the_openings_log_or_the_key(setup):

@@ -9,7 +9,12 @@ It refuses to score until the prereg is locked (locked_on set, and the file comm
 change since) before the first opening of any draft, saved or not, as the server's openings log
 records it, and until every one of the 24 drafts has an approved record for the draft's current
 SHA-256. It also refuses when the marked drafts (those committed text could let a reader single out)
-don't match the salted SHA-256 the prereg committed to. It reports whichever way the numbers come out.
+don't match the salted SHA-256 the prereg committed to, and unless every opening names the local review
+page (preparer/local_review.py) as its client and every record names it as both client and host. That
+rules out openings and approvals through the Claude Desktop and Claude Code preparer entries, whose client
+names differ. Names are self-reported, so it can't catch a client that calls itself preparer-local-host,
+or an opening logged to another reviews folder; CLAUDE.md rules those out. It reports whichever way the
+numbers come out.
 
 The rules it applies are the prereg's own words. A problem draft is caught when the approved list
 adds a missed document or raises its count to the required count, or a follow-up asks about a fact
@@ -46,6 +51,7 @@ MARKED = REPO / "data" / "truth" / "review_inferable.json"
 DRAFTS = REPO / "data" / "drafts"
 REVIEWS = REPO / "data" / "reviews"
 OUT = REPO / "docs" / "review-check.md"
+REVIEW_HOST = "preparer-local-host"  # the local review page's client and host name (preparer/local_review.py)
 
 
 class CatchError(RuntimeError):
@@ -202,6 +208,14 @@ def load(
     first = min([parse_stamp(o["opened_at"]) for o in openings] + [parse_stamp(r["opened_at"]) for r in records.values()])
     if locked >= first:
         raise CatchError(f"the prereg lock commit ({locked.isoformat()}) does not predate the first opening ({first.isoformat()})")
+    named = [(f"an opening of {o.get('draft_id')}", "client", o.get("client")) for o in openings]
+    for draft_id, record in records.items():
+        named += [(f"{draft_id}'s record", "client", record.get("client")), (f"{draft_id}'s record", "host", record.get("host"))]
+    for what, role, who in named:
+        name = who.get("name") if isinstance(who, dict) else None
+        if name != REVIEW_HOST:
+            raise CatchError(f"{what} names {name!r} as its {role}, not {REVIEW_HOST!r}: "
+                             "every opening and approval must come from the local review page")
     return Inputs(prereg, key, noted, drafts, records, marked, salt)
 
 

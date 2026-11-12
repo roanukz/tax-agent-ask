@@ -41,6 +41,7 @@ FAKE_CLIENT = """
 export function applyDocumentTheme(t) { document.documentElement.setAttribute("data-theme", t); }
 export function applyHostStyleVariables(v) { for (const [k, x] of Object.entries(v)) document.documentElement.style.setProperty(k, x); }
 export function applyHostFonts() {}
+const stripMeta = r => { const c = { ...r }; delete c._meta; return c; };
 export class App {
   constructor(info, caps) { this.info = info; this.appCaps = caps; }
   async connect() {
@@ -48,7 +49,10 @@ export class App {
       .filter(n => typeof this[n] === "function");
     this.plan = await window.hostCall("plan", { appInfo: this.info, appCaps: this.appCaps, handlers });
     const p = this.plan;
-    const open = () => window.hostCall("tool", { name: "open_review", arguments: { draft_id: p.draft } });
+    const open = async () => {
+      const r = await window.hostCall("tool", { name: "open_review", arguments: { draft_id: p.draft } });
+      return p.strip === "none" ? r : stripMeta(r);
+    };
     setTimeout(async () => {
       if (p.cancel) { this.ontoolcancelled({ reason: "user" }); return; }
       this.ontoolinput({ arguments: { draft_id: p.draft } });
@@ -62,8 +66,11 @@ export class App {
   getHostVersion() { return { name: "fake-host", version: "1.0" }; }
   async callServerTool(params) {
     await window.hostCall("log", ["callServerTool", params]);
-    const r = await window.hostCall("tool", params);
-    if (this.plan.echo) setTimeout(() => this.ontoolresult(r), 0);
+    const raw = await window.hostCall("tool", params);
+    const r = this.plan.strip === "all" ? stripMeta(raw) : raw;
+    const echoed = this.plan.strip === "none" ? raw : stripMeta(raw);
+    if (this.plan.echo === "before") this.ontoolresult(echoed);
+    else if (this.plan.echo) setTimeout(() => this.ontoolresult(echoed), 0);
     return r;
   }
   async updateModelContext(params) { await window.hostCall("log", ["updateModelContext", params]); return {}; }
@@ -100,7 +107,7 @@ class Host:
         self.network: list[str] = []
         self.errors: list[str] = []
         self.plan = {
-            "draft": "demo2", "deliver": "now", "late_ms": 0, "cancel": False, "grant": True, "echo": False,
+            "draft": "demo2", "deliver": "now", "late_ms": 0, "cancel": False, "grant": True, "echo": False, "strip": "none",
             "caps": FULL_CAPS,
             "ctx": {"theme": "dark", "displayMode": "inline", "availableDisplayModes": ["inline", "fullscreen"],
                     "styles": {"variables": {"--color-background-primary": "rgb(16, 24, 32)"}}},
@@ -252,6 +259,60 @@ def test_the_hosts_own_opening_after_the_fallback_hands_over_its_newer_token(bro
     v.locator("button:text-is('Approve list')").click()
     v.locator("#approved-text").wait_for()
     assert host.record()["status"] == "approved"
+    host.close()
+
+
+def test_a_host_that_drops_the_results_meta_gets_the_token_from_the_server(browser, tmp_path):
+    # The token travels only in the result's _meta. A host that passes the draft without it leaves the screen without a
+    # token, so the screen asks the server once itself; that answer comes back to the screen, not the conversation.
+    host = Host(browser, tmp_path, strip="host")
+    v = host.view
+    v.locator("#review-button").click()
+    host.decide_all()
+    v.locator("button:text-is('Save')").click()
+    v.locator("text=Saved at").wait_for()
+    calls = host.of("callServerTool")
+    assert [c["name"] for c in calls] == ["open_review", "save_review"]
+    assert isinstance(calls[1]["arguments"]["review_token"], str) and calls[1]["arguments"]["review_token"]
+    assert host.record()["status"] == "in_review" and host.errors == []
+    host.close()
+
+
+@pytest.mark.parametrize("echo", [True, "before"])
+def test_echoes_of_the_screens_own_openings_never_start_another_fetch(browser, tmp_path, echo):
+    # A host that drops _meta and also echoes the screen's own calls back into ontoolresult, after or before the
+    # response, must not make the screen fetch again and again: one extra opening, and Save works.
+    host = Host(browser, tmp_path, strip="host", echo=echo)
+    v = host.view
+    v.locator("#review-button").click()
+    host.page.wait_for_timeout(1500)
+    host.decide_all()
+    v.locator("button:text-is('Save')").click()
+    v.locator("text=Saved at").wait_for()
+    assert [c["name"] for c in host.of("callServerTool")] == ["open_review", "save_review"]
+    assert len((host.reviews / "openings.jsonl").read_text().splitlines()) == 2
+    host.close()
+
+
+def test_with_no_token_anywhere_and_echoes_the_screen_asks_once(browser, tmp_path):
+    host = Host(browser, tmp_path, strip="all", echo=True)
+    v = host.view
+    v.locator("#review-button").click()
+    host.page.wait_for_timeout(1500)
+    assert [c["name"] for c in host.of("callServerTool")] == ["open_review"]
+    assert len((host.reviews / "openings.jsonl").read_text().splitlines()) == 2
+    host.close()
+
+
+def test_with_no_token_anywhere_save_is_refused_on_screen(browser, tmp_path):
+    host = Host(browser, tmp_path, strip="all")
+    v = host.view
+    v.locator("#review-button").click()
+    host.decide_all()
+    v.locator("button:text-is('Save')").click()
+    v.locator("text=This screen has no review token from the server").wait_for()
+    assert [c["name"] for c in host.of("callServerTool")] == ["open_review"]
+    assert not (host.reviews / "demo2.json").exists()
     host.close()
 
 

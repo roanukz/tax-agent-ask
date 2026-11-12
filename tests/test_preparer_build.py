@@ -58,7 +58,7 @@ def test_the_demo_embeds_the_three_demo_drafts_as_open_review_gives_them():
     assert [p["draft"]["draft_id"] for p in payloads] == ["demo1", "demo2", "demo3"]
     for p in payloads:
         draft = drafts[p["draft"]["draft_id"]]
-        assert p == server.review_payload(draft, compute_flags(draft, ref), ref, None, f"demo-{draft['draft_id']}")
+        assert p == server.review_payload(draft, compute_flags(draft, ref), ref, None)
     assert "<title>The preparer's review screen: demo</title>" in DEMO
 
 

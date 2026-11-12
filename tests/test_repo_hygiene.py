@@ -58,9 +58,17 @@ def test_no_em_or_en_dashes(path):
 SPELLING_FILES = [p for p in WRITTEN_FILES if p.name != "test_repo_hygiene.py"]
 
 
+# Protocol names an outside spec fixes, which the code must spell as the spec does: the MCP Apps notification a host
+# sends when a tool call is called off (preparer/app/host.js and the stand-in client in its browser test).
+SPEC_NAMES = ("ui/notifications/tool-cancelled",)
+
+
 @pytest.mark.parametrize("path", SPELLING_FILES, ids=lambda p: str(p.relative_to(REPO)))
 def test_american_spelling(path):
-    found = sorted({m.group(0) for m in BRITISH.finditer(path.read_text(errors="replace"))})
+    text = path.read_text(errors="replace")
+    for name in SPEC_NAMES:
+        text = text.replace(name, "")
+    found = sorted({m.group(0) for m in BRITISH.finditer(text)})
     assert not found, f"British spellings: {found}"
 
 

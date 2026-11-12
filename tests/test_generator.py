@@ -52,7 +52,7 @@ FOLLOW_UPS = {k: s.asked_if["fact"] for k, s in SPECS.items() if s.is_follow_up}
 # records, the answer key, its notes and the marked drafts are written ASCII only by preparer.drafts.dump and
 # checked in their own tests.
 PREPARER_FILES = ("drafts", "reviews")
-PREPARER_TRUTH = ("review_key.json", "review_noted.json", "review_inferable.json")
+PREPARER_TRUTH = ("review_key.json", "review_noted.json", "review_inferable.json", "review_window.json")
 
 
 def generator_json_files():

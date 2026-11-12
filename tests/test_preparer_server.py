@@ -105,6 +105,13 @@ def keep_all(opened: dict[str, Any], **changes: Any) -> dict[str, Any]:
     return decisions
 
 
+def screen(result: Any) -> dict[str, Any]:
+    """What the review screen holds after an opening: the structuredContent, plus the token from the result's _meta,
+    which is the only place the token travels."""
+    assert not result.is_error and "review_token" not in result.structured_content
+    return {**result.structured_content, "review_token": result.meta[ps.TOKEN_META]}
+
+
 def args(opened: dict[str, Any], decisions: dict[str, Any], draft_id: str = "demo1", **extra: Any) -> dict[str, Any]:
     out = {"draft_id": draft_id, "review_token": opened["review_token"], "draft_sha256": opened["draft_sha256"], "decisions": decisions}
     out.update(extra)
@@ -179,6 +186,7 @@ async def test_open_review_gives_text_only_to_a_client_without_mcp_apps(env):
         async with client as c:
             result = await c.call_tool("open_review", {"draft_id": "demo1"})
         assert not result.is_error and result.structured_content is None
+        assert ps.TOKEN_META not in (result.meta or {})
         assert "can be read here but not approved" in text(result)
         assert "token" not in text(result).lower()
 
@@ -189,13 +197,17 @@ async def test_open_review_gives_an_apps_client_the_draft_flags_and_a_token(env)
         result = await c.call_tool("open_review", {"draft_id": "demo1"})
     sc = result.structured_content
     assert sorted(sc) == ["addable", "app_version", "count_rules", "draft", "draft_sha256", "facts", "flags", "open_number",
-                          "reasons", "record", "review_token", "status"]
+                          "reasons", "record", "status"]
     assert sc["count_rules"] == {"R001": {"fact": "w2_employer_count", "min": 1, "max": 10},
                                  "R020": {"fact": "k1_count", "min": 1, "max": 10}}
     draft = json.loads((env["drafts"] / "demo1.json").read_text())
     assert sc["draft"] == draft and sc["draft_sha256"] == draft["draft_sha256"] == draft_digest(draft)
     assert sc["flags"] == compute_flags(draft, Reference.load())
-    assert sc["review_token"] == "token-000" and sc["status"] == "pending_review" and sc["record"] is None
+    assert sc["status"] == "pending_review" and sc["record"] is None
+    # The token travels only in the result's _meta: Claude Code, and Claude Desktop's bridge into its Claude Code
+    # sessions, hand the model structuredContent (DECISIONS.md, 2026-11-06).
+    assert result.meta[ps.TOKEN_META] == "token-000"
+    assert "token-000" not in json.dumps(sc) and "token-000" not in json.dumps([c.model_dump() for c in result.content])
     body = text(result)
     assert "token-000" not in body and draft["draft_sha256"] not in body
     assert "Approval can't happen in chat" in body
@@ -207,22 +219,24 @@ async def test_open_review_gives_an_apps_client_the_draft_flags_and_a_token(env)
 @pytest.mark.anyio
 async def test_every_opening_is_logged_and_numbered(env):
     async with apps_client(env["server"]) as c:
-        first = (await c.call_tool("open_review", {"draft_id": "demo1"})).structured_content
+        first = screen(await c.call_tool("open_review", {"draft_id": "demo1"}))
         env["clock"].tick(30)
-        second = (await c.call_tool("open_review", {"draft_id": "demo1"})).structured_content
-        other = (await c.call_tool("open_review", {"draft_id": "demo2"})).structured_content
+        second = screen(await c.call_tool("open_review", {"draft_id": "demo1"}))
+        other = screen(await c.call_tool("open_review", {"draft_id": "demo2"}))
     async with plain_client(env["server"]) as c:
         await c.call_tool("open_review", {"draft_id": "demo3"})
         await c.call_tool("open_review", {"draft_id": "d99"})
     assert (first["open_number"], second["open_number"], other["open_number"]) == (1, 2, 1)
     lines = (env["reviews"] / "openings.jsonl").read_text().splitlines()
     sha1 = first["draft_sha256"]
+    host = {"name": "claude-desktop-test", "version": "9.9"}
+    text_only = {"name": "claude-code", "version": "2.1"}
     assert [json.loads(line) for line in lines] == [
-        {"draft_id": "demo1", "draft_sha256": sha1, "opened_at": "2026-11-08T15:00:00Z"},
-        {"draft_id": "demo1", "draft_sha256": sha1, "opened_at": "2026-11-08T15:00:30Z"},
-        {"draft_id": "demo2", "draft_sha256": other["draft_sha256"], "opened_at": "2026-11-08T15:00:30Z"},
+        {"draft_id": "demo1", "draft_sha256": sha1, "opened_at": "2026-11-08T15:00:00Z", "client": host},
+        {"draft_id": "demo1", "draft_sha256": sha1, "opened_at": "2026-11-08T15:00:30Z", "client": host},
+        {"draft_id": "demo2", "draft_sha256": other["draft_sha256"], "opened_at": "2026-11-08T15:00:30Z", "client": host},
         {"draft_id": "demo3", "draft_sha256": json.loads((env["drafts"] / "demo3.json").read_text())["draft_sha256"],
-         "opened_at": "2026-11-08T15:00:30Z"},
+         "opened_at": "2026-11-08T15:00:30Z", "client": text_only},
     ]
     assert "token" not in (env["reviews"] / "openings.jsonl").read_text()
 
@@ -242,7 +256,7 @@ async def test_open_review_refuses_bad_ids_plainly(env):
 @pytest.mark.anyio
 async def test_a_client_without_mcp_apps_can_never_save_or_approve(env):
     async with apps_client(env["server"]) as c:
-        opened = (await c.call_tool("open_review", {"draft_id": "demo1"})).structured_content
+        opened = screen(await c.call_tool("open_review", {"draft_id": "demo1"}))
     for client in (plain_client(env["server"]), Client(env["server"], extensions=[WRONG_MIME])):
         async with client as c:
             for tool in ("save_review", "approve_review"):
@@ -254,9 +268,9 @@ async def test_a_client_without_mcp_apps_can_never_save_or_approve(env):
 @pytest.mark.anyio
 async def test_a_stale_wrong_or_borrowed_token_is_refused(env):
     async with apps_client(env["server"]) as c:
-        first = (await c.call_tool("open_review", {"draft_id": "demo1"})).structured_content
-        second = (await c.call_tool("open_review", {"draft_id": "demo1"})).structured_content
-        other = (await c.call_tool("open_review", {"draft_id": "demo2"})).structured_content
+        first = screen(await c.call_tool("open_review", {"draft_id": "demo1"}))
+        second = screen(await c.call_tool("open_review", {"draft_id": "demo1"}))
+        other = screen(await c.call_tool("open_review", {"draft_id": "demo2"}))
         stale = await c.call_tool("save_review", args(first, keep_all(first)))
         wrong = await c.call_tool("save_review", {**args(second, keep_all(second)), "review_token": "token-999"})
         borrowed = await c.call_tool("save_review", {**args(second, keep_all(second)), "review_token": other["review_token"]})
@@ -269,7 +283,7 @@ async def test_a_stale_wrong_or_borrowed_token_is_refused(env):
 @pytest.mark.anyio
 async def test_a_restarted_server_has_no_tokens(env):
     async with apps_client(env["server"]) as c:
-        opened = (await c.call_tool("open_review", {"draft_id": "demo1"})).structured_content
+        opened = screen(await c.call_tool("open_review", {"draft_id": "demo1"}))
     restarted = ps.build_server(env["drafts"], env["reviews"], html=HTML, token_factory=lambda: "token-000")
     async with apps_client(restarted) as c:
         result = await c.call_tool("save_review", args(opened, keep_all(opened)))
@@ -279,7 +293,7 @@ async def test_a_restarted_server_has_no_tokens(env):
 @pytest.mark.anyio
 async def test_a_changed_sha_or_draft_is_refused(env):
     async with apps_client(env["server"]) as c:
-        opened = (await c.call_tool("open_review", {"draft_id": "demo1"})).structured_content
+        opened = screen(await c.call_tool("open_review", {"draft_id": "demo1"}))
         wrong = await c.call_tool("save_review", {**args(opened, keep_all(opened)), "draft_sha256": "0" * 64})
         path = env["drafts"] / "demo1.json"
         draft = json.loads(path.read_text())
@@ -288,7 +302,7 @@ async def test_a_changed_sha_or_draft_is_refused(env):
         path.write_text(dump(draft))
         changed = await c.call_tool("save_review", args(opened, keep_all(opened)))
         old_token_new_sha = await c.call_tool("save_review", {**args(opened, keep_all(opened)), "draft_sha256": draft["draft_sha256"]})
-        reopened = (await c.call_tool("open_review", {"draft_id": "demo1"})).structured_content
+        reopened = screen(await c.call_tool("open_review", {"draft_id": "demo1"}))
         ok = await c.call_tool("save_review", args(reopened, keep_all(reopened)))
     assert text(wrong) == ps.CHANGED and text(changed) == ps.CHANGED and not ok.is_error
     assert text(old_token_new_sha) == ps.CHANGED, "a token is bound to the SHA-256 it was minted for"
@@ -297,7 +311,7 @@ async def test_a_changed_sha_or_draft_is_refused(env):
 @pytest.mark.anyio
 async def test_a_review_saved_for_another_version_is_refused_everywhere(env):
     async with apps_client(env["server"]) as c:
-        opened = (await c.call_tool("open_review", {"draft_id": "demo1"})).structured_content
+        opened = screen(await c.call_tool("open_review", {"draft_id": "demo1"}))
         await c.call_tool("approve_review", args(opened, keep_all(opened)))
         before = (env["reviews"] / "demo1.json").read_bytes()
         path = env["drafts"] / "demo1.json"
@@ -321,7 +335,7 @@ async def test_simultaneous_saves_and_approvals_never_lose_or_break_a_record(env
         reviews = env["tmp"] / f"race-{i}"
         server = ps.build_server(env["drafts"], reviews, html=HTML, log=lambda line: None)
         async with apps_client(server) as c:
-            opened = (await c.call_tool("open_review", {"draft_id": "demo3"})).structured_content
+            opened = screen(await c.call_tool("open_review", {"draft_id": "demo3"}))
             results = {}
 
             async def call(tool):
@@ -339,7 +353,7 @@ async def test_simultaneous_saves_and_approvals_never_lose_or_break_a_record(env
 @pytest.mark.anyio
 async def test_invalid_or_incomplete_decisions_are_refused(env):
     async with apps_client(env["server"]) as c:
-        opened = (await c.call_tool("open_review", {"draft_id": "demo1"})).structured_content
+        opened = screen(await c.call_tool("open_review", {"draft_id": "demo1"}))
         bad = await c.call_tool("save_review", args(opened, keep_all(opened, notes="please call me")))
         incomplete = await c.call_tool("approve_review", args(opened, keep_all(opened, flags_checked=[])))
         bad_host = await c.call_tool("save_review", args(opened, keep_all(opened), host={"name": ""}))
@@ -354,7 +368,7 @@ async def test_both_protocol_eras_negotiate_the_screen_and_refuse_a_text_client(
     # local server to the initialize handshake, so the same flow runs there too.
     async with Client(env["server"], mode="legacy", extensions=[APPS], client_info=HOST) as c:
         assert c.protocol_version == "2025-11-25"
-        opened = (await c.call_tool("open_review", {"draft_id": "demo1"})).structured_content
+        opened = screen(await c.call_tool("open_review", {"draft_id": "demo1"}))
         saved = await c.call_tool("save_review", args(opened, keep_all(opened)))
         approved = await c.call_tool("approve_review", args(opened, keep_all(opened)))
     async with Client(env["server"], mode="legacy", client_info=HOST) as c:
@@ -369,10 +383,10 @@ async def test_both_protocol_eras_negotiate_the_screen_and_refuse_a_text_client(
 @pytest.mark.anyio
 async def test_approval_is_final(env):
     async with apps_client(env["server"]) as c:
-        opened = (await c.call_tool("open_review", {"draft_id": "demo1"})).structured_content
+        opened = screen(await c.call_tool("open_review", {"draft_id": "demo1"}))
         approved = await c.call_tool("approve_review", args(opened, keep_all(opened)))
         again = await c.call_tool("approve_review", args(opened, keep_all(opened)))
-        reopened = (await c.call_tool("open_review", {"draft_id": "demo1"})).structured_content
+        reopened = screen(await c.call_tool("open_review", {"draft_id": "demo1"}))
         save = await c.call_tool("save_review", args(reopened, keep_all(reopened)))
     assert not approved.is_error
     assert text(again) == ps.FINAL and text(save) == ps.FINAL
@@ -383,7 +397,7 @@ async def test_approval_is_final(env):
 async def test_refusals_follow_the_prd_order(env):
     """Each refusal wins over every later one: apps, then token, then SHA-256, then decisions, then approved."""
     async with apps_client(env["server"]) as c:
-        opened = (await c.call_tool("open_review", {"draft_id": "demo1"})).structured_content
+        opened = screen(await c.call_tool("open_review", {"draft_id": "demo1"}))
         await c.call_tool("approve_review", args(opened, keep_all(opened)))
         everything_wrong = {**args(opened, {"bad": 1}), "review_token": "nope", "draft_sha256": "0" * 64}
         token_bad = await c.call_tool("save_review", everything_wrong)
@@ -403,12 +417,12 @@ async def test_refusals_follow_the_prd_order(env):
 async def test_save_reopen_and_approve_keep_the_record_and_its_times(env):
     clock = env["clock"]
     async with apps_client(env["server"]) as c:
-        opened = (await c.call_tool("open_review", {"draft_id": "demo1"})).structured_content
+        opened = screen(await c.call_tool("open_review", {"draft_id": "demo1"}))
         clock.tick(40)
         partial = keep_all(opened, documents=[], flags_checked=[])
         saved = await c.call_tool("save_review", args(opened, partial, host={"name": "Claude", "version": "4.23118.0"}))
         clock.tick(600)
-        reopened = (await c.call_tool("open_review", {"draft_id": "demo1"})).structured_content
+        reopened = screen(await c.call_tool("open_review", {"draft_id": "demo1"}))
         clock.tick(25)
         decisions = keep_all(reopened, follow_ups=[{"fact": "w2_employer_count"}])
         approved = await c.call_tool("approve_review", args(reopened, decisions))
@@ -442,7 +456,7 @@ async def test_approved_list_before_approval_says_so(env):
 async def test_the_first_call_logs_the_client_and_refusals_are_logged(env):
     async with apps_client(env["server"]) as c:
         await c.call_tool("list_drafts", {})
-        opened = (await c.call_tool("open_review", {"draft_id": "demo1"})).structured_content
+        opened = screen(await c.call_tool("open_review", {"draft_id": "demo1"}))
         await c.call_tool("save_review", {"draft_id": "demo1", "review_token": "x", "draft_sha256": "y", "decisions": {}})
         await c.call_tool("save_review", args(opened, {"bad": 1}))
     logs = env["logs"]
@@ -500,7 +514,7 @@ async def test_the_server_opens_only_its_folders_the_rules_and_the_view(tmp_path
         server = ps.build_server(drafts, reviews, html_path=html)
         async with apps_client(server) as c:
             await c.call_tool("list_drafts", {})
-            opened = (await c.call_tool("open_review", {"draft_id": "demo1"})).structured_content
+            opened = screen(await c.call_tool("open_review", {"draft_id": "demo1"}))
             await c.call_tool("save_review", args(opened, keep_all(opened)))
             await c.call_tool("approve_review", args(opened, keep_all(opened)))
             await c.call_tool("approved_list", {"draft_id": "demo1"})

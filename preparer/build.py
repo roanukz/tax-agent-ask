@@ -49,7 +49,7 @@ def demo_data(demo_dir: Path = DEMO_DRAFTS, ref: Reference | None = None) -> str
     folder = DraftFolder(demo_dir, ref)
     payloads = []
     for draft_id, draft in folder.load_all().items():
-        payloads.append(review_payload(draft, compute_flags(draft, ref), ref, None, f"demo-{draft_id}"))
+        payloads.append(review_payload(draft, compute_flags(draft, ref), ref, None))
     text = json.dumps(payloads, ensure_ascii=True, separators=(",", ":"))
     return text.replace("</", "<\\/")
 

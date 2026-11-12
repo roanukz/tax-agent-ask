@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Preparer review</title>
+<link rel="stylesheet" href="/host.css">
+<script src="/host.js" defer></script>
+</head>
+<body data-mode="inline">
+<header class="bar">
+  <div class="name">
+    <strong>Preparer review</strong>
+    <span id="where" class="tag">local page</span>
+  </div>
+  <p id="progress" role="status" aria-live="polite">Connecting to the review server...</p>
+  <div class="actions">
+    <button id="open" type="button" class="primary" disabled>Open</button>
+    <button id="close" type="button" disabled>Close draft</button>
+    <button id="theme" type="button" aria-label="Theme: system">Theme: system</button>
+  </div>
+</header>
+<main>
+  <p id="note" role="alert" hidden></p>
+  <div id="stage"></div>
+  <p class="fine">No model is on this page and nothing here is sent anywhere. If the screen says to ask Claude, use Close draft, then Open.</p>
+</main>
+</body>
+</html>

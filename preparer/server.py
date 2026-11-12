@@ -20,8 +20,10 @@ token was minted for and the file on disk, that the decisions are valid, and tha
 isn't already approved. Each refusal comes back as a plain message for the view to show, and
 goes to stderr with the tool and draft. An MCP Apps host leaves the two app-only tools out of
 the model's tool list; the capability check also refuses a text-only client, which lists
-every tool. The token is returned only in structuredContent and only to an MCP Apps client,
-because a text-only client such as Claude Code hands structuredContent to the model.
+every tool. The token goes only to an MCP Apps client, and only in the result's _meta, never in
+content or structuredContent: Claude Code hands the model structuredContent, and Claude Desktop's
+bridge into its Claude Code sessions advertises MCP Apps (DECISIONS.md, 2026-11-06), while the
+MCP Apps spec marks a result's _meta as not for model context and passes it to the view.
 
 The server reads its drafts folder, the rules and fact keys, and the view's HTML, and writes
 its reviews folder; both folders are refused if they are truth folders, by the same check the
@@ -64,6 +66,7 @@ VIEW_URI = "ui://preparer/review.html"
 DIST_HTML = Path(__file__).resolve().parent / "app" / "dist" / "review.html"
 VIEW_CLIENT_ORIGIN = "https://unpkg.com"
 TOOL_NAMES = ("list_drafts", "open_review", "save_review", "approve_review", "approved_list")
+TOKEN_META = "preparer/review_token"  # the key in open_review's result _meta that carries the review token
 NOT_APPS = (
     "Refused: saving or approving a review needs the review screen, in a client that supports MCP Apps "
     "(such as Claude Desktop). This client did not say it supports them."
@@ -116,8 +119,12 @@ TOOLS = {
 }
 
 
-def text_result(text: str, structured: dict[str, Any] | None = None, *, error: bool = False) -> CallToolResult:
-    return CallToolResult(content=[TextContent(type="text", text=text)], structured_content=structured, is_error=error)
+def text_result(
+    text: str, structured: dict[str, Any] | None = None, *, error: bool = False, meta: dict[str, Any] | None = None,
+) -> CallToolResult:
+    return CallToolResult(
+        content=[TextContent(type="text", text=text)], structured_content=structured, is_error=error, meta=meta,
+    )
 
 
 def client_identity(ctx: Context) -> dict[str, str] | None:
@@ -127,7 +134,7 @@ def client_identity(ctx: Context) -> dict[str, str] | None:
         return None
     if info is None:
         return None
-    return {"name": str(info.name), "version": str(info.version)}
+    return {"name": str(info.name)[:200], "version": str(info.version)[:100]}
 
 
 def client_extensions(ctx: Context) -> Any:
@@ -228,10 +235,10 @@ def fact_keys(ref: Reference) -> dict[str, dict[str, Any]]:
 
 
 def review_payload(
-    draft: dict[str, Any], flags: list[dict[str, Any]], ref: Reference, record: dict[str, Any] | None, token: str,
-    number: int = 1,
+    draft: dict[str, Any], flags: list[dict[str, Any]], ref: Reference, record: dict[str, Any] | None, number: int = 1,
 ) -> dict[str, Any]:
-    """What the view needs to show one draft: open_review's structuredContent, and each draft in the static demo."""
+    """What the view needs to show one draft: open_review's structuredContent, and each draft in the static demo.
+    The review token is not here; open_review sends it in the result's _meta under TOKEN_META."""
     return {
         "draft": draft,
         "flags": flags,
@@ -241,7 +248,6 @@ def review_payload(
         "reasons": list(REASONS),
         "status": status_of(record),
         "record": record,
-        "review_token": token,
         "open_number": number,
         "draft_sha256": draft["draft_sha256"],
         "app_version": APP_VERSION,
@@ -321,12 +327,12 @@ def build_server(
             return refuse("open_review", draft_id, f"Refused: {e}")
         flags = compute_flags(draft, ref)
         apps = client_supports_apps(ctx)
-        reviews.log_opening(draft_id, draft["draft_sha256"], clock())
+        reviews.log_opening(draft_id, draft["draft_sha256"], clock(), client=client_identity(ctx))
         text = summary_text(draft, flags, record, apps)
         if not apps:
             return text_result(text)
         opened = tokens.mint(draft_id, draft["draft_sha256"])
-        return text_result(text, review_payload(draft, flags, ref, record, opened.token, opened.number))
+        return text_result(text, review_payload(draft, flags, ref, record, opened.number), meta={TOKEN_META: opened.token})
 
     def store(tool: str, draft_id: Any, token: Any, sha: Any, decisions: Any, host: Any, ctx: Context, approve: bool) -> CallToolResult:
         first_call(ctx)

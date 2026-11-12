@@ -1,0 +1,78 @@
+/* The local review page's host side. The screen in the frame keeps its own light and dark colors. */
+:root {
+  color-scheme: light;
+  --bg: #f6f5f1;
+  --surface: #ffffff;
+  --text: #1f1e1b;
+  --muted: #5d5a52;
+  --line: #d8d4c9;
+  --accent: #1d5c8a;
+  --accent-text: #ffffff;
+  --alert: #8a2a1d;
+  --bar-h: 64px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #181816;
+    --surface: #22211e;
+    --text: #efece4;
+    --muted: #aaa598;
+    --line: #3b3933;
+    --accent: #7fb6de;
+    --accent-text: #10202c;
+    --alert: #f0a596;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #181816;
+  --surface: #22211e;
+  --text: #efece4;
+  --muted: #aaa598;
+  --line: #3b3933;
+  --accent: #7fb6de;
+  --accent-text: #10202c;
+  --alert: #f0a596;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--text); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+
+.bar {
+  position: sticky; top: 0; z-index: 2;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px;
+  min-height: 64px; /* fixed: --bar-h follows the bar's own height, so as a floor it could only grow */
+  padding: 10px max(16px, env(safe-area-inset-right, 0px)) 10px max(16px, env(safe-area-inset-left, 0px));
+  background: var(--surface); border-bottom: 1px solid var(--line);
+}
+.name { display: flex; align-items: baseline; gap: 8px; }
+.tag { color: var(--muted); font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; }
+#progress { margin: 0; flex: 1 1 200px; min-width: 0; color: var(--muted); font-variant-numeric: tabular-nums; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
+button {
+  min-height: 44px; padding: 0 16px; border-radius: 8px;
+  border: 1px solid var(--line); background: var(--surface); color: var(--text);
+  font: inherit; cursor: pointer;
+}
+button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 600; }
+button:disabled { opacity: 0.45; cursor: default; }
+button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+main { max-width: 960px; margin: 0 auto; padding: 16px max(16px, env(safe-area-inset-right, 0px)) 24px max(16px, env(safe-area-inset-left, 0px)); }
+#note { margin: 0 0 12px; padding: 10px 12px; border-left: 4px solid var(--alert); background: var(--surface); color: var(--alert); }
+.fine { color: var(--muted); font-size: 13px; }
+
+/* content-box: the height the screen reports is its content's, so the 1px border goes outside it, not over it. */
+#stage iframe {
+  display: block; box-sizing: content-box; width: calc(100% - 2px); height: 420px;
+  border: 1px solid var(--line); border-radius: 10px; background: var(--surface);
+}
+body[data-mode="fullscreen"] main { max-width: none; padding: 0; }
+body[data-mode="fullscreen"] .fine, body[data-mode="fullscreen"] #note { display: none; }
+body[data-mode="fullscreen"] #stage iframe {
+  position: fixed; left: 0; top: var(--bar-h);
+  width: 100%; height: calc(100vh - var(--bar-h)); height: calc(100dvh - var(--bar-h)); border: 0; border-radius: 0;
+}

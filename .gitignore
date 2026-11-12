@@ -22,5 +22,6 @@ html/
 data/truth/review_key.json
 data/truth/review_noted.json
 data/truth/review_inferable.json
+data/truth/review_window.json
 preparer/app/demo_reviews/
 data/reviews/.lock

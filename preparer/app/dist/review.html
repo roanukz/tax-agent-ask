@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- Built by preparer/build.py from preparer/app/review.html, source sha256 9d9c8d77631fec4e20f42626fd7db35b89bf9ebeb8aa3f171bed4d8ca9313da6. Edit the source, then rebuild. -->
+<!-- Built by preparer/build.py from preparer/app/review.html, source sha256 3be84864dce0d5be2e2162bb1ecdceff0e68233b6b146507709b9dff597dc0c7. Edit the source, then rebuild. -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -155,6 +155,10 @@ details > summary { min-height: 44px; display: flex; align-items: center; cursor
 
 const APP_VERSION = "0.1.0";
 const CLIENT_URL = "https://unpkg.com/@modelcontextprotocol/ext-apps@1.7.5/dist/src/app-with-deps.js";
+// open_review sends the review token in its result's _meta, which the MCP Apps spec marks as not for model context,
+// never in structuredContent, which Claude Code hands to the model.
+const TOKEN_META = "preparer/review_token";
+const NO_TOKEN = "This screen has no review token from the server, so it can't save. Ask Claude to open the draft again.";
 const REASONS = { not_needed: "Not needed", duplicate: "Duplicate", client_said_no: "Client said no" };
 const KINDS = {
   dropped: "Dropped since last year",
@@ -170,6 +174,8 @@ const S = {
   phase: "loading",      // loading, ready, error, nohost
   display: "inline",     // inline, fullscreen, expanded (full review in place when the host has no full screen)
   data: null,            // what open_review returned in structuredContent
+  token: null,           // the review token from open_review's result _meta
+  wantToken: false,      // the host's result came without the token, and the screen should ask the server once connected
   d: null,               // the preparer's decisions on screen
   tab: "flags",
   dirty: false,
@@ -296,12 +302,47 @@ function resultText(result) {
   return first ? first.text : "";
 }
 
-function isOpenResult(result) {
-  const sc = result && result.structuredContent;
-  return !!(result && !result.isError && sc && sc.review_token && sc.draft);
+function tokenOf(result) {
+  const meta = result && result._meta;
+  const token = meta && typeof meta === "object" ? meta[TOKEN_META] : null;
+  return typeof token === "string" && token ? token : null;
 }
 
-function receiveOpen(result) {
+function isOpenResult(result) {
+  const sc = result && result.structuredContent;
+  return !!(result && !result.isError && sc && sc.draft && sc.draft_sha256);
+}
+
+// The screen's own open_review calls: how many are in flight, and the opening numbers they got back, so that a host
+// echoing them into ontoolresult (with or without _meta) is never taken for a new opening by the host.
+const OWN = { inFlight: 0, numbers: new Set(), fetchedFor: null };
+
+function ownOpen(draftId) {
+  OWN.inFlight++;
+  return tools.call("open_review", { draft_id: draftId })
+    .then(r => { const sc = r && r.structuredContent; if (sc && sc.open_number) OWN.numbers.add(sc.open_number); return r; })
+    .finally(() => { OWN.inFlight--; });
+}
+
+function isOwnEcho(r) {
+  const sc = isOpenResult(r) ? r.structuredContent : null;
+  return !!sc && (OWN.numbers.has(sc.open_number) || (OWN.inFlight > 0 && !tokenOf(r)));
+}
+
+// A host that passes the draft but drops the result's _meta leaves the screen without a token. Asking the server
+// directly gets one, at most once for each opening the host delivers; that answer comes back to this screen, not to
+// the conversation.
+function fetchToken() {
+  if (!tools || S.readOnly || !S.data) { S.wantToken = !S.readOnly; return; }
+  S.wantToken = false;
+  if (OWN.inFlight > 0 || OWN.fetchedFor === S.data.open_number) return;
+  OWN.fetchedFor = S.data.open_number;
+  ownOpen(S.data.draft.draft_id)
+    .then(r => { if (tokenOf(r) && isOpenResult(r)) receiveOpen(r); })
+    .catch(() => {});
+}
+
+function receiveOpen(result, fromHost = false) {
   if (!result) return;
   if (result.isError) { S.phase = "error"; S.error = resultText(result) || "The draft could not be opened."; render(); return; }
   const sc = result.structuredContent;
@@ -314,6 +355,7 @@ function receiveOpen(result) {
   const same = S.phase === "ready" && S.data && S.data.draft.draft_id === sc.draft.draft_id && S.data.draft_sha256 === sc.draft_sha256;
   const keep = same && S.dirty ? S.d : null;
   S.data = sc;
+  S.token = tokenOf(result);
   S.draftId = sc.draft.draft_id;
   S.d = keep || freshDecisions(sc);
   S.dirty = !!keep;
@@ -321,24 +363,26 @@ function receiveOpen(result) {
   S.phase = "ready";
   if (!TABS.includes(S.tab)) S.tab = "flags";
   render();
+  if (fromHost && !S.token) fetchToken();
 }
 
 async function openDraft(draftId) {
   if (!tools) return;
   S.phase = "loading";
   render();
-  try { receiveOpen(await tools.call("open_review", { draft_id: draftId })); }
+  try { receiveOpen(await ownOpen(draftId)); }
   catch (e) { S.phase = "error"; S.error = "The draft could not be opened: " + (e && e.message ? e.message : e); render(); }
 }
 
 async function store(approve) {
   if (S.busy || S.readOnly || !tools) return;
+  if (!S.token) { S.status = { kind: "error", text: NO_TOKEN }; render(); return; }
   S.busy = true;
   S.status = { kind: "ok", text: approve ? "Approving..." : "Saving..." };
   render();
   const args = {
     draft_id: S.data.draft.draft_id,
-    review_token: S.data.review_token,
+    review_token: S.token,
     draft_sha256: S.data.draft_sha256,
     decisions: serialize(),
   };
@@ -767,16 +811,18 @@ async function startHost() {
   app.ontoolresult = r => {
     // Once a draft is on screen, only a newer opening of the same draft replaces its token: the host's own open_review
     // can run after the fallback's and retire its token. An echo of the screen's own save or approval, or an older
-    // opening arriving late, changes nothing. Unsaved decisions stay either way.
+    // opening arriving late, changes nothing, and neither does an echo of the screen's own opening. Unsaved decisions
+    // stay either way.
+    if (isOwnEcho(r)) return;
     if (S.phase === "ready") {
       const sc = isOpenResult(r) ? r.structuredContent : null;
       const newer = sc && S.data && sc.draft.draft_id === S.data.draft.draft_id && sc.draft_sha256 === S.data.draft_sha256 &&
         (sc.open_number || 0) > (S.data.open_number || 0);
-      if (newer) receiveOpen(r);
+      if (newer) receiveOpen(r, true);
       return;
     }
     gotResult = true;
-    receiveOpen(r);
+    receiveOpen(r, true);
   };
   app.ontoolcancelled = () => {
     S.canceled = true;
@@ -794,6 +840,7 @@ async function startHost() {
   if (v && typeof v.name === "string" && v.name) S.host = { name: v.name.slice(0, 200), version: String(v.version || "").slice(0, 100) };
   tools = { call: (name, args) => app.callServerTool({ name, arguments: args }) };
   if (S.phase === "ready") render();
+  if (S.wantToken && S.phase === "ready") fetchToken();
   // Fall back to asking for the draft when the host never delivered the tool result, as when an old conversation reopens.
   setTimeout(() => {
     if (gotResult || S.canceled || S.phase !== "loading") return;
@@ -827,7 +874,8 @@ function demoLayer(payloads) {
     if (!p) return { isError: true, ...text(`Refused: no draft ${args.draft_id}`) };
     if (name === "open_review") {
       const record = records[p.draft.draft_id] || null;
-      return { ...text("demo"), structuredContent: { ...JSON.parse(JSON.stringify(p)), record, status: record ? record.status : "pending_review" } };
+      return { ...text("demo"), structuredContent: { ...JSON.parse(JSON.stringify(p)), record, status: record ? record.status : "pending_review" },
+        _meta: { [TOKEN_META]: `demo-${p.draft.draft_id}` } };
     }
     const existing = records[p.draft.draft_id];
     if (existing && existing.status === "approved") return { isError: true, ...text("Refused: this draft is already approved, and approval is final.") };
