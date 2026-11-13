@@ -169,11 +169,11 @@
 }
 
 /* Each capture links to its full-size file. */
-.screen a {
+.screen > a {
   display: block;
 }
 
-.screen a + a {
+.screen > a + a {
   margin-top: var(--space-12);
 }
 
@@ -192,4 +192,150 @@
 
 .limits li {
   margin-bottom: var(--space-12);
+}
+
+/* ---------- presenting on a shared screen ----------
+   Each decision is one screen: kicker, headline, paragraph, three tradeoff lines and one proof. Tested at 1024,
+   1152 and 1280 by 720, at 1440 by 900 and at 375 by 812, light and dark. */
+
+/* An anchor jump lands the kicker 24px under the top of the screen, and the previous decision's Next link stays
+   off it. The rail sticks at the same offset, so its title sits level with the kicker. */
+main > section {
+  scroll-margin-top: calc(var(--space-24) - var(--space-64));
+}
+
+@media (min-width: 1000px) {
+  .toc {
+    top: calc(var(--space-24) - var(--space-64));
+  }
+}
+
+/* The opening and its four numbers fit one 720px screen. */
+.hero {
+  padding: var(--space-24) 0 var(--space-32);
+}
+
+.hero .facts {
+  margin-top: var(--space-24);
+}
+
+/* The tradeoff lines run as wide as the proof under them, so each stays on one line where it can. */
+.tradeoff {
+  max-width: 820px;
+}
+
+/* Each decision's one proof: a small table, two numbers or a screen, with a line under it that says what it shows. */
+.proof {
+  margin: var(--space-24) 0 0;
+  max-width: 820px;
+}
+
+.proof table {
+  min-width: 0;
+}
+
+.proof th,
+.proof td,
+.proof caption {
+  padding-top: var(--space-8);
+  padding-bottom: var(--space-8);
+}
+
+/* The proof is what gets pointed at, so its values are set at reading size. */
+.proof tbody th,
+.proof td {
+  font-size: var(--size-16);
+}
+
+.proof td.num {
+  font-size: var(--size-20);
+  font-weight: 600;
+  color: var(--text-heading);
+  font-variant-numeric: tabular-nums;
+}
+
+.facts.proof {
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.facts.proof .fact-label {
+  font-size: var(--size-16);
+  line-height: var(--lh-16);
+  color: var(--text-body);
+}
+
+.proof-note {
+  margin: var(--space-8) 0 0;
+  max-width: 820px;
+  font-size: var(--size-16);
+  line-height: var(--lh-16);
+  color: var(--text-body);
+}
+
+/* The proof screen is cropped to its first flag and shown at the capture's own size, so the flag's words read at
+   body size on a shared screen. The link still opens the whole capture. The numbers are the crop in the capture's
+   own 1200 by 680 pixels: 810 wide from x 116, 204 tall from y 192. */
+.screen.proof {
+  max-width: 810px;
+}
+
+.screen.proof > a {
+  overflow: hidden;
+  aspect-ratio: 810 / 204;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+
+.screen.proof img {
+  width: calc(100% * 1200 / 810);
+  max-width: none;
+  margin: calc(-100% * 192 / 810) 0 0 calc(-100% * 116 / 810);
+  border: 0;
+  border-radius: 0;
+}
+
+.screen.proof figcaption {
+  max-width: none;
+  font-size: var(--size-16);
+  line-height: var(--lh-16);
+  color: var(--text-body);
+}
+
+/* The rail marks the decision the address points at, so it is right when he moves by the rail or a Next link. */
+@media (min-width: 1000px) {
+  body:has(#decision-1:target) .toc a[href='#decision-1'],
+  body:has(#decision-2:target) .toc a[href='#decision-2'],
+  body:has(#decision-3:target) .toc a[href='#decision-3'],
+  body:has(#decision-4:target) .toc a[href='#decision-4'],
+  body:has(#decision-5:target) .toc a[href='#decision-5'],
+  body:has(#next:target) .toc a[href='#next'] {
+    color: var(--link);
+    border-left-color: var(--fill);
+    font-weight: 600;
+  }
+}
+
+/* On a phone the proof table wraps its headings instead of scrolling sideways. */
+@media (max-width: 720px) {
+  .proof thead th {
+    white-space: normal;
+  }
+
+  .proof th,
+  .proof td,
+  .proof caption {
+    padding-left: var(--space-12);
+    padding-right: var(--space-12);
+  }
+
+  /* On a phone the crop narrows to the flag's own words, 430 wide from x 116, so they stay near 13px. */
+  .screen.proof > a {
+    aspect-ratio: 430 / 204;
+  }
+
+  .screen.proof img {
+    width: calc(100% * 1200 / 430);
+    margin: calc(-100% * 192 / 430) 0 0 calc(-100% * 116 / 430);
+  }
 }

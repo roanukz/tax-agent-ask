@@ -6,7 +6,7 @@
     <title>What Should My Tax Agent Ask? A Product Teardown</title>
     <meta
       name="description"
-      content="The product thinking behind an AI tax intake agent built to ask each client only what this year's return needs: the agent learns facts, code turns them into documents through sourced rules, the preparer approves and sends, and the measurement that judges the agent was built before its first run."
+      content="The product thinking behind an AI tax intake agent built to ask each client only what this year's return needs: the agent learns facts, code turns them into documents through sourced rules, the preparer approves and sends, and the bars that judge the agent locked before its one test run."
     />
     <meta property="og:title" content="What Should My Tax Agent Ask? A Product Teardown" />
     <meta
@@ -47,54 +47,48 @@
         <p class="eyebrow">Product teardown</p>
         <h1>What Should My Tax Agent Ask?</h1>
         <p class="lede">
-          Every tax season, a firm sends each client an organizer, either one
-          long questionnaire for everyone or a list carried forward from last
-          year, and whatever slips through comes back later as a missing form
-          and another round of requests. An AI agent could ask each client only
-          what this year's return needs, but no public benchmark I know of counts
-          both how many questions such an agent asks and which documents it
-          misses. This project builds that measurement, and the agent it will
-          judge.
+          Every tax season a firm sends each client an organizer: one long
+          questionnaire for everyone, or last year's list carried forward.
+          Whatever slips through comes back later as a missing form and a
+          second request. I designed an AI intake agent that asks each client
+          only what this year's return needs, and I locked the bars that judge
+          it before its one test run.
         </p>
         <p class="byline">
           Roanuk Zaman &middot; Product teardown of a tool I designed and
           directed
         </p>
         <p class="callout callout-notice" id="status">
-          <strong>Status on November 12, 2026.</strong> Built and tested offline
-          on synthetic households, then run live for the first time on the train
-          and dev groups only, with one trial of every configuration on the 40
-          dev households. From that trial I chose the configuration the bars
-          judge, the agent on Claude Opus 5.5, and raised the cost bar to fit it.
-          The bars locked on November 2, before the one test run. I have verified all 33 rules and labeled 60 transcripts for
-          the honesty judge, which meets its bars on delivery but not yet on
-          advice or summary, so its verdicts here are not yet checked ones.
-          The test run is done: on all 40 test households, 3 trials each, the agent on Claude Opus 5.5 passed 92.5% of 120 runs (interval 85.8% to 98.3%) and missed 0.5% of required documents, at $0.40 a household, against 86.7% for the full organizer and 32.5% for last year's list. Advice verdicts in that rate come from a judge my labels have not yet validated on advice.
-          On November 12 I reviewed 24 of the test run's drafts blind on a new review screen for the preparer, against a hypothesis locked first, and caught none of the 17 problems in them, approving every draft with its documents unchanged in a median of 10.5 seconds. The hypothesis is not supported, and the lesson I draw, from one reviewer, is to make each flag demand an answer before approval.
+          <strong>Status on November 13, 2026.</strong> The build, its one
+          test run and a blind check of the preparer's review screen are
+          finished, and the four numbers below are the results. I directed the
+          build, and Claude Code wrote the code and ran every experiment under
+          rules I set (<a href="#method">Appendix A</a>). Every household is
+          synthetic, and the client is a simulated model.
         </p>
 
         <div class="cta-row">
-          <a class="btn btn-primary" href="demo.html">View a step by step demo of the build process</a>
-          <a class="btn btn-primary" href="#results">See what is measured so far</a>
+          <a class="btn btn-primary" href="demo.html">Walk through it in five minutes</a>
+          <a class="btn btn-primary" href="#results">See the results</a>
           <a class="btn btn-secondary" href="https://github.com/Roanukz/tax-agent-ask">View the source</a>
         </div>
 
         <div class="facts">
           <div class="fact">
-            <span class="fact-value">38.6%</span>
-            <span class="fact-label">Documents missed by last year's list, as a share of what this year's returns need, in the 28 synthetic development households whose year changed; where nothing changed it cannot miss, by construction</span>
+            <span class="fact-value">92.5%</span>
+            <span class="fact-label">Test runs the agent passed, against a bar of 90% that locked before the run</span>
           </div>
           <div class="fact">
-            <span class="fact-value">10 of 11</span>
-            <span class="fact-label">Synthetic households, among the 30 I listed blind, with a 2026 clean energy install, energy upgrade or electric vehicle where my list asked for the paperwork behind a credit that had ended; for 6, that paperwork could still serve a purpose the rules do not model</span>
+            <span class="fact-value">0.5%</span>
+            <span class="fact-label">Required documents it missed; the full organizer missed 4.1% and last year's list 35.5%</span>
           </div>
           <div class="fact">
-            <span class="fact-value">0</span>
-            <span class="fact-label">Send tools the agent has: it drafts the request list, the preparer approves and sends it, and the agent reaches the client only through its questions</span>
+            <span class="fact-value">14</span>
+            <span class="fact-label">Questions it asked at the median, where the full organizer asks 36</span>
           </div>
           <div class="fact">
-            <span class="fact-value">1,065 of 1,067</span>
-            <span class="fact-label">Planted bugs in the scoring code that its tests caught, against a bar of 90%, so the code that judges the agent is itself tested</span>
+            <span class="fact-value">0 of 17</span>
+            <span class="fact-label">Problems I caught when I reviewed 24 test drafts blind; half were chosen because they had a problem</span>
           </div>
         </div>
       </div>
@@ -106,14 +100,15 @@
         <h2>TL;DR</h2>
         <p class="brief-definition">Too long; didn't read. The whole page in five sentences.</p>
         <p class="brief-body">
-          This project builds and measures an AI intake agent designed to ask
-          each client only what this year's return needs, counting questions
-          and misses. The agent learns facts, with evidence; code turns
-          them into a draft list through sourced rules, and only the preparer
-          sends it. On synthetic
-          households, last year's list missed over a third of documents where the year changed, and my blind lists requested paperwork behind ended
-          credits. On the test run, the Opus agent passed over 92%.
-          Reviewing some of its drafts blind, I caught none of their problems, so the preparer's flags should demand answers.
+          Tax firms gather documents with one long questionnaire, which costs
+          clients time, or last year's list, which misses what changed. I
+          designed an AI agent that asks each client only what this year's
+          return needs: it learns facts, code turns them into the document
+          list through sourced rules, and only the preparer sends that list. I
+          locked the bars before the one test run. The agent passed more than
+          92% of runs on under half the questions. My blind review
+          caught none of the drafts' problems, even flagged ones, so the next
+          version would make every flag demand an answer.
         </p>
       </section>
     </div>
@@ -128,14 +123,14 @@
           <li><a href="#evidence">Part 2. What I actually know</a></li>
           <li><a href="#lanes">Part 3. Where the agent acts, and where it does not</a></li>
           <li><a href="#rules">Part 4. The rules, and a person's check on them</a></li>
-          <li><a href="#judged">Part 5. How the agent will be judged</a></li>
-          <li><a href="#results">Part 6. What is measured so far</a></li>
+          <li><a href="#judged">Part 5. How the agent is judged</a></li>
+          <li><a href="#results">Part 6. What the test run found</a></li>
           <li><a href="#review">Part 7. The preparer's review screen</a></li>
           <li><a href="#decisions">Part 8. Design decisions</a></li>
           <li><a href="#carries">Part 9. What carries over to an intake product</a></li>
           <li><a href="#next">Part 10. What I would do next</a></li>
           <li><a href="#cut">Part 11. What I cut</a></li>
-          <li><a href="#method">Appendix A. Method made visible</a></li>
+          <li><a href="#method">Appendix A. Who did what, and how to check it</a></li>
           <li><a href="#terms">Appendix B. Terms used on this page</a></li>
         </ol>
       </nav>
@@ -147,145 +142,78 @@
           <ul>
             <li>
               <strong>The problem.</strong> A preparer cannot start a return
-              until the client's documents are in, and the usual way to get them
-              is an organizer. A generic organizer asks every client the same
-              long list of questions, while the AI organizers now offered to
-              firms start from last year's data instead
-              (<a href="#evidence">Part 2</a>). Questions that do not apply cost
-              the client time, and documents the client forgets come back as
-              missing forms and second requests (<a href="#problem">Part 1</a>).
-              Last year's data also has two blind spots: what changed this year, such as a new job, a side business or Marketplace health coverage, and rules that changed. A 2025 law, for one, ended several energy and vehicle credits before 2026 activity. The closest public benchmark
-              tests whether an agent asks a simulated taxpayer for missing
-              information, and it scores the finished return, so none I know of
-              counts an intake agent's questions alongside the documents it
-              misses.
+              until the client's documents are in. Firms gather them with an
+              organizer, either one long questionnaire for every client or
+              last year's list carried forward. The questionnaire costs every
+              client time, and last year's list cannot know what changed this
+              year, such as a new job or a tax credit that ended. Each
+              document that slips through comes back as a second request
+              (<a href="#problem">Part 1</a>).
             </li>
             <li>
               <strong>The thesis.</strong> Measure the questions, not just the
-              list, and split the work three ways. The agent holds the
-              conversation, asking questions and recording each fact with
-              evidence, either the client's own words or the field of last
-              year's profile that holds it. Code turns the recorded facts into the document
-              list through a table of 33 rules, each citing an official source,
-              and 3 of them are traps for credits that ended. Only the preparer approves the draft and sends it, since the agent has no send tool
-              (<a href="#lanes">Part 3</a>). If the split holds, an agent can ask
-              far fewer questions than a full organizer while missing about as
-              few documents, and every miss traces to a fact the conversation did not learn in time or a rule that was wrong. The rules and the review step sit behind eight tools on an open protocol rather than inside a prompt. Because of that, the same tools could serve another agent, a client portal or a partner's system, once the evidence check moves in with them (<a href="#carries">Part 9</a>).
+              list: count what an intake agent asks as well as what it misses,
+              and split the work three ways. The agent holds the conversation
+              and records each answer with the client's own words as evidence,
+              while code turns those facts into the document list through 33
+              rules that each cite an official source. Only the preparer
+              approves and sends the list, and the agent has no send tool. If
+              the split holds, the agent asks far fewer questions while missing
+              about as few documents, and every miss traces to a fact or a
+              rule (<a href="#lanes">Part 3</a>).
             </li>
             <li>
-              <strong>The method.</strong> Everything runs on 100 synthetic households, each with true facts, last year's profile and what changed, and 70 of them changed. They are frozen into train (20),
-              development or dev (40) and test (40) groups, and test runs once. A
-              Claude model plays each client from its facts, with personas that
-              forget things or do not know tax terms. Three baselines bracket the
-              agent: a full organizer that asks every question, last year's list
-              with no questions, and a model that writes the list itself from
-              perfect facts. Code scores every run, while a model judge decides
-              whether the agent gave advice or claimed to send the list, and I
-              check that judge against my own labels. The bars locked before the one test run. The configuration chosen from dev must pass at least 90% of test runs and miss at most 2% of documents. Its median question count must also be at most half the full organizer's, and it must cost at most $0.60 a household, a bar I raised from my original $0.10 after seeing the dev results (<a href="#judged">Part 5</a>). Since scoring cannot
-              catch a wrong rule, I also listed documents for 30 households
-              blind, settled every difference with the rules, and had the 17 that
-              disputed a rule checked against the official sources
+              <strong>The method.</strong> Everything runs on 100 synthetic
+              households, with a model playing each client, including clients
+              who forget things. On the same households I also score the full
+              organizer, which asks every question, and last year's list.
+              Forty households are held back for one test run of three trials
+              each, and a run passes only if it misses no required document,
+              asks for at most one it does not need, records no wrong fact,
+              and never gives tax advice or claims the list was sent. I locked
+              the bars before that run: at least 90% of runs passing, at most 2% of required documents missed, at
+              most half the full organizer's questions, and at most $0.60 a
+              household (<a href="#judged">Part 5</a>). Because scoring
+              cannot catch a wrong rule, I also checked all 33 rules by hand
               (<a href="#rules">Part 4</a>).
             </li>
             <li>
-              <strong>The results.</strong> On the test run, started November 2,
-              2026 and completed November 4, the agent on Claude Opus 5.5 passed
-              92.5% of 120 runs on the 40 test households and missed 0.5% of
-              required documents, at $0.40 a household (<a href="#results">Part 6</a>). The
-              choice came earlier: the project's harness, the code that runs the
-              agent, made its first live model calls on November 1, in a dev trial.
-              No configuration of the agent met all the bars as I first set
-              them, in one trial of each on the 40 dev households, a trial for
-              choosing a configuration and not the preregistered result. Run
-              on Claude Opus 5.5, the agent passed 92.5%, over the 90% pass bar,
-              and missed no document, but it cost $0.3704 a household, 3.7 times
-              my original $0.10 bar. Run on Claude Haiku 5.5, it passed 87.5%, a
-              run short of the pass bar, and met the bars for missed documents,
-              questions and cost. With Sonnet planning for Haiku, the per-step
-              split missed more documents than Haiku alone at five times the
-              cost. Tax decisions are critical and need the highest accuracy I
-              can get, so I chose Opus. Before the lock I raised the cost bar to
-              $0.60, with a buffer above Opus's costliest dev run. At $0.60 Opus
-              clears all five bars on dev, though one dev trial can neither place
-              its true pass rate above 90% nor separate it from Haiku on quality.
-              Offline,
-              on the 28 dev households whose year changed, last year's list
-              missed 73 of the 189 documents their returns need. That is 38.6%,
-              with a 95% interval, the range the true rate probably falls in, of
-              33.9% to 44.1%, and the list passed only 1 of the 28 households.
-              Against the rules, my blind lists asked for the paperwork behind an ended credit in 10 of the 11 households that had one. For 6 of them that paperwork could still serve a purpose the rules do not model. They never asked for the Form 1099-K that app payments
-              can bring, in 4 of 4 households, and they read a tuition payment
-              that had stopped as this year's in 2 of 3. All 190 differences were
-              settled and logged. The 95 about facts that did not change rest on my
-              rule verification, which now covers all 33 rules, after I asked
-              for all five proposed rule edits. On November 1, 2026, all 3,296
-              offline tests passed with the network blocked, and mutation testing,
-              which plants small bugs in the scoring code to see whether the
-              tests notice, had caught 1,065 of 1,067 (<a href="#results">Part 6</a>).
-              Last, on November 12, I reviewed 24 drafts from the test run blind
-              on the preparer's review screen. I caught none of the 17 problems
-              in them and approved every draft with its documents unchanged, at
-              a median of 10.5 seconds a draft (<a href="#review">Part 7</a>).
+              <strong>The results.</strong> On the test run the agent, on
+              Claude Opus, passed 92.5% of 120 runs, and the 95% interval, the
+              range the true rate probably falls in, is 85.8% to 98.3%. It
+              missed 0.5% of required documents and asked a median of 14
+              questions where the full organizer asks 36, at $0.40 a
+              household. The full organizer passed 86.7% of runs, and last
+              year's list passed 32.5% (<a href="#results">Part 6</a>). Then I
+              reviewed 24 drafts from the test run blind on the preparer's
+              review screen, 12 of them clean, and caught none of the 17
+              problems in the other 12 (<a href="#review">Part 7</a>).
             </li>
             <li>
-              <strong>What it means.</strong> The design bets that the agent's value
-              lies in finding what changed. Here last year's list misses documents
-              only where something changed, and it must, because the generator
-              builds it by applying this year's rules to last year's facts; for the
-              12 of 40 dev households where nothing changed, it was complete by
-              construction. A quiet year could then be a confirmation rather than
-              an interview, if the confirmation still catches a change the client
-              forgets to mention (<a href="#carries">Part 9</a>). The same
-              construction keeps this baseline from showing the second blind spot,
-              rules that changed, which the traps test instead, and rules that
-              changed did trip a person writing blind. That is the case for keeping
-              rules in sourced code rather than in a model's memory or a preparer's
-              habit, with the agent kept in the conversation and away from the send
-              button (<a href="#lanes">Part 3</a>). Whoever grades the agent also
-              has to know which of its words reached the client, since only its
-              questions do, and the judge's first transcripts left that unclear.
-              When the judge read them again with the other lines marked as unseen, it
-              failed advice in 4 dev runs, down from 12
-              (<a href="#results">Part 6</a>). On dev, every document an
-              agent run missed was the W-2 for a job the simulated client forgot,
-              and none of those runs asked directly about another job. A forgotten
-              job is the kind of change a confirmation has to catch. The agent on
-              Opus missed no document and got the job count right in 6 of the 7
-              households that hide one. For a tax decision I would rather pay for
-              that accuracy than save on the model, so I raised the cost bar to fit
-              Opus instead of letting the $0.10 bar rule it out. The one test run
-              has since measured that choice: Opus passed 92.5% of runs on the 40
-              test households and missed 0.5% of required documents
-              (<a href="#results">Part 6</a>). The preparer's end of the split
-              needed a test too, and it came out against my hypothesis. On the 4
-              drafts whose problem a flag showed, the review screen put the
-              right flag beside it, and I still approved every draft with its documents unchanged. The lesson I
-              draw, from one reviewer, is that a review step protects a client
-              only if its design makes the reviewer answer each flag
+              <strong>What it means.</strong> The agent's value is in finding
+              what changed, and its hardest case is a change the client
+              forgets to mention, such as a second job and its W-2. I chose the model that passed most often in development
+              and best caught that case. On the test run a cheaper one scored
+              too close to tell apart, so whether the extra cost buys accuracy
+              is still open (<a href="#results">Part 6</a>). The larger
+              lesson, from one reviewer, concerns the human check: the review
+              screen flags where a draft is most likely wrong, but it let me
+              mark a flag checked without answering it, so it was no safety
+              net. The next version would make each flag demand an answer
               (<a href="#review">Part 7</a>).
             </li>
             <li>
-              <strong>Cautions, and how to check.</strong> The households are
-              synthetic, and the generator decides how often and how they change;
-              it changed every medium and complex household and no simple one, so
-              change and complexity cannot be told apart. The client is a model,
-              not a person, and in the dev trial it still caused 7 of the 19 wrong
-              facts in agent runs. My blind lists come from one labeler who is not a
-              practicing preparer, and they cover only what changed. Test scoring
-              counts only the rules I have verified, now all 33. My labels
-              validate the judge on delivery but not yet on advice, though its advice
-              verdicts count toward a run's pass. In the 9 dev households
-              with a trap for an ended credit, it now fails advice on 4 of the 33
-              notes to the preparer that say the credit ended and passes the other
-              29. It had passed 3 of those 4 in its first reading, on transcripts
-              that changed only in how their lines were marked, and 16 of its 160
-              summary verdicts flipped, on a question the marking does not bear on.
-              Its verdicts vary between readings, so I cannot say how much of the
-              fall from 12 advice FAILs to 4 came from marking the lines. I also
-              moved a bar after seeing the dev results, raising the cost bar from
-              $0.10 to $0.60 a household so the configuration I chose would meet
-              it. The decision log keeps the original and my reason, and the other
-              bars are unchanged. The evidence check now needs two or more of the client's words in a row, a one-word answer sentence, or the field of last year's profile that holds the fact. It still proves only that the words or the field are there, not that they support the value, so a wrong fact is left to scoring. The review check rests on one reviewer, me, who built the project and is not a practicing preparer, on 24 synthetic drafts with wide intervals, and I knew the shape of the problems the flags show before I started. Anyone can reproduce the numbers drawn from the data offline, with no key and no cost, and tests check most of them. Research and review counts come instead from one time agent passes recorded in the decision log (<a href="#method">Appendix A</a>). Run files for the dev runs stay out of the repository, so the generated report and the spend ledger are their record, and no test rechecks them here.
+              <strong>Cautions, and how to check.</strong> Every household is
+              synthetic, and the client is a model, not a person. I am not a
+              practicing preparer, and the rule checks, the labels and the 24
+              reviews are all mine. A separate model checks each run for tax
+              advice and for claims that the list was sent, and so far my
+              labels validate it on those claims only, not on advice. I raised
+              the cost bar from $0.10 to $0.60 a household after seeing the
+              development results and before the lock, and the decision log
+              keeps the original. Anyone can reproduce the numbers drawn from
+              the data offline, with no key
+              (<a href="#method">Appendix A</a>).
             </li>
           </ul>
         </section>
@@ -293,25 +221,39 @@
         <section id="problem">
           <p class="section-kicker">Part 1</p>
           <h2>The problem</h2>
+
           <p>
             A preparer cannot start a return until the client's documents are in.
-            Usually they arrive through an organizer, one long questionnaire and a list of documents to send, the same for every client. Questions that
-            do not apply cost the client time, and documents the client forgets
-            come back later as missing forms and second requests. AI organizers
-            now build each client's questionnaire and document list from last
-            year's data instead, so they inherit last year's view of the client.
+            They usually arrive through an organizer, one long questionnaire and a
+            list of documents to send, the same for every client. Questions that do
+            not apply cost the client time, and documents the client forgets come
+            back later as missing forms and second requests.
           </p>
           <p>
-            Last year's data has two blind spots: it knows nothing about what
-            changed this year, such as a new job, a side business, Marketplace
-            health coverage or a home sale, and nothing about rules that changed.
-            Public Law 119-21, the 2025 law commonly called the One Big Beautiful
-            Bill, ended the energy efficient home improvement credit, the
-            residential clean energy credit and the clean vehicle credits before
-            2026 activity. A list built from older knowledge therefore asks for
-            receipts that no longer earn a federal credit.
+            Newer AI organizers start from last year's data instead, so they
+            inherit last year's view of the client. Last year's data has two blind
+            spots. It knows nothing about what changed this year, such as a new job,
+            a side business or a home sale. It also knows nothing about rules that
+            changed: Public Law 119-21, a 2025 law, ended the credits for home
+            energy upgrades, clean energy systems and clean vehicles before 2026
+            activity. A list built from older knowledge therefore asks for receipts
+            that no longer earn a federal credit.
+          </p>
+          <p class="jtbd">
+            <strong>The preparer's job:</strong> when a client's year changes,
+            help me learn what changed and ask for exactly the documents this
+            year's return needs, so I prepare the return once instead of chasing
+            forms.
           </p>
           <p>
+            The agent's part is gathering: it does not prepare the return, never
+            advises the client, and leaves the preparer in charge of what reaches
+            the client.
+          </p>
+          <details class="record">
+            <summary><span class="record-kicker">Detail</span> One household that shows both blind spots</summary>
+            <div class="record-body">
+              <p>
             One synthetic household from the dev group, H011, shows both blind spots. Last year it
             had one dependent and paid college tuition, and this year it has a
             new dependent, started receiving Social Security, bought a home with
@@ -325,22 +267,42 @@
             would also ask for the upgrade receipts, which earn no federal credit
             for upgrades put in during 2026.
           </p>
-          <p class="jtbd">
-            <strong>The preparer's job:</strong> when a client's year changes,
-            help me learn what changed and ask for exactly the documents this
-            year's return needs, so I prepare the return once instead of chasing
-            forms.
-          </p>
-          <p>
-            That job is gathering, not preparing the return and never advising
-            the client, and it leaves the preparer in charge of what reaches the
-            client.
-          </p>
+            </div>
+          </details>
         </section>
 
         <section id="evidence">
           <p class="section-kicker">Part 2</p>
           <h2>What I actually know</h2>
+
+          <p>This part sorts the page's claims by how sure I am of each.</p>
+          <ul>
+            <li>
+              <strong>Verified.</strong> AI organizers start from last year's data
+              (<a href="https://accountants.intuit.com/taxprocenter/practice-management/putting-the-ai-into-tax-organizers/">Intuit Tax Pro Center</a>).
+              The rules changed for 2026, when several energy and vehicle credits
+              ended (<a href="https://www.irs.gov/newsroom/faqs-for-modification-of-sections-25c-25d-25e-30c-30d-45l-45w-and-179d-under-public-law-119-21-139-stat-72-july-4-2025-commonly-known-as-the-one-big-beautiful-bill-obbb">IRS fact sheet FS-2025-05</a>).
+              The closest public benchmark,
+              <a href="https://daplab.cs.columbia.edu/projects/taxbench/">Columbia's TaxLab</a>,
+              scores the finished return, and I know of no public measure that
+              counts an intake agent's questions alongside the documents it misses.
+            </li>
+            <li>
+              <strong>Inferred.</strong> That fewer questions make a better
+              experience for the client, and that a model can play a client well
+              enough to compare agents. Neither is measured here with real clients.
+            </li>
+            <li>
+              <strong>Not known.</strong> Whether a practicing preparer would catch
+              what a draft gets wrong, since my own review caught nothing
+              (<a href="#review">Part 7</a>), and whether the costlier model buys
+              accuracy (<a href="#results">Part 6</a>).
+            </li>
+          </ul>
+          <details class="record">
+            <summary><span class="record-kicker">Detail</span> Each claim with its source, and what the rules rest on</summary>
+            <div class="record-body">
+
           <div class="evidence">
             <h3>Verified</h3>
             <ul>
@@ -411,53 +373,84 @@
             but I am one person and not a practicing preparer
             (<a href="#next">Part 10</a>).
           </p>
+            </div>
+          </details>
         </section>
 
         <section id="lanes">
           <p class="section-kicker">Part 3</p>
           <h2>Where the agent acts, and where it does not</h2>
+
           <p>
-            This design splits the job three ways, by what each part is good at
-            and by what it would cost to get that part wrong. A simpler design
-            puts the whole job in one model, which asks, decides which documents
-            are needed, writes the list and sends it.
+            The simpler design puts the whole job in one model, which asks, decides
+            which documents are needed, writes the list and sends it. This design
+            splits the job three ways instead, by what each part is good at and by
+            what it costs to get that part wrong.
           </p>
-          <h3>Who does what</h3>
           <div class="errc" role="group" aria-label="Who does what">
             <div class="errc-cell">
               <h4>The agent</h4>
               <ul>
-                <li>Asks plain language questions, one topic at a time, starting with what changed.</li>
-                <li>Records each fact with evidence: the client's own words, or the field of last year's profile that holds it.</li>
-                <li>Adds a custom request, with a reason, for anything no rule covers.</li>
-                <li>Hands any tax advice question to the preparer.</li>
-                <li>Cannot write the list, see the answer key, or send the list.</li>
+                <li>Asks plain questions, starting with what changed.</li>
+                <li>Records each answer with the client's own words as evidence.</li>
+                <li>Cannot write the list, send anything, or see the answers it is scored against.</li>
               </ul>
             </div>
             <div class="errc-cell">
               <h4>The code</h4>
               <ul>
-                <li>Turns recorded facts into the document list through 33 rules, each citing an official source.</li>
-                <li>Counts a fact never recorded as no, and lists it as not asked.</li>
+                <li>Turns recorded facts into the document list through 33 sourced rules.</li>
                 <li>Refuses a fact whose evidence does not check out.</li>
-                <li>Refuses a question that says the list was sent, or asks the client to send documents, before the client sees it.</li>
-                <li>Cannot guess a fact the conversation did not learn.</li>
+                <li>Reads each question before the client sees it, and refuses one that claims the list was sent.</li>
               </ul>
             </div>
             <div class="errc-cell">
               <h4>The preparer</h4>
               <ul>
                 <li>Verifies each rule against its source before it counts.</li>
-                <li>Reviews the draft on a review screen, with the agent's note on what it was unsure about and flags code computes beside their evidence; only the preparer's click can approve it (<a href="#review">Part 7</a>).</li>
-                <li>Answers the client's advice questions.</li>
-                <li>Sends the approved list through the firm's own system; neither the agent nor the review screen has a send tool.</li>
+                <li>Reviews the draft on a screen where code flags where to look (<a href="#review">Part 7</a>).</li>
+                <li>Approves with a click and sends through the firm's own system.</li>
               </ul>
             </div>
           </div>
           <p>
-            In this project I stand in for the preparer: I verify the rules, label the judge's transcripts and lock the bars, and I reviewed 24 of the test run's drafts blind on the review screen.
+            Three guarantees hold in code, not in the prompt: the model never writes
+            the list, every fact needs evidence, and no tool can send anything. They
+            are enforced by the tool server and by the harness, the code that runs
+            the agent, so no instruction can talk the agent around them. In this
+            project I stand in for the preparer: I verified the rules, locked the
+            bars, labeled transcripts to check the model judge
+            (<a href="#judged">Part 5</a>) and reviewed 24 drafts blind
+            (<a href="#review">Part 7</a>).
           </p>
-          <h3>Three guarantees in code, not in the prompt</h3>
+          <details class="record">
+            <summary><span class="record-kicker">Detail</span> The three lanes in full, the three guarantees, and the agent's nine tools</summary>
+            <div class="record-body">
+              <h3>The three lanes in full</h3>
+              <h4>The agent</h4>
+              <ul>
+              <li>Asks plain language questions, one topic at a time, starting with what changed.</li>
+              <li>Records each fact with evidence: the client's own words, or the field of last year's profile that holds it.</li>
+              <li>Adds a custom request, with a reason, for anything no rule covers.</li>
+              <li>Hands any tax advice question to the preparer.</li>
+              <li>Cannot write the list, see the answer key, or send the list.</li>
+              </ul>
+              <h4>The code</h4>
+              <ul>
+              <li>Turns recorded facts into the document list through 33 rules, each citing an official source.</li>
+              <li>Counts a fact never recorded as no, and lists it as not asked.</li>
+              <li>Refuses a fact whose evidence does not check out.</li>
+              <li>Refuses a question that says the list was sent, or asks the client to send documents, before the client sees it.</li>
+              <li>Cannot guess a fact the conversation did not learn.</li>
+              </ul>
+              <h4>The preparer</h4>
+              <ul>
+              <li>Verifies each rule against its source before it counts.</li>
+              <li>Reviews the draft on a review screen, with the agent's note on what it was unsure about and flags code computes beside their evidence; only the preparer's click can approve it (<a href="#review">Part 7</a>).</li>
+              <li>Answers the client's advice questions.</li>
+              <li>Sends the approved list through the firm's own system; neither the agent nor the review screen has a send tool.</li>
+              </ul>
+              <h3>Three guarantees in code, not in the prompt</h3>
           <ol>
             <li>
               <strong>The model never writes the list.</strong>
@@ -502,11 +495,35 @@
             rather than in the server, so a production version would move that
             check into the service. The server's tools also carry labels any caller can read: three are marked as only reading, the five that write as never destructive, and all eight as reaching nothing outside the server.
           </p>
+            </div>
+          </details>
         </section>
 
         <section id="rules">
           <p class="section-kicker">Part 4</p>
           <h2>The rules, and a person's check on them</h2>
+
+          <p>
+            The document list comes from 33 rules: 30 that request a document and 3
+            traps for credits that ended, where asking for the paperwork counts
+            against the list. Each rule cites an official IRS source, and a rule
+            counts in test scoring only after I have verified it against that
+            source. I verified all 33 by hand, after sending 23 back for changes on
+            my first pass. Every rule, with its source and status, is on the
+            <a href="https://github.com/Roanukz/tax-agent-ask/blob/main/docs/rules.md">rules page</a>.
+          </p>
+          <p>
+            Scoring cannot catch a wrong rule, because the answer key comes from the
+            same rules. So before seeing any rule's answer, I wrote my own request
+            lists for 30 households. All 190 differences between my lists and the
+            rules were settled and logged, each with its reason. Writing blind, I
+            asked for the paperwork behind an ended credit in 10 of the 11
+            households that had one. That is the mistake the traps exist to catch.
+          </p>
+          <details class="record">
+            <summary><span class="record-kicker">Detail</span> The 39 facts that describe a household, how the sources were found, the three traps, and how the blind check ran</summary>
+            <div class="record-body">
+
           <p>
             A household is described by 39 fact keys: 36 top level facts, such
             as filing status, the number of employers, a side business or
@@ -560,11 +577,44 @@
             agent told to refute its settlement from official sources it fetched
             itself. What the check found is in <a href="#results">Part 6</a>.
           </p>
+            </div>
+          </details>
         </section>
 
         <section id="judged">
           <p class="section-kicker">Part 5</p>
-          <h2>How the agent will be judged</h2>
+          <h2>How the agent is judged</h2>
+
+          <p>
+            The agent is judged on 100 synthetic households, frozen into train (20),
+            dev (40) and test (40): examples, development and a test group that runs
+            once. A model plays each client from that household's facts, and some of
+            those clients forget something, such as a second job, until a question
+            brings it back. On the same households the agent is compared with what
+            it would replace: a full organizer that asks every question, and last
+            year's list with no questions at all.
+          </p>
+          <p>
+            A run passes only if its draft misses no required document and asks for
+            at most one the return does not need, it records no wrong fact, and it
+            never gives tax advice or claims the list was sent. The bars sit in a preregistration file, a file that fixes the bars
+            and the configuration they judge before any test result exists. At least
+            90% of test runs must pass, at most 2% of required documents may be
+            missed, the median question count must be at most half the full
+            organizer's, and the cost must be at most $0.60 a household. The file
+            locked on November 2. Until then the code refused to run the test group.
+          </p>
+          <p>
+            The measurement is checked too. Mutation testing plants small bugs in
+            the scoring code to see whether the tests notice, and the tests caught
+            1,065 of 1,067. A second model, the honesty judge, reads each transcript
+            for advice and for claims that the list was sent. So far my own labels
+            validate it on those claims only, not on advice.
+          </p>
+          <details class="record">
+            <summary><span class="record-kicker">Detail</span> The households, the simulated client, the baselines, all nine bars, the honesty judge and the spending caps</summary>
+            <div class="record-body">
+
           <p>
             The bars below are written into a preregistration file: a file that fixes the bars, the configurations to run and the one they judge, before any test result exists. It locked on November 2, before the one test run, and only the cost bar changed before then. After the dev results I chose the configuration they judge, the agent on Opus 5.5, and raised that bar from $0.10 to $0.60 a household (<a href="#results">Part 6</a>). The code refused to run the test group until that file was committed with its lock date, and that commit predates the first test run. Three of the nine rows below, evidence and delivery,
             the rules and the tests, come from the requirements document rather
@@ -724,11 +774,82 @@
             Instead it reached the cap with 3 runs left, and I raised the cap to
             $160 to finish them.
           </p>
+            </div>
+          </details>
         </section>
 
         <section id="results">
           <p class="section-kicker">Part 6</p>
-          <h2>What is measured so far</h2>
+          <h2>What the test run found</h2>
+
+          <p>
+            The one test run scored all 40 test households, three trials each, after
+            the bars had locked. The agent on Claude Opus passed 92.5% of its 120
+            runs, missed 0.5% of required documents and asked a median of 14
+            questions where the full organizer asks 36, at $0.40 a household. It
+            meets the bars for passing, missed documents, questions and cost,
+            although its pass-rate interval reaches below 90%, and counting as
+            failures the 4 Opus runs that a network outage stopped before they
+            reached the model would put it at 89.2%.
+          </p>
+          <div class="table-scroll" tabindex="0" role="region" aria-label="Test results">
+            <table>
+              <caption>The test run: 40 households, 3 trials each. The columns are runs passed with a 95% interval, required documents missed, median questions asked, and cost per household. The first row is the configuration the bars judge.</caption>
+              <thead><tr><th scope="col">Configuration</th><th scope="col">Runs passed</th><th scope="col">Missed</th><th scope="col">Questions</th><th scope="col">Cost</th></tr></thead>
+              <tbody>
+                <tr><th scope="row">The agent on Opus (A-opus)</th><td class="num">92.5% [85.8, 98.3]</td><td class="num">0.5%</td><td class="num">14</td><td class="num">$0.40</td></tr>
+                <tr><th scope="row">The agent on Sonnet (A-sonnet)</th><td class="num">90.8% [83.3, 96.7]</td><td class="num">1.4%</td><td class="num">15</td><td class="num">$0.18</td></tr>
+                <tr><th scope="row">The agent on Haiku (A-haiku)</th><td class="num">86.7% [77.5, 94.2]</td><td class="num">1.9%</td><td class="num">12</td><td class="num">$0.01</td></tr>
+                <tr><th scope="row">Sonnet plans, Haiku asks (A-split)</th><td class="num">86.7% [78.3, 94.2]</td><td class="num">1.4%</td><td class="num">15</td><td class="num">$0.06</td></tr>
+                <tr><th scope="row">The full organizer (B1)</th><td class="num">86.7% [75.8, 95.8]</td><td class="num">4.1%</td><td class="num">36</td><td class="num">$0.01</td></tr>
+                <tr><th scope="row">Last year's list (B2)</th><td class="num">32.5% [17.5, 47.5]</td><td class="num">35.5%</td><td class="num">0</td><td class="num">$0.00</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>The test changed my thinking in three ways.</p>
+          <ul>
+            <li>
+              <strong>A cheaper model may be enough.</strong> The agent on Sonnet
+              passed 90.8% at $0.18 a household, and the intervals cannot tell it
+              apart from Opus at $0.40, so the evidence does not yet show that the
+              extra cost buys accuracy.
+            </li>
+            <li>
+              <strong>Runs fail on wrong facts.</strong> All 9 failing Opus runs
+              recorded a wrong fact, and none failed for giving advice.
+            </li>
+            <li>
+              <strong>Asking everything still misses the forgotten job.</strong> The
+              full organizer missed 15 of 54 documents on simple households, and
+              every one was a W-2 in a household whose client forgot a second job
+              when the question came once.
+            </li>
+          </ul>
+          <p>Four findings went against what I wanted, and the detail below lists all fourteen.</p>
+          <ul>
+            <li>
+              No configuration met all the bars as I first set them. I chose
+              accuracy and raised the cost bar from $0.10 to $0.60 a household,
+              after seeing the dev results and before the lock, and the decision
+              log keeps the original.
+            </li>
+            <li>
+              The honesty judge meets its bars on only one of its three questions,
+              so the advice verdicts inside these pass rates are not yet validated.
+            </li>
+            <li>
+              Writing my own request lists blind, I fell into the project's own
+              traps (<a href="#rules">Part 4</a>).
+            </li>
+            <li>
+              My own blind review of the agent's drafts caught none of their
+              problems (<a href="#review">Part 7</a>).
+            </li>
+          </ul>
+          <details class="record">
+            <summary><span class="record-kicker">Detail</span> The full record of the test run and the development trial before it: every configuration, all fourteen findings, and the tests of the scoring code</summary>
+            <div class="record-body">
+              <h3>How the test run was scored</h3>
           <p>
             The test run scored all 40 test households, 3 trials each. On
             November 2 it scored the 25 whose rules were all verified, as the
@@ -736,20 +857,6 @@
             a commit before it started scored the other 15 on November 4. The
             bars locked in a commit before the first test call.
           </p>
-          <div class="table-scroll" tabindex="0" role="region" aria-label="Test results">
-            <table>
-              <caption>Test results, 40 households, 3 trials each, with 95% household bootstrap intervals</caption>
-              <thead><tr><th scope="col">Config</th><th scope="col">Pass rate</th><th scope="col">Missed-document rate</th><th scope="col">Cost per household</th></tr></thead>
-              <tbody>
-                <tr><td>A-opus (primary)</td><td class="num">92.5% [85.8, 98.3]</td><td class="num">0.5% [0.0, 1.1]</td><td class="num">$0.3980</td></tr>
-                <tr><td>A-sonnet</td><td class="num">90.8% [83.3, 96.7]</td><td class="num">1.4% [0.3, 3.0]</td><td class="num">$0.1765</td></tr>
-                <tr><td>A-haiku</td><td class="num">86.7% [77.5, 94.2]</td><td class="num">1.9% [0.4, 4.0]</td><td class="num">$0.0133</td></tr>
-                <tr><td>A-split</td><td class="num">86.7% [78.3, 94.2]</td><td class="num">1.4% [0.3, 3.0]</td><td class="num">$0.0596</td></tr>
-                <tr><td>B1, full organizer</td><td class="num">86.7% [75.8, 95.8]</td><td class="num">4.1% [1.1, 8.5]</td><td class="num">$0.0060</td></tr>
-                <tr><td>B2, last year's list</td><td class="num">32.5% [17.5, 47.5]</td><td class="num">35.5% [29.6, 40.8]</td><td class="num">$0</td></tr>
-              </tbody>
-            </table>
-          </div>
           <p>
             A-opus meets the pass, missed-document, question, honesty and cost
             bars, though its pass-rate interval reaches below 90%. Its advice
@@ -767,7 +874,7 @@
             dropped, and 17 agent runs never reached the model: no tokens, no
             question asked, each scored as missing every document. Under the
             plan's rule for runs that measured no agent behavior, they were set
-            aside, kept in the repository, and run again; scored as failures,
+            aside under their own file names and run again; scored as failures,
             they would have put A-opus at 89.2%.
           </p>
           <p>
@@ -780,17 +887,16 @@
             does not show Opus's extra cost buying accuracy. Third, asking
             everything still works on hard cases: the full organizer passed all 30
             complex runs, but with about 2.6 times the questions, and it missed
-            15 of 54 documents on simple households, every one a W-2: the second
-            job a client forgets when the question comes once. My own labels needed checking too: 17 of my
+            15 of 54 documents on simple households, every one a W-2 in a household whose client forgot a second job when the question came once. My own labels needed checking too: 17 of my
             60 judge labels said PASS on transcripts where the assistant claimed
             to have emailed the list, which my written rule calls a FAIL, and I
             corrected them before using them.
           </p>
           <p>
-            Two fixes followed on dev, never on test. Revising the judge's advice
+            Two fixes followed, both worked out on dev. Revising the judge's advice
             and summary questions on the tuning labels raised its agreement with my
             PASS labels on the held-out split from 66.7% to 83.3% on advice and from
-            50.0% to 79.2% on summary, still short of the 90% bars. An agent fix
+            50.0% to 79.2% on summary, still short of the 90% bars. The revised judge then scored the 15 test households of November 4, and the 25 scored on November 2 kept the verdicts they were scored with. An agent fix
             failed: asking every client once more about any other job did not
             raise A-opus's dev pass rate, which went from 37 to 36 of 40, because
             A-opus already found the hidden job in all 7 households that have one
@@ -1033,18 +1139,63 @@
             only to choose a configuration. I raised the cost bar after seeing
             them, and only the one test run measured the configuration I locked.
           </p>
+            </div>
+          </details>
         </section>
 
         <section id="review">
           <p class="section-kicker">Part 7</p>
           <h2>The preparer's review screen</h2>
+
           <p>
-            Parts 5 and 6 judge the agent's lane. This part judges the
-            preparer's lane in the same spirit, though with no pass bar: a
-            hypothesis locked before the first review, a blind check, and a
-            report given whichever way it came out. It came out against the
-            hypothesis.
+            While Parts 5 and 6 judge the agent, this part judges the human check in
+            the same spirit: a hypothesis locked before the first review, a blind
+            test, and a report given whichever way it came out. It came out against
+            the hypothesis.
           </p>
+          <p>
+            <strong>The screen.</strong> Every agent run ends with a draft waiting
+            for the preparer, yet nothing showed the preparer that draft. So I added
+            a review screen, where code flags the places a draft is
+            most likely wrong, such as a document dropped since last year, and puts
+            each flag beside its evidence. Only a click on the screen
+            approves a draft. Claude Desktop and Claude Code both kept the approve
+            tool from the model in every check, and when I asked Claude to approve a
+            draft, it could not. You can <a href="review-demo.html">try the screen
+            with three demo drafts</a>, and the
+            <a href="demo.html#decision-5">walkthrough's fifth decision</a> shows it.
+          </p>
+          <p>
+            <strong>The test and the result.</strong> Before my first review I
+            locked a hypothesis: review catches most problems a draft shows and few
+            it hides. Then I reviewed 24 drafts from the test run, 6 from each agent
+            configuration, without seeing any draft's result: 4 whose problem a flag shows, 8 whose problem the flags
+            hide, and 12 clean. A problem is a missed document or a wrong fact. I
+            caught none of the 17 problems in the 12 problem drafts. I approved every
+            draft with its documents unchanged, at a median of 10.5 seconds a draft,
+            and I marked every flag checked, including the flags that pointed
+            straight at a problem. Although no clean draft got a harmful edit, the
+            hypothesis is not supported.
+          </p>
+          <p class="callout callout-info">
+            <strong>What it means for the product.</strong> The screen put the right
+            flag beside the problem, and one click still cleared it. A review step
+            protects a client only if its design makes the reviewer answer each
+            flag. So the next version would make each flag demand an answer before
+            Approve unlocks. For a document dropped since last year or a fact
+            carried over unconfirmed, the answer is to raise the count, ask the
+            client, or say why not. Because the check had one reviewer, me, who built the project and
+            is not a practicing preparer, the next step is the same scored test with
+            preparers who did not build it (<a href="#next">Part 10</a>).
+          </p>
+          <p>
+            The <a href="https://github.com/Roanukz/tax-agent-ask/blob/main/docs/review-check.md">catch check report</a>
+            has every draft and every problem.
+          </p>
+          <details class="record">
+            <summary><span class="record-kicker">Detail</span> The decisions behind the screen, how the blind check was set up and scored, and every result</summary>
+            <div class="record-body">
+
           <h3>Why the draft needed a screen</h3>
           <p>
             Every agent run ends with a draft request list waiting for the
@@ -1140,8 +1291,7 @@
             credit. You can
             <a href="review-demo.html">try the screen with three demo drafts</a>,
             in a static page with no model and no network, and
-            <a href="demo.html#step-7">step 7 of the walkthrough</a> shows how
-            it was built.
+            <a href="demo.html#decision-5">the walkthrough's fifth decision</a> shows the screen.
           </p>
           <h3>How it was measured</h3>
           <p>
@@ -1240,8 +1390,7 @@
             answer, and I marked every flag checked. The lesson I draw is that a
             review step protects a client only if its design makes the reviewer
             answer each flag, rather than letting every flag be marked checked.
-            So the next version would make the dropped and carried flags demand
-            an answer before Approve unlocks: raise the count, ask the client,
+            So the next version would make each flag demand an answer before Approve unlocks: for the dropped and carried flags, raise the count, ask the client,
             or say why not. It would also show the time spent on each draft.
             Because the check had one reviewer, it cannot say how a practicing
             preparer would do. The same scored check would run next with
@@ -1263,17 +1412,40 @@
             problem was a dropped W-2 request beside a wrong W-2 count, and all
             4 shown drafts are among the marked ones.
           </p>
+            </div>
+          </details>
         </section>
 
         <section id="decisions">
           <p class="section-kicker">Part 8</p>
           <h2>Design decisions</h2>
+
           <p>
-            Decisions 1 to 9 are dated in the
-            project's
-            <a href="https://github.com/Roanukz/tax-agent-ask/blob/main/DECISIONS.md">decision log</a>,
-            and Decision 10 comes from the requirements document's build plan.
+            Ten decisions shaped the build. Decisions 1 to 9 are dated in the
+            project's <a href="https://github.com/Roanukz/tax-agent-ask/blob/main/DECISIONS.md">decision log</a>, and Decision 10 comes from
+            the requirements document's build plan.
           </p>
+          <div class="table-scroll" tabindex="0" role="region" aria-label="The ten design decisions">
+            <table>
+              <caption>The ten design decisions, each with why I made it and what it cost</caption>
+              <thead><tr><th scope="col">No.</th><th scope="col">Decision</th><th scope="col">Why</th><th scope="col">Cost</th></tr></thead>
+              <tbody>
+                <tr><td class="num">1</td><th scope="row">Code writes the list, not the model</th><td>A miss then traces to a fact the agent did not learn or to a rule that was wrong</td><td>A document no rule covers needs a custom request</td></tr>
+                <tr><td class="num">2</td><th scope="row">Evidence, or it does not count</th><td>The preparer has to trust each recorded fact</td><td>A correct paraphrase is refused and costs a retry</td></tr>
+                <tr><td class="num">3</td><th scope="row">No send tool, rather than a denied one</th><td>A missing tool cannot be argued with</td><td>No end to end delivery demo</td></tr>
+                <tr><td class="num">4</td><th scope="row">The answer key is out of reach by construction</th><td>The scores mean something only if the agent cannot see the answers</td><td>Two files per household</td></tr>
+                <tr><td class="num">5</td><th scope="row">Traps for credits that ended</th><td>They test whether older knowledge leaks into a list</td><td>They rest on my reading of IRS guidance</td></tr>
+                <tr><td class="num">6</td><th scope="row">Bars that locked before one test run</th><td>The result could not be tuned to the test</td><td>A public miss was possible</td></tr>
+                <tr><td class="num">7</td><th scope="row">A spending cap high enough that the test measures the agent, not the cap</th><td>A normal run is never stopped early and scored as a failure</td><td>A runaway run can spend more before it stops</td></tr>
+                <tr><td class="num">8</td><th scope="row">The agent is not shown its budget</th><td>A model that sees its money running out may ask fewer questions</td><td>One backstop fewer</td></tr>
+                <tr><td class="num">9</td><th scope="row">The simulated client forgets, the way clients do</th><td>The test has to include the change a client leaves out</td><td>A client more consistent than a real one</td></tr>
+                <tr><td class="num">10</td><th scope="row">One model, not one per step</th><td>On one dev trial a two-model split missed more documents than the cheapest model, at five times its cost</td><td>The choice rests on one dev trial</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <details class="record">
+            <summary><span class="record-kicker">Detail</span> All ten decisions in full, each with who it is for</summary>
+            <div class="record-body">
 
           <div class="decision">
             <span class="decision-num">Decision 1</span>
@@ -1448,14 +1620,59 @@
               <li><span class="k">Quality</span><span>On dev, one trial: 80.0% of runs passed and 2.9% of documents were missed, against 87.5% and 1.0% for A-haiku and 92.5% and 0.0% for A-opus; paired on the same households, the split missed 2.0 points more than A-haiku [0.4, 4.4].</span></li>
             </ul>
           </div>
+            </div>
+          </details>
         </section>
 
         <section id="carries">
           <p class="section-kicker">Part 9</p>
           <h2>What carries over to an intake product</h2>
+
           <p>
-            These are the choices I would make for any client intake agent, and none of them needs this project's code.
+            These are the choices I would make for any client intake agent, and none
+            of them needs this project's code.
           </p>
+          <ol>
+            <li>
+              <strong>Put the agent in the conversation, and keep the rules and the
+              send button out of it.</strong> Asking what changed is work for the
+              agent, while deciding which documents the law requires stays in
+              sourced code and sending stays with the firm.
+            </li>
+            <li>
+              <strong>Judge an agent against what it replaces,</strong> on the same
+              clients, with the bars set first.
+            </li>
+            <li>
+              <strong>Triage by change, and test the triage.</strong> A quiet year
+              can be a confirmation rather than an interview, provided the
+              confirmation catches the change a client forgets to mention.
+            </li>
+            <li>
+              <strong>Treat the rules as a product with an owner and a
+              calendar.</strong> Each rule carries a source, a version and the date
+              it was verified.
+            </li>
+            <li>
+              <strong>Make cost a bar, not a surprise.</strong> Because cost was a
+              bar, I had to decide the price before the lock instead of finding it
+              on test.
+            </li>
+            <li>
+              <strong>Build capabilities as tools, not as one app.</strong> The same
+              tools could serve a client portal, a partner's system or another
+              agent, once the evidence check moves into the service.
+            </li>
+            <li>
+              <strong>Design the preparer's review in, and make each flag demand an
+              answer.</strong> Showing the reviewer where to look was not enough in
+              my own blind check (<a href="#review">Part 7</a>).
+            </li>
+          </ol>
+          <details class="record">
+            <summary><span class="record-kicker">Detail</span> Each of the seven, argued in full with its evidence</summary>
+            <div class="record-body">
+
           <ol>
             <li>
               <strong>Put the agent in the conversation, and keep the rules and
@@ -1534,11 +1751,59 @@
               those changes alone would have signaled nothing.
             </li>
           </ol>
+            </div>
+          </details>
         </section>
 
         <section id="next">
           <p class="section-kicker">Part 10</p>
           <h2>What I would do next</h2>
+
+          <p>
+            Nine earlier items are done, the test run and the review screen among
+            them. These seven are open.
+          </p>
+          <ol>
+            <li>
+              <strong>Make each flag demand an answer</strong> before Approve
+              unlocks, as <a href="#review">Part 7</a> describes.
+            </li>
+            <li>
+              <strong>Hand the same blind check to practicing preparers</strong> who
+              did not build the screen, as the project's first measure with a real
+              user.
+            </li>
+            <li>
+              <strong>Give the honesty judge failures to catch</strong> on advice
+              and on its summary question, so that all three of its checks can be
+              validated.
+            </li>
+            <li>
+              <strong>Fix the forgotten job without confusing the client.</strong>
+              One more question about other jobs led the simulated client to count
+              jobs it did not have, so I reverted it.
+            </li>
+            <li>
+              <strong>Read the documents, not just request them,</strong> by
+              checking that each uploaded file is the document requested.
+            </li>
+            <li>
+              <strong>Add state returns,</strong> as a second rules file with the
+              same schema.
+            </li>
+            <li>
+              <strong>Run one firm's real clients through the same measures,</strong>
+              after a privacy review. That is a different project.
+            </li>
+          </ol>
+          <p>
+            The design would have to change if the model needed to read documents
+            rather than ask questions, or if outside users needed live model calls.
+          </p>
+          <details class="record">
+            <summary><span class="record-kicker">Detail</span> The nine finished items, and each open item in full</summary>
+            <div class="record-body">
+
           <ol>
             <li>
               <strong>Check the rules against a person's blind lists.</strong><span class="shipped">Done</span>
@@ -1576,8 +1841,7 @@
             <li>
               <strong>Finish verifying the rules against their sources.</strong><span class="shipped">Done</span>
               I verified 10 of the 33 rules on November 1, sent 23 back with the
-              changes I wanted, verified 19 of them on November 2 and the last 4
-              on November 4, after which the 15 test households they held back
+              changes I wanted, verified 20 of them on November 2, sent one more back, and verified the last 4 on November 4, after which the 15 test households they held back
               were scored.
             </li>
             <li>
@@ -1654,37 +1918,70 @@
               privacy review. That is a different project.
             </li>
           </ol>
-          <p>
-            The design would have to change if the model needed to read documents rather than ask questions, or if outside users needed live model calls.
-          </p>
+            </div>
+          </details>
         </section>
 
         <section id="cut">
           <p class="section-kicker">Part 11</p>
           <h2>What I cut</h2>
+
           <p>
-            The requirements document ruled these out before the build started, so none of them was cut to save time.
+            The requirements document ruled these out before the build started, so
+            none of them was cut to save time.
           </p>
           <ul>
-            <li><strong>Sending, e-signing, payments and delivery.</strong> The agent has no send tool, nor does the preparer's review screen, and code checks each of the agent's questions before the client sees it, since a question is the one channel that reaches the client.</li>
-            <li><strong>Reading or extracting uploaded documents.</strong> Next on the list (<a href="#next">Part 10</a>).</li>
-            <li><strong>State and business returns.</strong> Federal individual returns (Form 1040 households) for tax year 2026 only.</li>
-            <li><strong>Tax advice.</strong> The agent is told to hand every advice question to the preparer, and a run that gives advice fails.</li>
-            <li><strong>A web interface or hosted endpoint.</strong> The tool servers run locally; a hosted demo would spend the API budget per visitor and stop when it ran out. The preparer's review screen came later, under its own requirements document: its demo on this site is a static page with three demo drafts and no model or network behind it, and the local review page serves only my own Mac.</li>
+            <li><strong>Sending, e-signing, payments and delivery.</strong> Neither the agent nor the review screen has a send tool.</li>
+            <li><strong>Reading uploaded documents.</strong> It is on the list of next steps (<a href="#next">Part 10</a>).</li>
+            <li><strong>State and business returns.</strong> The rules cover federal individual returns for tax year 2026 only.</li>
+            <li><strong>Tax advice.</strong> The agent hands every advice question to the preparer, and a run that gives advice fails.</li>
+            <li><strong>A hosted demo of the agent.</strong> It would spend the API budget for each visitor, so the only live demo is the review screen's static page, which has no model behind it.</li>
+            <li><strong>MCP Sampling</strong>, a protocol feature that lets a tool server ask the connected assistant's model to write text. It is deprecated in the 2026-07-28 specification, so the simulated client calls the model directly.</li>
             <li><strong>Integration with any commercial tax product.</strong> The value here is the measurement.</li>
             <li><strong>Real client data of any kind.</strong> Every household is synthetic, with obviously fake names.</li>
-            <li><strong>MCP Sampling</strong>, a protocol feature that lets a tool server ask the connected assistant's model to write text. It is deprecated in the 2026-07-28 specification, so the simulated client calls the model directly.</li>
           </ul>
         </section>
 
         <section id="method">
           <p class="section-kicker">Appendix A</p>
-          <h2>Method made visible</h2>
+          <h2>Who did what, and how to check it</h2>
 
-          <h3>How it was built</h3>
           <p>
-            The project began as a requirements document I signed off before any
-            code. It set out a one page problem, a thesis and eight testable
+            The requirements document came before any code, and I made the calls
+            that needed judgment and reviewed the results. Claude Code wrote the code and ran every
+            experiment under rules written into the repository. Under those rules
+            the API key stays in a local file it never reads, every model call
+            reserves its cost first, the test group stays locked until the bars are
+            committed, and nothing goes public without my typed "proceed".
+            Independent AI agents,
+            each told to refute a piece of the work, reviewed it before I relied on
+            it. On November 13, 2026, all 3,919 offline tests passed with the
+            network blocked.
+          </p>
+
+          <h3>How to check it yourself</h3>
+          <p>From a copy of the repository, with Python 3.12 and uv:</p>
+          <pre><code>uv sync
+uv run pytest
+uv run python -m eval.baselines prior-year --split train --split dev
+uv run python -m eval.report
+uv run python -m generator.labels compare --unsettled
+uv run python -m rules.validate
+uv run python -m sim.fidelity --dry-run
+uv run python -m agent.wiring_check
+uv run python -m preparer.build --check
+uv run python -m eval.review_catch
+uv run mutmut run &amp;&amp; uv run mutmut results</code></pre>
+          <p>
+            None of these needs a key or spends anything, since only the live runs
+            need an API key in a local file.
+          </p>
+          <details class="record">
+            <summary><span class="record-kicker">Detail</span> How it was built, every review and gate, what each command does, what I got wrong, and the honest limits</summary>
+            <div class="record-body">
+              <h3>How it was built</h3>
+          <p>
+            The project began as a requirements document written before any code. It set out a one page problem, a thesis and eight testable
             success criteria, then a build plan in 11 blocks with a done check
             for each, a spend plan and a cut order. Claude Code has built all
             11 blocks against that document, from the live checks on train
@@ -1712,20 +2009,8 @@
             <li>Gates: the comparison could not show the rules' answers until my lists were on record, code locks the test group, every live call is reserved against the caps first, best effort for the few the agent's runtime sends on its own, and publishing waited for my "proceed". The local review page refused the 24 drafts until the catch check's hypothesis was locked and offered them only in order, and the scorer refuses to score unless the lock came before the first opening of any draft.</li>
           </ul>
 
-          <h3>How to check it yourself</h3>
-          <p>From a copy of the repository, with Python 3.12 and uv:</p>
-          <pre><code>uv sync
-uv run pytest
-uv run python -m eval.baselines prior-year --split train --split dev
-uv run python -m eval.report
-uv run python -m generator.labels compare --unsettled
-uv run python -m rules.validate
-uv run python -m sim.fidelity --dry-run
-uv run python -m agent.wiring_check
-uv run python -m preparer.build --check
-uv run python -m eval.review_catch
-uv run mutmut run &amp;&amp; uv run mutmut results</code></pre>
-          <p>
+              <h3>What each command does</h3>
+              <p>
             The tests run with network sockets blocked. Here the baseline command rescores last year's list, the report command regenerates the results
             report from the run files, and the compare command lists any blind
             label difference still open. Since the dev runs' files stay out of
@@ -1734,7 +2019,7 @@ uv run mutmut run &amp;&amp; uv run mutmut results</code></pre>
             the spend ledger, which the repository keeps. Next, the rules check confirms that every rule has a source and a status. The two after it score the simulated client with a stand-in and run the real agent runtime against a fake model API on the same machine. The build check confirms that the review screen and its static demo match their source, and the catch check rescores my 24 reviews from the committed records and writes its report again; it needs a full clone, not a shallow one, since it checks the lock against the repository's history. Last comes the mutation testing, which takes a while. None of these needs a key or spends anything. Only the live runs need an API key in a local file.
           </p>
 
-          <h3>What I got wrong</h3>
+              <h3>What I got wrong</h3>
           <ul>
             <li><strong>My blind lists asked for paperwork behind ended credits in 10 of 11 households,</strong> on a project built on those credits having ended, though for 6 of them that paperwork could still serve a purpose the rules do not model.</li>
             <li><strong>My blind lists covered only what changed,</strong> so they checked about half the rules I meant them to check.</li>
@@ -1763,11 +2048,22 @@ uv run mutmut run &amp;&amp; uv run mutmut results</code></pre>
             <li>The catch check rests on one reviewer, me, who built the project and is not a practicing preparer, on 24 synthetic drafts, so its intervals are wide. I knew the shape of the shown problems before reviewing, and the 4 shown drafts are all among the marked ones. The reviews ran on a local page, not inside Claude.</li>
             <li>Claude Code drafted this page from the repository, and I reviewed it. Its numbers come from the data, the generated report, the fidelity report, the catch check report, the spend ledger, the requirements documents, the decision log and the build's own test runs and reviews. Tests check most of the ones drawn from the data, last year's list from the report and the catch check's counts from my committed reviews, but none of the live results.</li>
           </ul>
+            </div>
+          </details>
         </section>
 
         <section id="terms">
           <p class="section-kicker">Appendix B</p>
           <h2>Terms used on this page</h2>
+
+          <p>
+            Plain definitions for the terms this page uses, from organizer to Wilson
+            interval.
+          </p>
+          <details class="record">
+            <summary><span class="record-kicker">Detail</span> The glossary</summary>
+            <div class="record-body">
+
           <ul>
             <li><strong>Organizer:</strong> the questionnaire and document list a firm sends a client before preparing the return.</li>
             <li><strong>Agent:</strong> a model that works in steps toward a goal, calling tools and reading their results.</li>
@@ -1810,6 +2106,8 @@ uv run mutmut run &amp;&amp; uv run mutmut results</code></pre>
             <li><strong>Wilson interval:</strong> a standard way to compute a 95% interval for a count out of a total, used for the catch check, where the agent's results use the bootstrap.</li>
             <li><strong>Forms named on this page:</strong> W-2 (wages), 1099-K (payments through apps and card processors), 1099-NEC (pay for freelance work), SSA-1099 (Social Security benefits), 1098 (mortgage interest), 1098-VLI (interest on a loan for a new vehicle), 5695 (residential energy credits), and 1040 (the individual return).</li>
           </ul>
+            </div>
+          </details>
         </section>
       </main>
     </div>

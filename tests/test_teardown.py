@@ -85,8 +85,8 @@ def test_title_and_hero_order():
     assert -1 not in positions, dict(zip(order, positions))
     assert positions == sorted(positions)
     buttons = re.findall(r'<a class="btn [^"]+" href="([^"]+)">([^<]+)</a>', hero.group(1))
-    assert buttons == [("demo.html", "View a step by step demo of the build process"),
-                       ("#results", "See what is measured so far"),
+    assert buttons == [("demo.html", "Walk through it in five minutes"),
+                       ("#results", "See the results"),
                        (SOURCE, "View the source")]
     assert len(re.findall(r'<div class="fact">', hero.group(1))) == 4
 
@@ -239,13 +239,8 @@ def test_the_prior_year_numbers_are_recomputed_from_the_data(tmp_path):
             interval = re.fullmatch(rf"{re.escape(rate)} (\[[\d.]+, [\d.]+\]) \(n={g['households']}\)",
                                     report_cell(report, f"#### Changed and unchanged households ({split})", "changed", "B2"))
             assert interval is not None and f"{rate} {interval.group(1)}" in cells, (split, cells)
-    dev = groups[("dev", True)]
-    hero = f"{100 * dev['missed'] / dev['required']:.1f}%"
-    assert f'<span class="fact-value">{hero}</span>' in page()
-    assert f"in the {dev['households']} synthetic development households whose year changed" in page_text()
-    assert f"missed {dev['missed']} of the {dev['required']} documents their returns need. That is {hero}," in page_text()
     quiet = groups[("dev", False)]["households"]
-    assert f"{quiet} of 40 dev households" in page_text() and f"{quiet} of the 40 dev households" in page_text()
+    assert f"{quiet} of the 40 dev households" in page_text()
 
 
 def test_the_blind_label_numbers_are_recomputed_from_the_labels():
@@ -268,17 +263,15 @@ def test_the_blind_label_numbers_are_recomputed_from_the_labels():
     splits = Counter(truths[h]["split"] for h in sheet)
     text = page_text()
     assert f"{len(asked & trap_households)} of the {len(trap_households)} households that had one" in text
-    assert f'<span class="fact-value">{len(asked & trap_households)} of {len(trap_households)}</span>' in page()
     assert f"in the {len(app_paid)} households whose customers paid" in text and len(no_1099k & app_paid) == len(app_paid)
-    assert f"in {len(no_1099k)} of {len(app_paid)} households" in text
     assert f"in 2 of the {len(tuition_ended)} households with that line" in text and kinds["label_misread"] == 2
     # Trap requests whose settlement notes another federal use the rules do not model.
     other_use = {r["household_id"] for r in rows if r["settlement"] == "rule_stands" and r["maps_to"].startswith("T")
                  and any(w in r["note"] for w in ("rental", "home office", "itemiz"))}
-    assert f"For {len(other_use)} of them that paperwork could still serve" in text
+    assert f"for {len(other_use)} of them that paperwork could still serve" in text
     assert f"For {len(other_use)} of the {len(asked)}, the settlement notes" in text
     assert f"mapped my {items} items to rules" in text and f"agreed with it on all {items}" in text
-    assert f"All {len(rows)} differences were settled" in text and f"the {len(rows)} differences between" in text
+    assert f"All {len(rows)} differences between my lists and the rules were settled" in text and f"the {len(rows)} differences between" in text
     results = section("results")
     for kind, label in (("same_document", "The same document, in my words"),
                         ("rule_stands", "Checked against the source; the rule stands"),
@@ -342,7 +335,7 @@ def test_the_mutation_count_matches_the_decision_log():
     decisions = (REPO / "DECISIONS.md").read_text(encoding="utf-8")
     killed, total = re.findall(r"killed (\d+) of (\d+) mutants in the scorer", decisions)[-1]
     quoted = f"{int(killed):,} of {int(total):,}"
-    assert f'<span class="fact-value">{quoted}</span>' in page() and f"caught {quoted}" in page_text()
+    assert f"caught {quoted}" in text_of(section("judged"))
 
 
 def test_the_page_carries_what_prd_6_8_asks_of_the_teardown():
@@ -427,6 +420,79 @@ def test_the_catch_check_numbers_are_recomputed_from_the_reviews():
     assert f"{shows} whose problem a flag shows, {hides} whose problem the flags hide, and {clean} clean" in text
     assert n["shows_all_marked"] and f"({n['marked']} of them, including all {shows} shown drafts)" in text
     assert f"it locked on {n['locked_on']}, before the first review" in text
+
+
+def split_tables() -> dict[str, dict[str, str]]:
+    """Each config's cells in the two test-split tables of docs/results.md, keyed by column header."""
+    report = (REPO / "docs" / "results.md").read_text(encoding="utf-8")
+    block = report.split("### Test split")[1].split("#### By complexity tier (test)")[0]
+    out: dict[str, dict[str, str]] = {}
+    header: list[str] = []
+    for line in block.splitlines():
+        if not line.startswith("|"):
+            continue
+        cells = [c.strip() for c in line.strip("|").split("|")]
+        if cells[0] == "Config":
+            header = cells
+        elif not set(cells[0]) <= set("-: "):
+            out.setdefault(cells[0].replace(" (primary)", ""), {}).update(zip(header[1:], cells[1:]))
+    return out
+
+
+TEST_ROWS = (("The agent on Opus (A-opus)", "A-opus"), ("The agent on Sonnet (A-sonnet)", "A-sonnet"),
+             ("The agent on Haiku (A-haiku)", "A-haiku"), ("Sonnet plans, Haiku asks (A-split)", "A-split"),
+             ("The full organizer (B1)", "B1"), ("Last year's list (B2)", "B2"))
+
+
+def test_the_headline_numbers_and_the_results_table_come_from_the_report():
+    """The hero's four facts and Part 6's table quote the test run; they are read here from the generated report
+    and, for the last fact, scored from the committed reviews."""
+    tables = split_tables()
+    results = section("results")
+
+    def first(cell: str) -> str:
+        return cell.split(" ")[0]
+
+    for label, config in TEST_ROWS:
+        row = tables[config]
+        cost = f"${float(first(row['Cost per household']).lstrip('$')):.2f}"
+        cells = (row["Pass rate"], first(row["Missed-document rate"]), f"{float(first(row['Median questions'])):g}", cost)
+        expected = f'<tr><th scope="row">{html.escape(label, quote=False)}</th>' + "".join(f'<td class="num">{c}</td>' for c in cells) + "</tr>"
+        assert expected in html.unescape(results).replace("&", "&amp;") or expected in results, (config, cells)
+    opus, organizer, carried = tables["A-opus"], tables["B1"], tables["B2"]
+    hero = re.search(r'<header class="hero">([\s\S]*?)</header>', page()).group(1)
+    values = re.findall(r'<span class="fact-value">([^<]*)</span>', hero)
+    n = catch_numbers()
+    assert values == [first(opus["Pass rate"]), first(opus["Missed-document rate"]), f"{float(first(opus['Median questions'])):g}",
+                      f"{n['caught']} of {n['problems']}"]
+    labels = text_of(hero)
+    assert f"the full organizer missed {first(organizer['Missed-document rate'])} and last year's list {first(carried['Missed-document rate'])}" in labels
+    assert f"where the full organizer asks {float(first(organizer['Median questions'])):g}" in labels
+    low, high = re.fullmatch(r"[\d.]+% \[([\d.]+), ([\d.]+)\]", opus["Pass rate"]).groups()
+    summary = text_of(section("summary"))
+    assert f"passed {first(opus['Pass rate'])} of 120 runs" in summary and f"is {low}% to {high}%" in summary
+    assert f"The full organizer passed {first(organizer['Pass rate'])} of runs, and last year's list passed {first(carried['Pass rate'])}" in summary
+
+
+def visible(fragment: str) -> str:
+    """A fragment's text with every folded record left out: what a reader sees before opening anything."""
+    return text_of(re.sub(r'<details class="record">[\s\S]*?</details>', " ", fragment))
+
+
+def test_the_visible_page_stays_short_and_each_part_folds_its_record():
+    """The page is a short argument with each part's record one click away. These limits keep it from growing back."""
+    text = page()
+    body = text[text.index("<body"):]
+    assert len(visible(body).split()) <= 4200, len(visible(body).split())
+    assert len(text_of(section("summary")).split()) <= 670  # three minutes at an easy reading pace
+    folded = {"problem", "evidence", "lanes", "rules", "judged", "results", "review", "decisions", "carries", "next",
+              "method", "terms"}
+    for section_id in re.findall(r'<section id="([^"]+)"', text):
+        part = section(section_id)
+        assert part.count('<details class="record">') == (1 if section_id in folded else 0), section_id
+        assert len(visible(part).split()) <= (670 if section_id == "summary" else 440), (section_id, len(visible(part).split()))
+    for label in re.findall(r"<summary>([\s\S]*?)</summary>", text):
+        assert label.startswith('<span class="record-kicker">Detail</span> ') and len(text_of(label).split()) >= 3, label
 
 
 def test_the_test_count_matches_the_decision_log():

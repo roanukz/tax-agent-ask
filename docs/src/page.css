@@ -23,3 +23,77 @@ pre code {
 .cta-row .btn {
   text-align: center;
 }
+
+/* A part's longer record, folded under its short argument: one click away for the reader who wants the proof.
+   A native disclosure, so it needs no script and opens for the keyboard and for find in page. */
+.record {
+  margin: var(--space-24) 0 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+
+.record > summary {
+  padding: var(--space-12) var(--space-16);
+  cursor: pointer;
+  font-size: var(--size-13);
+  line-height: var(--lh-16);
+  font-weight: 600;
+  color: var(--text-body);
+}
+
+.record > summary:hover {
+  color: var(--link-hover);
+}
+
+.record > summary:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--radius-lg);
+}
+
+.record-kicker {
+  margin: 0 var(--space-8) 0 var(--space-4);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.record[open] > summary {
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.record-body {
+  padding: var(--space-8) var(--space-24) var(--space-24);
+  background: var(--page-bg);
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+
+.record-body > :first-child {
+  margin-top: var(--space-16);
+}
+
+/* The teardown's contents rail is taller than a 720px screen, so it scrolls inside itself and never hides its last
+   entries. The walkthrough's shorter rail is unaffected. */
+@media (min-width: 1000px) {
+  .toc {
+    max-height: calc(100vh - var(--space-32));
+    overflow-y: auto;
+    margin: 0 calc(-1 * var(--space-4));
+    padding-left: var(--space-4);
+    padding-right: var(--space-4);
+    padding-bottom: var(--space-8);
+  }
+}
+
+/* The three lanes sit side by side on a desktop, since the split is described as three ways. */
+#lanes .errc {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 720px) {
+  #lanes .errc {
+    grid-template-columns: 1fr;
+  }
+}
