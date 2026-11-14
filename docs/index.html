@@ -847,7 +847,7 @@
             </li>
           </ul>
           <details class="record">
-            <summary><span class="record-kicker">Detail</span> The full record of the test run and the development trial before it: every configuration, all fourteen findings, and the tests of the scoring code</summary>
+            <summary><span class="record-kicker">Detail</span> The full record of the test run and the development trial before it: every configuration, all fourteen findings, how the organizer's misses were counted, and the tests of the scoring code</summary>
             <div class="record-body">
               <h3>How the test run was scored</h3>
           <p>
@@ -891,6 +891,26 @@
             60 judge labels said PASS on transcripts where the assistant claimed
             to have emailed the list, which my written rule calls a FAIL, and I
             corrected them before using them.
+          </p>
+          <p>
+            <strong>How the organizer's misses were counted.</strong> The full
+            organizer missed 24 of 591 required documents on the test run, all
+            of them W-2s, in 16 runs where the client left out a job. In 8 of
+            those runs the client said one employer, but the baseline recorded
+            no employer count and its list asked for no W-2, so both of the
+            household's W-2s counted as missed. That can happen because the
+            baseline does not read the client's words: it records a fact only
+            when the simulated client's reply also reports it as revealed.
+            Counting one miss in each of those 8 runs would put the organizer
+            at 16 of 591, or 2.7%, and at 9 of 54 on simple households, still
+            above the agent's 3 of 591 and 0 of 54. Where the year changed, the
+            organizer would fall from 1.7% to 1.3% against the agent's 0.6%,
+            so the bar that compares the two is met either way. On dev the
+            same count gives the organizer 6 of 204, or 2.9%, where the
+            report shows 5.4%. This came out of a fact check on November 13,
+            after the run was scored, so the report and every table here keep
+            the figures as scored, and the <a href="https://github.com/Roanukz/tax-agent-ask/blob/main/DECISIONS.md">decision log</a>
+            has the count for each run.
           </p>
           <p>
             Two fixes followed, both worked out on dev. Revising the judge's advice
@@ -1955,7 +1975,7 @@
             committed, and nothing goes public without my typed "proceed".
             Independent AI agents,
             each told to refute a piece of the work, reviewed it before I relied on
-            it. On November 13, 2026, all 3,919 offline tests passed with the
+            it. On November 13, 2026, all 3,920 offline tests passed with the
             network blocked.
           </p>
 
@@ -2046,7 +2066,7 @@ uv run mutmut run &amp;&amp; uv run mutmut results</code></pre>
             <li>Every simple household stayed the same and every other one changed, so change and complexity are tangled in every comparison between them. Last year's list is complete by construction where nothing changed, and its misses come from changed facts, never from changed rules.</li>
             <li>The evidence and question checks live in the test harness, not in the tool server. The evidence check finds two or more of the client's words in a row, a one-word answer sentence, or the field that holds the fact, but cannot tell whether they support the value. The question check misses some claims, one of them in a live run, and leaves them to the judge.</li>
             <li>The catch check rests on one reviewer, me, who built the project and is not a practicing preparer, on 24 synthetic drafts, so its intervals are wide. I knew the shape of the shown problems before reviewing, and the 4 shown drafts are all among the marked ones. The reviews ran on a local page, not inside Claude.</li>
-            <li>Claude Code drafted this page from the repository, and I reviewed it. Its numbers come from the data, the generated report, the fidelity report, the catch check report, the spend ledger, the requirements documents, the decision log and the build's own test runs and reviews. Tests check most of the ones drawn from the data, last year's list from the report and the catch check's counts from my committed reviews, but none of the live results.</li>
+            <li>Claude Code drafted this page from the repository, and I reviewed it. Its numbers come from the data, the generated report, the fidelity report, the catch check report, the spend ledger, the requirements documents, the decision log and the build's own test runs and reviews. Tests check most of the ones drawn from the data, last year's list from the report and the catch check's counts from my committed reviews. Of the live results, tests match the headline numbers and the results table to the report and, where the run files exist, recompute the recount of the organizer's misses in Part 6, but no test reruns a live result.</li>
           </ul>
             </div>
           </details>

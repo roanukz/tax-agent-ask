@@ -18,6 +18,7 @@ from datetime import datetime, timezone
 from html.parser import HTMLParser
 from pathlib import Path
 
+import pytest
 import yaml
 
 from agent.env import load_settings
@@ -493,6 +494,87 @@ def test_the_visible_page_stays_short_and_each_part_folds_its_record():
         assert len(visible(part).split()) <= (670 if section_id == "summary" else 440), (section_id, len(visible(part).split()))
     for label in re.findall(r"<summary>([\s\S]*?)</summary>", text):
         assert label.startswith('<span class="record-kicker">Detail</span> ') and len(text_of(label).split()) >= 3, label
+
+
+RUNS = REPO / "eval" / "runs"
+
+
+@pytest.mark.skipif(not RUNS.is_dir(), reason="eval/runs is gitignored and absent here")
+def test_the_organizer_recount_is_recomputed_from_the_run_files():
+    """Both pages count the organizer's missed W-2s a second way. The figures are the baseline's own runs, recounted."""
+    def runs(split: str, config: str) -> list[tuple[dict, dict]]:
+        paths = sorted(RUNS.glob(f"{split}-H*-{config}-t*.score.json"))
+        return [(json.loads(p.read_text(encoding="utf-8")),
+                 json.loads(p.with_name(p.name.replace(".score.json", ".summary.json")).read_text(encoding="utf-8")))
+                for p in paths]
+
+    def unrecorded(score: dict, summary: dict) -> bool:
+        """A run with a miss that recorded no job count, so its list asked for no W-2 at all."""
+        return (score["missed_count"] > 0 and "w2_employer_count" not in summary["facts_recorded"]
+                and all(item["rule_id"] != "R001" for item in score["requested"]))
+
+    def tally(pairs, keep=lambda score: True) -> tuple[int, int, int, int]:
+        """Required documents, missed as scored, missed at one for each unrecorded run, and runs with a miss."""
+        kept = [(score, summary) for score, summary in pairs if keep(score)]
+        return (sum(score["required_count"] for score, _ in kept), sum(score["missed_count"] for score, _ in kept),
+                sum(1 if unrecorded(score, summary) else score["missed_count"] for score, summary in kept),
+                sum(1 for score, _ in kept if score["missed_count"]))
+
+    def pct(part: int, whole: int) -> str:
+        return f"{100 * part / whole:.1f}%"
+
+    def simple(score: dict) -> bool:
+        return score["complexity"] == "simple"
+
+    def changed(score: dict) -> bool:
+        return bool(score["changed_facts"])
+
+    organizer, agent = runs("test", "B1"), runs("test", "A-opus")
+    if not organizer:
+        pytest.skip("eval/runs holds no test runs of the organizer baseline")
+    assert len(organizer) == len(agent) == 120
+    with_miss = [(score, summary) for score, summary in organizer if score["missed_count"]]
+    assert {item["rule_id"] for score, _ in with_miss for item in score["missed"]} == {"R001"}
+    blank = [score for score, summary in with_miss if unrecorded(score, summary)]
+    assert all(score["missed_count"] == 2 for score in blank)
+    required, missed, recount, missing_runs = tally(organizer)
+    simple_required, simple_missed, simple_recount, _ = tally(organizer, simple)
+    changed_required, changed_missed, changed_recount, _ = tally(organizer, changed)
+    # Every simple household stayed the same, so the simple group is also the group whose year did not change.
+    assert tally(organizer, lambda score: not changed(score)) == tally(organizer, simple)
+    agent_required, agent_missed, _, _ = tally(agent)
+    agent_simple_required, agent_simple_missed, _, _ = tally(agent, simple)
+    agent_changed_required, agent_changed_missed, _, _ = tally(agent, changed)
+    assert (agent_required, agent_simple_required, agent_changed_required) == (required, simple_required, changed_required)
+    dev_required, dev_missed, dev_recount, _ = tally(runs("dev", "B1"))
+    report = (REPO / "docs" / "results.md").read_text(encoding="utf-8")
+    tables = split_tables()
+    assert tables["B1"]["Missed-document rate"].startswith(pct(missed, required) + " ")
+    assert f"| changed | {pct(agent_changed_missed, agent_changed_required)} " in report
+    assert f"| B1 | 40 (40) | 85.0% [72.5, 95.0] | 85.0% [72.5, 95.0] | {pct(dev_missed, dev_required)} " in report
+
+    shared = (
+        f"missed {missed} of {required} required documents",
+        f"all of them W-2s, in {missing_runs} runs where the client left out a job",
+        f"In {len(blank)} of those runs the client said one employer",
+        f"Counting one miss in each of those {len(blank)} runs would put the organizer at {recount} of {required}, "
+        f"or {pct(recount, required)}, and at {simple_recount} of {simple_required} on",
+        f"still above the agent's {agent_missed} of {agent_required} and {agent_simple_missed} of {agent_simple_required}",
+    )
+    part = section("results")
+    fold = text_of(re.search(r'<details class="record">[\s\S]*?</details>', part).group(0))
+    walkthrough = (REPO / "docs" / "demo.html").read_text(encoding="utf-8")
+    first = re.search(r'<section id="decision-1">[\s\S]*?</section>', walkthrough).group(0)
+    backup = text_of(re.search(r'<details class="record">[\s\S]*?</details>', first).group(0))
+    for claim in shared:
+        assert claim in fold, claim
+        assert claim in backup, claim
+    assert f"missed {simple_missed} of {simple_required} documents" in visible(part)
+    assert f"missed {simple_missed} of {simple_required} documents" in text_of(first)
+    assert (f"the organizer would fall from {pct(changed_missed, changed_required)} to "
+            f"{pct(changed_recount, changed_required)} against the agent's {pct(agent_changed_missed, agent_changed_required)}") in fold
+    assert (f"On dev the same count gives the organizer {dev_recount} of {dev_required}, or {pct(dev_recount, dev_required)}, "
+            f"where the report shows {pct(dev_missed, dev_required)}") in fold
 
 
 def test_the_test_count_matches_the_decision_log():
