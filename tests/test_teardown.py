@@ -86,7 +86,7 @@ def test_title_and_hero_order():
     assert -1 not in positions, dict(zip(order, positions))
     assert positions == sorted(positions)
     buttons = re.findall(r'<a class="btn [^"]+" href="([^"]+)">([^<]+)</a>', hero.group(1))
-    assert buttons == [("demo.html", "Walk through it in five minutes"),
+    assert buttons == [("demo.html", "Walk through it in two minutes"),
                        ("#results", "See the results"),
                        (SOURCE, "View the source")]
     assert len(re.findall(r'<div class="fact">', hero.group(1))) == 4
@@ -563,14 +563,9 @@ def test_the_organizer_recount_is_recomputed_from_the_run_files():
     )
     part = section("results")
     fold = text_of(re.search(r'<details class="record">[\s\S]*?</details>', part).group(0))
-    walkthrough = (REPO / "docs" / "demo.html").read_text(encoding="utf-8")
-    first = re.search(r'<section id="decision-1">[\s\S]*?</section>', walkthrough).group(0)
-    backup = text_of(re.search(r'<details class="record">[\s\S]*?</details>', first).group(0))
     for claim in shared:
         assert claim in fold, claim
-        assert claim in backup, claim
     assert f"missed {simple_missed} of {simple_required} documents" in visible(part)
-    assert f"missed {simple_missed} of {simple_required} documents" in text_of(first)
     assert (f"the organizer would fall from {pct(changed_missed, changed_required)} to "
             f"{pct(changed_recount, changed_required)} against the agent's {pct(agent_changed_missed, agent_changed_required)}") in fold
     assert (f"On dev the same count gives the organizer {dev_recount} of {dev_required}, or {pct(dev_recount, dev_required)}, "

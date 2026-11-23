@@ -3,15 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>What Should My Tax Agent Ask? Five Decisions in Five Minutes</title>
+    <title>What Should My Tax Agent Ask? A Two-Minute Walkthrough</title>
     <meta
       name="description"
-      content="A five-minute walkthrough of an AI tax intake agent: five decisions, each with what I chose, what I rejected, what it cost and the proof, from asking only what this year's return needs to a blind test of the preparer's own review."
+      content="A two-minute walkthrough of a prototype AI tax intake agent: three points on why it matters, the hypothesis and what would make it fail, then what the agent does, how I tested it, the result and what it means for the hypothesis, and the call I made from it."
     />
-    <meta property="og:title" content="What Should My Tax Agent Ask? Five Decisions in Five Minutes" />
+    <meta property="og:title" content="What Should My Tax Agent Ask? A Two-Minute Walkthrough" />
     <meta
       property="og:description"
-      content="Five decisions behind an AI tax intake agent, a minute each: ask only what this year's return needs, let code write the list, lock the bars before the test, pay for accuracy, and test the reviewer too."
+      content="Hypothesis: if the model asks for the facts and code writes the document list, an agent can ask half the questions and miss almost no documents. What the agent does, how I tested it, the result, and my call."
     />
     <meta name="author" content="Roanuk Zaman" />
     <meta property="og:type" content="article" />
@@ -38,1000 +38,595 @@
 
     <nav class="topbar" aria-label="Site">
       <div class="wrap">
-        <a href="index.html">Read the teardown</a>
+        <span class="topbar-name"><strong>Roanuk Zaman</strong> &middot; I designed it and made the calls, and Claude Code wrote the code under rules I set</span>
+        <a href="index.html">Read the full write-up</a>
         <a href="https://github.com/Roanukz/tax-agent-ask">View source</a>
       </div>
     </nav>
 
-    <header class="hero">
+    <main id="main" tabindex="-1">
+      <header class="hero opening" id="top">
+        <div class="wrap">
+          <p class="eyebrow">What Should My Tax Agent Ask? &middot; A two-minute walkthrough of a prototype on synthetic data</p>
+          <div class="lead-row">
+            <p class="tag">Purpose</p>
+            <p class="purpose">
+              A tax return cannot start until the documents arrive, so an AI agent interviews the
+              client to find which to request, and a preparer approves each list.
+            </p>
+          </div>
+          <div class="lead-row">
+            <p class="tag">Hypothesis</p>
+            <div>
+              <h1>
+                <span><em class="hinge">If</em> the model asks for the facts and code writes the document list from rules that cite IRS sources,</span>
+                <span><em class="hinge">then</em> the agent can ask half the questions of a full questionnaire and miss almost no documents.</span>
+              </h1>
+              <p class="thesis-test">
+                It fails below a 90% pass rate on the held-out test, above half the questions, or
+                above 2% of documents missed, bars I locked before any test run.
+              </p>
+            </div>
+          </div>
+        </div>
+      </header>
+
       <div class="wrap">
-        <p class="eyebrow">Five-minute walkthrough</p>
-        <h1>Five decisions behind the tax agent</h1>
-        <p class="lede">
-          I designed an AI intake agent for tax firms. It asks each client only
-          what this year's return needs, then drafts the list of documents to
-          request. One failure runs through all five decisions below: the
-          second job a client forgets to mention, and the W-2 that goes missing
-          with it.
-        </p>
-        <p class="byline">
-          Roanuk Zaman &middot; A walkthrough of a tool I designed and directed
-        </p>
-        <p class="callout callout-notice" id="how">
-          <strong>How to read this.</strong> Each decision takes about a
-          minute: what I chose, what I rejected, what it cost, and the proof. I
-          directed the build, and Claude Code wrote the code and ran every
-          experiment under rules I set. Every household is synthetic, and the
-          client is a simulated model.
-        </p>
-
-        <div class="cta-row">
-          <a class="btn btn-primary" href="#decision-1">Start with decision 1</a>
-          <a class="btn btn-secondary" href="index.html">Read the full teardown</a>
-        </div>
-
-        <div class="facts">
-          <div class="fact">
-            <span class="fact-value">92.5%</span>
-            <span class="fact-label">Test runs the agent passed, against a bar of 90% that locked before the run</span>
-          </div>
-          <div class="fact">
-            <span class="fact-value">0.5%</span>
-            <span class="fact-label">Required documents it missed; the full organizer missed 4.1% and last year's list 35.5%</span>
-          </div>
-          <div class="fact">
-            <span class="fact-value">14</span>
-            <span class="fact-label">Questions it asked at the median, where the full organizer asks 36</span>
-          </div>
-          <div class="fact">
-            <span class="fact-value">0 of 17</span>
-            <span class="fact-label">Problems I caught when I reviewed 24 test drafts blind; half were chosen because they had a problem</span>
-          </div>
-        </div>
-      </div>
-    </header>
-
-    <div class="wrap">
-      <div class="layout">
-        <nav class="toc" aria-label="Decisions">
-          <p class="toc-title">Five decisions</p>
-          <ol>
-            <li><a href="#decision-1">1. Ask only what this year needs</a></li>
-            <li><a href="#decision-2">2. Let code write the list</a></li>
-            <li><a href="#decision-3">3. Build the test first</a></li>
-            <li><a href="#decision-4">4. Pay for accuracy</a></li>
-            <li><a href="#decision-5">5. Test the reviewer too</a></li>
-            <li><a href="#next">What I would do next</a></li>
-          </ol>
-        </nav>
-
-        <main id="main" tabindex="-1">
-          <section id="decision-1">
-            <div class="step-head">
-              <span class="step-num" aria-hidden="true">1</span>
-              <p class="section-kicker">Decision 1 of 5 &middot; The target</p>
-            </div>
-            <h2>Ask only what this year's return needs</h2>
-            <p>
-              A preparer cannot start a return until the client's documents are
-              in, and each missed document comes back as a second request.
-              Firms gather documents in one of two ways, and each has a blind
-              spot. A full organizer, one long questionnaire, asks every client
-              the same 36 questions but asks about employers only once. Last
-              year's list asks nothing, so it misses whatever changed.
-            </p>
-            <ul class="tradeoff">
-              <li><span class="k">The call</span><span>Ask each client only what this year's return needs: far fewer questions, with about as few documents missed.</span></li>
-              <li><span class="k">Rejected</span><span>The full organizer for everyone, and last year's list carried forward.</span></li>
-              <li><span class="k">Cost</span><span>Every question cut is one less chance to hear about a forgotten job.</span></li>
-            </ul>
-            <div class="table-scroll proof" tabindex="0" role="region" aria-label="Today's two options">
-              <table>
-                <caption>Today's two options, on the 40 test households</caption>
-                <thead><tr><th scope="col">Option</th><th scope="col">Questions asked</th><th scope="col">Required documents missed</th></tr></thead>
-                <tbody>
-                  <tr><th scope="row">The full organizer</th><td class="num">36</td><td class="num">4.1%</td></tr>
-                  <tr><th scope="row">Last year's list</th><td class="num">0</td><td class="num">35.5%</td></tr>
-                </tbody>
-              </table>
-            </div>
-            <p class="proof-note">
-              On the simplest test households the organizer missed 15 of 54
-              documents, and every one was a W-2 in a household whose client
-              forgot a second job.
-            </p>
-            <details class="record">
-              <summary><span class="record-kicker">Backup</span> How the organizer's misses were counted, and the household behind the backups for decisions 2 and 3</summary>
-              <div class="record-body">
-            <h3>How the organizer's misses were counted</h3>
-            <p>
-              On the test run the organizer missed 24 of 591 required
-              documents, all of them W-2s, in 16 runs where the client left
-              out a job. In 8 of those runs the client said one employer,
-              the baseline recorded no employer count, and its list asked
-              for no W-2, so both of the household's W-2s counted as missed.
-              Counting one miss in each of those 8 runs would put the
-              organizer at 16 of 591, or 2.7%, and at 9 of 54 on the
-              simplest households, still above the agent's 3 of 591 and 0
-              of 54. The table above keeps the figures as scored, and the
-              <a href="https://github.com/Roanukz/tax-agent-ask/blob/main/DECISIONS.md">decision log</a> has
-              the count for each run.
-            </p>
-
-            <h3>One household, one form</h3>
-            <p>
-              H053 is a synthetic couple filing jointly with one dependent,
-              and four things changed in their year. They have a second
-              employer, a health plan bought through HealthCare.gov or a state
-              exchange for the first time, new college tuition payments, and
-              solar panels whose installation finished in 2026. Last year's
-              request list knows about none of the new items. Those solar
-              panels are what this project calls a trap. Under IRS fact sheet
-              FS-2025-05, the residential clean energy credit ended for
-              systems finished after 2025, so the rules ask for no solar
-              paperwork for that credit. A request for it counts against the
-              list.
-            </p>
-            <p>
-              The backup detail under decisions 2 and 3 follows one form, the Form 1095-A, Health Insurance
-              Marketplace Statement. The Marketplace sends it, and the
-              preparer uses it to complete Form 8962, which reconciles the
-              advance payments of the Premium Tax Credit against the credit
-              the household qualifies for. For 2026 returns the reconciliation
-              carries more weight than it used to, because Public Law 119-21
-              <a href="https://www.irs.gov/tax-professionals/eitc-central/repayment-caps-eliminated-for-excess-advance-payments-of-the-premium-tax-credit">removed
-              the cap on repaying excess advance payments</a>. Beginning with
-              tax year 2026, the full excess must be repaid.
-            </p>
-          
-              </div>
-            </details>
-            <p class="step-next"><a href="#decision-2">Next: decision 2, who writes the list</a></p>
-          </section>
-
-          <section id="decision-2">
-            <div class="step-head">
-              <span class="step-num" aria-hidden="true">2</span>
-              <p class="section-kicker">Decision 2 of 5 &middot; The split</p>
-            </div>
-            <h2>Let the agent ask, and let code write the list</h2>
-            <p>
-              A missing W-2 has to trace to a fact or a rule. So the agent only
-              asks, recording each answer with the client's own words as
-              evidence. Code turns those facts into the list through 33 rules,
-              each citing an IRS source. Only the preparer approves and sends,
-              since the agent has no way to send anything.
-            </p>
-            <ul class="tradeoff">
-              <li><span class="k">The call</span><span>The agent learns facts, code writes the list, and the preparer approves and sends it.</span></li>
-              <li><span class="k">Rejected</span><span>A model that writes the list itself, and any way for the agent to send.</span></li>
-              <li><span class="k">Cost</span><span>33 rules to verify by hand and keep current. I sent 23 back for changes on my first pass.</span></li>
-            </ul>
-            <div class="facts proof">
-              <div class="fact">
-                <span class="fact-value">57.5% to 75.0%</span>
-                <span class="fact-label">The share of the 40 development households, the ones used while building, that passed when each of three models wrote the list itself from the true facts. The models failed mostly by asking for documents nobody needed.</span>
-              </div>
-              <div class="fact">
-                <span class="fact-value">92.5%</span>
-                <span class="fact-label">The share of the same households that passed when the agent on Opus learned the facts and code wrote the list. The separate test run later gave the same figure.</span>
-              </div>
-            </div>
-            <details class="record">
-              <summary><span class="record-kicker">Backup</span> The guarantees in code, and one question followed from the client's words to the form</summary>
-              <div class="record-body">
-            <h3>Split the job before writing a prompt</h3>
-            <p>
-              The first decision kept the model out of writing the document
-              list. In the requirements, written before any code, the
-              agent only learns facts: it asks the client questions and
-              records each answer with the client's own words as evidence.
-              Code then turns those facts into the list through a table of
-              rules, each citing an official IRS source, and the preparer
-              approves the list and sends it. The agent has no tool that sends
-              the list, its questions are its only channel to the client, and
-              code checks each question before the client sees it. The server
-              the agent works through cannot read the answer key for its own
-              test households.
-            </p>
-            <p>
-              A list built by code fails in only three ways: a fact the agent
-              never learned, a fact it recorded wrong, or a rule that was
-              wrong. I chose that split because the run's record shows which
-              one. I kept the rejected design as a baseline: models handed
-              each household's true facts and asked to write the list passed
-              57.5% to 75.0% of dev households, mostly because they asked for
-              documents nobody needed. Meanwhile, no agent run among 160
-              recorded a fact without evidence, and the judge found none that
-              claimed the list was sent.
-            </p>
-            <ul class="tradeoff">
-              <li><span class="k">The call</span><span>The agent learns facts, code builds the list, and the preparer approves and sends it.</span></li>
-              <li><span class="k">Rejected</span><span>A model that writes the list, kept as a baseline to measure, and any tool that sends the list.</span></li>
-              <li><span class="k">Cost</span><span>A server, tools and checks to enforce what a prompt could only request.</span></li>
-            </ul>
-            <div class="who">
-              <p><span class="who-label">My part</span>The split and its guarantees, set in the requirements before any code.</p>
-              <p><span class="who-label">Claude Code's part</span>The server, the tools and the checks that hold the agent to them.</p>
-            </div>
-            <div class="thread">
-              <p class="thread-label">H053: the question and the 1095-A</p>
-              <p>
-                The agent asked about the Marketplace in plain words and
-                recorded the answer with the client's own phrase as evidence.
-                The rules table, not the model, then put the Form 1095-A on
-                the draft.
-              </p>
-              <ol class="transcript">
-                <li><span class="speaker">Agent</span>Did anyone in your household buy health insurance through HealthCare.gov or a state exchange this year?</li>
-                <li class="t-client"><span class="speaker">Client</span>Yes, we bought a health plan through the marketplace this year, which is new for us.</li>
-                <li class="t-fact"><span class="speaker">Recorded fact</span>marketplace_coverage = true, evidence "bought a health plan through the marketplace"</li>
-                <li class="t-note">
-                  <span class="speaker">From the note for the preparer, not shown to the client</span>
-                  <p>I submitted the draft list for H053 for your review, and it now has the status pending_review. Nothing has gone to the client.</p>
-                  <p class="t-gap" aria-label="Lines left out">[...]</p>
-                  <p>Form 1095-A (Marketplace plan, new this year)</p>
-                  <p class="t-gap" aria-label="Lines left out">[...]</p>
-                  <p>No document needed: The solar panels were installed in 2026, and the rules say that credit ended.</p>
+        <div class="console" id="walk">
+          <span class="part-anchor" id="shut"></span>
+          <span class="part-anchor" id="agent"></span>
+          <section class="part part-agent">
+            <h2 class="part-head">
+              <a class="part-link part-open" href="#agent" aria-expanded="false" aria-controls="agent-body"><span class="part-n" aria-hidden="true">1</span><span class="part-title">What the agent does</span><span class="part-gist">The model asks, code writes the list, and a preparer approves</span><span class="part-cue" aria-hidden="true"></span></a>
+              <span class="part-link part-shown"><span class="part-n" aria-hidden="true">1</span><span class="part-title">What the agent does</span><span class="part-cue" aria-hidden="true"></span><a class="part-close" href="#shut" aria-expanded="true" aria-controls="agent-body" aria-label="Close What the agent does"></a></span>
+            </h2>
+            <div class="part-body" id="agent-body">
+              <ol class="steps" role="list">
+                <li class="step b1">
+                  <span class="node" aria-hidden="true"></span>
+                  <span class="step-text"><strong class="step-title">Start from last year's file</strong>
+                    <span class="step-detail">last year's facts and documents on file</span></span>
+                </li>
+                <li class="step b2">
+                  <span class="node" aria-hidden="true"></span>
+                  <span class="step-text"><strong class="step-title">Ask the client what changed</strong>
+                    <span class="step-detail">each fact kept with its evidence</span></span>
+                </li>
+                <li class="step b3">
+                  <span class="node" aria-hidden="true"></span>
+                  <span class="step-text"><strong class="step-title">Code writes the document list</strong>
+                    <span class="step-detail">from rules that cite IRS sources</span></span>
+                </li>
+                <li class="step b4">
+                  <span class="node" aria-hidden="true"></span>
+                  <span class="step-text"><strong class="step-title">A preparer approves each list</strong>
+                    <span class="step-detail">on the review screen, flag by flag</span></span>
                 </li>
               </ol>
-              <p class="byline">
-                Excerpts from dev run dev-H053-A-sonnet-t1, the agent on Claude
-                Sonnet 5.5, with a synthetic household and a simulated client.
-                [...] marks lines of the note left out here, and pending_review
-                means the list waits for the preparer's approval. Run files stay
-                out of the repository.
-              </p>
+              <figure class="diagram dg-agent" role="img" aria-label="One answer followed through the agent. Last year&#x27;s file has two W-2s on file. The model asks, the client says Just one employer, and the model records the fact, one employer, with the client&#x27;s words as its evidence. Code applies the rule, a W-2 from each employer, and requests one W-2, citing an IRS source. On the review screen code flags that last year had two, and a preparer approves, which the server allows only with the review screen&#x27;s token. The agent has no tool that sends a list.">
+                <figcaption class="dg-title">One answer, followed from last year's file to the approved list</figcaption>
+                <div class="flow">
+                  <div class="col">
+                    <span class="col-head">Start</span>
+                    <div class="card c1"><strong class="l1">Last year's file</strong><span class="card-line l2">2 W&#8209;2s on file</span></div>
+                  </div>
+                  <div class="agent-box">
+                    <div class="col">
+                      <span class="col-head">Model asks</span>
+                      <div class="card c2"><span class="card-line said l1">&quot;Just one employer&quot;</span><strong class="l2">Fact: 1 employer</strong><span class="card-line l3">evidence: the client's words</span></div>
+                    </div>
+                    <div class="col">
+                      <span class="col-head">Code writes</span>
+                      <div class="card c3"><span class="card-line l1">Rule: a W&#8209;2 from each employer</span><strong class="l2">Request 1 W&#8209;2</strong><span class="card-line l3">cites an IRS source</span></div>
+                    </div>
+                    <span class="agent-note">The agent has no tool that sends a list</span>
+                  </div>
+                  <div class="col">
+                    <span class="col-head">Review screen</span>
+                    <div class="card c4"><span class="card-line l1"><i class="flag"></i>Flag: last year had 2</span><strong class="l2">A preparer approves</strong><span class="card-line l3"><i class="lock"></i>approval needs this screen's token</span></div>
+                  </div>
+                </div>
+              </figure>
+              <span class="rail" aria-hidden="true"></span>
             </div>
-            
-              </div>
-            </details>
-            <p class="step-next"><a href="#decision-3">Next: decision 3, how I would know it works</a></p>
           </section>
-
-          <section id="decision-3">
-            <div class="step-head">
-              <span class="step-num" aria-hidden="true">3</span>
-              <p class="section-kicker">Decision 3 of 5 &middot; The measurement</p>
-            </div>
-            <h2>Build the test before the agent, and lock the bars</h2>
-            <p>
-              The test existed before the agent's first run: 100 synthetic
-              households, 40 of them held back for the test, and a simulated
-              client that forgets things, a second job included. I locked the
-              pass bars before the one test run, and the code refused to run
-              the test until I had.
-            </p>
-            <ul class="tradeoff">
-              <li><span class="k">The call</span><span>Bars and baselines locked, and 40 households held back, before the one test run.</span></li>
-              <li><span class="k">Rejected</span><span>Scoring the agent on the households used to build it, and a client with perfect recall.</span></li>
-              <li><span class="k">Cost</span><span>One shot at the test, and a failure would have been public.</span></li>
-            </ul>
-            <div class="table-scroll proof" tabindex="0" role="region" aria-label="The bars and the test run">
-              <table>
-                <caption>Four of the nine bars, and the one test run: 40 households, 3 trials each</caption>
-                <thead><tr><th scope="col">Bar, locked first</th><th scope="col">The agent</th></tr></thead>
-                <tbody>
-                  <tr><th scope="row">At least 90% of runs pass</th><td class="num">92.5%</td></tr>
-                  <tr><th scope="row">At most 2% of required documents missed</th><td class="num">0.5%</td></tr>
-                  <tr><th scope="row">At most half the organizer's 36 questions</th><td class="num">14</td></tr>
-                  <tr><th scope="row">At most $0.60 a household, raised from $0.10 before the lock</th><td class="num">$0.40</td></tr>
-                </tbody>
-              </table>
-            </div>
-            <p class="proof-note">
-              A run passes only if it misses no required document, asks for at
-              most one it does not need, records no wrong fact, and never gives
-              tax advice or claims the list was sent. The 95% interval on the
-              92.5% pass rate is 85.8% to 98.3%.
-            </p>
-            <details class="record">
-              <summary><span class="record-kicker">Backup</span> The bars and baselines, my blind answer key, the check of all 33 rules, and what the judge reads</summary>
-              <div class="record-body">
-            <h3>Build the measurement before the agent</h3>
-            <p>
-              I wanted the agent judged by a measurement that existed before
-              its first run. So the requirements set the groups, the bars and
-              the baselines up front, as proposals that lock before the one
-              test run. Of the 100 synthetic households, 20 form the train
-              group, 40 the dev group and 40 the test group, and the run code
-              refuses the test group until I lock the bars in a commit. A run
-              passes only if it submits its draft and misses no required
-              document. It may add at most one unnecessary request, must
-              record no fact that contradicts the truth, must never claim the
-              list was sent, and must hand any advice question to the
-              preparer; the <a href="index.html#judged">teardown</a> gives the
-              full definition.
-            </p>
-            <p>
-              Three baselines run on the same households for comparison. One
-              asks every question on a full organizer, the long questionnaire
-              many firms send every client. Another sends last year's list
-              without asking anything, and the third lets a model write the
-              list from the household's true facts. On the 28 dev households
-              whose year changed, last year's list missed 38.6% of what the
-              returns needed. That gap comes from how the synthetic households
-              were built rather than from real clients, and where nothing
-              changed the list cannot miss, by construction. The scoring code
-              is tested too, because every rate rests on it: of 1,067 small
-              bugs planted in the scorer, its tests caught 1,065.
-            </p>
-            <ul class="tradeoff">
-              <li><span class="k">The call</span><span>Groups, bars and baselines set before the first run, and a test group the run code refuses until the bars lock.</span></li>
-              <li><span class="k">Rejected</span><span>Scoring the agent on the households used to develop it, or reading test results before the bars lock.</span></li>
-              <li><span class="k">Cost</span><span>One shot at the test group: a mistake in the setup cannot be fixed by running it again.</span></li>
-            </ul>
-            <div class="who">
-              <p><span class="who-label">My part</span>The bars, the baselines, and the rule that the test group waits for the lock.</p>
-              <p><span class="who-label">Claude Code's part</span>The scorer, the planted-bug check, the repository's offline test suite, and the lock check in the run code.</p>
-            </div>
-            <div class="thread">
-              <p class="thread-label">H053: the score</p>
-              <p>
-                In H053, last year's list missed 3 of the 12 documents the
-                household needed, the 1095-A among them. The agent run excerpted
-                under decision 2 passed: it missed nothing, asked for nothing
-                unnecessary, made no trap request, and needed 21 questions
-                where the full organizer asks 37. Across the 4 dev households
-                with a new Marketplace plan, last year's list missed the
-                1095-A every time, while every agent configuration asked for
-                it, as did the organizer and the model-written lists.
-              </p>
-            </div>
-            
-
-            <h3>Write the answer key blind, then check it against the rules</h3>
-            <p>
-              Before I trusted the rules, I wrote my own request lists for 30
-              synthetic households without seeing what the rules would say. A
-              local label page showed each household as plain facts with no
-              form names, and it kept the rules' answers hidden until every
-              household had a label. When I said to proceed, my labels were
-              copied byte for byte to a snapshot before anything compared
-              them, so nothing I learned afterward could rewrite the blind
-              record. The comparison found 190 differences, and every one is
-              settled in a file with its reason. Most were bookkeeping: 39 of
-              my items named a rule's document in my own words, and each
-              counts twice, once from each side, for 78. Another 95 were
-              documents for facts that had not changed, which my lists left
-              out by design. The rest are where the judgment was: 15 cases
-              where the rule held up when checked against its IRS source, and
-              2 where I had misread the household.
-            </p>
-            <p>
-              Writing blind, I made the mistake the traps exist to catch: I
-              asked for the paperwork behind an ended credit in 10 of the 11
-              households that had one. In 6 of those 10, though, the paperwork
-              could still serve a purpose the rules do not model, such as a
-              rental or a home office. My lists also produced five proposed
-              rule edits, covering six rules. Because my lists named only what
-              changed, 16 rules for facts that carried over were never tested
-              by them. The choice was whether to write full lists for six of
-              the households to cover those rules, or to rely on checking
-              every rule against its source, which test scoring needed anyway.
-              I chose the rule check, in my words: "Rule check is enough".
-            </p>
-            <ul class="tradeoff">
-              <li><span class="k">The call</span><span>Label blind, snapshot at the reveal, and settle every difference against a source.</span></li>
-              <li><span class="k">Rejected</span><span>Labeling after seeing the rules, and full lists for six households in place of a rule check.</span></li>
-              <li><span class="k">Cost</span><span>My time on 30 households, and 16 rules left to the rule check alone.</span></li>
-            </ul>
-            <div class="who">
-              <p><span class="who-label">My part</span>All 30 labels, written blind, and the call to rely on a full rule check.</p>
-              <p><span class="who-label">Claude Code's part</span>The label page, the snapshot, the comparison, two agents that mapped my items to the rules independently, a settlement for each difference, and an agent that tried to refute the 17 that disputed a rule or my reading.</p>
-            </div>
-            <div class="thread">
-              <p class="thread-label">H053: my blind list against the rules</p>
-              <p>
-                For H053 I wrote four items: new w2; new healthcare.gov plan;
-                tuition payments x1; energy installation costs x1, where x1
-                means one of them. The settlements matched my plan item to the
-                Form 1095-A and ruled out the solar paperwork with this note:
-              </p>
-              <blockquote>
-                <p>Rule stands, checked against FS-2025-05 (Q7) and IRC 25D(e)(8)(A): the residential clean energy credit ends for expenditures made after December 31, 2025, and an expenditure counts as made when installation is completed, so equipment finished in 2026 earns no federal credit and needs no request.</p>
-              </blockquote>
-              <p>
-                The note also records its assumption: the panels are on the
-                home the household lives in. H053 also rents out a property,
-                and on the rental the panels' cost would belong with the
-                rental records instead, which the household's description does
-                not settle.
-              </p>
-              <div class="table-scroll" tabindex="0" role="region" aria-label="How my four items for H053 were settled">
-                <table>
-                  <caption>How my four items for H053 were settled, from the repository's settlements file.</caption>
-                  <thead>
-                    <tr><th scope="col">My item</th><th scope="col">The rule</th><th scope="col">How it was settled</th></tr>
-                  </thead>
-                  <tbody>
-                    <tr><td>new healthcare.gov plan</td><td>R012, Form 1095-A</td><td>Same document: HealthCare.gov coverage and premiums are reported on Form 1095-A.</td></tr>
-                    <tr><td>tuition payments x1</td><td>R017, Form 1098-T</td><td>Same document: tuition payments are reported on Form 1098-T.</td></tr>
-                    <tr><td>new w2</td><td>R001, Form W-2</td><td>Changes only: 1 of the 2 W-2s is new this year, and my list named only what changed.</td></tr>
-                    <tr><td>energy installation costs x1</td><td>T001, a trap</td><td>Rule stands: no federal credit for equipment finished in 2026, so no request.</td></tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-            <figure class="screen">
-              <a href="demo/label-h053-light.webp">
-                <picture>
-                  <source srcset="demo/label-h053-dark.webp" media="(prefers-color-scheme: dark)" />
-                  <img src="demo/label-h053-light.webp" width="956" height="908" loading="lazy"
-                    alt="The label page for H053. On the left, this year's facts in plain words, including a health plan bought through HealthCare.gov or a state exchange and solar equipment finished in 2026; on the right, what changed since last year. Below, my four items, each with a count: new w2, new healthcare.gov plan, tuition payments, energy installation costs." />
-                </picture>
-              </a>
-              <figcaption>
-                The local label page with H053 as I labeled it: the household in
-                plain facts, and my four items below. The rules' answers stayed
-                hidden until all 30 households had labels. Select the screen to
-                open it at full size.
-              </figcaption>
-            </figure>
-            
-
-            <h3>Check every rule against its IRS source, one at a time</h3>
-            <p>
-              Each of the 33 rules, 30 that request a document and 3 traps for
-              credits that ended, carries an official IRS source, and only the
-              rules I verify count when the test run is scored. Eleven
-              research passes proposed a source for each rule. A separate
-              skeptic agent then fetched every page again and tried to refute
-              it: 26 first choices held, and 7 were replaced with sources that
-              did support the request. Because a test household counts only
-              when every rule it needs is verified, no test result can exist
-              until I have verified the rules it rests on.
-            </p>
-            <p>
-              When I asked for an easier way to check them, Claude Code built
-              Rule Check, a private page that shows one rule at a time beside
-              its source. Before I make a call, the page states what it would
-              do to the test run. I verified 10 rules as written and sent 23
-              back: 17 adopting the fuller document wording suggested in the
-              research notes, and 6 carrying the five edits my blind lists had
-              proposed. The W-2 rule, for example, should also ask for a
-              spouse's W-2s on a joint return and any corrected Form W-2c.
-              Every test household needs that rule, so no test household can
-              be scored until the 23 edits are made and I verify those rules
-              again. My calls are in the rules file, dated November 1, and the
-              decision log records them. I verified 20 of the edited rules the
-              next day and sent one more back, R020, which I had verified the day before. I verified the last 4 on November 4, after which the 15 test
-              households they held back were scored.
-            </p>
-            <ul class="tradeoff">
-              <li><span class="k">The call</span><span>Score the test run only on rules I have verified against their sources.</span></li>
-              <li><span class="k">Rejected</span><span>Trusting the research passes, or scoring unverified rules with a caveat.</span></li>
-              <li><span class="k">Cost</span><span>No test result until 23 edits are made and checked again.</span></li>
-            </ul>
-            <div class="who">
-              <p><span class="who-label">My part</span>A call on all 33 rules, with a note saying what to change on each of the 23.</p>
-              <p><span class="who-label">Claude Code's part</span>The research and skeptic passes, Rule Check, and the script that wrote my calls into the rules file.</p>
-            </div>
-            <div class="thread">
-              <p class="thread-label">H053: R012, the Form 1095-A rule</p>
-              <p>
-                R012 asks for the Form 1095-A whenever anyone in the household
-                bought coverage through HealthCare.gov or a state exchange,
-                and it cites the IRS page on
-                <a href="https://www.irs.gov/individuals/reconciling-your-advance-payments-of-the-premium-tax-credit">reconciling
-                advance payments of the Premium Tax Credit</a>. I verified it
-                as written. The skeptic's check found that the IRS page on
-                <a href="https://www.irs.gov/affordable-care-act/individuals-and-families/health-insurance-marketplace-statements">Health
-                Insurance Marketplace Statements</a> also supports asking for
-                the 1095-A whenever anyone in the household enrolled. R012's
-                research notes also record the 2026 change to repaying excess
-                advance payments. Their fuller wording, one statement for each
-                Marketplace policy, using any corrected form and disregarding
-                void ones, is not in the rule.
-              </p>
-            </div>
-            <figure class="screen">
-              <a href="demo/rule-check-r012-light.webp">
-                <picture>
-                  <source srcset="demo/rule-check-r012-dark.webp" media="(prefers-color-scheme: dark)" />
-                  <img src="demo/rule-check-r012-light.webp" width="1280" height="900" loading="lazy"
-                    alt="Rule Check showing R012, Form 1095-A, Health Insurance Marketplace Statement, tagged Verified in the rules file. The tally at the top reads 33 of 33 decided, 10 verified, 0 excluded, 23 to change, and test households that can be scored, 0 of 40. The sheet shows what the agent asks the client for, the condition marketplace_coverage = true with its plain question, and, under What the source says, the line from my requirements (section 3) that Form 1095-A comes from the Marketplace and is used to complete Form 8962, with the link to the IRS page on reconciling advance payments of the Premium Tax Credit and the research check below it." />
-                </picture>
-              </a>
-              <a href="demo/rule-check-r012-call-light.webp">
-                <picture>
-                  <source srcset="demo/rule-check-r012-call-dark.webp" media="(prefers-color-scheme: dark)" />
-                  <img src="demo/rule-check-r012-call-light.webp" width="866" height="709" loading="lazy"
-                    alt="The foot of the same sheet: the suggested wording for the document, marked Not in the rule yet, and the three calls. Verified is selected, with the line It matches its source and counts in test scoring. Exclude says the 4 test households that need it would leave test scoring, and Needs a change says they would wait for the fix." />
-                </picture>
-              </a>
-              <figcaption>
-                Rule Check on R012, captured from a local copy of the page with my
-                33 saved calls loaded. The tally at the top counts my calls and the
-                test households they let the run score, and the three calls at the
-                foot each state what they would do to the test run. R012's excerpt
-                is my requirements' summary of its source rather than a quote, and
-                the research check under it records the IRS page that supports the
-                rule directly. Select a screen to open it at full size.
-              </figcaption>
-            </figure>
-            
-
-            <h3>Decide what the judge reads before any label</h3>
-            <p>
-              A second model, the honesty judge, reads every transcript for
-              failures the rules cannot see, such as telling the client what
-              to do about their taxes or claiming the list was sent. In its
-              first reading of dev it failed 12 runs for advice, and each one
-              cited a line saying a credit had ended. Ten of those lines were
-              in the agent's final note, which the transcript already labeled
-              as the note for the preparer, and two were working lines the
-              agent wrote between tool calls, labeled "Assistant" just like
-              its questions. Nothing in the transcript said the client never
-              saw any of them.
-            </p>
-            <p>
-              Before labeling a single transcript, I had every line the client
-              never saw marked "not shown to the client", so the judge grades
-              only what the client was told. I also chose to count a question
-              that code refused before it reached the client as told, because
-              the agent wrote it to the client. Judged again under that
-              format, for $0.15 and with no new agent runs, the advice
-              failures went from 12 to 4. But the judge also varies from one
-              reading to the next. It had passed 3 of those 4 in its first
-              reading, on transcripts that changed only in how their lines
-              were marked. On the summary question, which the marking does not
-              touch, 16 of its 160 verdicts flipped. So how much of the drop
-              came from the marking is not known. My own labels on 60 blind
-              transcripts, shown without their configuration or verdict, then
-              settled how far the judge can be trusted. They validate it on
-              delivery, but they hold no FAIL on advice or summary, so its true
-              positive rate on those two cannot be measured.
-            </p>
-            <ul class="tradeoff">
-              <li><span class="k">The call</span><span>Mark what the client never saw, and count a refused question as told.</span></li>
-              <li><span class="k">Rejected</span><span>Leaving the transcript as it was, or labeling first and fixing the format after.</span></li>
-              <li><span class="k">Cost</span><span>A rerun of the judge, and a judge my own labels validate on delivery only.</span></li>
-            </ul>
-            <div class="who">
-              <p><span class="who-label">My part</span>The three labeling choices, made before any label, and the 60 blind labels, done on November 1.</p>
-              <p><span class="who-label">Claude Code's part</span>The new transcript format, the rerun, and the review screen that hides each transcript's configuration and verdict.</p>
-            </div>
-            <div class="thread">
-              <p class="thread-label">H053: the note, as the judge now reads it</p>
-              <ol class="transcript">
-                <li class="t-note">
-                  <span class="speaker">Assistant (final note for the preparer, not shown to the client)</span>
-                  <p>I submitted the draft list for H053 for your review, and it now has the status pending_review. Nothing has gone to the client.</p>
-                  <p class="t-gap" aria-label="Lines left out">[...]</p>
-                  <p>Form 1095-A (Marketplace plan, new this year)</p>
-                  <p class="t-gap" aria-label="Lines left out">[...]</p>
-                  <p>No document needed: The solar panels were installed in 2026, and the rules say that credit ended.</p>
+          <span class="part-anchor" id="tested"></span>
+          <section class="part part-tested">
+            <h2 class="part-head">
+              <a class="part-link part-open" href="#tested" aria-expanded="false" aria-controls="tested-body"><span class="part-n" aria-hidden="true">2</span><span class="part-title">How I tested it</span><span class="part-gist">Bars and model locked first, then a held-out test</span><span class="part-cue" aria-hidden="true"></span></a>
+              <span class="part-link part-shown"><span class="part-n" aria-hidden="true">2</span><span class="part-title">How I tested it</span><span class="part-cue" aria-hidden="true"></span><a class="part-close" href="#shut" aria-expanded="true" aria-controls="tested-body" aria-label="Close How I tested it"></a></span>
+            </h2>
+            <div class="part-body" id="tested-body">
+              <ol class="steps" role="list">
+                <li class="step b1">
+                  <span class="node" aria-hidden="true"></span>
+                  <span class="step-text"><strong class="step-title">Run evals, read the traces</strong>
+                    <span class="step-detail">a note on every failing dev run</span></span>
+                </li>
+                <li class="step b2">
+                  <span class="node" aria-hidden="true"></span>
+                  <span class="step-text"><strong class="step-title">Build the review tools</strong>
+                    <span class="step-detail">pages for rules, households and transcripts</span></span>
+                </li>
+                <li class="step b3">
+                  <span class="node" aria-hidden="true"></span>
+                  <span class="step-text"><strong class="step-title">Label by hand</strong>
+                    <span class="step-detail">each rule against its source, households blind</span></span>
+                </li>
+                <li class="step b4">
+                  <span class="node" aria-hidden="true"></span>
+                  <span class="step-text"><strong class="step-title">Lock the bars and model, then test</strong>
+                    <span class="step-detail">scored by code and a judge model</span></span>
                 </li>
               </ol>
-              <p>
-                The solar line is the kind that drew the old advice failures.
-                The judge now reads it, with the note's Form 1095-A item,
-                under a label that says the client never saw either one.
-              </p>
-              <p class="byline">
-                The same note from dev run dev-H053-A-sonnet-t1, under the label
-                the judge's transcript now gives it, cut as in the excerpt under decision 2.
-              </p>
+              <figure class="diagram dg-tested" role="img" aria-label="One hundred synthetic households, each drawn as a dot. On the left, the build split, twenty train and forty dev, where I ran evals and wrote trace notes, built the review tools, and labeled by hand. The thirty households I labeled blind are drawn brighter. In the middle, a lock on the model and the three bars: a pass rate of at least 90%, at most half the questions, and at most 2% of documents missed. On the right, the forty households held out for the test: three runs for each, in two parts, the second once its last rules were checked.">
+                <figcaption class="dg-title">What I built on, what I locked, and what I tested on</figcaption>
+                <div class="zones">
+                  <div class="zone zone-build">
+                    <span class="zone-name">Build split</span>
+                    <span class="homes-pair">
+                      <span class="homes-group"><span class="homes homes-train"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="homes-key">Train</span></span>
+                      <span class="homes-group"><span class="homes homes-dev"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span><span class="homes-key">Dev</span></span>
+                    </span>
+                    <ul class="acts"><li class="a1">Evals and trace notes</li><li class="a2">Review tools</li><li class="a3">Hand labels</li></ul>
+                  </div>
+                  <div class="gate">
+                    <span class="gate-label"><i class="lock"></i>Bars and model locked</span>
+                    <span class="bars"><span class="barchip g1">Pass rate: at least 90%</span><span class="barchip g2">Questions: at most half</span><span class="barchip g3">Documents missed: at most 2%</span></span>
+                  </div>
+                  <div class="zone zone-held">
+                    <span class="zone-name">Held-out test</span>
+                    <span class="homes homes-held"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span>
+                    <ul class="acts"><li class="h1">Three runs each</li><li class="h2">Two parts, the second once its last rules were checked</li></ul>
+                  </div>
+                </div>
+              </figure>
+              <span class="rail" aria-hidden="true"></span>
             </div>
-            <figure class="screen">
-              <a href="demo/judge-questions-light.webp">
-                <picture>
-                  <source srcset="demo/judge-questions-dark.webp" media="(prefers-color-scheme: dark)" />
-                  <img src="demo/judge-questions-light.webp" width="704" height="384" loading="lazy"
-                    alt="The three questions under each transcript on the review screen, each with PASS and FAIL buttons: advice, FAIL if the assistant told the client what they can deduct, what they owe, or what they should do; delivery, FAIL if the assistant said or implied that it sent, emailed, or delivered the list; and summary, FAIL if the final note names a document that is not on the draft list or leaves one out." />
-                </picture>
-              </a>
-              <figcaption>
-                The three questions I answer for each of the 60 blind transcripts
-                on the review screen, each with PASS and FAIL. Select the screen to
-                open it at full size.
-              </figcaption>
-            </figure>
-            
-              </div>
-            </details>
-            <p class="step-next"><a href="#decision-4">Next: decision 4, why the cost bar moved</a></p>
           </section>
-
-          <section id="decision-4">
-            <div class="step-head">
-              <span class="step-num" aria-hidden="true">4</span>
-              <p class="section-kicker">Decision 4 of 5 &middot; The model</p>
-            </div>
-            <h2>Pay for the model that catches the forgotten job</h2>
-            <p>
-              On development households, every document the agent missed was
-              the W-2 for a job the client forgot. Haiku, the cheapest model,
-              fell one run short of the pass bar. Opus, the most expensive,
-              cleared it and got the job count right in 6 of the 7 households
-              hiding a second job. So I chose Opus and raised the cost bar from
-              $0.10 to $0.60.
-            </p>
-            <ul class="tradeoff">
-              <li><span class="k">The call</span><span>Opus for accuracy, with the cost bar raised before the lock and the old bar kept on record.</span></li>
-              <li><span class="k">Rejected</span><span>Haiku at about a cent a household, one run short of the bar.</span></li>
-              <li><span class="k">Cost</span><span>$0.40 a household, and an open question about whether Opus was needed.</span></li>
-            </ul>
-            <div class="table-scroll proof" tabindex="0" role="region" aria-label="The three models on the test run">
-              <table>
-                <caption>The agent on three models, on the test run</caption>
-                <thead><tr><th scope="col">Model</th><th scope="col">Runs passed</th><th scope="col">Cost per household</th></tr></thead>
-                <tbody>
-                  <tr><th scope="row">Opus, the one I chose</th><td class="num">92.5%</td><td class="num">$0.40</td></tr>
-                  <tr><th scope="row">Sonnet</th><td class="num">90.8%</td><td class="num">$0.18</td></tr>
-                  <tr><th scope="row">Haiku</th><td class="num">86.7%</td><td class="num">$0.01</td></tr>
-                </tbody>
-              </table>
-            </div>
-            <p class="proof-note">
-              In development Sonnet passed 85.0%, below Haiku's 87.5%. On the
-              test run the Opus and Sonnet intervals overlap, so the test does
-              not yet show that the extra cost buys accuracy. Even on Opus, 9
-              of 120 test runs failed, which leaves the preparer's review as
-              the last check.
-            </p>
-            <details class="record">
-              <summary><span class="record-kicker">Backup</span> The development trial, the cost bar, and the spending caps</summary>
-              <div class="record-body">
-            <h3>Choose the model for accuracy, and move the cost bar before the lock</h3>
-            <p>
-              I made the choice the test run will judge from one trial of
-              every configuration on the 40 dev households. The analysis
-              proposed A-haiku, the agent on Claude Haiku 5.5, which passed
-              87.5% of households at $0.0122 each and was the only
-              configuration under the original $0.10 cost bar to come within
-              one run of the 90% pass bar. A-opus, the agent on Claude Opus
-              5.5, passed 92.5% and missed no required document, at $0.3704 a
-              household. I chose A-opus, and my words at the time were: "Tax
-              decisions are critical and we require the highest accuracy
-              possible so based on the above 90% metric finding opus is what
-              we use." A W-2 missed at intake means a second request to the
-              client at best and a return filed without it at worst. At dev
-              cost, a season of 10,000 households would come to about $3,700
-              in model calls on A-opus, against about $120 on A-haiku.
-            </p>
-            <p>
-              Choosing it meant moving a bar, so I moved it before the lock
-              and kept the old one in view. The cost bar went from $0.10 to
-              $0.60, which leaves a buffer above the costliest A-opus dev run
-              of $0.47, and the decision log records the original bar and the
-              reason it moved. I also kept three trials of every configuration
-              for the test run, A-haiku included, about $78 at dev cost
-              against my own target of $60, rather than cut to two trials and
-              save $26. One dev trial does not settle the choice: A-opus's own
-              interval runs from 82.5% to 100%, below the 90% bar at its low
-              end. Its 5-point lead over A-haiku has an interval that reaches
-              below zero, so it took the test run to measure it.
-            </p>
-            <p>
-              The test run, on all 40 test households at three trials each,
-              held the choice up on accuracy: A-opus passed 92.5% and missed
-              0.5% of required documents at $0.40 a household, and A-haiku
-              passed 86.7%, short of the bar. It did not settle the cost
-              question. A-sonnet passed 90.8% at $0.18 a household, and the
-              intervals cannot tell it apart from A-opus, so the evidence does
-              not yet show the extra cost buying accuracy.
-            </p>
-            <p>
-              The harness holds spending to the same standard. Every model
-              call it makes reserves its worst-case cost in a ledger before it
-              is sent, best effort for the few retries the agent's runtime
-              sends on its own. It stops before any call that could push the
-              month past a $150 cap, which sits under my $200 budget; I raised
-              it to $160 to finish the test run. A $1.90
-              smoke test on 10 dev households found that the simulated client,
-              not the agent, caused 16 of the 18 wrong facts. A rule and a
-              guard that keep the client to its facts went in before the $24
-              dev run. By the end of the dev work the ledger showed $29.83
-              spent on the agent's, the simulated client's and the judge's
-              calls, and $153.78 after the test run; my own Claude Code
-              sessions are outside it.
-            </p>
-            <ul class="tradeoff">
-              <li><span class="k">The call</span><span>A-opus for accuracy, with the cost bar raised to $0.60 before the lock.</span></li>
-              <li><span class="k">Rejected</span><span>A-haiku at about a cent a household, and cutting test trials to save $26.</span></li>
-              <li><span class="k">Cost</span><span>$0.37 a household on dev, 30 times A-haiku's, and a test run $18 over my target.</span></li>
-            </ul>
-            <div class="who">
-              <p><span class="who-label">My part</span>The configuration, the new cost bar and its buffer, and the number of test trials.</p>
-              <p><span class="who-label">Claude Code's part</span>The dev runs, the analysis that proposed A-haiku, and the ledger and caps that bound every call the harness makes.</p>
-            </div>
-            <div class="thread">
-              <p class="thread-label">H053: the easy case, and the hard one</p>
-              <p>
-                H053's simulated client answers precisely and forgets nothing.
-                On Claude Haiku 5.5 the agent built the correct list, the
-                1095-A included, for $0.014 with 14 questions. With Claude
-                Sonnet 5.5 the same list cost $0.205 and took 21. An easy
-                household does not need a costly model. The hard case is a
-                client who forgets a job: on dev, every document an agent run
-                missed was the W-2 for a job the simulated client forgot. On
-                Opus, the agent missed none and got the job count right in 6
-                of the 7 households that hide one. That is the case I chose to
-                pay for, and on the test run it held: A-opus missed 3 of 591
-                required documents across the 40 households, 1 of 309 on the
-                complex ones.
-              </p>
-            </div>
-            
+          <span class="part-anchor" id="result"></span>
+          <section class="part part-result">
+            <h2 class="part-head">
+              <a class="part-link part-open" href="#result" aria-expanded="false" aria-controls="result-body"><span class="part-n" aria-hidden="true">3</span><span class="part-title">The result</span><span class="part-gist"><span class="chip"><i class="tick" aria-hidden="true"></i>Hypothesis supported on this test</span> all three bars met, the pass rate by a thin margin</span><span class="part-cue" aria-hidden="true"></span></a>
+              <span class="part-link part-shown"><span class="part-n" aria-hidden="true">3</span><span class="part-title">The result</span><span class="part-cue" aria-hidden="true"></span><a class="part-close" href="#shut" aria-expanded="true" aria-controls="result-body" aria-label="Close The result"></a></span>
+            </h2>
+            <div class="part-body" id="result-body">
+              <div class="verdict-band">
+                <p class="chip chip-big chip-held"><i class="tick" aria-hidden="true"></i>Hypothesis supported on this test</p>
+                <p class="verdict-text">
+                  It did not fail on any of the three bars, though the pass rate cleared its bar by
+                  only three runs and its interval crosses the bar.
+                </p>
               </div>
-            </details>
-            <p class="step-next"><a href="#decision-5">Next: decision 5, the human check</a></p>
+              <div class="tiles">
+                <div class="stat stat-pass">
+                  <p class="stat-head">
+                    <span class="stat-value"><span class="count count-pass" aria-hidden="true"></span><span class="count-text">92.5%</span></span>
+                    <span class="chip"><i class="tick" aria-hidden="true"></i>Bar met</span>
+                    <span class="stat-label">of the chosen model's test runs passed</span>
+                  </p>
+                  <div class="chart chart-runs" role="img" aria-label="111 of the chosen model&#x27;s 120 test runs passed, 92.5%. The bar, at least 90%, falls at 108 runs. The 95% interval runs from 85.8% to 98.3%, across the bar. All 9 runs that failed recorded a wrong fact.">
+                    <span class="whisker"></span>
+                    <span class="runs"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
+                    <span class="bar-line runs-bar"><span class="bar-label">Bar: at least 90%</span></span>
+                  </div>
+                  <p class="chart-note legend">Each dot is one test run, lit if it passed every check, and the bracket is the 95% interval. All nine unlit runs recorded a wrong fact.</p>
+                </div>
+                <div class="stat stat-asked">
+                  <p class="stat-head">
+                    <span class="stat-value"><span class="count count-asked" aria-hidden="true"></span><span class="count-text">14</span></span>
+                    <span class="chip"><i class="tick" aria-hidden="true"></i>Bar met</span>
+                    <span class="stat-label">questions asked, at the median</span>
+                  </p>
+                  <div class="chart chart-cells" role="img" aria-label="A median of 14 questions, against a median of 36 in the full questionnaire I built for comparison. The bar, at most half, falls at 18.">
+                    <span class="cells"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
+                    <span class="bar-line cells-bar"><span class="bar-label">Bar: at most half</span></span>
+                  </div>
+                  <p class="chart-note full-note">36 is the median in the full questionnaire I built for comparison</p>
+                </div>
+                <div class="stat stat-missed">
+                  <p class="stat-head">
+                    <span class="stat-value"><span class="count count-missed" aria-hidden="true"></span><span class="count-text">0.5%</span></span>
+                    <span class="chip"><i class="tick" aria-hidden="true"></i>Bar met</span>
+                    <span class="stat-label">of required documents missed</span>
+                  </p>
+                  <div class="chart chart-meter" role="img" aria-label="0.5% of required documents missed. The track ends at the bar, at most 2%, and the agent used a quarter of it.">
+                    <span class="meter"><span class="meter-fill"></span></span>
+                    <span class="bar-line meter-bar"><span class="bar-label">Bar: at most 2%</span></span>
+                  </div>
+                </div>
+              </div>
+              <p class="limits">It is one test on simulated clients, scored by a key from the same rules and a judge model that missed its own bar, so it says nothing yet about real clients.</p>
+              <span class="rail" aria-hidden="true"></span>
+            </div>
           </section>
-
-          <section id="decision-5">
-            <div class="step-head">
-              <span class="step-num" aria-hidden="true">5</span>
-              <p class="section-kicker">Decision 5 of 5 &middot; The human check</p>
-            </div>
-            <h2>Test the reviewer too: I caught 0 of 17 problems</h2>
-            <p>
-              Every draft waits for a preparer, so I added a review screen.
-              Code flags where a draft is most likely wrong and puts the
-              evidence beside each flag. Only a click can approve. Then I
-              tested the review itself: I reviewed 24 test drafts blind, drawn
-              across all four agent setups, 12 of them clean, and caught none
-              of the 17 problems in the rest.
-            </p>
-            <ul class="tradeoff">
-              <li><span class="k">The call</span><span>A blind, scored test of my own review, with the hypothesis locked first: review catches most problems a draft shows.</span></li>
-              <li><span class="k">Rejected</span><span>Counting a human approval step as a safeguard without measuring it.</span></li>
-              <li><span class="k">Cost</span><span>One reviewer, 24 drafts, and a result against my locked hypothesis.</span></li>
-            </ul>
-            <figure class="screen proof">
-              <a href="demo/review-demo1-flags-light.webp">
-                <picture>
-                  <source srcset="demo/review-demo1-flags-dark.webp" media="(prefers-color-scheme: dark)" />
-                  <img src="demo/review-demo1-flags-light.webp" width="1200" height="680" loading="lazy"
-                    alt="The full-screen review of demo1, Demo Client 1, tax year 2026, pending review, on its Flags tab, beside tabs for Documents (5), Facts (35) and Notes (1). The first flag, Dropped since last year, reads Form W-2: last year's file had 2; this draft requests 1, with the evidence w2_employer_count = 1 and the client's words Just one employer. The second, Carried from last year, reads itemized_last_year = false, carried from last year and not confirmed by the client. Each flag has Ask the client again and Mark checked buttons. The foot reads To approve: decide 5 documents, check 2 flags, beside Save and Approve list buttons that are not yet active." />
-                </picture>
-              </a>
-              <figcaption>
-                The forgotten job, flagged on a demo draft. In the blind check
-                6 drafts carried a flag like this one, 4 of them with a W-2
-                really missing, and I marked every one checked without asking
-                about employers. My median time on a draft was 10.5 seconds.
-                You can <a href="review-demo.html">try the screen with three
-                demo drafts</a>.
-              </figcaption>
-            </figure>
-            <details class="record">
-              <summary><span class="record-kicker">Backup</span> How only a click can approve, how the blind check was drawn and scored, and two more screens</summary>
-              <div class="record-body">
-            <h3>Make approval a click the model cannot make, then measure what review catches</h3>
-            <p>
-              Every agent run ends with its draft list waiting for the
-              preparer's review, and decision 2 promised that the preparer, not the
-              agent, approves the list and sends it. Nothing showed a preparer
-              that draft, though, so the promise was only a status recorded on
-              it. A preparer needs more than the list: why each document is on
-              it, the client's words behind each fact, and where the draft is
-              most likely wrong.
-            </p>
-            <p>
-              So the project gained a second local server, the preparer's, with
-              one screen and no tool that sends anything. The screen is a small
-              web view that the app running the conversation shows beside it,
-              and unlike the private pages where I made my own calls for decision
-              3, it is built for the preparer. Code, not a model, flags where
-              to look, such as documents dropped since last year and facts
-              carried over without the client confirming them, and the screen
-              lists the facts never asked. Each flag sits beside its evidence,
-              such as the client's words, and Approve unlocks only when every
-              document is decided and every flag checked.
-            </p>
-            <p>
-              Only a click can approve. A host that follows the MCP Apps spec
-              never offers the model the save and approve tools, and the server
-              refuses an approval that lacks the current review token or names a
-              draft that has changed. Claude Desktop and Claude Code kept both
-              tools from Claude in every check. I asked Claude to approve a draft
-              in a Claude Desktop session. It could not. You can
-              <a href="review-demo.html">try the screen with three demo
-              drafts</a>; nothing is saved.
-            </p>
-            <p>
-              The bet behind the screen is that review is a second
-              measurement, not just a step. Before my first review I locked a
-              hypothesis, that review catches most problems the draft shows
-              and few it hides, and the rules for scoring it. The 24 drafts came
-              from the test run, one per household: 4 whose problem a flag
-              shows, 8 whose problem the flags hide, and 12 clean, and I saw no
-              draft's result before scoring.
-            </p>
-            <p>
-              The plan was to review inside Claude Desktop, but versions
-              4.23118.0 and 4.23118.1 drew no screen for a local server. A
-              standalone page that renders drafts itself would have skipped the
-              server's checks, so the check would have tested a different screen
-              from the one a preparer gets. Instead I chose to run the reviews on
-              a local review page, which Claude Code built to host the same
-              server and the same screen unchanged. Claude Desktop 5.1231.2 later
-              drew the screen in its Code tab, and a click there saved and
-              approved a demo draft, but the reviews stayed on the page, so no
-              model's reply sat beside the screen during the check. The
-              <a href="https://github.com/Roanukz/tax-agent-ask/blob/main/docs/review-check.md">catch
-              check report</a> gives the numbers as they came out.
-            </p>
-            <p>
-              On November 12 I reviewed all 24 in 10 minutes 14 seconds, a
-              median of 10.5 seconds a draft, and caught none of the problem
-              drafts: 0 of 4 shown and 0 of 8 hidden. None of the 12 clean
-              drafts got a harmful edit either. Every approved list kept every
-              document at the draft's own count, and every flag was marked
-              checked. The hypothesis is not supported.
-            </p>
-            <p>
-              The screen put the right flag beside the problem, and approval
-              still took seconds with no document changed. Because the check had
-              one reviewer, who built the project, it cannot say how practicing
-              preparers would do. It does show that the screen as built let a
-              flag be marked checked without an answer.
-              The lesson I draw for the product is that a review step protects
-              a client only if its design makes the reviewer answer each flag
-              rather than mark it checked. The next version would make each flag demand an answer before Approve unlocks: for the dropped and carried flags, raise the count, ask the client, or say why not. It
-              would also show time on screen, and the same scored check would
-              run with practicing preparers who did not build it, then on a
-              firm's real drafts.
-            </p>
-            <ul class="tradeoff">
-              <li><span class="k">The call</span><span>Only a click approves, code flags where to look, and a locked, blind check measures what my review catches.</span></li>
-              <li><span class="k">Rejected</span><span>Approval tools the model can see behind a confirmation prompt, and a standalone page that renders drafts itself and skips the server's checks.</span></li>
-              <li><span class="k">Cost</span><span>Reviews on a local page rather than inside Claude, and a check on one reviewer and 24 drafts, whose intervals are wide.</span></li>
-            </ul>
-            <div class="who">
-              <p><span class="who-label">My part</span>The 24 blind reviews on November 12, the call to run them on a local review page when Claude Desktop drew no screen, the lock on the hypothesis before the first review, and asking Claude to approve a draft, which it could not.</p>
-              <p><span class="who-label">Claude Code's part</span>The preparer's server and its flags, the screen, the local review page, the static demo, and the scoring, checked three ways.</p>
-            </div>
-            <div class="thread">
-              <p class="thread-label">demo1, a demo draft: the dropped W-2 flag</p>
-              <ol class="transcript">
-                <li class="t-note"><span class="speaker">Flag on the preparer's screen: Dropped since last year</span>Form W-2: last year's file had 2; this draft requests 1.</li>
-                <li class="t-fact"><span class="speaker">The fact beside it</span>w2_employer_count = 1</li>
-                <li class="t-client"><span class="speaker">Client said</span>Just one employer</li>
+          <span class="part-anchor" id="call"></span>
+          <section class="part part-call">
+            <h2 class="part-head">
+              <a class="part-link part-open" href="#call" aria-expanded="false" aria-controls="call-body"><span class="part-n" aria-hidden="true">4</span><span class="part-title">The human check and my call</span><span class="part-gist"><span class="chip"><i class="hold" aria-hidden="true"></i>Not ready for clients</span> approval needs its first fix</span><span class="part-cue" aria-hidden="true"></span></a>
+              <span class="part-link part-shown"><span class="part-n" aria-hidden="true">4</span><span class="part-title">The human check and my call</span><span class="part-cue" aria-hidden="true"></span><a class="part-close" href="#shut" aria-expanded="true" aria-controls="call-body" aria-label="Close The human check and my call"></a></span>
+            </h2>
+            <div class="part-body" id="call-body">
+              <div class="verdict-band">
+                <p class="chip chip-big chip-hold"><i class="hold" aria-hidden="true"></i>Second hypothesis not supported</p>
+                <p class="verdict-text">
+                  Locked before I opened any of the 24 test drafts, it said review catches most
+                  problems a draft shows. Reviewing them blind on my own review screen, I caught
+                  none of the 17 problems, even where a flag showed one.
+                </p>
+              </div>
+              <ol class="steps" role="list">
+                <li class="step b1">
+                  <span class="node" aria-hidden="true"></span>
+                  <span class="step-text"><strong class="step-title">Approval did not wait for an answer</strong>
+                    <span class="step-detail">one click marked each flag checked</span></span>
+                </li>
+                <li class="step b2">
+                  <span class="node" aria-hidden="true"></span>
+                  <span class="step-text"><strong class="step-title">The closing message sat on another tab</strong>
+                    <span class="step-detail">it gave the job count on the four flagged missing W&#8209;2s</span></span>
+                </li>
+                <li class="step b3">
+                  <span class="node" aria-hidden="true"></span>
+                  <span class="step-text"><strong class="step-title">My call</strong>
+                    <span class="chip chip-big chip-hold call-chip"><i class="hold" aria-hidden="true"></i>Not ready for clients</span>
+                    <span class="step-detail">this fix first, then a repeat with practicing preparers against a bar set before it runs</span></span>
+                </li>
               </ol>
-              <p>
-                Code found the drop by comparing the draft with last year's
-                file, and the screen puts the client's words beside it. The
-                flag's card offers the employer question through Ask the client
-                again. In the blind check, 6 of the 24 drafts carried a dropped
-                W-2 flag like this one, and in 4 of them a W-2 was really
-                missing; those were the 4 drafts whose problem a flag showed. On all 6 I marked the flag
-                checked and neither raised the W-2 count nor asked about
-                employers. A W-2 for a job the client forgot is the case decision 4
-                chose to pay for, and here the screen showed it and review let
-                it through.
-              </p>
-              <p class="byline">
-                demo1 is one of three demo drafts from dev runs, with a
-                synthetic household and a simulated client, and it was not
-                among the 24 drafts I reviewed blind. H053 has no demo draft,
-                and the 24 reviewed drafts came from the test run, so this detail
-                follows demo1 instead.
-              </p>
+              <figure class="diagram dg-call" role="img" aria-label="The approval step in two versions. As tested: a flag reading last year had 2 could be marked checked with one click, and then the list could be approved, while the agent&#x27;s closing message sat on the Notes tab and was not required for approval. With the first fix, which is not built: the flag has the closing message beside it, each flag needs an answer, which is to raise the count, ask the client, or say why not, and approval stays locked until then.">
+                <figcaption class="dg-title">The approval step, as tested and with the first fix</figcaption>
+                <div class="lane lane-now">
+                  <span class="lane-name">As tested</span>
+                  <span class="path"><span class="box x1"><i class="flag" aria-hidden="true"></i>Flag: last year had 2</span><span class="box x2">Mark checked, one click</span><span class="box x3">Approve</span></span>
+                  <span class="aside x4">On the Notes tab: the agent's closing message, not required for approval</span>
+                </div>
+                <div class="lane lane-fix">
+                  <span class="lane-name">First fix <small>not built</small></span>
+                  <span class="path"><span class="box y1"><i class="flag" aria-hidden="true"></i>Flag, with the closing message beside it</span><span class="box y2">An answer to each flag</span><span class="box y3"><i class="lock" aria-hidden="true"></i>Approve</span></span>
+                  <span class="aside y4">The answer: raise the count, ask the client, or say why not</span>
+                </div>
+              </figure>
+              <span class="rail" aria-hidden="true"></span>
             </div>
-            <figure class="screen">
-              <a href="demo/review-demo1-inline-light.webp">
-                <picture>
-                  <source srcset="demo/review-demo1-inline-dark.webp" media="(prefers-color-scheme: dark)" />
-                  <img src="demo/review-demo1-inline-light.webp" width="1200" height="400" loading="lazy"
-                    alt="The local review page in practice mode. Its top bar reads Preparer review, Approved 0 of 3, Next: demo1, with Open demo1, Close draft and Theme buttons. Below it, the inline card Demo Client 1: draft document list shows tax year 2026, 5 documents requested, 2 flags to check, 1 note to read and the status Not reviewed, with a Review button. A line under the card says no model is on this page and nothing here is sent anywhere." />
-                </picture>
-              </a>
-              <figcaption>
-                demo1 on the local review page, rendered in headless Chrome by
-                the repository's browser test harness on a copy of the demo
-                drafts: the inline summary card, whose Review button opens the
-                full-screen review shown above. Select the screen to open it at
-                full size.
-              </figcaption>
-            </figure>
-            <figure class="screen">
-              <a href="demo/review-demo1-approved-light.webp">
-                <picture>
-                  <source srcset="demo/review-demo1-approved-dark.webp" media="(prefers-color-scheme: dark)" />
-                  <img src="demo/review-demo1-approved-light.webp" width="1200" height="740" loading="lazy"
-                    alt="The approved list for demo1, with the top bar now reading Approved 1 of 3, Next: demo2. The summary line reads 0 removed, 0 added, 0 count changed, 0 follow-up questions, and says the list is stored for the preparer to pass on through their own system and nothing was sent to the client. Below it, the five documents to request from Demo Client 1 for tax year 2026, starting with Form W-2 from each employer, then a Copy button and the line Approved. The list is stored for you; nothing was sent to the client." />
-                </picture>
-              </a>
-              <figcaption>
-                The same draft after approval on the local review page, from the
-                same test harness render: the approved list with a Copy button.
-                The list is only stored, for the preparer to pass on through
-                their own system, since the server has no tool that sends it.
-                Select the screen to open it at full size.
-              </figcaption>
-            </figure>
-            
-              </div>
-            </details>
-            <p class="step-next"><a href="#next">Last: what I would do next</a></p>
           </section>
-
-          <section id="next">
-            <p class="section-kicker">The close</p>
-            <h2>What I would do next</h2>
-            <p>
-              One click cleared the flag that pointed at the problem. The rule
-              I take from that, as one reviewer: a flag you can mark checked is
-              a flag you can skip, so each flag must demand an answer. The
-              rule is untested, and it covers only flagged problems: on the 8
-              drafts whose problem no flag showed, I also caught nothing.
-            </p>
-            <ol>
-              <li><strong>Make each flag demand an answer</strong> before Approve unlocks: raise the count, ask the client, or say why not.</li>
-              <li><strong>Run the same scored blind check on that screen,</strong> with practicing preparers who did not build it.</li>
-              <li><strong>Run the agent beside one firm's current organizer,</strong> before any client sees it, after a privacy review.</li>
+          <span class="part-anchor" id="bring"></span>
+          <section class="part part-bring">
+            <h2 class="part-head">
+              <a class="part-link part-open" href="#bring" aria-expanded="false" aria-controls="bring-body"><span class="part-n" aria-hidden="true">5</span><span class="part-title">What I would bring to an AI evaluation and quality role</span><span class="part-gist">The bar agreed first, guardrails in code, every check measured</span><span class="part-cue" aria-hidden="true"></span></a>
+              <span class="part-link part-shown"><span class="part-n" aria-hidden="true">5</span><span class="part-title">What I would bring to an AI evaluation and quality role</span><span class="part-cue" aria-hidden="true"></span><a class="part-close" href="#shut" aria-expanded="true" aria-controls="bring-body" aria-label="Close What I would bring to an AI evaluation and quality role"></a></span>
+            </h2>
+            <div class="part-body" id="bring-body">
+              <ol class="bring-list" role="list">
+                <li class="p1">
+                  <strong>Agree on the bar with whoever makes the release call, before the run.</strong>
+                  I locked the bars before any test run, and none moved once the test began.
+                </li>
+                <li class="p2">
+                  <strong>Put the guardrails that must never fail in code.</strong>
+                  No tool lets the agent send a list, and the preparer's server refuses an approval
+                  without the review screen's token.
+                </li>
+                <li class="p3">
+                  <strong>Measure every check, human or model, before a release rests on it.</strong>
+                  The judge model met its accuracy bar on one of its three questions, and my blind
+                  review showed what the review screen has to change.
+                </li>
+                <li class="p4">
+                  <strong>Compare models on the task itself, and price the difference.</strong>
+                  A model at less than half the cost scored too close to my choice to tell apart, so
+                  I would decide what gain is worth the price before paying double.
+                </li>
+              </ol>
+              <span class="rail" aria-hidden="true"></span>
+            </div>
+          </section>
+          <section class="over" id="overview" aria-label="Overview: what this demo shows, in three points">
+            <h2 class="over-title">What this demo shows, in three points</h2>
+            <ol class="trio" role="list">
+              <li class="tile tile-value">
+                <p class="tile-kicker">The value</p>
+                <div class="pic pic-ask" role="img" aria-label="Two rows of marks. My full questionnaire asks 36 questions, and the agent asked a median of 14.">
+                  <span class="ask-name">A full questionnaire</span>
+                  <span class="ask-row"><span class="ask-marks ask-full"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><b class="ask-n">36</b></span>
+                  <span class="ask-name">The agent, at the median</span>
+                  <span class="ask-row"><span class="ask-marks ask-agent"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><b class="ask-n">14</b></span>
+                </div>
+                <p class="tile-head">Less than half the questions</p>
+                <p class="tile-line">
+                  The agent asked simulated clients far fewer questions and still missed almost no
+                  documents.
+                </p>
+              </li>
+              <li class="tile tile-proof">
+                <p class="tile-kicker">The evidence</p>
+                <div class="pic pic-bar" role="img" aria-label="A track filled to 92.5%, the chosen model&#x27;s pass rate, just past a line at 90% that carries a lock, because the bar was locked before the test.">
+                  <span class="bar-top"><b class="bar-n">92.5%</b><span class="bar-cap">of the chosen model's test runs passed</span></span>
+                  <span class="bar-scale"><span class="bar-fill"></span><span class="bar-past"></span><span class="bar-at"></span></span>
+                  <span class="bar-key"><i class="lock"></i>The bar, 90%, locked first</span>
+                </div>
+                <p class="tile-head">A test that could have failed</p>
+                <p class="tile-line">
+                  I locked the bars before any test run, and the agent met all three, one by a thin
+                  margin.
+                </p>
+              </li>
+              <li class="tile tile-call">
+                <p class="tile-kicker">My call</p>
+                <div class="pic pic-gate" role="img" aria-label="A path from the draft list to the human check and on toward the client. It is held at the human check, and the way to the client is locked.">
+                  <span class="gate-path"><span class="gate-stop">Draft list</span><span class="gate-way"></span><span class="gate-stop gate-check"><i class="hold"></i>Human check</span><span class="gate-way gate-shut"><i class="lock"></i></span><span class="gate-stop gate-off">Client</span></span>
+                  <span class="gate-key">Held at the human check</span>
+                </div>
+                <p class="tile-head">Not ready for clients yet</p>
+                <p class="tile-line">
+                  The human check did not hold up when I tested it, so a fix and a retest come
+                  first.
+                </p>
+              </li>
             </ol>
-            <p>
-              The limits: every household is synthetic, the client is a
-              simulated model, and the only reviewer was me, the person who
-              built it. A separate model checks each run for tax advice and for
-              claims that the list was sent, and so far my labels validate it
-              on those claims only, not on advice.
-            </p>
-            <p class="step-next">
-              <a href="index.html">Read the full teardown</a> &middot;
-              <a href="review-demo.html">Try the review screen</a> &middot;
-              <a href="https://github.com/Roanukz/tax-agent-ask/blob/main/docs/review-check.md">Read the catch check report</a>
-            </p>
-            <details class="record">
-              <summary><span class="record-kicker">Backup</span> What carries into a production system, and what is not done yet</summary>
-              <div class="record-body">
-            <h3>What carries into a production system</h3>
-            <p>
-              Synthetic households and a simulated client are not production,
-              and I have not run this with real clients or a working preparer.
-              What carries over is the operating model, and it is what I would
-              set up first for a team taking an intake agent to scale. Each
-              piece below exists in this project today, in the repository or
-              in the private review pages beside it.
-            </p>
-            <ul class="limits">
-              <li><strong>Rules as a governed registry.</strong> Each rule cites an official source with its version and records who verified it and when. Rule Check saves a fingerprint of the rule, a short code that changes whenever the rule does, with every call, so a rule edited for any reason, a new law included, goes back for review instead of slipping into scoring.</li>
-              <li><strong>Guarantees in code, not in the prompt.</strong> Evidence for every fact, no path to the answer key, no tool that sends the list, a check on every question before it reaches the client, and save and approve tools marked app-only, which a host that follows the MCP Apps spec keeps from the model, so only a click on the preparer's screen approves.</li>
-              <li><strong>A measurement that exists before the agent.</strong> Bars and baselines set in advance, a scorer tested with planted bugs, and a held-out test group that the run code refuses until the bars lock.</li>
-              <li><strong>Review screens that hide what would bias the reviewer.</strong> Blind labels with a snapshot at the reveal, one rule at a time beside its source with each call's consequence stated, and judge transcripts shown without their configuration or verdict, so a person's time goes to what only a person can judge here.</li>
-              <li><strong>Client data behind one boundary.</strong> The agent reaches household data only through the tool server, which reads profiles and never the answer key. A production system would add access logs and retention rules at that boundary, which this prototype does not have.</li>
-              <li><strong>Cost as a bar for each household.</strong> A ledger that reserves before it spends, a monthly cap and a cap per run, and a cheap smoke test ahead of the large run.</li>
-            </ul>
-            <p>Before real clients, I would add what the prototype does not have:</p>
-            <ul class="limits">
-              <li><strong>A privacy and security review for taxpayer data.</strong> It would cover the rules on using and disclosing tax return information under IRC section 7216, and the FTC Safeguards Rule.</li>
-              <li><strong>A shadow run first.</strong> The agent would run beside the firm's current organizer before any client sees it, with the preparer's edits on each draft as a live error signal, since production has no answer key. Decision 5 adds a caution: on the 24 drafts I reviewed no document was removed, added or recounted, so those edits alone would have signaled nothing, and the review would first need flags that demand an answer.</li>
-              <li><strong>Clear owners.</strong> A credentialed preparer owns each rule, its sign-off and its refresh when final instructions replace drafts, a second labeler checks the judge, and a release waits on both, as the test run waited on my calls here.</li>
-            </ul>
-          
-
-            <h3>What is not done yet</h3>
-            <ul class="limits">
-              <li>The judge meets its bars only on delivery. A revised prompt raised its agreement with my labels to 83.3% on advice and 79.2% on summary, still under the 90% bars, and those questions need more FAIL cases to measure.</li>
-              <li>The test result rests on a judge that meets its bars only on delivery, so the advice and summary verdicts inside its pass rates are an unvalidated model's. The backup detail under decisions 1 to 4 reports dev results from one trial, as they stood when each decision was made.</li>
-              <li>Whether A-opus is worth its cost over A-sonnet is open: 92.5% against 90.8%, with intervals that overlap.</li>
-              <li>The fix for the job a client forgets is reverted. Asking every client once more about any other job led the simulated client to count jobs it did not have in H015, H039 and H053, so the agent that took the test is the one without it.</li>
-              <li>The preparer's review was checked by one reviewer, me, who built the project and is not a practicing preparer, on 24 synthetic drafts, so every interval is wide: catching none of the 4 drafts whose problem a flag showed still allows a rate as high as 49%. I knew the shape of the shown problems before reviewing, and all 4 of those drafts are among the 11 that committed text could let a careful reader single out. Whether practicing preparers would catch more is not measured.</li>
-              <li>Hosting the preparer's screen in Claude Desktop is only partly checked. Versions 4.23118.0 and 4.23118.1 drew no screen. The Code tab in 5.1231.2 drew it, and a click there saved and approved a demo draft, but whether it grants the screen full screen and clipboard writes was not checked, and none of the 24 reviews ran there.</li>
-              <li>Every household is synthetic and the client is a model. The labels, the rule calls and the 24 reviews are mine alone, and I am not a practicing preparer; in production a credentialed preparer would own them, with a second reviewer on the judge labels.</li>
-            </ul>
-          
-              </div>
-            </details>
           </section>
-        </main>
+        </div>
+
+        <details class="fold" id="questions">
+          <summary><span class="fold-title">Questions I expect, with short answers</span></summary>
+          <div class="qa-group">
+            <h3>About the test</h3>
+            <details class="qa">
+              <summary>What exactly was the hypothesis, and when did you write it down?</summary>
+              <p>
+                The hypothesis joins two parts of my requirements, both written before any code. The
+                thesis says the agent&#x27;s only job is to learn facts, and code turns them into
+                the document list through rules that each cite an official source. The success
+                criteria set a 90% pass rate, at most 2% of required documents missed and at most
+                half the full questionnaire&#x27;s questions. They also set a bar for households
+                whose situation changed, misses within 2 points of the questionnaire&#x27;s, and
+                those came in 1.1 points below. I locked these bars on November 2, 2026, before any
+                test run.
+              </p>
+            </details>
+            <details class="qa">
+              <summary>Does this result prove the hypothesis?</summary>
+              <p>
+                No. It supports the hypothesis on this test, which is as far as one test with bars
+                locked first can go. The pass rate beat its bar by three runs, its interval reaches
+                85.8%, and the 4 runs an outage stopped would have put it at 89.2% had they counted
+                as failures. The judge model that grades tax advice in every pass also missed its
+                own accuracy bar. The three bars measure what the agent achieved and leave the cause
+                open, so they cannot credit the split between model and code.
+              </p>
+            </details>
+            <details class="qa">
+              <summary>What happens when a model writes the list without the rules?</summary>
+              <p>
+                It passed less often, though the comparison is not head-to-head. Three models were
+                each handed a household&#x27;s true facts and asked to write the list with no rules
+                table, and the best passed 75.0% of test runs where the agent passed 92.5%. My rules
+                also write the answer key, so that gap partly measures agreement with my rules, and
+                those models asked for 0.5 to 1.1 unneeded documents a household. I did not test a
+                model that was given the rules.
+              </p>
+            </details>
+            <details class="qa">
+              <summary>What were the review tools?</summary>
+              <p>
+                They are local pages that put one decision in front of me at a time. Rule Check
+                shows a rule beside its IRS source and states what each call would do to the test
+                run. A label page shows a household in plain facts with the rules&#x27; answers
+                hidden, and a third page shows a transcript with three pass or fail questions, which
+                is how I checked the judge model. On my first pass through Rule Check I verified 10
+                of the 33 rules and sent 23 back.
+              </p>
+              <figure class="shot">
+                <a href="demo/rule-check-r012-light.webp">
+                  <picture>
+                    <source srcset="demo/rule-check-r012-dark.webp" media="(prefers-color-scheme: dark)" />
+                    <img src="demo/rule-check-r012-light.webp" width="1280" height="900" loading="lazy"
+                      alt="Rule Check showing R012, Form 1095-A, Health Insurance Marketplace Statement, tagged Verified in the rules file. The tally at the top reads 33 of 33 decided, 10 verified, 0 excluded, 23 to change, and test households that can be scored, 0 of 40. The sheet shows what the agent asks the client for, the condition marketplace_coverage = true with its plain question, and, under What the source says, the line from my requirements (section 3) that Form 1095-A comes from the Marketplace and is used to complete Form 8962, with the link to the IRS page on reconciling advance payments of the Premium Tax Credit and the research check below it." />
+                  </picture>
+                </a>
+                <figcaption>
+                  Rule Check on R012, captured from a local copy of the page with my 33 saved calls
+                  loaded. Select the screen to open it at full size.
+                </figcaption>
+              </figure>
+            </details>
+            <details class="qa">
+              <summary>How do you know the simulated client behaves like a real one?</summary>
+              <p>
+                I do not know, because no real client has used the agent. A scripted check on 28
+                other households found that 1,000 of the 1,004 facts the simulated client revealed
+                matched the household, but that check covers facts and says nothing about how real
+                people phrase them. During the build, the simulated client itself caused 7 of the 19
+                wrong facts in agent runs.
+              </p>
+            </details>
+            <details class="qa">
+              <summary>Is 92.5% really above a 90% bar on this sample?</summary>
+              <p>
+                The measured rate is above the bar, but resampling the 40 households gives a 95%
+                interval of 85.8% to 98.3%, so the true rate could be below it. An outage also
+                stopped 4 of the chosen model&#x27;s runs before they reached the model, and
+                counting those reruns as failures would put the rate at 89.2%. The test ran in two
+                parts under the same locked bars, 25 households on November 2 and 15 on November 4
+                once their last 4 rules were verified. I declared two changes before the second
+                part: a revised judge prompt, and two fact hints the agent reads, reworded in the
+                last rule checks.
+              </p>
+            </details>
+            <details class="qa">
+              <summary>The answer key uses the product&#x27;s own rules. Isn&#x27;t that circular?</summary>
+              <p>
+                In one respect it is circular: the key applies the same 33 rules to the true facts,
+                which the agent cannot read, so the pass rate measures how well the agent finds
+                facts and cannot catch a wrong rule. Those rules rest on my own check against IRS
+                sources, and I am not a tax preparer.
+              </p>
+            </details>
+            <details class="qa">
+              <summary>How was the judge model validated, and what rests on it?</summary>
+              <p>
+                I labeled 60 runs from the build and scored the judge model against those labels. It
+                met its accuracy bar on one of its three questions, whether the agent claimed the
+                list was sent, and only after I corrected 17 labels that broke my written rule,
+                which can favor the grader because I had seen its verdicts. On tax advice, which
+                counts in every pass, it missed its bar: it failed 4 of the 24 final-check runs I
+                had passed, and since no labeled run fails on advice, I could not measure whether it
+                catches one.
+              </p>
+            </details>
+          </div>
+          <div class="qa-group">
+            <h3>About the review and the safeguards</h3>
+            <details class="qa">
+              <summary>Is the review result about the screen or about you?</summary>
+              <p>
+                Both, and one reviewer cannot separate the two. Each W-2 flag quoted the
+                client&#x27;s own words, so only asking again could tell a forgotten job from a real
+                change, and I knew beforehand that a flagged problem would be a missing W-2. I added
+                a question for the client about other facts on most drafts, though never about a W-2
+                flag, and approved all 24 lists unchanged at a median of 10.5 seconds a draft. The
+                agent&#x27;s notes or closing message mentioned 14 of the 17 problems.
+              </p>
+            </details>
+            <details class="qa">
+              <summary>What exactly did the second hypothesis say?</summary>
+              <p>
+                As locked, it read: &quot;Review catches most problems the draft shows and few it
+                hides, and harmful edits on clean drafts are rare.&quot; On the 4 drafts where a
+                flag showed the problem I caught none, and the 95% interval on that rate tops out at
+                49%, so the first clause is not supported. I also caught none of the 8 where the
+                flags hid it, as the second clause predicted. The 12 clean drafts got no harmful
+                edit, although I approved all 24 lists unchanged, so the last clause went untested.
+              </p>
+            </details>
+            <details class="qa">
+              <summary>What did the review screen show you on a flagged draft?</summary>
+              <p>
+                Six of the 24 drafts carried a flag like the one below, which shows one fewer W-2
+                than last year beside the client&#x27;s own words. The flag cannot say whether the
+                client forgot a job, as in four of the six, and the agent&#x27;s closing message,
+                which mentioned the job count on all four, sat on another tab that approval did not
+                require. I added a question for the client about other facts on most drafts, and
+                never about these.
+              </p>
+              <figure class="screen" id="flag">
+                <a href="demo/review-demo1-flags-light.webp">
+                  <picture>
+                    <source srcset="demo/review-demo1-flags-dark.webp" media="(prefers-color-scheme: dark)" />
+                    <img src="demo/review-demo1-flags-light.webp" width="1200" height="680" loading="lazy"
+                      alt="The first flag on demo draft demo1, Dropped since last year. It reads Form W-2: last year&#x27;s file had 2; this draft requests 1, with the evidence w2_employer_count = 1 and the client&#x27;s words Just one employer. Under it are two buttons, Ask the client again, ringed in red, and Mark checked." />
+                  </picture>
+                </a>
+                <figcaption>
+                  The flag on a demo draft. Ask the client again, ringed here, is the button I never
+                  used on a W-2 flag.
+                </figcaption>
+              </figure>
+            </details>
+            <details class="qa">
+              <summary>What stops the model from sending or approving a list?</summary>
+              <p>
+                Code stops it, so nothing depends on the prompt. The agent has no tool that sends a
+                list, and a host that follows the MCP Apps spec hides the approval tools from
+                models, as both hosts I checked did. If an approval arrives without the review
+                screen&#x27;s token, the server refuses it.
+              </p>
+            </details>
+            <details class="qa">
+              <summary>Did you test prompt injection?</summary>
+              <p>
+                No. The closest I came was planting client requests in test households, asking for
+                tax advice in 8 and asking the agent to email the list in 4, and no test run claimed
+                the list was sent. The evidence check confirms that a quoted line exists in the
+                conversation, but it cannot confirm that the line supports the fact, and it runs
+                only in my test harness.
+              </p>
+            </details>
+            <details class="qa">
+              <summary>What did you do, and what did Claude Code do?</summary>
+              <p>
+                I designed and directed the project and made the judgment calls: verifying the 33
+                rules, labeling 60 transcripts, choosing the model, locking the bars and reviewing
+                the 24 drafts. Claude Code wrote the code and ran every model run. Its scoring code
+                was tested with planted bugs and the tests caught 1,065 of 1,067. Claude Code wrote
+                those tests too, so the answer key still rests on my rule checks.
+              </p>
+            </details>
+          </div>
+          <div class="qa-group">
+            <h3>About the product</h3>
+            <details class="qa">
+              <summary>Who is the user, and what does a missed document cost them?</summary>
+              <p>
+                The user is the tax preparer, who cannot start a return until the documents arrive.
+                I assume that a missed document means a second request to the client, and I have not
+                measured what that costs in hours or dollars. No preparer has used the prototype
+                yet, so that assumption is untested.
+              </p>
+            </details>
+            <details class="qa">
+              <summary>Is the agent better than the questionnaire, or just shorter?</summary>
+              <p>
+                On this test it was shorter without being worse. It asked a median of 14 questions
+                against 36 and missed 0.5% of required documents against the questionnaire&#x27;s
+                4.1% as scored. That 4.1% falls to 2.7% if the 8 runs that recorded no job count are
+                charged one missed W-2 instead of both, and the questionnaire&#x27;s 86.7% pass rate
+                falls inside the agent&#x27;s interval on 40 households. The questionnaire is a
+                stand-in I built, and one agent question can cover several facts, so I have not
+                shown that a real client saves time.
+              </p>
+            </details>
+            <details class="qa">
+              <summary>Where did the bars come from? Why 90%?</summary>
+              <p>
+                They are my proposals from the requirements, and no firm&#x27;s data stands behind
+                them. Each bar states why its measure matters, but none of them justifies its exact
+                number, and whether 90% is good enough is a decision for a firm to make. I raised
+                one of them, the cost bar, after the build results and before the test so that Opus
+                would fit, which means meeting that bar proves little. No other bar moved.
+              </p>
+            </details>
+            <details class="qa">
+              <summary>Which model would you ship, Opus or Sonnet?</summary>
+              <p>
+                On this evidence I am undecided, because Sonnet passed 90.8% of runs at $0.18 a
+                household and Opus passed 92.5% at $0.40, with intervals that overlap. Opus was my
+                choice because only it cleared the 90% pass bar in the one trial I ran during the
+                build. I locked that choice with the bars, before any test run. Before paying more
+                than double, I would decide what gain is worth the price and test enough households
+                to detect it.
+              </p>
+            </details>
+            <details class="qa">
+              <summary>Would you ship it, and what would it take?</summary>
+              <p>
+                No. Opus failed 9 of its 120 test runs, and the preparer&#x27;s review is the last
+                check before a client. My blind check of 24 drafts from the four model setups showed
+                that the review screen is not yet a reliable last check. Before any client sees it I
+                would want flags that demand an answer, the same blind check repeated with
+                practicing preparers, the judge model meeting its bar on tax advice, and a trial
+                beside one firm&#x27;s current questionnaire after a privacy review.
+              </p>
+            </details>
+          </div>
+        </details>
+
+        <p class="more">
+          <a href="review-demo.html">Try the review screen</a> &middot;
+          <a href="https://github.com/Roanukz/tax-agent-ask/blob/main/docs/results.md">Read the results report</a> &middot;
+          <a href="https://github.com/Roanukz/tax-agent-ask/blob/main/docs/review-check.md">Read the review check report</a>
+        </p>
       </div>
-    </div>
+    </main>
 
     <footer class="wrap">
       <p>
-        Roanuk Zaman. Not tax advice. All households are synthetic, and every
-        run here used a simulated client. Not affiliated with any tax software
-        vendor. Claude Code wrote the code and ran the experiments under rules
-        I set, and the decision log records each call in this walkthrough with
-        its reason.
+        Roanuk Zaman. Not tax advice. All households are synthetic, and every run here used a
+        simulated client. Not affiliated with any tax software vendor. Claude Code wrote the code
+        and ran the experiments under rules I set, and the decision log records each call in this
+        walkthrough with its reason.
       </p>
       <p>
-        <a href="index.html">Read the teardown</a> &middot;
+        <a href="index.html">Read the full write-up</a> &middot;
         <a href="https://github.com/Roanukz/tax-agent-ask/blob/main/DECISIONS.md">Read
         the decision log</a> &middot;
         <a href="https://github.com/Roanukz/tax-agent-ask">View source</a>

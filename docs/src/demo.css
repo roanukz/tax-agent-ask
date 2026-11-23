@@ -1,84 +1,40 @@
-/* What the build walkthrough needs beyond the shared stylesheet: a numbered step head, the two-line split of who
-   did what, the running example's box, the review screens as figures (each with a dark capture), and a short
-   transcript excerpt. Role tokens only, so dark mode follows the shared file. */
+/* What the two-minute walkthrough needs beyond the shared stylesheet. The purpose and the hypothesis stay in view
+   at the top. Under them is one dark panel. It opens on an overview, three bright tiles with a small picture each,
+   above the titles of five sections that open one at a time, each on a click of its title: what the agent does, how
+   I tested it, the result, the human check with my call, and what I would bring to the role. An open section takes
+   the overview's place. Each closed row says its conclusion, and each open section holds a few lines and one
+   diagram that plays when the section opens. Under the panel is one plain fold, the questions I expect. There is
+   no script. The drawn numbers and the motion are generated at the end of this file. */
 
-.hero h1 {
-  text-wrap: balance;
+.wrap {
+  max-width: 1240px;
 }
 
-.step-head {
-  display: flex;
-  align-items: center;
-  gap: var(--space-12);
-  margin: 0 0 var(--space-12);
-}
-
-/* The step number reuses the rank badge's roles: a numbered item in an ordered sequence. */
-.step-num {
-  display: inline-grid;
-  place-items: center;
-  flex: none;
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius);
-  background: var(--rank-bg);
-  color: var(--rank-text);
-  font-size: var(--size-16);
-  font-weight: 650;
-  font-variant-numeric: tabular-nums;
-}
-
-.step-head .section-kicker {
-  margin: 0;
-}
-
-/* Who did what, side by side: the call I made and the work Claude Code did for it. */
-.who {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: var(--space-12);
-  margin: var(--space-24) 0;
-  max-width: 820px;
-}
-
-.who p {
-  margin: 0;
-  max-width: none;
-  padding: var(--space-12) var(--space-16);
-  background: var(--surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg);
-  font-size: var(--size-13);
-  line-height: var(--lh-16);
-}
-
-.who-label {
-  display: block;
-  margin-bottom: var(--space-4);
-  font-size: var(--size-13);
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+.topbar-name {
+  margin-right: auto;
   color: var(--text-muted);
 }
 
-/* The running example: the same household and the same form at every step. */
-.thread {
-  margin: var(--space-24) 0;
-  padding: var(--space-16) var(--space-24);
-  max-width: 820px;
-  background: var(--surface);
-  border: 1px solid var(--border-subtle);
-  border-left: 3px solid var(--marker);
-  border-radius: var(--radius-lg);
+.topbar-name strong {
+  color: var(--text-heading);
 }
 
-.thread > :last-child {
-  margin-bottom: 0;
+/* ---------- purpose and hypothesis ---------- */
+
+.hero.opening {
+  padding: var(--space-16) 0 0;
+  border-bottom: 0;
 }
 
-.thread-label {
-  margin: 0 0 var(--space-8);
+.opening .eyebrow {
+  margin-bottom: var(--space-12);
+  max-width: none;
+}
+
+/* The small label that names a part of the talk. */
+.tag {
+  margin: 0;
+  max-width: none;
   font-size: var(--size-13);
   line-height: var(--lh-13);
   font-weight: 600;
@@ -87,255 +43,2389 @@
   color: var(--kicker-text);
 }
 
-.thread blockquote {
-  margin: var(--space-12) 0 var(--space-16);
-}
-
-/* The thread is narrow, so its one table gives up the shared minimum width and wraps instead. */
-.thread table {
-  min-width: 0;
-}
-
-/* A transcript excerpt, set like the review screen sets it: the client's words carry the marker rule. */
-.transcript {
-  list-style: none;
-  margin: var(--space-16) 0;
-  padding: 0;
+.lead-row {
   display: grid;
-  gap: var(--space-8);
-  max-width: var(--measure-16);
+  grid-template-columns: minmax(100px, max-content) minmax(0, 1fr);
+  column-gap: var(--space-16);
+  align-items: baseline;
 }
 
-.transcript li {
+.lead-row + .lead-row {
+  margin-top: var(--space-12);
+}
+
+.purpose {
   margin: 0;
-  padding: var(--space-8) var(--space-12);
-  background: var(--surface-sunken);
-  border-radius: var(--radius);
+  max-width: none;
+  color: var(--text-body);
+  text-wrap: pretty;
 }
 
-.transcript .speaker {
-  display: block;
+/* The hypothesis is the page's heading. Its two halves, the condition and the claim, each start a line on a wide
+   screen, and the words they hinge on carry the link color. */
+.hero.opening h1 {
+  max-width: none;
+  font-size: var(--size-25);
+  line-height: var(--lh-25);
+  letter-spacing: var(--ls-25);
+  font-weight: var(--w-25);
+  text-wrap: balance;
+}
+
+.hinge {
+  font-style: normal;
+  color: var(--link);
+}
+
+@media (min-width: 1240px) {
+  .hero.opening h1 span {
+    display: block;
+  }
+}
+
+.thesis-test {
+  margin: var(--space-8) 0 0;
+  max-width: none;
+  color: var(--text-body);
+  text-wrap: pretty;
+}
+
+/* ---------- the panel ----------
+   The one surface that stays dark in both color schemes, so that it reads as an instrument and the eye goes to it.
+   It names its own roles here, from the shared ramps: teal for what was measured, brass for the bars and the locks
+   (the measurement ramp), green and amber for the two states, each with a mark and a word. Its children stand in a
+   column, so that the overview, which comes last in the page's source, is drawn first. */
+
+.console {
+  --c-bg: var(--primary-950);
+  --c-band: var(--primary-900);
+  --c-line: var(--primary-800);
+  --c-rail: var(--primary-600);
+  --c-off: var(--primary-500);
+  --c-lit: var(--primary-300);
+  --c-hot: var(--primary-100);
+  --c-ink: var(--primary-50);
+  --c-text: var(--primary-200);
+  --c-dim: var(--primary-300);
+  --c-bar: var(--accent-400);
+  --c-bar-text: var(--accent-200);
+  --c-good: var(--success-300);
+  --c-hold: var(--warning-300);
+  --c-halo: color-mix(in srgb, var(--primary-300) 30%, transparent);
+  --c-glow: color-mix(in srgb, var(--primary-300) 65%, transparent);
+  --c-row: color-mix(in srgb, var(--primary-300) 11%, transparent);
+  --c-faint: color-mix(in srgb, var(--primary-500) 50%, transparent);
+  --stage: 358px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  margin-top: var(--space-16);
+  padding: 0;
+  overflow: hidden;
+  background: var(--c-bg);
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius-lg);
+  color: var(--c-text);
+}
+
+/* In the dark scheme the page is nearly as dark as the panel, so the panel's edge is lifted. */
+@media (prefers-color-scheme: dark) {
+  .console {
+    border-color: var(--primary-700);
+    box-shadow: 0 12px 40px -16px color-mix(in srgb, var(--primary-300) 25%, transparent);
+  }
+}
+
+.console a:focus-visible {
+  outline: 2px solid var(--c-hot);
+  outline-offset: -2px;
+}
+
+/* ---------- the overview: three points, each a bright tile with a small picture ----------
+   It is what the panel shows before any section is opened, and what it shows again when the open section is
+   closed. It comes after the sections in the page's source, so that the address of an open section can hide it,
+   and it is drawn first. Each tile names its own two colors and one ink, and its picture is drawn in that ink:
+   two rows of marks for the questions, a track with the locked bar on it for the test, and a path that stops at
+   the human check for the call. */
+
+.over {
+  order: -1;
+  padding: var(--space-12) var(--space-24) var(--space-16);
+  border-bottom: 1px solid var(--c-line);
+}
+
+.part-anchor:target:not(#shut) ~ .over {
+  display: none;
+}
+
+/* The anchor that closes is laid out above the overview. Where following a link scrolls, on a narrow or very short
+   screen, closing a section then brings the overview to the top of the screen. */
+#shut {
+  order: -2;
+}
+
+.over-title {
+  margin: 0 0 var(--space-12);
+  max-width: none;
   font-size: var(--size-13);
   line-height: var(--lh-13);
   font-weight: 600;
-  color: var(--text-muted);
-}
-
-.transcript .t-client {
-  background: var(--page-bg);
-  border-left: 3px solid var(--marker);
-  border-radius: 0 var(--radius) var(--radius) 0;
-}
-
-.transcript .t-fact {
-  font-family: var(--font-mono);
-  font-size: var(--size-13);
-  line-height: var(--lh-16);
-  overflow-wrap: anywhere;
-}
-
-.transcript .t-fact .speaker {
-  font-family: var(--font-sans);
-}
-
-.transcript .t-note {
-  border: 1px dashed var(--border-default);
-  background: transparent;
-}
-
-.transcript .t-note p {
-  margin: var(--space-4) 0 0;
-}
-
-/* Lines of a note left out of the excerpt. */
-.transcript .t-gap {
-  color: var(--text-muted);
   letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-dim);
 }
 
-/* Review screens. Each capture has a light and a dark version, picked by the reader's color scheme. */
-.screen {
-  margin: var(--space-24) 0;
-  max-width: 880px;
+.trio {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-16);
+  margin: 0;
+  padding: 0;
+  max-width: none;
+}
+
+.tile {
+  --t-ink: var(--primary-950);
+  --t-mid: color-mix(in srgb, var(--t-ink) 74%, transparent);
+  --t-soft: color-mix(in srgb, var(--t-ink) 30%, transparent);
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: var(--space-12) var(--space-16) var(--space-16);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(150deg, var(--t-a), var(--t-b));
+  color: var(--t-ink);
+}
+
+.tile-value {
+  --t-a: var(--primary-100);
+  --t-b: var(--primary-300);
+}
+
+.tile-proof {
+  --t-a: var(--info-100);
+  --t-b: var(--info-300);
+}
+
+.tile-call {
+  --t-a: var(--warning-100);
+  --t-b: var(--warning-300);
+}
+
+.tile-kicker {
+  margin: 0;
+  max-width: none;
+  font-size: var(--size-13);
+  line-height: var(--lh-13);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--t-ink);
+}
+
+/* Every picture has one height, so the points and the sentences under them line up across the three tiles. */
+.pic {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 92px;
+  margin: var(--space-8) 0;
+}
+
+.pic > * {
+  flex: none;
+}
+
+.ask-name,
+.bar-cap,
+.bar-key,
+.gate-key {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+  color: var(--t-mid);
+}
+
+/* The questions: one row of marks for a full questionnaire and one for the agent, on the same scale. */
+.ask-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 34px;
+  align-items: center;
+  column-gap: var(--space-8);
+}
+
+.ask-row + .ask-name {
+  margin-top: var(--space-4);
+}
+
+.ask-marks {
+  display: grid;
+  gap: 2px;
+}
+
+.ask-marks i {
+  display: block;
+  height: 14px;
+  border-radius: 2px;
+  background: var(--t-soft);
+}
+
+.ask-full i,
+.ask-marks i.on {
+  background: var(--t-ink);
+}
+
+.ask-n,
+.bar-n {
+  font-size: var(--size-25);
+  line-height: 28px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.ask-n {
+  text-align: right;
+}
+
+/* The test: a track of all the runs, filled as far as the runs that passed, with the bar across it and a lock on
+   the bar because it was fixed first. */
+.bar-top {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-8);
+}
+
+.bar-scale {
+  position: relative;
+  display: block;
+  height: 14px;
+  margin-top: 14px;
+  border-radius: 3px;
+  background: var(--t-soft);
+}
+
+.bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: 3px 0 0 3px;
+  background: var(--t-ink);
+  transform-origin: left center;
+}
+
+/* The runs past the bar, in the tile's own bright color, so the thin margin can be seen. */
+.bar-past {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: var(--info-500);
+  transform-origin: left center;
+}
+
+/* The bar: a thin line through the track, taller than it. Its label under the track carries the lock. */
+.bar-at {
+  position: absolute;
+  top: -8px;
+  bottom: -8px;
+  width: 3px;
+  margin-left: -1.5px;
+  background: var(--t-ink);
+  box-shadow: 0 0 0 1.5px var(--t-a);
+}
+
+.bar-key {
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-end;
+  gap: var(--space-4);
+  margin-top: 12px;
+}
+
+.bar-key .lock {
+  margin: 0 2px 3px 0;
+}
+
+/* The call: the draft list reaches the human check and is held there, and the way on to the client is not open. */
+.gate-path {
+  display: grid;
+  grid-template-columns: auto minmax(10px, 1fr) auto minmax(34px, 1fr) auto;
+  align-items: center;
+}
+
+.gate-stop {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border: 1.5px solid var(--t-ink);
+  border-radius: var(--radius);
+  font-size: var(--size-13);
+  line-height: 18px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.gate-check {
+  --state: var(--t-ink);
+  background: var(--t-ink);
+  color: var(--t-a);
+}
+
+.gate-way {
+  display: block;
+  height: 3px;
+  background: var(--t-ink);
+  transform-origin: left center;
+}
+
+/* The way that is not open: dots on either side of a lock. */
+.gate-shut {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: auto;
+  background: none;
+}
+
+.gate-shut::before,
+.gate-shut::after {
+  content: '';
+  flex: 1;
+  border-top: 3px dotted var(--t-mid);
+}
+
+.gate-shut .lock {
+  margin: 4px 0 0;
+}
+
+.gate-off {
+  border-style: dashed;
+  border-color: var(--t-mid);
+  color: var(--t-mid);
+}
+
+.gate-key {
+  display: block;
+  margin-top: 9px;
+  text-align: center;
+}
+
+/* In a narrow tile, on a phone or a zoomed laptop, the three stops are set smaller so the last one stays whole. */
+@container (max-width: 340px) {
+  .pic {
+    height: auto;
+    min-height: 92px;
+  }
+
+  .gate-path {
+    grid-template-columns: auto minmax(8px, 1fr) auto minmax(26px, 1fr) auto;
+  }
+
+  .gate-stop {
+    gap: 3px;
+    padding: 4px 5px;
+    font-size: 12px;
+    line-height: 16px;
+    letter-spacing: -0.01em;
+  }
+}
+
+/* On a tile the lock and the diamond are drawn in the tile's ink, except the diamond on the dark stop. */
+.tile .lock {
+  background: var(--t-ink);
+}
+
+.tile .lock::before {
+  border-color: var(--t-ink);
+}
+
+.tile-head {
+  margin: 0;
+  max-width: none;
+  font-size: var(--size-20);
+  line-height: 25px;
+  letter-spacing: var(--ls-20);
+  font-weight: 700;
+  color: var(--t-ink);
+  text-wrap: balance;
+}
+
+.tile-line {
+  margin: var(--space-4) 0 0;
+  max-width: none;
+  font-size: 15px;
+  line-height: 21px;
+  color: var(--t-ink);
+  text-wrap: pretty;
+}
+
+/* ---------- a section that opens on a click of its title ----------
+   Each title is a link to an anchor that sits just ahead of its section. The anchor is not drawn, so following the
+   link scrolls nothing. The section whose anchor the address points at shows its body, and only one can be the
+   target, so opening one closes the last. A body that has just been shown starts its motion from the beginning,
+   which is how each diagram plays when its section opens, every time. While a section is open its title is plain
+   words, so a second click on it does nothing, and the mark at the end of its row is a link to an anchor that
+   opens nothing, which closes it and brings the overview back. */
+
+.part-anchor {
+  display: none;
+}
+
+.part {
+  padding: 0;
+  border-top: 1px solid var(--c-line);
+}
+
+.part:first-of-type {
+  border-top: 0;
+}
+
+.part-head {
+  margin: 0;
+  max-width: none;
+  font-size: inherit;
+  line-height: inherit;
+  letter-spacing: 0;
+  font-weight: inherit;
+}
+
+.part-link {
+  display: grid;
+  grid-template-columns: 28px auto minmax(0, 1fr) 44px;
+  align-items: center;
+  column-gap: var(--space-12);
+  min-height: 48px;
+  padding: var(--space-8) 6px var(--space-8) var(--space-24);
+  color: var(--c-ink);
+  text-decoration: none;
+}
+
+.part-open:hover {
+  background: var(--c-row);
+  color: var(--c-ink);
+}
+
+.part-shown {
+  display: none;
+}
+
+.part-n {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 1.5px solid var(--c-rail);
+  border-radius: 50%;
+  font-size: var(--size-13);
+  line-height: 1;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  color: var(--c-text);
+}
+
+.part-title {
+  font-size: var(--size-20);
+  line-height: var(--lh-20);
+  letter-spacing: var(--ls-20);
+  font-weight: var(--w-20);
+  white-space: nowrap;
+}
+
+/* A closed row says what its section concludes, so the closed rows read as the whole story in five lines. */
+.part-gist {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  min-width: 0;
+  overflow: hidden;
+  font-size: 15px;
+  line-height: 22px;
+  font-weight: 400;
+  white-space: nowrap;
+  color: var(--c-text);
+}
+
+/* The mark at the end of a title: a corner that points down when the section is closed and up when it is open. */
+.part-cue {
+  justify-self: center;
+  width: 9px;
+  height: 9px;
+  margin-bottom: 4px;
+  border-right: 2px solid var(--c-dim);
+  border-bottom: 2px solid var(--c-dim);
+  transform: rotate(45deg);
+}
+
+/* While a section is open the mark points up, and the link that closes the section lies over it, in a box large
+   enough to hit. The link takes no click for its first moment: a closed row's mark opens its section, and without
+   the wait the second click of a double click there would land on this link and close the section again. The wait
+   is not motion, so it also holds where motion is turned off. */
+.part-shown .part-cue {
+  grid-column: 4;
+  grid-row: 1;
+  margin-bottom: -4px;
+  transform: rotate(225deg);
+}
+
+.part-close {
+  position: relative;
+  z-index: 1;
+  grid-column: 4;
+  grid-row: 1;
+  align-self: stretch;
+  min-height: 32px;
+  border-radius: var(--radius);
+  animation: arm 0.7s step-end;
+}
+
+@keyframes arm {
+  from,
+  to {
+    visibility: hidden;
+  }
+}
+
+.part-close:hover {
+  background: var(--c-row);
+}
+
+/* Lines on the left and the diagram on the right. On a wide screen every body is as tall as the stage, which is
+   the height of the tallest section and more than the overview's. So the panel keeps one height from section to
+   section, and a pointer left where a title was clicked comes to rest inside the section that opened, never on
+   another title or on a link under the panel. */
+.part-body {
+  position: relative;
+  display: none;
+  grid-template-columns: minmax(0, 33fr) minmax(0, 67fr);
+  column-gap: var(--space-32);
+  align-items: start;
+  align-content: center;
+  min-height: var(--stage);
+  padding: var(--space-4) var(--space-24) var(--space-24);
+}
+
+.part-anchor:target + .part .part-body {
+  display: grid;
+}
+
+.part-anchor:target + .part .part-open {
+  display: none;
+}
+
+.part-anchor:target + .part .part-shown {
+  display: grid;
+  box-shadow: inset 3px 0 0 var(--c-lit);
+}
+
+.part-anchor:target + .part .part-n {
+  border-color: var(--c-hot);
+  background: var(--c-hot);
+  color: var(--c-bg);
+}
+
+/* ---------- the lines beside a diagram ---------- */
+
+.steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-width: none;
+}
+
+.step {
+  position: relative;
+  display: grid;
+  grid-template-columns: 15px minmax(0, 1fr);
+  column-gap: var(--space-12);
+  align-items: start;
+  margin: 0 calc(-1 * var(--space-8));
+  padding: var(--space-8) var(--space-8);
+  border-radius: var(--radius);
+}
+
+.node {
+  position: relative;
+  z-index: 1;
+  justify-self: center;
+  width: 11px;
+  height: 11px;
+  margin-top: 6px;
+  border: 2px solid var(--c-lit);
+  border-radius: 50%;
+  background: var(--c-lit);
+}
+
+/* The rail from one line's dot down to the next. */
+.step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: calc(var(--space-8) + 6.5px);
+  top: 19px;
+  width: 2px;
+  height: 100%;
+  background: var(--c-off);
+}
+
+.step-title {
+  display: block;
+  font-size: 17px;
+  line-height: 23px;
+  font-weight: 600;
+  color: var(--c-ink);
+}
+
+.step-detail {
+  display: block;
+  font-size: 15px;
+  line-height: 21px;
+  color: var(--c-text);
+  text-wrap: pretty;
+}
+
+/* ---------- states and small marks ---------- */
+
+/* A state, said with a mark and a word on a quiet ground. The word wears the text color, and the mark carries the
+   state's color. */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  margin: 0;
+  padding: var(--space-4) var(--space-12) var(--space-4) var(--space-8);
+  border-radius: var(--radius);
+  background: var(--c-row);
+  font-size: var(--size-13);
+  line-height: var(--lh-13);
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--c-ink);
+}
+
+.tick {
+  flex: none;
+  width: 11px;
+  height: 6px;
+  margin: 0 1px 3px 2px;
+  border-left: 2px solid var(--c-good);
+  border-bottom: 2px solid var(--c-good);
+  transform: rotate(-45deg);
+}
+
+/* A filled amber diamond is a state that is not met. */
+.hold {
+  flex: none;
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  margin: 0 2px;
+  background: var(--c-hold);
+  transform: rotate(45deg);
+}
+
+/* An open amber diamond is a flag on the review screen, which is a different thing from a state. */
+.flag {
+  flex: none;
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin: 6px 4px 0 3px;
+  border: 1.5px solid var(--c-hold);
+  transform: rotate(45deg);
+}
+
+/* A lock: a brass body with a shackle over it. */
+.lock {
+  position: relative;
+  flex: none;
+  display: inline-block;
+  width: 11px;
+  height: 9px;
+  margin: 5px 3px 0 1px;
+  border-radius: 2px;
+  background: var(--c-bar);
+}
+
+.lock::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: -6px;
+  width: 7px;
+  height: 7px;
+  border: 2px solid var(--c-bar);
+  border-bottom: 0;
+  border-radius: 4px 4px 0 0;
+}
+
+/* The two conclusions are the states to remember, so inside their sections each is set larger and given an edge in
+   its own color. */
+.chip-big {
+  padding: 6px var(--space-12) 6px 10px;
+  font-size: var(--size-16);
+  line-height: var(--lh-13);
+}
+
+.chip-big .tick {
+  width: 13px;
+  height: 7px;
+}
+
+.chip-big .hold {
+  width: 11px;
+  height: 11px;
+}
+
+.chip-held {
+  --state: var(--c-good);
+}
+
+.chip-hold {
+  --state: var(--c-hold);
+}
+
+.chip-held,
+.chip-hold {
+  border: 1px solid color-mix(in srgb, var(--state) 55%, transparent);
+}
+
+/* ---------- the diagrams ----------
+   Each section's diagram is drawn with the same few parts: a title, cards for the steps of a process, small dots
+   for things that are counted, and a brass line or lock for what was fixed in advance. */
+
+.diagram {
+  position: relative;
+  margin: 0;
+  min-width: 0;
+}
+
+.dg-title {
+  margin: 0 0 var(--space-12);
+  max-width: none;
+  font-size: var(--size-13);
+  line-height: var(--lh-13);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-dim);
+}
+
+/* The line along the foot of an open section that fills while its diagram plays. It is drawn only while it
+   moves, and it takes no room. */
+.rail {
+  position: absolute;
+  left: var(--space-24);
+  right: var(--space-24);
+  bottom: 5px;
+  height: 2px;
+  background: var(--c-off);
+  opacity: 0;
+  transform-origin: left center;
+}
+
+/* What the agent does: four cards, with one answer carried through them. The dashed box is the agent. */
+.part-agent .part-body {
+  grid-template-columns: minmax(0, 30fr) minmax(0, 70fr);
+}
+
+.flow {
+  display: grid;
+  grid-template-columns: minmax(0, 22fr) minmax(0, 50fr) minmax(0, 28fr);
+  column-gap: var(--space-16);
+  align-items: stretch;
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  min-width: 0;
+}
+
+.col-head {
+  font-size: var(--size-13);
+  line-height: var(--lh-13);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-ink);
+}
+
+.flow > .col {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.agent-box {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-rows: 1fr auto;
+  gap: var(--space-8) var(--space-16);
+  padding: var(--space-8) var(--space-12);
+  border: 1.5px dashed var(--c-rail);
+  border-radius: var(--radius-lg);
+}
+
+/* What the agent cannot do, said along the foot of its box. */
+.agent-note {
+  grid-column: 1 / -1;
+  font-size: 15px;
+  line-height: 20px;
+  color: var(--c-text);
+}
+
+.card {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-12);
+  border: 1.5px solid var(--c-rail);
+  border-radius: var(--radius);
+  background: var(--c-band);
+}
+
+/* A corner in the gap before each card after the first, pointing the way the answer travels. */
+.c2::before,
+.c3::before,
+.c4::before {
+  content: '';
+  position: absolute;
+  top: 22px;
+  left: -13px;
+  width: 7px;
+  height: 7px;
+  border-top: 2px solid var(--c-dim);
+  border-right: 2px solid var(--c-dim);
+  transform: rotate(45deg);
+}
+
+.c2::before,
+.c4::before {
+  left: -23px;
+}
+
+.card strong {
+  font-size: 17px;
+  line-height: 23px;
+  color: var(--c-ink);
+}
+
+.card-line {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  font-size: 15px;
+  line-height: 21px;
+  color: var(--c-text);
+}
+
+.said {
+  font-style: italic;
+  color: var(--c-ink);
+}
+
+/* How I tested it: the households I built on, the lock with the bars it fixed, and the households held out. */
+.zones {
+  display: grid;
+  grid-template-columns: minmax(0, 31fr) minmax(0, 36fr) minmax(0, 33fr);
+  column-gap: var(--space-24);
+  align-items: start;
+}
+
+.zone {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  min-width: 0;
+}
+
+.zone-name {
+  font-size: 17px;
+  line-height: 23px;
+  font-weight: 600;
+  color: var(--c-ink);
+}
+
+.homes-pair {
+  display: flex;
+  gap: var(--space-16);
+}
+
+.homes-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* One dot for each household: outlined for train, filled for dev and for the held-out households. The ones I
+   labeled blind are brighter, and the generated rules at the end of this file say which. */
+.homes {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(5, 11px);
+  grid-auto-columns: 11px;
+  gap: 5px;
+}
+
+.homes i {
+  display: block;
+  border: 1.5px solid var(--c-off);
+  border-radius: 50%;
+}
+
+.homes i.on {
+  background: var(--c-lit);
+  border-color: var(--c-lit);
+}
+
+.homes-key {
+  font-size: var(--size-13);
+  line-height: var(--lh-13);
+  color: var(--c-text);
+}
+
+.acts {
+  list-style: none;
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  max-width: none;
+}
+
+.acts li {
+  position: relative;
+  margin: 0 0 var(--space-4);
+  padding-left: 14px;
+  font-size: 15px;
+  line-height: 21px;
+  color: var(--c-ink);
+  text-wrap: pretty;
+}
+
+.acts li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 8px;
+  width: 6px;
+  height: 6px;
+  border-radius: 1px;
+  background: var(--c-lit);
+}
+
+/* The hand labels carry the key to the brighter dots above them. */
+.acts .a3::before {
+  top: 7px;
+  width: 8px;
+  height: 8px;
+  left: -1px;
+  border-radius: 50%;
+  background: var(--c-hot);
+}
+
+/* The lock: a brass line down the middle, named at its head, with the three bars it fixed beside it. */
+.gate {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  align-self: stretch;
+  padding-left: var(--space-16);
+}
+
+.gate::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--c-bar);
+  transform-origin: center top;
+}
+
+.gate-label {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  font-size: 17px;
+  line-height: 23px;
+  font-weight: 600;
+  color: var(--c-bar-text);
+}
+
+.bars {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-8);
+}
+
+.barchip {
+  padding: var(--space-4) 10px;
+  border: 1.5px solid var(--c-bar);
+  border-radius: var(--radius);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--c-bar-text);
+}
+
+/* ---------- the result: the verdict on the hypothesis, then one measure for each bar ---------- */
+
+.part-result .part-body {
+  grid-template-columns: minmax(0, 1fr);
+  row-gap: var(--space-12);
+}
+
+/* The verdict: what the results mean for the hypothesis, said as a state and a sentence. The result and the human
+   check each open with one. */
+.verdict-band {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: var(--space-24);
+  align-items: center;
+  margin: 0 calc(-1 * var(--space-24));
+  padding: var(--space-12) var(--space-24);
+  border-top: 1px solid var(--c-line);
+  border-bottom: 1px solid var(--c-line);
+  background: var(--c-band);
+}
+
+.verdict-text {
+  margin: 0;
+  max-width: none;
+  color: var(--c-ink);
+  text-wrap: pretty;
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: minmax(0, 445fr) minmax(0, 330fr) minmax(0, 260fr);
+  column-gap: var(--space-48);
+  align-items: start;
+}
+
+.stat-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  column-gap: var(--space-12);
+  margin: 0;
+  max-width: none;
+}
+
+.stat-head .chip {
+  justify-self: start;
+}
+
+.stat-value {
+  font-size: var(--size-39);
+  line-height: var(--lh-39);
+  letter-spacing: var(--ls-39);
+  font-weight: var(--w-39);
+  font-variant-numeric: tabular-nums;
+  color: var(--c-ink);
+}
+
+/* The counted number shows only where it can move. Everywhere else the plain text is what is drawn. */
+.count {
+  display: none;
+}
+
+.stat-label {
+  grid-column: 1 / -1;
+  font-size: var(--size-16);
+  line-height: 22px;
+  color: var(--c-text);
+}
+
+/* A drawing and the marks on it. Its width is the scale: all the test runs, the full questionnaire, or the share
+   of documents the bar allows. */
+.chart {
+  position: relative;
+  max-width: 445px;
+  margin-top: var(--space-4);
+}
+
+.chart-runs {
+  padding-top: 34px;
+}
+
+.chart-cells,
+.chart-meter {
+  padding-top: 26px;
+}
+
+/* One dot for each test run, filling column by column, lit if the run passed. */
+.runs {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+}
+
+.runs i {
+  display: block;
+  aspect-ratio: 1;
+  border: 1.5px solid var(--c-off);
+  border-radius: 50%;
+}
+
+.runs i.on {
+  background: var(--c-lit);
+  border-color: var(--c-lit);
+}
+
+/* One mark for each question the full questionnaire asks, lit for each the agent asked. The marks that are not
+   lit are faint and have no outline, since an outlined mark of this shape reads as a zero. */
+.cells {
+  display: grid;
+}
+
+.cells i {
+  display: block;
+  height: 12px;
+  border-radius: 2px;
+  background: var(--c-faint);
+}
+
+.cells i.on {
+  background: var(--c-lit);
+}
+
+/* The missed documents: a track as long as the bar allows, filled as far as the agent went. */
+.meter {
+  display: block;
+  height: 12px;
+  border: 1.5px solid var(--c-off);
+  border-radius: 3px;
+}
+
+.meter-fill {
+  display: block;
+  height: 100%;
+  border-radius: 1px;
+  background: var(--c-lit);
+  transform-origin: left center;
+}
+
+/* A bar locked before the test: a brass line through the drawing, named at its head. */
+.bar-line {
+  position: absolute;
+  top: 0;
+  bottom: -4px;
+  width: 3px;
+  margin-left: -1.5px;
+  background: var(--c-bar);
+  box-shadow: 0 0 0 2px var(--c-bg);
+  transform-origin: center top;
+}
+
+/* Between two question marks the bar has only their gap, so it is as thin as the gap and has no edge. */
+.cells-bar {
+  width: 2px;
+  margin-left: -1px;
+  box-shadow: none;
+}
+
+.bar-label {
+  position: absolute;
+  top: -4px;
+  right: 10px;
+  white-space: nowrap;
+  font-size: 15px;
+  line-height: 19px;
+  font-weight: 600;
+  color: var(--c-bar-text);
+}
+
+/* The 95% interval: a line with a cap at each end, over the dots. It is drawn above the bar's line, so that it
+   crosses the bar in one piece. */
+.whisker {
+  position: absolute;
+  z-index: 1;
+  top: 21px;
+  height: 9px;
+  border-left: 2px solid var(--c-ink);
+  border-right: 2px solid var(--c-ink);
+}
+
+.whisker::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 2px;
+  margin-top: -1px;
+  background: var(--c-ink);
+}
+
+.chart-note {
+  margin: var(--space-8) 0 0;
+  max-width: 445px;
+  font-size: var(--size-13);
+  line-height: var(--lh-13);
+  color: var(--c-text);
+  text-wrap: pretty;
+}
+
+.limits {
+  margin: 0;
+  max-width: none;
+  font-size: 15px;
+  line-height: 21px;
+  color: var(--c-text);
+  text-wrap: pretty;
+}
+
+/* ---------- the human check and my call ---------- */
+
+.part-call .part-body {
+  grid-template-columns: minmax(0, 36fr) minmax(0, 64fr);
+  row-gap: var(--space-12);
+}
+
+/* My call is a state too, set under its line's title. */
+.call-chip {
+  margin: var(--space-4) 0;
+}
+
+/* The approval step in two versions, one above the other. */
+.lane {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  column-gap: var(--space-12);
+  row-gap: var(--space-8);
+  align-items: center;
+  padding: var(--space-12) 0;
+  border-top: 1px solid var(--c-line);
+}
+
+.lane-name {
+  font-size: 17px;
+  line-height: 22px;
+  font-weight: 600;
+  color: var(--c-ink);
+}
+
+.lane-name small {
+  display: block;
+  font-size: var(--size-13);
+  line-height: var(--lh-13);
+  font-weight: 400;
+  color: var(--c-text);
+}
+
+.path {
+  display: grid;
+  grid-template-columns: minmax(0, 40fr) minmax(0, 36fr) minmax(0, 24fr);
+  column-gap: var(--space-24);
+  align-items: stretch;
+}
+
+.box {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  padding: var(--space-8) 10px;
+  border: 1.5px solid var(--c-rail);
+  border-radius: var(--radius);
+  background: var(--c-band);
+  font-size: 15px;
+  line-height: 21px;
+  font-weight: 600;
+  color: var(--c-ink);
+}
+
+/* A corner in the gap before each box after the first. */
+.box + .box::before {
+  content: '';
+  position: absolute;
+  top: calc(50% - 4px);
+  left: -17px;
+  width: 7px;
+  height: 7px;
+  border-top: 2px solid var(--c-dim);
+  border-right: 2px solid var(--c-dim);
+  transform: rotate(45deg);
+}
+
+/* The fix is a proposal, so its lane is drawn in dashes. */
+.lane-fix .box {
+  border-style: dashed;
+}
+
+.aside {
+  grid-column: 2;
+  font-size: 15px;
+  line-height: 21px;
+  color: var(--c-text);
+}
+
+/* ---------- what I would bring: four practices, side by side ---------- */
+
+/* The four practices are four cards of one height, each with a rule in the measured color at its head. */
+.part-bring .part-body {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.bring-list {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-16) var(--space-16);
+  margin: var(--space-8) 0 var(--space-4);
+  padding: 0;
+  max-width: none;
+}
+
+.bring-list li {
+  margin: 0;
+  padding: var(--space-16) var(--space-16) var(--space-16);
+  border-top: 3px solid var(--c-lit);
+  border-radius: 0 0 var(--radius) var(--radius);
+  background: var(--c-band);
+  font-size: 15px;
+  line-height: 21px;
+  color: var(--c-text);
+  text-wrap: pretty;
+}
+
+.bring-list strong {
+  display: block;
+  margin-bottom: var(--space-8);
+  font-size: var(--size-20);
+  line-height: 26px;
+  letter-spacing: var(--ls-20);
+  color: var(--c-ink);
+  text-wrap: balance;
+}
+
+/* ---------- a screen shorter than the page ----------
+   On a laptop the browser leaves about 780px, or about 750px with a bookmarks bar. Tighter spacing keeps the
+   hypothesis, the five titles and either the overview or the open section on it. */
+@media (min-width: 1240px) and (max-height: 860px) {
+  .hero.opening {
+    padding-top: var(--space-12);
+  }
+
+  .opening .eyebrow {
+    margin-bottom: var(--space-4);
+  }
+
+  .hero.opening h1 {
+    font-size: 23px;
+    line-height: 30px;
+  }
+
+  .lead-row + .lead-row {
+    margin-top: var(--space-8);
+  }
+
+  .thesis-test {
+    margin-top: var(--space-4);
+  }
+
+  .console {
+    --stage: 322px;
+    margin-top: var(--space-12);
+  }
+
+  .part-link {
+    min-height: 42px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+  }
+
+  .part-body {
+    padding-bottom: var(--space-12);
+  }
+
+  .part-result .part-body,
+  .part-call .part-body {
+    row-gap: var(--space-8);
+  }
+
+  .verdict-band {
+    padding-top: var(--space-8);
+    padding-bottom: var(--space-8);
+  }
+
+  .stat-value {
+    font-size: var(--size-31);
+    line-height: var(--lh-31);
+  }
+
+  .lane {
+    padding: var(--space-8) 0;
+  }
+
+  .step {
+    padding-top: 6px;
+    padding-bottom: 6px;
+  }
+}
+
+/* A shorter screen still, such as a small laptop with its toolbars showing. */
+@media (min-width: 1240px) and (max-height: 740px) {
+  .hero.opening {
+    padding-top: var(--space-8);
+  }
+
+  .hero.opening h1 {
+    font-size: 21px;
+    line-height: 27px;
+  }
+
+  .console {
+    --stage: 318px;
+    margin-top: var(--space-8);
+  }
+
+  .over {
+    padding-top: var(--space-8);
+    padding-bottom: var(--space-12);
+  }
+
+  .over-title {
+    margin-bottom: var(--space-8);
+  }
+
+  .tile {
+    padding: var(--space-8) var(--space-16) var(--space-12);
+  }
+
+  .pic {
+    min-height: 76px;
+    margin: var(--space-4) 0;
+  }
+
+  .part-link {
+    min-height: 38px;
+    padding-top: 3px;
+    padding-bottom: 3px;
+  }
+
+  .part-title {
+    font-size: 18px;
+    line-height: 24px;
+  }
+
+  .part-body {
+    padding-bottom: var(--space-8);
+  }
+
+  .chart-runs {
+    padding-top: 30px;
+  }
+
+  .chart-note {
+    margin-top: var(--space-4);
+  }
+}
+
+/* ---------- narrower screens: lines above, diagram below ----------
+   Here an open section may not fit the screen, so its anchor is given a place, a line of no height just above the
+   section, and following a title's link brings that section's title to the top of the screen. The same holds on
+   a wide screen that is very short. */
+@media (max-width: 1239px), (max-height: 700px) {
+  .part-anchor {
+    display: block;
+    height: 0;
+    scroll-margin-top: var(--space-8);
+  }
+}
+
+@media (max-width: 1239px) {
+  .part-body,
+  .part-agent .part-body,
+  .part-call .part-body {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: var(--space-16);
+    min-height: 0;
+  }
+
+  .tiles {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: var(--space-24);
+  }
+
+  .part-link {
+    grid-template-columns: 28px minmax(0, 1fr) 44px;
+    row-gap: var(--space-4);
+  }
+
+  .part-title {
+    white-space: normal;
+  }
+
+  .part-gist {
+    grid-column: 2;
+    grid-row: 2;
+    flex-wrap: wrap;
+    overflow: visible;
+    white-space: normal;
+  }
+
+  .part-gist .chip {
+    white-space: normal;
+  }
+
+  .part-open .part-cue {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+  .part-close {
+    grid-column: 3;
+  }
+}
+
+@media (max-width: 1099px) {
+  .bring-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .trio,
+  .flow,
+  .agent-box,
+  .zones,
+  .path {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: var(--space-12);
+  }
+
+  .c2::before,
+  .c3::before,
+  .c4::before,
+  .box + .box::before {
+    display: none;
+  }
+
+  .lane {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .aside {
+    grid-column: 1;
+  }
+}
+
+@media (max-width: 720px) {
+  .topbar-name {
+    display: none;
+  }
+
+  .lead-row {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: var(--space-4);
+  }
+
+  .hero.opening h1 {
+    font-size: var(--size-20);
+    line-height: var(--lh-20);
+    letter-spacing: var(--ls-20);
+  }
+
+  .over,
+  .part-body {
+    padding-left: var(--space-16);
+    padding-right: var(--space-16);
+  }
+
+  .part-link {
+    padding-left: var(--space-16);
+  }
+
+  .rail {
+    left: var(--space-16);
+    right: var(--space-16);
+  }
+
+  .part-title {
+    font-size: 17px;
+    line-height: 23px;
+  }
+
+  .verdict-band {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: var(--space-8);
+    margin-left: calc(-1 * var(--space-16));
+    margin-right: calc(-1 * var(--space-16));
+    padding-left: var(--space-16);
+    padding-right: var(--space-16);
+  }
+
+  .verdict-band .chip,
+  .call-chip {
+    white-space: normal;
+  }
+
+  .chart,
+  .chart-note {
+    max-width: 320px;
+  }
+
+  .bring-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ---------- the fold under the panel ---------- */
+
+.fold {
+  margin-top: var(--space-16);
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.fold > summary {
+  padding: var(--space-12) 0 var(--space-12) 1.2em;
+  text-indent: -1.2em;
+  cursor: pointer;
+  color: var(--text-heading);
+}
+
+.fold > summary:hover {
+  color: var(--link);
+}
+
+.fold-title {
+  font-size: var(--size-20);
+  line-height: var(--lh-20);
+  letter-spacing: var(--ls-20);
+  font-weight: var(--w-20);
+}
+
+.more {
+  margin: var(--space-16) 0 0;
+  max-width: none;
+  font-weight: 600;
+}
+
+/* ---------- the questions I expect ---------- */
+
+.qa-group {
+  max-width: 820px;
+}
+
+.qa-group h3 {
+  margin-top: var(--space-16);
+  margin-bottom: var(--space-8);
+}
+
+.qa-group:last-child {
+  margin-bottom: var(--space-24);
+}
+
+.qa {
+  border-top: 1px solid var(--border-subtle);
+}
+
+.qa:last-child {
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.qa > summary {
+  padding: var(--space-12) 0 var(--space-12) 1.2em;
+  text-indent: -1.2em;
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--text-heading);
+}
+
+.qa > summary:hover {
+  color: var(--link);
+}
+
+.qa > p {
+  margin: 0 0 var(--space-16);
+  max-width: var(--measure-16);
+  text-wrap: pretty;
+}
+
+.qa figure {
+  margin: 0 0 var(--space-24);
+  max-width: 810px;
+}
+
+.qa figcaption {
+  margin-top: var(--space-12);
+  max-width: var(--measure-16);
+  font-size: var(--size-16);
+  line-height: var(--lh-16);
+  color: var(--text-body);
+}
+
+/* A whole capture, in the reader's color scheme. The link opens it at full size. */
+.shot > a {
+  display: block;
+  overflow: hidden;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+
+.shot img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* The review screen's capture, cropped to its first flag card, whole, with 10px around it. The numbers are the
+   crop in the capture's own 1200 by 680 pixels: 968 wide from x 116, 204 tall from y 192. The link opens the whole
+   capture. */
+.screen > a {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  aspect-ratio: 968 / 204;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+
+/* A ring around Ask the client again, the button that was never used on a W-2 flag. Its box is the button's in the
+   capture, 171 by 44 at x 141, y 327, with 3px around it, as shares of the crop. */
+.screen > a::after {
+  content: '';
+  position: absolute;
+  left: calc(100% * 22 / 968);
+  top: calc(100% * 132 / 204);
+  width: calc(100% * 177 / 968);
+  height: calc(100% * 50 / 204);
+  border: 2px solid var(--error-text);
+  border-radius: var(--radius);
+  pointer-events: none;
 }
 
 .screen img {
   display: block;
-  width: 100%;
+  width: calc(100% * 1200 / 968);
+  max-width: none;
   height: auto;
-  background: var(--surface);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-lg);
+  margin: calc(-100% * 192 / 968) 0 0 calc(-100% * 116 / 968);
 }
 
-/* Each capture links to its full-size file. */
-.screen > a {
-  display: block;
-}
-
-.screen > a + a {
-  margin-top: var(--space-12);
-}
-
-.screen figcaption {
-  margin-top: var(--space-8);
-  max-width: var(--measure-16);
-  font-size: var(--size-13);
-  line-height: var(--lh-16);
-  color: var(--text-muted);
-}
-
-.step-next {
-  margin: var(--space-24) 0 0;
-  font-weight: 600;
-}
-
-.limits li {
-  margin-bottom: var(--space-12);
-}
-
-/* ---------- presenting on a shared screen ----------
-   Each decision is one screen: kicker, headline, paragraph, three tradeoff lines and one proof. Tested at 1024,
-   1152 and 1280 by 720, at 1440 by 900 and at 375 by 812, light and dark. */
-
-/* An anchor jump lands the kicker 24px under the top of the screen, and the previous decision's Next link stays
-   off it. The rail sticks at the same offset, so its title sits level with the kicker. */
-main > section {
-  scroll-margin-top: calc(var(--space-24) - var(--space-64));
-}
-
-@media (min-width: 1000px) {
-  .toc {
-    top: calc(var(--space-24) - var(--space-64));
-  }
-}
-
-/* The opening and its four numbers fit one 720px screen. */
-.hero {
-  padding: var(--space-24) 0 var(--space-32);
-}
-
-.hero .facts {
-  margin-top: var(--space-24);
-}
-
-/* The tradeoff lines run as wide as the proof under them, so each stays on one line where it can. */
-.tradeoff {
-  max-width: 820px;
-}
-
-/* Each decision's one proof: a small table, two numbers or a screen, with a line under it that says what it shows. */
-.proof {
-  margin: var(--space-24) 0 0;
-  max-width: 820px;
-}
-
-.proof table {
-  min-width: 0;
-}
-
-.proof th,
-.proof td,
-.proof caption {
-  padding-top: var(--space-8);
-  padding-bottom: var(--space-8);
-}
-
-/* The proof is what gets pointed at, so its values are set at reading size. */
-.proof tbody th,
-.proof td {
-  font-size: var(--size-16);
-}
-
-.proof td.num {
-  font-size: var(--size-20);
-  font-weight: 600;
-  color: var(--text-heading);
-  font-variant-numeric: tabular-nums;
-}
-
-.facts.proof {
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-}
-
-.facts.proof .fact-label {
-  font-size: var(--size-16);
-  line-height: var(--lh-16);
-  color: var(--text-body);
-}
-
-.proof-note {
-  margin: var(--space-8) 0 0;
-  max-width: 820px;
-  font-size: var(--size-16);
-  line-height: var(--lh-16);
-  color: var(--text-body);
-}
-
-/* The proof screen is cropped to its first flag and shown at the capture's own size, so the flag's words read at
-   body size on a shared screen. The link still opens the whole capture. The numbers are the crop in the capture's
-   own 1200 by 680 pixels: 810 wide from x 116, 204 tall from y 192. */
-.screen.proof {
-  max-width: 810px;
-}
-
-.screen.proof > a {
-  overflow: hidden;
-  aspect-ratio: 810 / 204;
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-lg);
-  background: var(--surface);
-}
-
-.screen.proof img {
-  width: calc(100% * 1200 / 810);
-  max-width: none;
-  margin: calc(-100% * 192 / 810) 0 0 calc(-100% * 116 / 810);
-  border: 0;
-  border-radius: 0;
-}
-
-.screen.proof figcaption {
-  max-width: none;
-  font-size: var(--size-16);
-  line-height: var(--lh-16);
-  color: var(--text-body);
-}
-
-/* The rail marks the decision the address points at, so it is right when he moves by the rail or a Next link. */
-@media (min-width: 1000px) {
-  body:has(#decision-1:target) .toc a[href='#decision-1'],
-  body:has(#decision-2:target) .toc a[href='#decision-2'],
-  body:has(#decision-3:target) .toc a[href='#decision-3'],
-  body:has(#decision-4:target) .toc a[href='#decision-4'],
-  body:has(#decision-5:target) .toc a[href='#decision-5'],
-  body:has(#next:target) .toc a[href='#next'] {
-    color: var(--link);
-    border-left-color: var(--fill);
-    font-weight: 600;
-  }
-}
-
-/* On a phone the proof table wraps its headings instead of scrolling sideways. */
+/* On a phone the whole card would be too small to read, so the crop narrows to the flag's own words and buttons,
+   440 wide from x 116. */
 @media (max-width: 720px) {
-  .proof thead th {
-    white-space: normal;
+  .screen > a {
+    aspect-ratio: 440 / 204;
   }
 
-  .proof th,
-  .proof td,
-  .proof caption {
-    padding-left: var(--space-12);
-    padding-right: var(--space-12);
+  .screen img {
+    width: calc(100% * 1200 / 440);
+    margin: calc(-100% * 192 / 440) 0 0 calc(-100% * 116 / 440);
   }
 
-  /* On a phone the crop narrows to the flag's own words, 430 wide from x 116, so they stay near 13px. */
-  .screen.proof > a {
-    aspect-ratio: 430 / 204;
+  .screen > a::after {
+    left: calc(100% * 22 / 440);
+    width: calc(100% * 177 / 440);
+  }
+}
+
+/* On paper the overview and every section are shown, since nothing can be clicked, and the panel keeps its colors
+   so the light text stays on its dark ground. */
+@media print {
+  .console,
+  .tile {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
   }
 
-  .screen.proof img {
-    width: calc(100% * 1200 / 430);
-    margin: calc(-100% * 192 / 430) 0 0 calc(-100% * 116 / 430);
+  .part-body {
+    display: grid;
+    min-height: 0;
   }
+
+  .part-anchor:target:not(#shut) ~ .over {
+    display: block;
+  }
+
+  .part-anchor:target + .part .part-open {
+    display: grid;
+  }
+
+  .part-anchor:target + .part .part-shown,
+  .part-cue {
+    display: none;
+  }
+
+  .tile,
+  .step,
+  .stat,
+  .card,
+  .lane,
+  .bring-list li,
+  .qa {
+    break-inside: avoid;
+  }
+}
+
+/* Where the reader's system forces its own colors, a mark drawn with a background would vanish into the ground.
+   The lit marks, the bars, the locks and the interval keep a color of the system's own, so the drawings still say
+   what they say. */
+@media (forced-colors: active) {
+  .tile {
+    border: 1px solid CanvasText;
+  }
+
+  .runs i.on,
+  .cells i,
+  .homes i.on,
+  .meter-fill,
+  .node,
+  .hold,
+  .flag,
+  .lock,
+  .bar-line,
+  .gate::before,
+  .whisker::before,
+  .ask-marks i,
+  .bar-scale,
+  .bar-fill,
+  .bar-past,
+  .bar-at,
+  .gate-way:not(.gate-shut) {
+    forced-color-adjust: none;
+  }
+
+  .cells i,
+  .ask-marks i,
+  .bar-scale {
+    background-color: GrayText;
+  }
+
+  .runs i.on,
+  .cells i.on,
+  .homes i.on,
+  .meter-fill,
+  .node,
+  .hold,
+  .ask-marks.ask-full i,
+  .ask-marks i.on,
+  .bar-fill,
+  .bar-past,
+  .gate-way:not(.gate-shut) {
+    background-color: CanvasText;
+    border-color: CanvasText;
+  }
+
+  .flag {
+    border-color: CanvasText;
+  }
+
+  .lock,
+  .tile .lock,
+  .bar-line,
+  .gate::before,
+  .whisker::before,
+  .bar-at {
+    background-color: Highlight;
+    box-shadow: none;
+  }
+
+  .tile .lock::before {
+    border-color: Highlight;
+  }
+}
+
+/* ---------- the drawn numbers ----------
+   Every place and length here is a number from the report or a locked bar. The page has no inline style, so
+   they live in this file, and tests/test_demo.py checks each against the report and the bars.
+   The 120 test runs fill a grid column by column, so a distance along it is a share of the runs: the bar at
+   90% and the interval from 85.8% to 98.3%. The 36 question marks have their bar at half. The
+   missed documents fill a track that ends at their bar, 2%. In the overview the pass rate fills a
+   track of all the runs, with its bar on it, and the questions are two rows of marks. In the second section
+   the 10 train and 20 dev households I labeled blind are drawn brighter. */
+.runs {
+  gap: 5px;
+  grid-template-rows: repeat(4, auto);
+}
+
+.cells {
+  gap: 2px;
+  grid-template-columns: repeat(36, minmax(0, 1fr));
+}
+
+.runs-bar {
+  left: calc((100% + 5px) * 0.9 - 2.5px);
+}
+
+.whisker {
+  left: calc((100% + 5px) * 0.858 - 2.5px);
+  width: calc((100% + 5px) * 0.125);
+}
+
+.cells-bar {
+  left: calc((100% + 2px) * 0.5 - 1px);
+}
+
+.meter-fill {
+  width: 25%;
+}
+
+.meter-bar {
+  left: 100%;
+}
+
+.ask-marks {
+  grid-template-columns: repeat(36, minmax(0, 1fr));
+}
+
+.bar-fill {
+  width: 90%;
+}
+
+.bar-past {
+  left: 90%;
+  width: 2.5%;
+}
+
+.bar-at {
+  left: 90%;
+}
+
+.homes-train i:nth-child(-n+10) {
+  border-color: var(--c-hot);
+}
+
+.homes-dev i:nth-child(-n+20) {
+  background: var(--c-hot);
+  border-color: var(--c-hot);
+}
+
+.count-pass {
+  --pass-whole: 92;
+  counter-reset: whole var(--pass-whole);
+}
+
+.count-pass::after {
+  content: counter(whole) '.5%';
+}
+
+.count-asked {
+  --asked: 14;
+  counter-reset: asked var(--asked);
+}
+
+.count-asked::after {
+  content: counter(asked);
+}
+
+.count-missed {
+  --missed-tenth: 5;
+  counter-reset: tenth var(--missed-tenth);
+}
+
+.count-missed::after {
+  content: '0.' counter(tenth) '%';
+}
+
+@media (max-width: 720px) {
+  .runs {
+    grid-template-rows: repeat(6, auto);
+  }
+}
+
+/* ---------- the motion ----------
+   The overview plays once, in about 4.8 seconds, when the page loads and whenever it comes back. A
+   section's motion starts when its body is shown, so it plays every time the section opens, and there is no
+   other way to play it. Each beat is set from the script, at about 140 words a minute, so that a sentence
+   and the part of the diagram it is about arrive together, and the line beside the diagram that is being
+   told takes the light for that beat. A section that opens with a verdict gives it the first seconds, with a
+   glow on its state. The words are never dimmed, so they can be read from the first moment. A thin line
+   along the foot of an open section fills across the run and then goes, so a pause between beats never
+   looks like a stop. The result draws its three bars before its numbers, because they were locked before
+   the data, and ends on the three runs past the bar.
+   The five sections run 15.6, 16.4, 21.4, 19.2 and 16.4 seconds.
+   Nothing here holds its last frame: when a playing ends, the section is on its own styles, which are the
+   finished state. With reduced motion, on paper and where none of this is supported, that state is all there
+   is, with every word and number in it. */
+@property --pass-whole { syntax: '<integer>'; inherits: false; initial-value: 92; }
+@property --asked { syntax: '<integer>'; inherits: false; initial-value: 14; }
+@property --missed-tenth { syntax: '<integer>'; inherits: false; initial-value: 5; }
+
+@media screen and (prefers-reduced-motion: no-preference) {
+  @keyframes node-in {
+    from { background-color: var(--c-lit); border-color: var(--c-lit); box-shadow: 0 0 0 0 transparent; }
+    to { background-color: var(--c-hot); border-color: var(--c-hot); box-shadow: 0 0 0 4px var(--c-halo), 0 0 14px 2px var(--c-glow); }
+  }
+  @keyframes node-hold {
+    0%, 85% { background-color: var(--c-hot); border-color: var(--c-hot); box-shadow: 0 0 0 4px var(--c-halo), 0 0 14px 2px var(--c-glow); }
+    100% { background-color: var(--c-lit); border-color: var(--c-lit); box-shadow: 0 0 0 0 transparent; }
+  }
+  @keyframes row-hold {
+    0%, 85% { background-color: var(--c-row); }
+    100% { background-color: transparent; }
+  }
+  @keyframes show {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes wake {
+    from { opacity: 0.3; }
+    to { opacity: 1; }
+  }
+  @keyframes draw {
+    from { transform: scaleY(0); }
+    to { transform: scaleY(1); }
+  }
+  @keyframes grow {
+    from { transform: scaleX(0); }
+    to { transform: scaleX(1); }
+  }
+  @keyframes mark {
+    0% { background-color: transparent; border-color: var(--c-off); box-shadow: 0 0 0 0 transparent; }
+    55% { background-color: var(--c-hot); border-color: var(--c-hot); box-shadow: 0 0 9px 1px var(--c-glow); }
+    100% { background-color: var(--c-lit); border-color: var(--c-lit); box-shadow: 0 0 0 0 transparent; }
+  }
+  @keyframes cell {
+    0% { background-color: var(--c-faint); box-shadow: 0 0 0 0 transparent; }
+    55% { background-color: var(--c-hot); box-shadow: 0 0 9px 1px var(--c-glow); }
+    100% { background-color: var(--c-lit); box-shadow: 0 0 0 0 transparent; }
+  }
+  @keyframes margin {
+    0%, 100% { background-color: var(--c-lit); border-color: var(--c-lit); box-shadow: 0 0 0 0 transparent; }
+    45% { background-color: var(--c-hot); border-color: var(--c-hot); box-shadow: 0 0 0 4px var(--c-halo), 0 0 12px 3px var(--c-glow); }
+  }
+  @keyframes ring {
+    0% { opacity: 0; transform: scale(0.5); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+  @keyframes glance {
+    0%, 100% { background-color: var(--c-lit); border-color: var(--c-lit); }
+    50% { background-color: var(--c-hot); border-color: var(--c-hot); }
+  }
+  @keyframes label-dev {
+    0% { background-color: var(--c-lit); border-color: var(--c-lit); box-shadow: 0 0 0 0 transparent; }
+    50% { box-shadow: 0 0 0 3px var(--c-halo); }
+    100% { background-color: var(--c-hot); border-color: var(--c-hot); box-shadow: 0 0 0 0 transparent; }
+  }
+  @keyframes label-train {
+    0% { border-color: var(--c-off); box-shadow: 0 0 0 0 transparent; }
+    50% { box-shadow: 0 0 0 3px var(--c-halo); }
+    100% { border-color: var(--c-hot); box-shadow: 0 0 0 0 transparent; }
+  }
+  @keyframes card-in {
+    from { opacity: 0.35; border-color: var(--c-line); }
+    to { opacity: 1; border-color: var(--c-hot); }
+  }
+  @keyframes card-hold {
+    0%, 85% { border-color: var(--c-hot); box-shadow: 0 0 0 3px var(--c-halo); }
+    100% { border-color: var(--c-rail); box-shadow: 0 0 0 0 transparent; }
+  }
+  @keyframes state {
+    0%, 100% { box-shadow: 0 0 0 0 transparent; }
+    40% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--state) 35%, transparent); }
+  }
+  @keyframes edge {
+    0%, 100% { border-color: var(--c-rail); }
+    40% { border-color: var(--c-hot); }
+  }
+  @keyframes lead-in {
+    from { border-top-color: var(--c-lit); background-color: var(--c-band); }
+    to { border-top-color: var(--c-hot); background-color: var(--c-line); }
+  }
+  @keyframes lead-hold {
+    0%, 85% { border-top-color: var(--c-hot); background-color: var(--c-line); }
+    100% { border-top-color: var(--c-lit); background-color: var(--c-band); }
+  }
+  @keyframes rail {
+    0% { opacity: 1; transform: scaleX(0); }
+    95% { opacity: 1; transform: scaleX(1); }
+    100% { opacity: 0; transform: scaleX(1); }
+  }
+  @keyframes count-pass {
+    from { --pass-whole: 0; }
+    to { --pass-whole: 92; }
+  }
+  @keyframes count-asked {
+    from { --asked: 0; }
+    to { --asked: 14; }
+  }
+  @keyframes count-missed {
+    from { --missed-tenth: 0; }
+    to { --missed-tenth: 5; }
+  }
+
+  /* With motion, the three numbers are drawn by counters that the keyframes drive. Each is drawn over the
+     real text, which stays in the page unseen, so it keeps the number's width and a screen reader still
+     reads it. */
+  .stat-value { position: relative; display: inline-block; }
+  .count { display: block; position: absolute; top: 0; right: 0; white-space: nowrap; }
+  .count-text { color: transparent; }
+
+  /* The overview. */
+  .over .tile-value { animation: show 0.5s ease-out 0.1s backwards; }
+  .over .tile-proof { animation: show 0.5s ease-out 0.25s backwards; }
+  .over .tile-call { animation: show 0.5s ease-out 0.4s backwards; }
+  .over .ask-agent i:nth-child(1) { animation: wake 0.3s ease-out 0.9s backwards; }
+  .over .ask-agent i:nth-child(2) { animation: wake 0.3s ease-out 0.97s backwards; }
+  .over .ask-agent i:nth-child(3) { animation: wake 0.3s ease-out 1.04s backwards; }
+  .over .ask-agent i:nth-child(4) { animation: wake 0.3s ease-out 1.11s backwards; }
+  .over .ask-agent i:nth-child(5) { animation: wake 0.3s ease-out 1.18s backwards; }
+  .over .ask-agent i:nth-child(6) { animation: wake 0.3s ease-out 1.25s backwards; }
+  .over .ask-agent i:nth-child(7) { animation: wake 0.3s ease-out 1.32s backwards; }
+  .over .ask-agent i:nth-child(8) { animation: wake 0.3s ease-out 1.39s backwards; }
+  .over .ask-agent i:nth-child(9) { animation: wake 0.3s ease-out 1.46s backwards; }
+  .over .ask-agent i:nth-child(10) { animation: wake 0.3s ease-out 1.53s backwards; }
+  .over .ask-agent i:nth-child(11) { animation: wake 0.3s ease-out 1.6s backwards; }
+  .over .ask-agent i:nth-child(12) { animation: wake 0.3s ease-out 1.67s backwards; }
+  .over .ask-agent i:nth-child(13) { animation: wake 0.3s ease-out 1.74s backwards; }
+  .over .ask-agent i:nth-child(14) { animation: wake 0.3s ease-out 1.81s backwards; }
+  .over .bar-at { animation: show 0.4s ease-out 1.3s backwards; }
+  .over .bar-fill { animation: grow 0.9s linear 1.8s backwards; }
+  .over .bar-past { animation: grow 0.4s ease-out 2.7s backwards; }
+  .over .gate-way:not(.gate-shut) { animation: grow 0.5s ease-out 3s backwards; }
+  .over .gate-shut .lock { animation: ring 0.4s ease-out 3.5s backwards; }
+  .over .gate-check { animation: state 1.2s ease-in-out 3.5s; }
+
+  /* What the agent does. */
+  .part-agent .b1 .node { animation: node-in 0.45s ease-out -0.05s, node-hold 2.6s linear 0.4s; }
+  .part-agent .b1 { animation: row-hold 2.6s linear 0.4s; }
+  .part-agent .b2 .node { animation: node-in 0.45s ease-out 2.55s, node-hold 4.6s linear 3s; }
+  .part-agent .b2 { animation: row-hold 4.6s linear 3s; }
+  .part-agent .b3 .node { animation: node-in 0.45s ease-out 7.15s, node-hold 2.4s linear 7.6s; }
+  .part-agent .b3 { animation: row-hold 2.4s linear 7.6s; }
+  .part-agent .b4 .node { animation: node-in 0.45s ease-out 9.55s, node-hold 5.6s linear 10s; }
+  .part-agent .b4 { animation: row-hold 5.6s linear 10s; }
+  .part-agent .c1 { animation: card-in 0.45s ease-out -0.05s backwards, card-hold 2.6s linear 0.4s; }
+  .part-agent .c1 .l1 { animation: show 0.4s ease-out 0.7s backwards; }
+  .part-agent .c1 .l2 { animation: show 0.4s ease-out 1.4s backwards; }
+  .part-agent .c2 { animation: card-in 0.45s ease-out 2.55s backwards, card-hold 4.6s linear 3s; }
+  .part-agent .c2 .l1 { animation: show 0.4s ease-out 3.4s backwards; }
+  .part-agent .c2 .l2 { animation: show 0.4s ease-out 4.5s backwards; }
+  .part-agent .c2 .l3 { animation: show 0.4s ease-out 5.6s backwards; }
+  .part-agent .c3 { animation: card-in 0.45s ease-out 7.15s backwards, card-hold 2.4s linear 7.6s; }
+  .part-agent .c3 .l1 { animation: show 0.4s ease-out 7.9s backwards; }
+  .part-agent .c3 .l2 { animation: show 0.4s ease-out 8.4s backwards; }
+  .part-agent .c3 .l3 { animation: show 0.4s ease-out 8.9s backwards; }
+  .part-agent .c4 { animation: card-in 0.45s ease-out 9.55s backwards, card-hold 2s linear 10s; }
+  .part-agent .c4 .l1 { animation: show 0.4s ease-out 10.3s backwards; }
+  .part-agent .c4 .l2 { animation: show 0.4s ease-out 10.9s backwards; }
+  .part-agent .c4 .l3 { animation: show 0.4s ease-out 11.5s backwards; }
+  .part-agent .agent-box { animation: edge 1.4s ease-in-out 12s; }
+  .part-agent .agent-note { animation: show 0.5s ease-out 12.2s backwards; }
+  .part-agent .rail { animation: rail 15.6s linear; }
+
+  /* How I tested it. */
+  .part-tested .b1 .node { animation: node-in 0.45s ease-out -0.05s, node-hold 6.2s linear 0.4s; }
+  .part-tested .b1 { animation: row-hold 6.2s linear 0.4s; }
+  .part-tested .b2 .node { animation: node-in 0.45s ease-out 6.15s, node-hold 2.4s linear 6.6s; }
+  .part-tested .b2 { animation: row-hold 2.4s linear 6.6s; }
+  .part-tested .b3 .node { animation: node-in 0.45s ease-out 8.55s, node-hold 2.4s linear 9s; }
+  .part-tested .b3 { animation: row-hold 2.4s linear 9s; }
+  .part-tested .b4 .node { animation: node-in 0.45s ease-out 10.95s, node-hold 5s linear 11.4s; }
+  .part-tested .b4 { animation: row-hold 5s linear 11.4s; }
+  .part-tested .homes-train { animation: show 0.4s ease-out 0.4s backwards; }
+  .part-tested .homes-dev { animation: show 0.4s ease-out 0.7s backwards; }
+  .part-tested .zone-build .homes-key { animation: show 0.3s ease-out 1s backwards; }
+  .part-tested .homes-dev i:nth-child(1) { animation: label-dev 0.7s ease-in-out 9.8s backwards, glance 0.5s ease-in-out 1.4s; }
+  .part-tested .homes-dev i:nth-child(2) { animation: label-dev 0.7s ease-in-out 9.84s backwards, glance 0.5s ease-in-out 1.48s; }
+  .part-tested .homes-dev i:nth-child(3) { animation: label-dev 0.7s ease-in-out 9.88s backwards, glance 0.5s ease-in-out 1.56s; }
+  .part-tested .homes-dev i:nth-child(4) { animation: label-dev 0.7s ease-in-out 9.92s backwards, glance 0.5s ease-in-out 1.64s; }
+  .part-tested .homes-dev i:nth-child(5) { animation: label-dev 0.7s ease-in-out 9.96s backwards, glance 0.5s ease-in-out 1.72s; }
+  .part-tested .homes-dev i:nth-child(6) { animation: label-dev 0.7s ease-in-out 10s backwards, glance 0.5s ease-in-out 1.8s; }
+  .part-tested .homes-dev i:nth-child(7) { animation: label-dev 0.7s ease-in-out 10.04s backwards, glance 0.5s ease-in-out 1.88s; }
+  .part-tested .homes-dev i:nth-child(8) { animation: label-dev 0.7s ease-in-out 10.08s backwards, glance 0.5s ease-in-out 1.96s; }
+  .part-tested .homes-dev i:nth-child(9) { animation: label-dev 0.7s ease-in-out 10.12s backwards, glance 0.5s ease-in-out 2.04s; }
+  .part-tested .homes-dev i:nth-child(10) { animation: label-dev 0.7s ease-in-out 10.16s backwards, glance 0.5s ease-in-out 2.12s; }
+  .part-tested .homes-dev i:nth-child(11) { animation: label-dev 0.7s ease-in-out 10.2s backwards, glance 0.5s ease-in-out 2.2s; }
+  .part-tested .homes-dev i:nth-child(12) { animation: label-dev 0.7s ease-in-out 10.24s backwards, glance 0.5s ease-in-out 2.28s; }
+  .part-tested .homes-dev i:nth-child(13) { animation: label-dev 0.7s ease-in-out 10.28s backwards, glance 0.5s ease-in-out 2.36s; }
+  .part-tested .homes-dev i:nth-child(14) { animation: label-dev 0.7s ease-in-out 10.32s backwards, glance 0.5s ease-in-out 2.44s; }
+  .part-tested .homes-dev i:nth-child(15) { animation: label-dev 0.7s ease-in-out 10.36s backwards, glance 0.5s ease-in-out 2.52s; }
+  .part-tested .homes-dev i:nth-child(16) { animation: label-dev 0.7s ease-in-out 10.4s backwards, glance 0.5s ease-in-out 2.6s; }
+  .part-tested .homes-dev i:nth-child(17) { animation: label-dev 0.7s ease-in-out 10.44s backwards, glance 0.5s ease-in-out 2.68s; }
+  .part-tested .homes-dev i:nth-child(18) { animation: label-dev 0.7s ease-in-out 10.48s backwards, glance 0.5s ease-in-out 2.76s; }
+  .part-tested .homes-dev i:nth-child(19) { animation: label-dev 0.7s ease-in-out 10.52s backwards, glance 0.5s ease-in-out 2.84s; }
+  .part-tested .homes-dev i:nth-child(20) { animation: label-dev 0.7s ease-in-out 10.56s backwards, glance 0.5s ease-in-out 2.92s; }
+  .part-tested .homes-dev i:nth-child(21) { animation: glance 0.5s ease-in-out 3s; }
+  .part-tested .homes-dev i:nth-child(22) { animation: glance 0.5s ease-in-out 3.08s; }
+  .part-tested .homes-dev i:nth-child(23) { animation: glance 0.5s ease-in-out 3.16s; }
+  .part-tested .homes-dev i:nth-child(24) { animation: glance 0.5s ease-in-out 3.24s; }
+  .part-tested .homes-dev i:nth-child(25) { animation: glance 0.5s ease-in-out 3.32s; }
+  .part-tested .homes-dev i:nth-child(26) { animation: glance 0.5s ease-in-out 3.4s; }
+  .part-tested .homes-dev i:nth-child(27) { animation: glance 0.5s ease-in-out 3.48s; }
+  .part-tested .homes-dev i:nth-child(28) { animation: glance 0.5s ease-in-out 3.56s; }
+  .part-tested .homes-dev i:nth-child(29) { animation: glance 0.5s ease-in-out 3.64s; }
+  .part-tested .homes-dev i:nth-child(30) { animation: glance 0.5s ease-in-out 3.72s; }
+  .part-tested .homes-dev i:nth-child(31) { animation: glance 0.5s ease-in-out 3.8s; }
+  .part-tested .homes-dev i:nth-child(32) { animation: glance 0.5s ease-in-out 3.88s; }
+  .part-tested .homes-dev i:nth-child(33) { animation: glance 0.5s ease-in-out 3.96s; }
+  .part-tested .homes-dev i:nth-child(34) { animation: glance 0.5s ease-in-out 4.04s; }
+  .part-tested .homes-dev i:nth-child(35) { animation: glance 0.5s ease-in-out 4.12s; }
+  .part-tested .homes-dev i:nth-child(36) { animation: glance 0.5s ease-in-out 4.2s; }
+  .part-tested .homes-dev i:nth-child(37) { animation: glance 0.5s ease-in-out 4.28s; }
+  .part-tested .homes-dev i:nth-child(38) { animation: glance 0.5s ease-in-out 4.36s; }
+  .part-tested .homes-dev i:nth-child(39) { animation: glance 0.5s ease-in-out 4.44s; }
+  .part-tested .homes-dev i:nth-child(40) { animation: glance 0.5s ease-in-out 4.52s; }
+  .part-tested .homes-train i:nth-child(1) { animation: label-train 0.7s ease-in-out 9.4s backwards; }
+  .part-tested .homes-train i:nth-child(2) { animation: label-train 0.7s ease-in-out 9.44s backwards; }
+  .part-tested .homes-train i:nth-child(3) { animation: label-train 0.7s ease-in-out 9.48s backwards; }
+  .part-tested .homes-train i:nth-child(4) { animation: label-train 0.7s ease-in-out 9.52s backwards; }
+  .part-tested .homes-train i:nth-child(5) { animation: label-train 0.7s ease-in-out 9.56s backwards; }
+  .part-tested .homes-train i:nth-child(6) { animation: label-train 0.7s ease-in-out 9.6s backwards; }
+  .part-tested .homes-train i:nth-child(7) { animation: label-train 0.7s ease-in-out 9.64s backwards; }
+  .part-tested .homes-train i:nth-child(8) { animation: label-train 0.7s ease-in-out 9.68s backwards; }
+  .part-tested .homes-train i:nth-child(9) { animation: label-train 0.7s ease-in-out 9.72s backwards; }
+  .part-tested .homes-train i:nth-child(10) { animation: label-train 0.7s ease-in-out 9.76s backwards; }
+  .part-tested .a1 { animation: show 0.4s ease-out 4.8s backwards; }
+  .part-tested .a2 { animation: show 0.4s ease-out 6.8s backwards; }
+  .part-tested .a3 { animation: show 0.4s ease-out 9.2s backwards; }
+  .part-tested .gate { animation: wake 0.3s ease-out 11.4s backwards; }
+  .part-tested .gate::before { animation: draw 0.5s ease-out 11.4s backwards; }
+  .part-tested .gate-label { animation: show 0.4s ease-out 11.8s backwards; }
+  .part-tested .g1 { animation: show 0.4s ease-out 12.1s backwards; }
+  .part-tested .g2 { animation: show 0.4s ease-out 12.4s backwards; }
+  .part-tested .g3 { animation: show 0.4s ease-out 12.7s backwards; }
+  .part-tested .homes-held i:nth-child(1) { animation: mark 0.32s ease-out 13.3s backwards; }
+  .part-tested .homes-held i:nth-child(2) { animation: mark 0.32s ease-out 13.33s backwards; }
+  .part-tested .homes-held i:nth-child(3) { animation: mark 0.32s ease-out 13.36s backwards; }
+  .part-tested .homes-held i:nth-child(4) { animation: mark 0.32s ease-out 13.4s backwards; }
+  .part-tested .homes-held i:nth-child(5) { animation: mark 0.32s ease-out 13.43s backwards; }
+  .part-tested .homes-held i:nth-child(6) { animation: mark 0.32s ease-out 13.46s backwards; }
+  .part-tested .homes-held i:nth-child(7) { animation: mark 0.32s ease-out 13.49s backwards; }
+  .part-tested .homes-held i:nth-child(8) { animation: mark 0.32s ease-out 13.52s backwards; }
+  .part-tested .homes-held i:nth-child(9) { animation: mark 0.32s ease-out 13.56s backwards; }
+  .part-tested .homes-held i:nth-child(10) { animation: mark 0.32s ease-out 13.59s backwards; }
+  .part-tested .homes-held i:nth-child(11) { animation: mark 0.32s ease-out 13.62s backwards; }
+  .part-tested .homes-held i:nth-child(12) { animation: mark 0.32s ease-out 13.65s backwards; }
+  .part-tested .homes-held i:nth-child(13) { animation: mark 0.32s ease-out 13.68s backwards; }
+  .part-tested .homes-held i:nth-child(14) { animation: mark 0.32s ease-out 13.72s backwards; }
+  .part-tested .homes-held i:nth-child(15) { animation: mark 0.32s ease-out 13.75s backwards; }
+  .part-tested .homes-held i:nth-child(16) { animation: mark 0.32s ease-out 13.78s backwards; }
+  .part-tested .homes-held i:nth-child(17) { animation: mark 0.32s ease-out 13.81s backwards; }
+  .part-tested .homes-held i:nth-child(18) { animation: mark 0.32s ease-out 13.84s backwards; }
+  .part-tested .homes-held i:nth-child(19) { animation: mark 0.32s ease-out 13.88s backwards; }
+  .part-tested .homes-held i:nth-child(20) { animation: mark 0.32s ease-out 13.91s backwards; }
+  .part-tested .homes-held i:nth-child(21) { animation: mark 0.32s ease-out 13.94s backwards; }
+  .part-tested .homes-held i:nth-child(22) { animation: mark 0.32s ease-out 13.97s backwards; }
+  .part-tested .homes-held i:nth-child(23) { animation: mark 0.32s ease-out 14s backwards; }
+  .part-tested .homes-held i:nth-child(24) { animation: mark 0.32s ease-out 14.04s backwards; }
+  .part-tested .homes-held i:nth-child(25) { animation: mark 0.32s ease-out 14.07s backwards; }
+  .part-tested .h1 { animation: show 0.4s ease-out 13.6s backwards; }
+  .part-tested .homes-held i:nth-child(26) { animation: mark 0.32s ease-out 14.9s backwards; }
+  .part-tested .homes-held i:nth-child(27) { animation: mark 0.32s ease-out 14.94s backwards; }
+  .part-tested .homes-held i:nth-child(28) { animation: mark 0.32s ease-out 14.98s backwards; }
+  .part-tested .homes-held i:nth-child(29) { animation: mark 0.32s ease-out 15.02s backwards; }
+  .part-tested .homes-held i:nth-child(30) { animation: mark 0.32s ease-out 15.06s backwards; }
+  .part-tested .homes-held i:nth-child(31) { animation: mark 0.32s ease-out 15.1s backwards; }
+  .part-tested .homes-held i:nth-child(32) { animation: mark 0.32s ease-out 15.14s backwards; }
+  .part-tested .homes-held i:nth-child(33) { animation: mark 0.32s ease-out 15.18s backwards; }
+  .part-tested .homes-held i:nth-child(34) { animation: mark 0.32s ease-out 15.22s backwards; }
+  .part-tested .homes-held i:nth-child(35) { animation: mark 0.32s ease-out 15.26s backwards; }
+  .part-tested .homes-held i:nth-child(36) { animation: mark 0.32s ease-out 15.3s backwards; }
+  .part-tested .homes-held i:nth-child(37) { animation: mark 0.32s ease-out 15.34s backwards; }
+  .part-tested .homes-held i:nth-child(38) { animation: mark 0.32s ease-out 15.38s backwards; }
+  .part-tested .homes-held i:nth-child(39) { animation: mark 0.32s ease-out 15.42s backwards; }
+  .part-tested .homes-held i:nth-child(40) { animation: mark 0.32s ease-out 15.46s backwards; }
+  .part-tested .h2 { animation: show 0.4s ease-out 15.3s backwards; }
+  .part-tested .rail { animation: rail 16.4s linear; }
+
+  /* The result. */
+  .part-result .verdict-band .chip { animation: state 1.6s ease-in-out 0.3s; }
+  .part-result .runs-bar { animation: draw 0.35s ease-out 1.2s backwards; }
+  .part-result .runs-bar .bar-label { animation: show 0.3s ease-out 1.4s backwards; }
+  .part-result .cells-bar { animation: draw 0.35s ease-out 1.4s backwards; }
+  .part-result .cells-bar .bar-label { animation: show 0.3s ease-out 1.6s backwards; }
+  .part-result .meter-bar { animation: draw 0.35s ease-out 1.6s backwards; }
+  .part-result .meter-bar .bar-label { animation: show 0.3s ease-out 1.8s backwards; }
+  .part-result .stat-pass .stat-value, .part-result .stat-pass .stat-label { animation: show 0.3s ease-out 2.6s backwards; }
+  .part-result .count-pass { animation: count-pass 2.5s linear 2.8s backwards; }
+  .part-result .runs i.on:nth-child(n+1):nth-child(-n+4) { animation: mark 0.32s ease-out 2.8s backwards; }
+  .part-result .runs i.on:nth-child(n+5):nth-child(-n+8) { animation: mark 0.32s ease-out 2.89s backwards; }
+  .part-result .runs i.on:nth-child(n+9):nth-child(-n+12) { animation: mark 0.32s ease-out 2.98s backwards; }
+  .part-result .runs i.on:nth-child(n+13):nth-child(-n+16) { animation: mark 0.32s ease-out 3.08s backwards; }
+  .part-result .runs i.on:nth-child(n+17):nth-child(-n+20) { animation: mark 0.32s ease-out 3.17s backwards; }
+  .part-result .runs i.on:nth-child(n+21):nth-child(-n+24) { animation: mark 0.32s ease-out 3.26s backwards; }
+  .part-result .runs i.on:nth-child(n+25):nth-child(-n+28) { animation: mark 0.32s ease-out 3.35s backwards; }
+  .part-result .runs i.on:nth-child(n+29):nth-child(-n+32) { animation: mark 0.32s ease-out 3.45s backwards; }
+  .part-result .runs i.on:nth-child(n+33):nth-child(-n+36) { animation: mark 0.32s ease-out 3.54s backwards; }
+  .part-result .runs i.on:nth-child(n+37):nth-child(-n+40) { animation: mark 0.32s ease-out 3.63s backwards; }
+  .part-result .runs i.on:nth-child(n+41):nth-child(-n+44) { animation: mark 0.32s ease-out 3.72s backwards; }
+  .part-result .runs i.on:nth-child(n+45):nth-child(-n+48) { animation: mark 0.32s ease-out 3.82s backwards; }
+  .part-result .runs i.on:nth-child(n+49):nth-child(-n+52) { animation: mark 0.32s ease-out 3.91s backwards; }
+  .part-result .runs i.on:nth-child(n+53):nth-child(-n+56) { animation: mark 0.32s ease-out 4s backwards; }
+  .part-result .runs i.on:nth-child(n+57):nth-child(-n+60) { animation: mark 0.32s ease-out 4.09s backwards; }
+  .part-result .runs i.on:nth-child(n+61):nth-child(-n+64) { animation: mark 0.32s ease-out 4.19s backwards; }
+  .part-result .runs i.on:nth-child(n+65):nth-child(-n+68) { animation: mark 0.32s ease-out 4.28s backwards; }
+  .part-result .runs i.on:nth-child(n+69):nth-child(-n+72) { animation: mark 0.32s ease-out 4.37s backwards; }
+  .part-result .runs i.on:nth-child(n+73):nth-child(-n+76) { animation: mark 0.32s ease-out 4.46s backwards; }
+  .part-result .runs i.on:nth-child(n+77):nth-child(-n+80) { animation: mark 0.32s ease-out 4.56s backwards; }
+  .part-result .runs i.on:nth-child(n+81):nth-child(-n+84) { animation: mark 0.32s ease-out 4.65s backwards; }
+  .part-result .runs i.on:nth-child(n+85):nth-child(-n+88) { animation: mark 0.32s ease-out 4.74s backwards; }
+  .part-result .runs i.on:nth-child(n+89):nth-child(-n+92) { animation: mark 0.32s ease-out 4.83s backwards; }
+  .part-result .runs i.on:nth-child(n+93):nth-child(-n+96) { animation: mark 0.32s ease-out 4.93s backwards; }
+  .part-result .runs i.on:nth-child(n+97):nth-child(-n+100) { animation: mark 0.32s ease-out 5.02s backwards; }
+  .part-result .runs i.on:nth-child(n+101):nth-child(-n+104) { animation: mark 0.32s ease-out 5.11s backwards; }
+  .part-result .runs i.on:nth-child(n+105):nth-child(-n+108) { animation: mark 0.32s ease-out 5.2s backwards; }
+  .part-result .runs i.on:nth-child(n+109):nth-child(-n+112) { animation: mark 0.32s ease-out 5.3s backwards, margin 2.4s ease-in-out 16.4s; }
+  .part-result .runs i.on:nth-child(n+113):nth-child(-n+116) { animation: mark 0.32s ease-out 5.39s backwards; }
+  .part-result .runs i.on:nth-child(n+117):nth-child(-n+120) { animation: mark 0.32s ease-out 5.48s backwards; }
+  .part-result .whisker { animation: show 0.4s ease-out 6s backwards; }
+  .part-result .legend { animation: show 0.3s ease-out 6.4s backwards; }
+  .part-result .stat-pass .chip { animation: show 0.35s ease-out 6.9s backwards; }
+  .part-result .stat-asked .stat-value, .part-result .stat-asked .stat-label { animation: show 0.3s ease-out 7.6s backwards; }
+  .part-result .count-asked { animation: count-asked 1.54s linear 7.9s backwards; }
+  .part-result .cells i.on:nth-child(1) { animation: cell 0.32s ease-out 7.9s backwards; }
+  .part-result .cells i.on:nth-child(2) { animation: cell 0.32s ease-out 8.01s backwards; }
+  .part-result .cells i.on:nth-child(3) { animation: cell 0.32s ease-out 8.12s backwards; }
+  .part-result .cells i.on:nth-child(4) { animation: cell 0.32s ease-out 8.23s backwards; }
+  .part-result .cells i.on:nth-child(5) { animation: cell 0.32s ease-out 8.34s backwards; }
+  .part-result .cells i.on:nth-child(6) { animation: cell 0.32s ease-out 8.45s backwards; }
+  .part-result .cells i.on:nth-child(7) { animation: cell 0.32s ease-out 8.56s backwards; }
+  .part-result .cells i.on:nth-child(8) { animation: cell 0.32s ease-out 8.67s backwards; }
+  .part-result .cells i.on:nth-child(9) { animation: cell 0.32s ease-out 8.78s backwards; }
+  .part-result .cells i.on:nth-child(10) { animation: cell 0.32s ease-out 8.89s backwards; }
+  .part-result .cells i.on:nth-child(11) { animation: cell 0.32s ease-out 9s backwards; }
+  .part-result .cells i.on:nth-child(12) { animation: cell 0.32s ease-out 9.11s backwards; }
+  .part-result .cells i.on:nth-child(13) { animation: cell 0.32s ease-out 9.22s backwards; }
+  .part-result .cells i.on:nth-child(14) { animation: cell 0.32s ease-out 9.33s backwards; }
+  .part-result .full-note { animation: show 0.3s ease-out 8.8s backwards; }
+  .part-result .stat-asked .chip { animation: show 0.35s ease-out 9.84s backwards; }
+  .part-result .stat-missed .stat-value, .part-result .stat-missed .stat-label { animation: show 0.3s ease-out 12.2s backwards; }
+  .part-result .meter-fill { animation: grow 0.7s ease-out 12.5s backwards; }
+  .part-result .count-missed { animation: count-missed 0.6s linear 12.5s backwards; }
+  .part-result .stat-missed .chip { animation: show 0.35s ease-out 13.5s backwards; }
+  .part-result .limits { animation: show 0.5s ease-out 19.6s backwards; }
+  .part-result .rail { animation: rail 21.4s linear; }
+
+  /* The human check and my call. */
+  .part-call .b1 .node { animation: node-in 0.45s ease-out 2.95s, node-hold 4.2s linear 3.4s; }
+  .part-call .b1 { animation: row-hold 4.2s linear 3.4s; }
+  .part-call .b2 .node { animation: node-in 0.45s ease-out 7.15s, node-hold 5.2s linear 7.6s; }
+  .part-call .b2 { animation: row-hold 5.2s linear 7.6s; }
+  .part-call .b3 .node { animation: node-in 0.45s ease-out 12.35s, node-hold 6.4s linear 12.8s; }
+  .part-call .b3 { animation: row-hold 6.4s linear 12.8s; }
+  .part-call .verdict-band .chip { animation: state 1.6s ease-in-out 0.3s; }
+  .part-call .x1 { animation: show 0.45s ease-out 1s backwards; }
+  .part-call .x2 { animation: show 0.45s ease-out 3.7s backwards; }
+  .part-call .x3 { animation: show 0.45s ease-out 4.8s backwards; }
+  .part-call .x4 { animation: show 0.45s ease-out 7.9s backwards; }
+  .part-call .call-chip { animation: state 1.6s ease-in-out 13.1s; }
+  .part-call .lane-fix { animation: wake 0.5s ease-out 13.8s backwards; }
+  .part-call .y1 { animation: show 0.45s ease-out 14.2s backwards; }
+  .part-call .y2 { animation: show 0.45s ease-out 15.5s backwards; }
+  .part-call .y3 { animation: show 0.45s ease-out 16.8s backwards; }
+  .part-call .y4 { animation: show 0.45s ease-out 17.8s backwards; }
+  .part-call .y3 .lock { animation: ring 0.4s ease-out 17.2s backwards; }
+  .part-call .rail { animation: rail 19.2s linear; }
+
+  /* What I would bring. */
+  .part-bring .p1 { animation: lead-in 0.45s ease-out -0.05s, lead-hold 4.8s linear 0.4s; }
+  .part-bring .p2 { animation: lead-in 0.45s ease-out 4.75s, lead-hold 3.8s linear 5.2s; }
+  .part-bring .p3 { animation: lead-in 0.45s ease-out 8.55s, lead-hold 3.8s linear 9s; }
+  .part-bring .p4 { animation: lead-in 0.45s ease-out 12.35s, lead-hold 3.2s linear 12.8s; }
+  .part-bring .rail { animation: rail 16.4s linear; }
 }
