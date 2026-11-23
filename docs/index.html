@@ -6,12 +6,12 @@
     <title>What Should My Tax Agent Ask? A Product Teardown</title>
     <meta
       name="description"
-      content="The product thinking behind an AI tax intake agent built to ask each client only what this year's return needs: the agent learns facts, code turns them into documents through sourced rules, the preparer approves and sends, and the bars that judge the agent locked before its one test run."
+      content="The product thinking behind an AI tax intake agent built to ask each client only what this year's return needs: the agent learns facts, code turns them into documents through sourced rules, the preparer approves and sends, and the bars that judge the agent locked before any test run."
     />
     <meta property="og:title" content="What Should My Tax Agent Ask? A Product Teardown" />
     <meta
       property="og:description"
-      content="Where an AI agent belongs in tax intake, where it does not, and how you would know: an agent that learns facts, rules in sourced code, a preparer who approves and sends, and baselines and bars that lock before the one test run."
+      content="Where an AI agent belongs in tax intake, where it does not, and how you would know: an agent that learns facts, rules in sourced code, a preparer who approves and sends, and baselines and bars that lock before any test run."
     />
     <meta name="author" content="Roanuk Zaman" />
     <meta property="og:type" content="article" />
@@ -52,14 +52,14 @@
           Whatever slips through comes back later as a missing form and a
           second request. I designed an AI intake agent that asks each client
           only what this year's return needs, and I locked the bars that judge
-          it before its one test run.
+          it before any test run.
         </p>
         <p class="byline">
           Roanuk Zaman &middot; Product teardown of a tool I designed and
           directed
         </p>
         <p class="callout callout-notice" id="status">
-          <strong>Status on November 13, 2026.</strong> The build, its one
+          <strong>Status on November 13, 2026.</strong> The build, its
           test run and a blind check of the preparer's review screen are
           finished, and the four numbers below are the results. I directed the
           build, and Claude Code wrote the code and ran every experiment under
@@ -76,7 +76,7 @@
         <div class="facts">
           <div class="fact">
             <span class="fact-value">92.5%</span>
-            <span class="fact-label">Test runs the agent passed, against a bar of 90% that locked before the run</span>
+            <span class="fact-label">Test runs the agent passed, against a bar of 90% that locked before any of them ran</span>
           </div>
           <div class="fact">
             <span class="fact-value">0.5%</span>
@@ -105,7 +105,7 @@
           designed an AI agent that asks each client only what this year's
           return needs: it learns facts, code turns them into the document
           list through sourced rules, and only the preparer sends that list. I
-          locked the bars before the one test run. The agent passed more than
+          locked the bars before any test run. The agent passed more than
           92% of runs on under half the questions. My blind review
           caught none of the drafts' problems, even flagged ones, so the next
           version would make every flag demand an answer.
@@ -167,11 +167,11 @@
               households, with a model playing each client, including clients
               who forget things. On the same households I also score the full
               organizer, which asks every question, and last year's list.
-              Forty households are held back for one test run of three trials
+              Forty households are held back for the test, at three trials
               each, and a run passes only if it misses no required document,
               asks for at most one it does not need, records no wrong fact,
               and never gives tax advice or claims the list was sent. I locked
-              the bars before that run: at least 90% of runs passing, at most 2% of required documents missed, at
+              the bars before any test run: at least 90% of runs passing, at most 2% of required documents missed, at
               most half the full organizer's questions, and at most $0.60 a
               household (<a href="#judged">Part 5</a>). Because scoring
               cannot catch a wrong rule, I also checked all 33 rules by hand
@@ -588,7 +588,7 @@
           <p>
             The agent is judged on 100 synthetic households, frozen into train (20),
             dev (40) and test (40): examples, development and a test group that runs
-            once. A model plays each client from that household's facts, and some of
+            only after the bars lock. A model plays each client from that household's facts, and some of
             those clients forget something, such as a second job, until a question
             brings it back. On the same households the agent is compared with what
             it would replace: a full organizer that asks every question, and last
@@ -616,7 +616,7 @@
             <div class="record-body">
 
           <p>
-            The bars below are written into a preregistration file: a file that fixes the bars, the configurations to run and the one they judge, before any test result exists. It locked on November 2, before the one test run, and only the cost bar changed before then. After the dev results I chose the configuration they judge, the agent on Opus 5.5, and raised that bar from $0.10 to $0.60 a household (<a href="#results">Part 6</a>). The code refused to run the test group until that file was committed with its lock date, and that commit predates the first test run. Three of the nine rows below, evidence and delivery,
+            The bars below are written into a preregistration file: a file that fixes the bars, the configurations to run and the one they judge, before any test result exists. It locked on November 2, before any test run, and only the cost bar changed before then. After the dev results I chose the configuration they judge, the agent on Opus 5.5, and raised that bar from $0.10 to $0.60 a household (<a href="#results">Part 6</a>). The code refused to run the test group until that file was committed with its lock date, and that commit predates the first test run. Three of the nine rows below, evidence and delivery,
             the rules and the tests, come from the requirements document rather
             than from that file.
           </p>
@@ -627,7 +627,7 @@
             with the same seed gives byte identical files. They are frozen into
             train (20), dev (40) and test (40), each with the same mix of
             complexity, so that train holds examples, dev is for iteration, and
-            test is touched once. Some households carry probes, which are
+            test is not touched until the bars lock. Some households carry probes, which are
             requests the harness slips into the client's answers to test the
             agent. A request for tax advice goes in the first answer, and a request to email the list goes in the next, or in the first when there is no advice probe. Dev has 8 advice and 4 email probes, and test has the same.
           </p>
@@ -696,9 +696,9 @@
             bootstrap that resamples households 10,000 times, since trials of the
             same household are not independent.
           </p>
-          <div class="table-scroll" tabindex="0" role="region" aria-label="The bars, locked before the one test run">
+          <div class="table-scroll" tabindex="0" role="region" aria-label="The bars, locked before any test run">
             <table>
-              <caption>The bars, locked before the one test run (40 households, 3 trials each, all scored)</caption>
+              <caption>The bars, locked before any test run (40 households, 3 trials each, all scored)</caption>
               <thead>
                 <tr><th>Criterion</th><th>Bar</th><th>Why it matters</th></tr>
               </thead>
@@ -756,9 +756,10 @@
             its own, that check is best effort, and the API workspace's own spend
             limit is the hard stop behind it. My requirements document put the
             whole project at about $50 at list price, about $30 of it for the test
-            run, which it said should come in under $60. Before the test run the
-            live runs had cost $29.83 by the
-            <a href="https://github.com/Roanukz/tax-agent-ask/blob/main/ledger/spend.jsonl">ledger</a>;
+            run, which it said should come in under $60. After the dev sweep and
+            the judge's second reading the live runs had cost $29.83 by the
+            <a href="https://github.com/Roanukz/tax-agent-ask/blob/main/ledger/spend.jsonl">ledger</a>,
+            and $30.51 by the time the test run began;
             by its end the ledger showed $153.78, which includes a dev rerun,
             the judge work and about $17 booked at their limit for runs a network
             outage stopped before they reached the model.
@@ -783,7 +784,7 @@
           <h2>What the test run found</h2>
 
           <p>
-            The one test run scored all 40 test households, three trials each, after
+            The test run scored all 40 test households, three trials each, after
             the bars had locked. The agent on Claude Opus passed 92.5% of its 120
             runs, missed 0.5% of required documents and asked a median of 14
             questions where the full organizer asks 36, at $0.40 a household. It
@@ -1157,7 +1158,7 @@
             practicing preparer. Dev results are one trial on 40 households,
             scored with a judge my labels validate only on delivery, so they serve
             only to choose a configuration. I raised the cost bar after seeing
-            them, and only the one test run measured the configuration I locked.
+            them, and only the test run measured the configuration I locked.
           </p>
             </div>
           </details>
@@ -1204,7 +1205,9 @@
             flag. So the next version would make each flag demand an answer before
             Approve unlocks. For a document dropped since last year or a fact
             carried over unconfirmed, the answer is to raise the count, ask the
-            client, or say why not. Because the check had one reviewer, me, who built the project and
+            client, or say why not. That version would also show the agent's
+            closing message beside the flag it concerns, since the screen as built
+            kept the message on a Notes tab that approval did not require. Because the check had one reviewer, me, who built the project and
             is not a practicing preparer, the next step is the same scored test with
             preparers who did not build it (<a href="#next">Part 10</a>).
           </p>
@@ -1411,7 +1414,7 @@
             review step protects a client only if its design makes the reviewer
             answer each flag, rather than letting every flag be marked checked.
             So the next version would make each flag demand an answer before Approve unlocks: for the dropped and carried flags, raise the count, ask the client,
-            or say why not. It would also show the time spent on each draft.
+            or say why not. It would also move the agent's closing message from the Notes tab to sit beside the flag it concerns, and show the time spent on each draft.
             Because the check had one reviewer, it cannot say how a practicing
             preparer would do. The same scored check would run next with
             practicing preparers who did not build it, then with a firm's real
@@ -1455,7 +1458,7 @@
                 <tr><td class="num">3</td><th scope="row">No send tool, rather than a denied one</th><td>A missing tool cannot be argued with</td><td>No end to end delivery demo</td></tr>
                 <tr><td class="num">4</td><th scope="row">The answer key is out of reach by construction</th><td>The scores mean something only if the agent cannot see the answers</td><td>Two files per household</td></tr>
                 <tr><td class="num">5</td><th scope="row">Traps for credits that ended</th><td>They test whether older knowledge leaks into a list</td><td>They rest on my reading of IRS guidance</td></tr>
-                <tr><td class="num">6</td><th scope="row">Bars that locked before one test run</th><td>The result could not be tuned to the test</td><td>A public miss was possible</td></tr>
+                <tr><td class="num">6</td><th scope="row">Bars that locked before any test run</th><td>The result could not be tuned to the test</td><td>A public miss was possible</td></tr>
                 <tr><td class="num">7</td><th scope="row">A spending cap high enough that the test measures the agent, not the cap</th><td>A normal run is never stopped early and scored as a failure</td><td>A runaway run can spend more before it stops</td></tr>
                 <tr><td class="num">8</td><th scope="row">The agent is not shown its budget</th><td>A model that sees its money running out may ask fewer questions</td><td>One backstop fewer</td></tr>
                 <tr><td class="num">9</td><th scope="row">The simulated client forgets, the way clients do</th><td>The test has to include the change a client leaves out</td><td>A client more consistent than a real one</td></tr>
@@ -1550,12 +1553,12 @@
 
           <div class="decision">
             <span class="decision-num">Decision 6</span>
-            <h3>Bars that locked before one test run</h3>
+            <h3>Bars that locked before any test run</h3>
             <p class="decision-risk">For: a reader who wants results that were not tuned to the test</p>
             <p>
-              Dev is for iteration, while test runs once, with the configuration
-              and the bars committed first, and the code refuses the test group
-              until then. A configuration cannot be picked because it did best on
+              Dev is for iteration, while the code refuses the test group until
+              the configuration and the bars are committed. A configuration
+              cannot be picked because it did best on
               test. Until the lock the bars can still move, and after the dev
               results I moved one of them, raising the cost bar from $0.10 to $0.60
               a household for A-opus (<a href="#results">Part 6</a>).
@@ -1871,7 +1874,7 @@
               the 22 failing dev agent runs.
             </li>
             <li>
-              <strong>Lock the preregistration, then run the test once.</strong><span class="shipped">Done</span>
+              <strong>Lock the preregistration, then run the test.</strong><span class="shipped">Done</span>
               The bars locked on November 2 with A-opus as the configuration they
               judge, and the test run scored all 40 test households at 3 trials
               each by November 4 (<a href="#results">Part 6</a>).
@@ -1915,8 +1918,10 @@
               <strong>Make each flag demand an answer:</strong> the dropped and
               carried flags would ask the reviewer to raise the count, ask the
               client, or say why not before Approve unlocks, and the screen would
-              show the time spent on each draft, since my own review marked every flag
-              checked and caught nothing (<a href="#review">Part 7</a>).
+              show the agent's closing message beside the flag it concerns and
+              the time spent on each draft, since my own review marked every flag
+              checked and caught nothing, and the closing message sat on a tab
+              that approval did not require (<a href="#review">Part 7</a>).
             </li>
             <li>
               <strong>Hand the same check to practicing preparers:</strong> the
@@ -2005,7 +2010,7 @@ uv run mutmut run &amp;&amp; uv run mutmut results</code></pre>
             success criteria, then a build plan in 11 blocks with a done check
             for each, a spend plan and a cut order. Claude Code has built all
             11 blocks against that document, from the live checks on train
-            and dev to the one test run, under rules written into the
+            and dev to the test run, under rules written into the
             repository. The preparer's review screen came after, with its own
             <a href="https://github.com/Roanukz/tax-agent-ask/blob/main/PRD-preparer-review.md">requirements document</a>:
             a one page problem and thesis, nine testable success criteria, and

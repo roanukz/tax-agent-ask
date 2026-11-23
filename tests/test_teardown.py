@@ -203,6 +203,33 @@ def test_the_status_line_matches_the_spend_ledger():
         assert "The agent has not made a live model call yet" in status
 
 
+def test_the_spend_before_the_test_run_is_the_ledgers():
+    """The page and the README say what the month had cost when the test began. Both once gave $29.83 for that, which
+    is the total after the dev sweep and the judge's second reading. Grading the 60 labeled judge transcripts on
+    Sonnet came between the two, so the ledger stood at $30.51 at the first test call, the figure the decision log
+    gives when the test was declared. Both figures are recomputed here from the ledger, each for its own moment."""
+    entries = [json.loads(line) for line in (REPO / "ledger" / "spend.jsonl").read_text(encoding="utf-8").splitlines()
+               if line.strip()]
+    first_test = next(i for i, e in enumerate(entries) if e["run_id"].startswith("test-"))
+    settled = [e for e in entries[:first_test] if e["kind"] == "settle"]
+    assert {e["run_id"] for e in entries[:first_test]} == {e["run_id"] for e in settled}, "a run was open when the test began"
+    log = (REPO / "DECISIONS.md").read_text(encoding="utf-8")
+    count, model, grading = re.search(r"the (\d+) were graded with (claude-[\w-]+) \(\$(\d+\.\d+)\)", log).groups()
+    graded = settled[-int(count):]  # the last runs booked before the test: the labeled transcripts, graded on Sonnet
+    assert {e["model"] for e in graded} == {model} and f"{sum(e['actual_usd'] for e in graded):.4f}" == grading
+    before = sum(e["actual_usd"] for e in settled)
+    month, after_dev = f"{before:.2f}", f"{before - sum(e['actual_usd'] for e in graded):.2f}"
+    assert f"with the ${after_dev} spent so far" in log, "the estimate of the month was made after the dev sweep"
+    assert f"${grading} for the Sonnet grading; the month is at ${month}." in log and f"against ${month} spent this month" in log
+    judged = text_of(section("judged"))
+    assert f"the judge's second reading the live runs had cost ${after_dev} by the ledger" in judged
+    assert f"and ${month} by the time the test run began" in judged
+    assert f"After that dev work the month stood at ${after_dev} in the spend ledger" in text_of(section("results"))
+    readme = (REPO / "README.md").read_text(encoding="utf-8")
+    assert f"Spend before the test run: ${month} in `ledger/spend.jsonl`. It stood at ${after_dev} after the dev sweep" in readme
+    assert f"grading the {count} labeled judge transcripts on Sonnet added ${float(grading):.2f}" in readme
+
+
 def report_cell(report: str, heading: str, group: str, config: str) -> str:
     """One config's cell in a group's row of the first table under a heading of docs/results.md, found by its column."""
     rows = [line for line in report.split(heading)[1].splitlines() if line.startswith("|")]
@@ -494,6 +521,51 @@ def test_the_visible_page_stays_short_and_each_part_folds_its_record():
         assert len(visible(part).split()) <= (670 if section_id == "summary" else 440), (section_id, len(visible(part).split()))
     for label in re.findall(r"<summary>([\s\S]*?)</summary>", text):
         assert label.startswith('<span class="record-kicker">Detail</span> ') and len(text_of(label).split()) >= 3, label
+
+
+def test_the_page_never_says_the_test_ran_once():
+    """The test ran in two parts under bars locked on November 2: 25 households that day and the other 15 on November 4,
+    once their last 4 rules were verified, and the runs an outage stopped before they reached the model ran again. The
+    lock came before all of it. So the page says the bars locked "before any test run", as the walkthrough does, and
+    this fails if a wording that counts one run comes back, in the text or in a description a search result shows."""
+    parser = VisibleText()
+    parser.feed(page())
+    read = re.sub(r"\s+", " ", " ".join(parser.chunks))
+    for gone in ("one test run", "single test run", "test once", "run once", "runs once", "touched once", "locked before the run"):
+        assert gone not in read, gone
+    hero = re.search(r'<header class="hero">([\s\S]*?)</header>', page()).group(1)
+    for front in (hero, section("tldr"), section("summary")):
+        assert "before any test run" in text_of(front)
+    assert "<strong>Lock the preregistration, then run the test.</strong>" in section("next")
+    # The record of the test still gives both parts.
+    fold = text_of(re.search(r'<details class="record">[\s\S]*?</details>', section("results")).group(0))
+    assert "a run declared in a commit before it started scored the other 15 on November 4" in fold
+
+
+def test_the_next_review_screen_is_told_in_both_halves():
+    """The walkthrough draws the first fix to the review screen as two things, an answer to each flag and the agent's
+    closing message beside its flag, and marks the fix not built. Parts 7 and 10 once told only the first half. The
+    second rests on the screen's own code: the closing message is drawn on the Notes tab, and approval does not look
+    there. The page tells it as what the next version would do, since none of it is built."""
+    part = section("review")
+    fold = text_of(re.search(r'<details class="record">[\s\S]*?</details>', part).group(0))
+    shown = visible(part)
+    assert "So the next version would make each flag demand an answer before Approve unlocks. For a document dropped" in shown
+    assert ("That version would also show the agent's closing message beside the flag it concerns, since the screen as "
+            "built kept the message on a Notes tab that approval did not require.") in shown
+    assert ("It would also move the agent's closing message from the Notes tab to sit beside the flag it concerns, and "
+            "show the time spent on each draft.") in fold
+    assert ("and the screen would show the agent's closing message beside the flag it concerns and the time spent on "
+            "each draft, since my own review marked every flag checked and caught nothing, and the closing message sat "
+            "on a tab that approval did not require") in text_of(section("next"))
+    code = (REPO / "preparer" / "app" / "review.html").read_text(encoding="utf-8")
+    notes_tab = code[code.index("function notesPanel()"):]
+    notes_tab = notes_tab[:notes_tab.index("\n}\n")]
+    assert "The agent's closing message" in notes_tab and code.count("The agent's closing message") == 1
+    needs = code[code.index("function missing()"):]
+    needs = needs[:needs.index("\n}\n")]
+    assert "docs:" in needs and "flags:" in needs and "note" not in needs
+    assert "const ready = !m.docs && !m.custom && !m.flags;" in code, "Approve waits on documents, custom requests and flags"
 
 
 RUNS = REPO / "eval" / "runs"
