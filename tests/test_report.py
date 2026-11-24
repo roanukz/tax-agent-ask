@@ -986,3 +986,20 @@ def test_docs_results_follows_the_prd_order():
     path = REPO / "docs" / "results.md"
     assert path.exists(), "run uv run python -m eval.report"
     assert sections_in_order(path.read_text())
+
+
+def test_the_report_never_says_the_test_ran_once(tmp_path):
+    """The test ran in two parts under bars locked on November 2, 25 households that day and the other 15 on
+    November 4, and the runs an outage stopped before they reached the model ran again. The report used to say the
+    test group "is touched once" and that the test sweep was "Run once". It now says what eval.run enforces and what
+    holds for any set of runs, that the test group is not touched until the bars are locked. Checked on a report
+    rendered here and on the committed docs/results.md, whose wording no other test compares with the generator's."""
+    rendered = write_report(tmp_path / "runs", tmp_path / "results.md", prereg_path=prereg(tmp_path),
+                            ledger_path=tmp_path / "spend.jsonl", fidelity_dir=tmp_path / "none", draws=DRAWS,
+                            generated_on="2026-11-23", judge_labels_path=tmp_path / "no-labels.csv").read_text()
+    committed = (REPO / "docs" / "results.md").read_text(encoding="utf-8")
+    for name, text in (("a rendered report", rendered), ("docs/results.md", committed)):
+        assert "dev is for iteration, and test is not touched until the bars are locked.\n" in text, name
+        assert "- Method: Run only after the bars and primary config are locked and committed.\n" in text, name
+        for gone in ("touched once", "run once", "runs once", "test once", "one test run", "single test run"):
+            assert gone not in text.lower(), (name, gone)

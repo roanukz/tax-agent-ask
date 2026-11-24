@@ -1,6 +1,6 @@
 # Results: What Should My Tax Agent Ask?
 
-Generated on 2026-11-05 by `uv run python -m eval.report` from 1460 run summaries and 1460 scores in eval/runs/. Intervals: household bootstrap, 10000 draws, seed 7, level 0.95. Preregistration: locked_on 2026-11-02, primary_config A-opus.
+Generated on 2026-11-23 by `uv run python -m eval.report` from 1460 run summaries and 1460 scores in eval/runs/. Intervals: household bootstrap, 10000 draws, seed 7, level 0.95. Preregistration: locked_on 2026-11-02, primary_config A-opus.
 
 ## Executive summary
 
@@ -32,7 +32,7 @@ This project measures how many questions an AI tax intake agent asks and which d
 | dev | 40 | 12 | 18 | 10 | 28 | 8 | 4 |
 | test | 40 | 12 | 18 | 10 | 28 | 8 | 4 |
 
-Ratio 20/40/40, stratified by complexity, frozen on 2026-10-31. Train holds prompt examples, dev is for iteration, and test is touched once, after the bars are locked.
+Ratio 20/40/40, stratified by complexity, frozen on 2026-10-31. Train holds prompt examples, dev is for iteration, and test is not touched until the bars are locked.
 
 ### Rule verification
 
@@ -90,7 +90,7 @@ Live check on claude-haiku-5-5: 1000 of 1004 revealed facts match the truth (99.
 
 - Goal: The one preregistered test of the success criteria.
 - What was tried: Every config in eval/prereg.yaml on the 40 test households, 3 trials each.
-- Method: Run once, after the bars and primary config are locked and committed.
+- Method: Run only after the bars and primary config are locked and committed.
 - Findings: A-opus on test: pass rate 92.5% [85.8, 98.3], missed-document rate 0.5% [0.0, 1.1] (120 runs). A-haiku on test: pass rate 86.7% [77.5, 94.2], missed-document rate 1.9% [0.4, 4.0] (120 runs). A-sonnet on test: pass rate 90.8% [83.3, 96.7], missed-document rate 1.4% [0.3, 3.0] (120 runs). A-split on test: pass rate 86.7% [78.3, 94.2], missed-document rate 1.4% [0.3, 3.0] (120 runs). B1 on test: pass rate 86.7% [75.8, 95.8], missed-document rate 4.1% [1.1, 8.5] (120 runs). B2 on test: pass rate 32.5% [17.5, 47.5], missed-document rate 35.5% [29.6, 40.8] (120 runs). B3-haiku on test: pass rate 64.2% [51.7, 76.7], missed-document rate 2.7% [1.3, 4.1] (120 runs). B3-sonnet on test: pass rate 75.0% [63.3, 85.8], missed-document rate 2.0% [0.2, 4.2] (120 runs). B3-opus on test: pass rate 74.2% [61.7, 85.8], missed-document rate 3.7% [1.5, 6.0] (120 runs). A-opus on dev: pass rate 92.5% [82.5, 100.0], missed-document rate 0.0% [0.0, 0.0] (40 runs). A-haiku on dev: pass rate 87.5% [77.5, 97.5], missed-document rate 1.0% [0.0, 2.5] (40 runs). A-sonnet on dev: pass rate 85.0% [72.5, 95.0], missed-document rate 2.0% [0.4, 4.1] (40 runs). A-split on dev: pass rate 80.0% [67.5, 92.5], missed-document rate 2.9% [0.9, 5.7] (40 runs). B1 on dev: pass rate 85.0% [72.5, 95.0], missed-document rate 5.4% [1.7, 10.4] (40 runs). B2 on dev: pass rate 32.5% [17.5, 47.5], missed-document rate 35.8% [30.8, 40.6] (40 runs). B3-haiku on dev: pass rate 57.5% [42.5, 72.5], missed-document rate 2.9% [0.7, 5.7] (40 runs). B3-sonnet on dev: pass rate 72.5% [57.5, 85.0], missed-document rate 1.0% [0.0, 2.4] (40 runs). B3-opus on dev: pass rate 75.0% [60.0, 87.5], missed-document rate 2.0% [0.5, 3.9] (40 runs). B2 on train: pass rate 35.0% [15.0, 55.0], missed-document rate 29.7% [21.4, 37.0] (20 runs).
 
 ## Results

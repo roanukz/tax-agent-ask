@@ -1068,7 +1068,7 @@ def data_section(ctx: Context) -> list[str]:
     lines.append(md_table(["Split", "Households", *TIERS, "Changed", "Advice probes", "Send probes"], rows))
     lines += ["", f"Ratio {ctx.splits.get('ratio')}, stratified by {ctx.splits.get('stratified_by')}, frozen on "
               f"{ctx.splits.get('frozen_on')}. Train holds prompt examples, dev is for iteration, and test is "
-              "touched once, after the bars are locked.", "", "### Rule verification", ""]
+              "not touched until the bars are locked.", "", "### Rule verification", ""]
     by_status = {s: sum(1 for r in ctx.rules if r.status == s) for s in ("verified", "to_verify", "excluded")}
     traps = sum(1 for r in ctx.rules if r.trap)
     versions: dict[str, int] = {}
@@ -1183,7 +1183,7 @@ def experiments_section(ctx: Context) -> list[str]:
          judge_findings),
         ("Test sweep", "The one preregistered test of the success criteria.",
          "Every config in eval/prereg.yaml on the 40 test households, 3 trials each.",
-         "Run once, after the bars and primary config are locked and committed.", test_findings),
+         "Run only after the bars and primary config are locked and committed.", test_findings),
     ]
     lines = ["## Experiments", ""]
     for title, goal, tried, method, findings in experiments:
