@@ -683,11 +683,12 @@ def test_the_human_check_ties_its_result_to_its_own_hypothesis():
     prereg_text = (REPO / "eval" / "review_prereg.yaml").read_text(encoding="utf-8")
     assert "before he opens the first of the 24 drafts" in prereg_text
     band = re.search(r'<div class="verdict-band">([\s\S]*?)</div>', drawn).group(1)
-    assert '<p class="chip chip-big chip-hold"><i class="hold" aria-hidden="true"></i>Second hypothesis: no support</p>' in band
+    assert '<p class="chip chip-big chip-hold"><i class="hold" aria-hidden="true"></i>No support</p>' in band
     assert n["caught"] == 0
     assert text_of(re.search(r'<p class="verdict-text">([\s\S]*?)</p>', band).group(1)) == (
-        "Before the review I locked a second hypothesis: review catches most problems a draft shows. It got no support, "
-        f"since reviewing {n['drafts']} drafts blind, I caught none of the {n['problems']} problems, even where a flag showed one.")
+        "Second hypothesis: if a reviewer checks each draft on the review screen, they catch most problems it flags. The test "
+        f"gave it no support, because reviewing {n['drafts']} drafts blind, I caught none of the {n['problems']} problems, even "
+        "where a flag showed one.")
     # The clause it quotes is about problems a flag shows, and none was caught on the drafts where a flag showed one.
     shows, hides, clean = n["design"]
     by_label = {label: result for label, result, _ in n["rows"]}
