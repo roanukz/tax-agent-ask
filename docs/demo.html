@@ -248,10 +248,10 @@
             </h2>
             <div class="part-body" id="call-body">
               <div class="verdict-band">
-                <p class="chip chip-big chip-hold"><i class="hold" aria-hidden="true"></i>No support for hypothesis two</p>
+                <p class="chip chip-big chip-hold"><i class="hold" aria-hidden="true"></i>Second hypothesis: no support</p>
                 <p class="verdict-text">
-                  I locked it before I opened the 24 test drafts, and it said review catches most
-                  problems a draft shows. Reviewing them blind on my own screen, I caught none of
+                  Before the review I locked a second hypothesis: review catches most problems a
+                  draft shows. It got no support, since reviewing 24 drafts blind, I caught none of
                   the 17 problems, even where a flag showed one.
                 </p>
               </div>
@@ -376,7 +376,7 @@
             <details class="qa">
               <summary>What exactly was the hypothesis, and when did you write it down?</summary>
               <p>
-                The hypothesis joins two parts of my requirements, both written before any code. The
+                The hypothesis joins two parts of my requirements, which I set before any code. The
                 thesis says the agent&#x27;s only job is to learn facts, and code turns them into
                 the document list through rules that each cite an official source. The success
                 criteria set a 90% pass rate, at most 2% of required documents missed and at most
@@ -389,7 +389,7 @@
             <details class="qa">
               <summary>Does this result prove the hypothesis?</summary>
               <p>
-                No. It supports the hypothesis on this test, which is as far as one test with bars
+                No. It supports the hypothesis on this test, which is as far as one test with bars I
                 locked first can go. The pass rate beat its bar by three runs, its interval reaches
                 85.8%, and the 4 runs an outage stopped would have put it at 89.2% had they counted
                 as failures. The judge model that grades tax advice in every pass also missed its
@@ -404,7 +404,7 @@
                 task completion. It must build and submit the list, miss no required document, make
                 at most one unneeded request and record no wrong fact. It must also give no tax
                 advice and pass any advice question to the preparer, receive every request I
-                planted, and never claim the list was sent. Code scores five, and a judge model
+                planted, and never claim it sent the list. Code scores five, and a judge model
                 grades the other two: the sent claim, with code as its fallback, and tax advice,
                 where code also requires a note to the preparer. Passing means a draft awaiting a
                 preparer&#x27;s review, for a simulated client.
@@ -413,12 +413,12 @@
             <details class="qa">
               <summary>What happens when a model writes the list without the rules?</summary>
               <p>
-                It passed less often, though the comparison is not head-to-head. Three models were
-                each handed a household&#x27;s true facts and asked to write the list with no rules
-                table, and the best passed 75.0% of test runs where the agent passed 92.5%. My rules
-                also write the answer key, so that gap partly measures agreement with my rules, and
-                those models asked for 0.5 to 1.1 unneeded documents a household. I did not test a
-                model that was given the rules.
+                It passed less often, though the comparison is not head-to-head. I handed three
+                models each household&#x27;s true facts and asked them to write the list with no
+                rules table, and the best passed 75.0% of test runs where the agent passed 92.5%. My
+                rules also write the answer key, so that gap partly measures agreement with my
+                rules, and those models asked for 0.5 to 1.1 unneeded documents a household. I did
+                not test a model that had the rules.
               </p>
             </details>
             <details class="qa">
@@ -476,9 +476,9 @@
                 stopped 4 of the chosen model&#x27;s runs before they reached the model, and
                 counting those reruns as failures would put the rate at 89.2%. The test ran in two
                 parts under the same locked bars, 25 households on November 2 and 15 on November 4
-                once their last 4 rules were verified. I declared two changes before the second
-                part: a revised judge prompt, and two fact hints the agent reads, reworded in the
-                last rule checks.
+                once I had verified their last 4 rules. I declared two changes before the second
+                part: a revised judge prompt, and two fact hints the agent reads, which the last
+                rule checks reworded.
               </p>
             </details>
             <details class="qa">
@@ -491,11 +491,11 @@
               </p>
             </details>
             <details class="qa">
-              <summary>How was the judge model validated, and what rests on it?</summary>
+              <summary>How did you validate the judge model, and what rests on it?</summary>
               <p>
                 I labeled 60 runs from the build and scored the judge model against those labels. It
-                met its accuracy bar on one of its three questions, whether the agent claimed the
-                list was sent, and only after I corrected 17 labels that broke my written rule,
+                met its accuracy bar on one of its three questions, whether the agent claimed it had
+                sent the list, and only after I corrected 17 labels that broke my written rule,
                 which can favor the grader because I had seen its verdicts. On tax advice, which
                 counts in every pass, it missed its bar: it failed 4 of the 24 final-check runs I
                 had passed, and since no labeled run fails on advice, I could not measure whether it
@@ -519,12 +519,13 @@
             <details class="qa">
               <summary>What exactly did the second hypothesis say?</summary>
               <p>
-                As locked, it read: &quot;Review catches most problems the draft shows and few it
-                hides, and harmful edits on clean drafts are rare.&quot; On the 4 drafts where a
+                As I locked it, it read: &quot;Review catches most problems the draft shows and few
+                it hides, and harmful edits on clean drafts are rare.&quot; On the 4 drafts where a
                 flag showed the problem I caught none, and the 95% interval on that rate tops out at
-                49%, so the first clause is not supported. I also caught none of the 8 where the
-                flags hid it, as the second clause predicted. The 12 clean drafts got no harmful
-                edit, although I approved all 24 lists unchanged, so the last clause went untested.
+                49%, so the result does not support the first clause. I also caught none of the 8
+                where the flags hid it, as the second clause predicted. The 12 clean drafts got no
+                harmful edit, although I approved all 24 lists unchanged, so the last clause went
+                untested.
               </p>
             </details>
             <details class="qa">
@@ -567,11 +568,12 @@
             <details class="qa">
               <summary>Did you measure the guardrails themselves?</summary>
               <p>
-                Only one, and it failed, so I never built it. A check designed to refuse tax advice
-                refused 8 of 16 correct deferrals and let 16 of 20 real advice answers through. The
-                guardrails I kept are unit tested to act, but their accuracy was never measured, and
-                none covers tax advice. At run time only the prompt keeps the agent from giving it,
-                and the judge model that grades it afterward missed its own accuracy bar.
+                Only one, and it failed, so I never built it. A check I designed to refuse tax
+                advice refused 8 of 16 correct deferrals and let 16 of 20 real advice answers
+                through. Unit tests show that the guardrails I kept act, but I never measured their
+                accuracy, and none covers tax advice. At run time only the prompt keeps the agent
+                from giving it, and the judge model that grades it afterward missed its own accuracy
+                bar.
               </p>
             </details>
             <details class="qa">
@@ -579,11 +581,11 @@
               <p>
                 No. The closest I came was planting client requests in test households, asking for
                 tax advice in 8 and asking the agent to email the list in 4, and no test run claimed
-                the list was sent. Those were plain requests from a simulated client, so they show
-                nothing about a deliberate attack. The evidence check confirms that a quoted line
-                exists in the conversation, but it cannot confirm that the line supports the fact,
-                and it runs only in my test harness. Before a release I would plant injected
-                instructions in client answers and last year&#x27;s file, against a bar set before
+                it had sent the list. Those were plain requests from a simulated client, so they
+                show nothing about a deliberate attack. The evidence check confirms that a quoted
+                line exists in the conversation, but it cannot confirm that the line supports the
+                fact, and it runs only in my test harness. Before a release I would plant injected
+                instructions in client answers and last year&#x27;s file, against a bar I set before
                 the run.
               </p>
             </details>
@@ -592,9 +594,9 @@
               <p>
                 I designed and directed the project and made the judgment calls: verifying the 33
                 rules, labeling 60 transcripts, choosing the model, locking the bars and reviewing
-                the 24 drafts. Claude Code wrote the code and ran every model run. Its scoring code
-                was tested with planted bugs and the tests caught 1,065 of 1,067. Claude Code wrote
-                those tests too, so the answer key still rests on my rule checks.
+                the 24 drafts. Claude Code wrote the code and ran every model run. A mutation tool
+                planted bugs in its scoring code, and the tests caught 1,065 of 1,067. Claude Code
+                wrote those tests too, so the answer key still rests on my rule checks.
               </p>
             </details>
           </div>
@@ -606,7 +608,7 @@
                 The user is the tax preparer, who cannot start a return until the documents arrive.
                 I assume that a missed document means a second request to the client, and I have not
                 measured what that costs in hours or dollars. No preparer has used the prototype
-                yet, so that assumption is untested.
+                yet, so I have not tested that assumption.
               </p>
             </details>
             <details class="qa">
@@ -614,8 +616,8 @@
               <p>
                 On this test it was shorter without being worse. It asked a median of 14 questions
                 against 36 and missed 0.5% of required documents against the questionnaire&#x27;s
-                4.1% as scored. That 4.1% falls to 2.7% if the 8 runs that recorded no job count are
-                charged one missed W-2 instead of both, and the questionnaire&#x27;s 86.7% pass rate
+                4.1% as scored. That 4.1% falls to 2.7% if I charge the 8 runs that recorded no job
+                count one missed W-2 instead of both, and the questionnaire&#x27;s 86.7% pass rate
                 falls inside the agent&#x27;s interval on 40 households. The questionnaire is a
                 stand-in I built, and one agent question can cover several facts, so I have not
                 shown that a real client saves time.

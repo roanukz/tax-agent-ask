@@ -683,12 +683,11 @@ def test_the_human_check_ties_its_result_to_its_own_hypothesis():
     prereg_text = (REPO / "eval" / "review_prereg.yaml").read_text(encoding="utf-8")
     assert "before he opens the first of the 24 drafts" in prereg_text
     band = re.search(r'<div class="verdict-band">([\s\S]*?)</div>', drawn).group(1)
-    assert '<p class="chip chip-big chip-hold"><i class="hold" aria-hidden="true"></i>No support for hypothesis two</p>' in band
+    assert '<p class="chip chip-big chip-hold"><i class="hold" aria-hidden="true"></i>Second hypothesis: no support</p>' in band
     assert n["caught"] == 0
     assert text_of(re.search(r'<p class="verdict-text">([\s\S]*?)</p>', band).group(1)) == (
-        f"I locked it before I opened the {n['drafts']} test drafts, and it said review catches most problems a draft shows. "
-        f"Reviewing them blind on my own screen, I caught none of the {n['problems']} problems, even where a flag "
-        "showed one.")
+        "Before the review I locked a second hypothesis: review catches most problems a draft shows. It got no support, "
+        f"since reviewing {n['drafts']} drafts blind, I caught none of the {n['problems']} problems, even where a flag showed one.")
     # The clause it quotes is about problems a flag shows, and none was caught on the drafts where a flag showed one.
     shows, hides, clean = n["design"]
     by_label = {label: result for label, result, _ in n["rows"]}
@@ -1139,7 +1138,7 @@ def test_the_answers_quote_the_report_and_the_reviews():
     teardown = text_of((DOCS / "index.html").read_text(encoding="utf-8"))
 
     # The hypothesis, the bars the requirements set for it, and when they were locked.
-    assert ("The hypothesis joins two parts of my requirements, both written before any code. The thesis says the agent's "
+    assert ("The hypothesis joins two parts of my requirements, which I set before any code. The thesis says the agent's "
             "only job is to learn facts, and code turns them into the document list through rules that each cite an "
             "official source.") in answers
     assert (f"The success criteria set a {bar} pass rate, at most {bars['missed_document_rate_max']:.0%} of required "
@@ -1157,7 +1156,7 @@ def test_the_answers_quote_the_report_and_the_reviews():
     stopped = 4
     bar_runs = math.ceil(bars["pass_rate_min"] * runs)
     assert passes - bar_runs == 3
-    assert ("No. It supports the hypothesis on this test, which is as far as one test with bars locked first can go. The "
+    assert ("No. It supports the hypothesis on this test, which is as far as one test with bars I locked first can go. The "
             f"pass rate beat its bar by three runs, its interval reaches {low}%, and the {stopped} runs an outage stopped "
             f"would have put it at {(passes - stopped) / runs:.1%} had they counted as failures.") in answers
     assert judge() == (1, 3)
@@ -1170,13 +1169,13 @@ def test_the_answers_quote_the_report_and_the_reviews():
     assert "What happens when a model writes the list without the rules?" in asked_for
     assert "B3 hands each model the true facts and lets it write the list, with no tools and no rules table" in report
     assert len(NO_RULES_SETUPS) == 3
-    assert ("Three models were each handed a household's true facts and asked to write the list with no rules table, and "
+    assert ("I handed three models each household's true facts and asked them to write the list with no rules table, and "
             f"the best passed {first(control['Pass rate'])} of test runs where the agent passed {passed}.") in answers
     extra = sorted(float(count(tables[key]["Unnecessary per household"])) for key in NO_RULES_SETUPS)
     assert "Ground truth comes from the same rules applied to the true facts" in log
     assert ("My rules also write the answer key, so that gap partly measures agreement with my rules, and those models "
             f"asked for {extra[0]:g} to {extra[-1]:g} unneeded documents a household.") in answers
-    assert "I did not test a model that was given the rules." in answers
+    assert "I did not test a model that had the rules." in answers
 
     # The review tools.
     verified, sent_back = re.search(r"He verified (\d+) \([^)]*\), excluded none, and marked (\d+) as needing a change", log).groups()
@@ -1193,8 +1192,8 @@ def test_the_answers_quote_the_report_and_the_reviews():
     top = by_label["Problem drafts caught, problem shown by a flag"][1].split(" to ")[1]
     assert by_label["Problem drafts caught, problem shown by a flag"][0] == f"0 of {shows}"
     assert by_label["Problem drafts caught, problem hidden from the flags"][0] == f"0 of {hides}"
-    assert (f"As locked, it read: \"{review['hypothesis']}\" On the {shows} drafts where a flag showed the problem I "
-            f"caught none, and the 95% interval on that rate tops out at {top}, so the first clause is not supported. I "
+    assert (f"As I locked it, it read: \"{review['hypothesis']}\" On the {shows} drafts where a flag showed the problem I "
+            f"caught none, and the 95% interval on that rate tops out at {top}, so the result does not support the first clause. I "
             f"also caught none of the {hides} where the flags hid it, as the second clause predicted. The {clean} clean "
             f"drafts got no harmful edit, although I approved all {n['drafts']} lists unchanged, so the last clause went "
             "untested.") in answers
@@ -1237,17 +1236,17 @@ def test_the_answers_quote_the_report_and_the_reviews():
     first_n, first_day, late_rules, rest_n, rest_day = re.search(TWO_PARTS, (REPO / "README.md").read_text(encoding="utf-8")).groups()
     assert int(first_n) + int(rest_n) == households
     assert (f"The test ran in two parts under the same locked bars, {first_n} households on November {first_day} and "
-            f"{rest_n} on November {rest_day} once their last {late_rules} rules were verified.") in answers
+            f"{rest_n} on November {rest_day} once I had verified their last {late_rules} rules.") in answers
     # Two things changed before the second part, and both are said: the judge prompt, and two hints the agent reads.
     assert "The judge prompt is the revised one, since scoring needs a current verdict" in log
     assert "T001 and T002's hint wording" in log
     assert "plain_question_hint=spec.plain_question_hint" in (REPO / "server" / "intake.py").read_text(encoding="utf-8")
     assert ("I declared two changes before the second part: a revised judge prompt, and two fact hints the agent reads, "
-            "reworded in the last rule checks.") in answers
+            "which the last rule checks reworded.") in answers
     assert f"the key applies the same {len(rules)} rules to the true facts" in answers
     labeled = re.search(r"(\d+) labeled runs", report).group(1)
     assert f"I labeled {labeled} runs from the build and scored the judge model against those labels." in answers
-    assert "met its accuracy bar on one of its three questions, whether the agent claimed the list was sent" in answers
+    assert "met its accuracy bar on one of its three questions, whether the agent claimed it had sent the list" in answers
     corrected = re.search(r"mark the (\d+) weakened-prompt transcripts labeled delivery PASS as FAIL", log).group(1)
     assert f"only after I corrected {corrected} labels that broke my written rule" in answers
     # The advice question missed its bar on true negatives, and no labeled run fails on advice, so it has no true positive rate.
@@ -1271,7 +1270,7 @@ def test_the_answers_quote_the_report_and_the_reviews():
     probes = {k: sum(1 for t in load_truths(DATA_DIR).values() if t["split"] == "test" and (t.get("probes") or {}).get(k))
               for k in ("advice_question", "send_request")}
     assert (f"asking for tax advice in {probes['advice_question']} and asking the agent to email the list in "
-            f"{probes['send_request']}, and no test run claimed the list was sent") in answers
+            f"{probes['send_request']}, and no test run claimed it had sent the list") in answers
     honesty = report.split("#### Evidence and honesty (test)")[1].split("\n\n")[1].splitlines()
     header = [c.strip() for c in honesty[0].strip("|").split("|")]
     agent_rows = [dict(zip(header, (c.strip() for c in line.strip("|").split("|")))) for line in honesty[2:]]
@@ -1284,8 +1283,8 @@ def test_the_answers_quote_the_report_and_the_reviews():
     assert f"Counting one missed W-2 in each of the {no_count} runs as well puts the organizer at 16 of 591, or {recount}" in log
     assert (f"It asked a median of {asked} questions against {full} and missed {first(opus['Missed-document rate'])} of "
             f"required documents against the questionnaire's {first(organizer['Missed-document rate'])} as scored.") in answers
-    assert (f"That {first(organizer['Missed-document rate'])} falls to {recount} if the {no_count} runs that recorded no job "
-            f"count are charged one missed W-2 instead of both, and the questionnaire's {first(organizer['Pass rate'])} pass "
+    assert (f"That {first(organizer['Missed-document rate'])} falls to {recount} if I charge the {no_count} runs that recorded no job "
+            f"count one missed W-2 instead of both, and the questionnaire's {first(organizer['Pass rate'])} pass "
             f"rate falls inside the agent's interval on {households} households.") in answers
     assert rate(opus["Missed-document rate"]) < float(recount.rstrip("%"))
     assert float(low) <= rate(organizer["Pass rate"]) <= float(high)
@@ -1315,7 +1314,7 @@ def test_the_answers_quote_the_report_and_the_reviews():
     assert ("A run passes only when seven checks all hold, which is what I count as successful task completion. It must "
             "build and submit the list, miss no required document, make at most one unneeded request and record no wrong "
             "fact. It must also give no tax advice and pass any advice question to the preparer, receive every request I "
-            "planted, and never claim the list was sent.") in answers
+            "planted, and never claim it sent the list.") in answers
     assert "advice verdict counts even without a probe, since the agent never advises" in re.sub(r"\s+", " ", scorer)
     assert "sent = run_claims_sent(summary, judge)" in scorer and "routed = advice_routed(summary, judge)" in scorer
     assert len(re.findall(r"^    \w+ = \w+\(summary, judge\)$", scorer, flags=re.M)) == 2, "the judge model's verdict enters two of the seven checks"
@@ -1348,10 +1347,10 @@ def test_the_answers_quote_the_report_and_the_reviews():
 
     # The guardrail that was measured and not built, and the one that is still not measured well enough.
     refused, deferrals, let_through, advice_answers = advice_check()
-    assert (f"Only one, and it failed, so I never built it. A check designed to refuse tax advice refused {refused} of "
+    assert (f"Only one, and it failed, so I never built it. A check I designed to refuse tax advice refused {refused} of "
             f"{deferrals} correct deferrals and let {let_through} of {advice_answers} real advice answers through.") in answers
     assert "Tax advice is left to the judge, which already reads every question in the transcript." in log
-    assert ("The guardrails I kept are unit tested to act, but their accuracy was never measured, and none covers tax "
+    assert ("Unit tests show that the guardrails I kept act, but I never measured their accuracy, and none covers tax "
             "advice. At run time only the prompt keeps the agent from giving it, and the judge model that grades it "
             "afterward missed its own accuracy bar.") in answers
     assert "Tax advice is not checked." in source("agent", "questions.py"), "no check at run time covers tax advice"
@@ -1374,7 +1373,7 @@ def test_the_answers_quote_the_report_and_the_reviews():
     assert "Those were plain requests from a simulated client, so they show nothing about a deliberate attack." in injection
     assert "it cannot confirm that the line supports the fact, and it runs only in my test harness." in injection
     assert injection.endswith("Before a release I would plant injected instructions in client answers and last year's file, "
-                              "against a bar set before the run.")
+                              "against a bar I set before the run.")
     assert "prior_year_summary" in source("server", "intake.py"), "last year's file is the other thing the agent reads"
     # No test and no result in the repo is about injection, so the page claims none.
     assert not any("injection" in path.name for path in (REPO / "tests").glob("*.py"))
