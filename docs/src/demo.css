@@ -2047,7 +2047,7 @@
    along the foot of an open section fills across the run and then goes, so a pause between beats never
    looks like a stop. The result draws its three bars before its numbers, because they were locked before
    the data, and ends on the three runs past the bar.
-   The five sections run 15.6, 16.4, 21.4, 19.2 and 16.4 seconds.
+   The five sections run 15.6, 18.4, 21.4, 19.2 and 18.8 seconds.
    Nothing here holds its last frame: when a playing ends, the section is on its own styles, which are the
    finished state. With reduced motion, on paper and where none of this is supported, that state is all there
    is, with every word and number in it. */
@@ -2225,8 +2225,8 @@
   .part-tested .b2 { animation: row-hold 2.4s linear 6.6s; }
   .part-tested .b3 .node { animation: node-in 0.45s ease-out 8.55s, node-hold 2.4s linear 9s; }
   .part-tested .b3 { animation: row-hold 2.4s linear 9s; }
-  .part-tested .b4 .node { animation: node-in 0.45s ease-out 10.95s, node-hold 5s linear 11.4s; }
-  .part-tested .b4 { animation: row-hold 5s linear 11.4s; }
+  .part-tested .b4 .node { animation: node-in 0.45s ease-out 10.95s, node-hold 7s linear 11.4s; }
+  .part-tested .b4 { animation: row-hold 7s linear 11.4s; }
   .part-tested .homes-train { animation: show 0.4s ease-out 0.4s backwards; }
   .part-tested .homes-dev { animation: show 0.4s ease-out 0.7s backwards; }
   .part-tested .zone-build .homes-key { animation: show 0.3s ease-out 1s backwards; }
@@ -2331,7 +2331,7 @@
   .part-tested .homes-held i:nth-child(39) { animation: mark 0.32s ease-out 15.42s backwards; }
   .part-tested .homes-held i:nth-child(40) { animation: mark 0.32s ease-out 15.46s backwards; }
   .part-tested .h2 { animation: show 0.4s ease-out 15.3s backwards; }
-  .part-tested .rail { animation: rail 16.4s linear; }
+  .part-tested .rail { animation: rail 18.4s linear; }
 
   /* The result. */
   .part-result .verdict-band .chip { animation: state 1.6s ease-in-out 0.3s; }
@@ -2401,7 +2401,7 @@
   .part-result .limits { animation: show 0.5s ease-out 19.6s backwards; }
   .part-result .rail { animation: rail 21.4s linear; }
 
-  /* The human check and my call. */
+  /* Human oversight and my release call. */
   .part-call .b1 .node { animation: node-in 0.45s ease-out 2.95s, node-hold 4.2s linear 3.4s; }
   .part-call .b1 { animation: row-hold 4.2s linear 3.4s; }
   .part-call .b2 .node { animation: node-in 0.45s ease-out 7.15s, node-hold 5.2s linear 7.6s; }
@@ -2423,9 +2423,9 @@
   .part-call .rail { animation: rail 19.2s linear; }
 
   /* What I would bring. */
-  .part-bring .p1 { animation: lead-in 0.45s ease-out -0.05s, lead-hold 4.8s linear 0.4s; }
-  .part-bring .p2 { animation: lead-in 0.45s ease-out 4.75s, lead-hold 3.8s linear 5.2s; }
-  .part-bring .p3 { animation: lead-in 0.45s ease-out 8.55s, lead-hold 3.8s linear 9s; }
-  .part-bring .p4 { animation: lead-in 0.45s ease-out 12.35s, lead-hold 3.2s linear 12.8s; }
-  .part-bring .rail { animation: rail 16.4s linear; }
+  .part-bring .p1 { animation: lead-in 0.45s ease-out -0.05s, lead-hold 6s linear 0.4s; }
+  .part-bring .p2 { animation: lead-in 0.45s ease-out 5.95s, lead-hold 3.4s linear 6.4s; }
+  .part-bring .p3 { animation: lead-in 0.45s ease-out 9.35s, lead-hold 4.4s linear 9.8s; }
+  .part-bring .p4 { animation: lead-in 0.45s ease-out 13.75s, lead-hold 4.2s linear 14.2s; }
+  .part-bring .rail { animation: rail 18.8s linear; }
 }

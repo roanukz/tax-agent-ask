@@ -90,7 +90,7 @@
                 <li class="step b2">
                   <span class="node" aria-hidden="true"></span>
                   <span class="step-text"><strong class="step-title">Ask the client what changed</strong>
-                    <span class="step-detail">each fact kept with its evidence</span></span>
+                    <span class="step-detail">it keeps each fact with its evidence</span></span>
                 </li>
                 <li class="step b3">
                   <span class="node" aria-hidden="true"></span>
@@ -104,7 +104,7 @@
                 </li>
               </ol>
               <figure class="diagram dg-agent" role="img" aria-label="One answer followed through the agent. Last year&#x27;s file has two W-2s on file. The model asks, the client says Just one employer, and the model records the fact, one employer, with the client&#x27;s words as its evidence. Code applies the rule, a W-2 from each employer, and requests one W-2, citing an IRS source. On the review screen code flags that last year had two, and a preparer approves, which the server allows only with the review screen&#x27;s token. The agent has no tool that sends a list.">
-                <figcaption class="dg-title">One answer, followed from last year's file to the approved list</figcaption>
+                <figcaption class="dg-title">Follow one answer from last year's file to the approved list</figcaption>
                 <div class="flow">
                   <div class="col">
                     <span class="col-head">Start</span>
@@ -133,7 +133,7 @@
           <span class="part-anchor" id="tested"></span>
           <section class="part part-tested">
             <h2 class="part-head">
-              <a class="part-link part-open" href="#tested" aria-expanded="false" aria-controls="tested-body"><span class="part-n" aria-hidden="true">2</span><span class="part-title">How I tested it</span><span class="part-gist">Bars and model locked first, then a held-out test</span><span class="part-cue" aria-hidden="true"></span></a>
+              <a class="part-link part-open" href="#tested" aria-expanded="false" aria-controls="tested-body"><span class="part-n" aria-hidden="true">2</span><span class="part-title">How I tested it</span><span class="part-gist">I locked the bars and model, then ran a held-out test</span><span class="part-cue" aria-hidden="true"></span></a>
               <span class="part-link part-shown"><span class="part-n" aria-hidden="true">2</span><span class="part-title">How I tested it</span><span class="part-cue" aria-hidden="true"></span><a class="part-close" href="#shut" aria-expanded="true" aria-controls="tested-body" aria-label="Close How I tested it"></a></span>
             </h2>
             <div class="part-body" id="tested-body">
@@ -145,21 +145,21 @@
                 </li>
                 <li class="step b2">
                   <span class="node" aria-hidden="true"></span>
-                  <span class="step-text"><strong class="step-title">Build the review tools</strong>
+                  <span class="step-text"><strong class="step-title">Design the review tools</strong>
                     <span class="step-detail">pages for rules, households and transcripts</span></span>
                 </li>
                 <li class="step b3">
                   <span class="node" aria-hidden="true"></span>
                   <span class="step-text"><strong class="step-title">Label by hand</strong>
-                    <span class="step-detail">each rule against its source, households blind</span></span>
+                    <span class="step-detail">each rule against its source, households blind, the judge against my labels</span></span>
                 </li>
                 <li class="step b4">
                   <span class="node" aria-hidden="true"></span>
                   <span class="step-text"><strong class="step-title">Lock the bars and model, then test</strong>
-                    <span class="step-detail">scored by code and a judge model</span></span>
+                    <span class="step-detail">code refused it until I committed the lock, then code and a judge model scored it</span></span>
                 </li>
               </ol>
-              <figure class="diagram dg-tested" role="img" aria-label="One hundred synthetic households, each drawn as a dot. On the left, the build split, twenty train and forty dev, where I ran evals and wrote trace notes, built the review tools, and labeled by hand. The thirty households I labeled blind are drawn brighter. In the middle, a lock on the model and the three bars: a pass rate of at least 90%, at most half the questions, and at most 2% of documents missed. On the right, the forty households held out for the test: three runs for each, in two parts, the second once its last rules were checked.">
+              <figure class="diagram dg-tested" role="img" aria-label="One hundred synthetic households, each drawn as a dot. On the left, the build split, twenty train and forty dev, where I ran evals and wrote trace notes, designed the review tools, and labeled by hand. The thirty households I labeled blind are drawn brighter. In the middle, a lock on the model and the three bars: a pass rate of at least 90%, at most half the questions, and at most 2% of documents missed. On the right, the forty households held out for the test: three runs for each, in two parts, the second once its last rules were checked.">
                 <figcaption class="dg-title">What I built on, what I locked, and what I tested on</figcaption>
                 <div class="zones">
                   <div class="zone zone-build">
@@ -171,13 +171,13 @@
                     <ul class="acts"><li class="a1">Evals and trace notes</li><li class="a2">Review tools</li><li class="a3">Hand labels</li></ul>
                   </div>
                   <div class="gate">
-                    <span class="gate-label"><i class="lock"></i>Bars and model locked</span>
+                    <span class="gate-label"><i class="lock"></i>I locked bars and model</span>
                     <span class="bars"><span class="barchip g1">Pass rate: at least 90%</span><span class="barchip g2">Questions: at most half</span><span class="barchip g3">Documents missed: at most 2%</span></span>
                   </div>
                   <div class="zone zone-held">
                     <span class="zone-name">Held-out test</span>
                     <span class="homes homes-held"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span>
-                    <ul class="acts"><li class="h1">Three runs each</li><li class="h2">Two parts, the second once its last rules were checked</li></ul>
+                    <ul class="acts"><li class="h1">Three runs each</li><li class="h2">Two parts, the second once I checked its last rules</li></ul>
                   </div>
                 </div>
               </figure>
@@ -187,12 +187,12 @@
           <span class="part-anchor" id="result"></span>
           <section class="part part-result">
             <h2 class="part-head">
-              <a class="part-link part-open" href="#result" aria-expanded="false" aria-controls="result-body"><span class="part-n" aria-hidden="true">3</span><span class="part-title">The result</span><span class="part-gist"><span class="chip"><i class="tick" aria-hidden="true"></i>Hypothesis supported on this test</span> all three bars met, the pass rate by a thin margin</span><span class="part-cue" aria-hidden="true"></span></a>
+              <a class="part-link part-open" href="#result" aria-expanded="false" aria-controls="result-body"><span class="part-n" aria-hidden="true">3</span><span class="part-title">The result</span><span class="part-gist"><span class="chip"><i class="tick" aria-hidden="true"></i>This test supports the hypothesis</span> it met all three bars, one by a thin margin</span><span class="part-cue" aria-hidden="true"></span></a>
               <span class="part-link part-shown"><span class="part-n" aria-hidden="true">3</span><span class="part-title">The result</span><span class="part-cue" aria-hidden="true"></span><a class="part-close" href="#shut" aria-expanded="true" aria-controls="result-body" aria-label="Close The result"></a></span>
             </h2>
             <div class="part-body" id="result-body">
               <div class="verdict-band">
-                <p class="chip chip-big chip-held"><i class="tick" aria-hidden="true"></i>Hypothesis supported on this test</p>
+                <p class="chip chip-big chip-held"><i class="tick" aria-hidden="true"></i>This test supports the hypothesis</p>
                 <p class="verdict-text">
                   It did not fail on any of the three bars, though the pass rate cleared its bar by
                   only three runs and its interval crosses the bar.
@@ -202,7 +202,7 @@
                 <div class="stat stat-pass">
                   <p class="stat-head">
                     <span class="stat-value"><span class="count count-pass" aria-hidden="true"></span><span class="count-text">92.5%</span></span>
-                    <span class="chip"><i class="tick" aria-hidden="true"></i>Bar met</span>
+                    <span class="chip"><i class="tick" aria-hidden="true"></i>Meets bar</span>
                     <span class="stat-label">of the chosen model's test runs passed</span>
                   </p>
                   <div class="chart chart-runs" role="img" aria-label="111 of the chosen model&#x27;s 120 test runs passed, 92.5%. The bar, at least 90%, falls at 108 runs. The 95% interval runs from 85.8% to 98.3%, across the bar. All 9 runs that failed recorded a wrong fact.">
@@ -215,8 +215,8 @@
                 <div class="stat stat-asked">
                   <p class="stat-head">
                     <span class="stat-value"><span class="count count-asked" aria-hidden="true"></span><span class="count-text">14</span></span>
-                    <span class="chip"><i class="tick" aria-hidden="true"></i>Bar met</span>
-                    <span class="stat-label">questions asked, at the median</span>
+                    <span class="chip"><i class="tick" aria-hidden="true"></i>Meets bar</span>
+                    <span class="stat-label">questions it asked, at the median</span>
                   </p>
                   <div class="chart chart-cells" role="img" aria-label="A median of 14 questions, against a median of 36 in the full questionnaire I built for comparison. The bar, at most half, falls at 18.">
                     <span class="cells"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
@@ -227,8 +227,8 @@
                 <div class="stat stat-missed">
                   <p class="stat-head">
                     <span class="stat-value"><span class="count count-missed" aria-hidden="true"></span><span class="count-text">0.5%</span></span>
-                    <span class="chip"><i class="tick" aria-hidden="true"></i>Bar met</span>
-                    <span class="stat-label">of required documents missed</span>
+                    <span class="chip"><i class="tick" aria-hidden="true"></i>Meets bar</span>
+                    <span class="stat-label">of required documents it missed</span>
                   </p>
                   <div class="chart chart-meter" role="img" aria-label="0.5% of required documents missed. The track ends at the bar, at most 2%, and the agent used a quarter of it.">
                     <span class="meter"><span class="meter-fill"></span></span>
@@ -236,23 +236,23 @@
                   </div>
                 </div>
               </div>
-              <p class="limits">It is one test on simulated clients, scored by a key from the same rules and a judge model that missed its own bar, so it says nothing yet about real clients.</p>
+              <p class="limits">It is one test on simulated clients, and its scorers were a key from the same rules and a judge model that missed its own bar, so it says nothing yet about real clients.</p>
               <span class="rail" aria-hidden="true"></span>
             </div>
           </section>
           <span class="part-anchor" id="call"></span>
           <section class="part part-call">
             <h2 class="part-head">
-              <a class="part-link part-open" href="#call" aria-expanded="false" aria-controls="call-body"><span class="part-n" aria-hidden="true">4</span><span class="part-title">The human check and my call</span><span class="part-gist"><span class="chip"><i class="hold" aria-hidden="true"></i>Not ready for clients</span> approval needs its first fix</span><span class="part-cue" aria-hidden="true"></span></a>
-              <span class="part-link part-shown"><span class="part-n" aria-hidden="true">4</span><span class="part-title">The human check and my call</span><span class="part-cue" aria-hidden="true"></span><a class="part-close" href="#shut" aria-expanded="true" aria-controls="call-body" aria-label="Close The human check and my call"></a></span>
+              <a class="part-link part-open" href="#call" aria-expanded="false" aria-controls="call-body"><span class="part-n" aria-hidden="true">4</span><span class="part-title">Human oversight and my release call</span><span class="part-gist"><span class="chip"><i class="hold" aria-hidden="true"></i>Not ready for clients</span> the human check needs its first fix</span><span class="part-cue" aria-hidden="true"></span></a>
+              <span class="part-link part-shown"><span class="part-n" aria-hidden="true">4</span><span class="part-title">Human oversight and my release call</span><span class="part-cue" aria-hidden="true"></span><a class="part-close" href="#shut" aria-expanded="true" aria-controls="call-body" aria-label="Close Human oversight and my release call"></a></span>
             </h2>
             <div class="part-body" id="call-body">
               <div class="verdict-band">
-                <p class="chip chip-big chip-hold"><i class="hold" aria-hidden="true"></i>Second hypothesis not supported</p>
+                <p class="chip chip-big chip-hold"><i class="hold" aria-hidden="true"></i>No support for hypothesis two</p>
                 <p class="verdict-text">
-                  Locked before I opened any of the 24 test drafts, it said review catches most
-                  problems a draft shows. Reviewing them blind on my own review screen, I caught
-                  none of the 17 problems, even where a flag showed one.
+                  I locked it before I opened the 24 test drafts, and it said review catches most
+                  problems a draft shows. Reviewing them blind on my own screen, I caught none of
+                  the 17 problems, even where a flag showed one.
                 </p>
               </div>
               <ol class="steps" role="list">
@@ -264,24 +264,24 @@
                 <li class="step b2">
                   <span class="node" aria-hidden="true"></span>
                   <span class="step-text"><strong class="step-title">The closing message sat on another tab</strong>
-                    <span class="step-detail">it gave the job count on the four flagged missing W&#8209;2s</span></span>
+                    <span class="step-detail">it gave job counts on the four flagged missing W&#8209;2s</span></span>
                 </li>
                 <li class="step b3">
                   <span class="node" aria-hidden="true"></span>
                   <span class="step-text"><strong class="step-title">My call</strong>
                     <span class="chip chip-big chip-hold call-chip"><i class="hold" aria-hidden="true"></i>Not ready for clients</span>
-                    <span class="step-detail">this fix first, then a repeat with practicing preparers against a bar set before it runs</span></span>
+                    <span class="step-detail">this fix first, then a repeat with practicing preparers against a bar I set first</span></span>
                 </li>
               </ol>
               <figure class="diagram dg-call" role="img" aria-label="The approval step in two versions. As tested: a flag reading last year had 2 could be marked checked with one click, and then the list could be approved, while the agent&#x27;s closing message sat on the Notes tab and was not required for approval. With the first fix, which is not built: the flag has the closing message beside it, each flag needs an answer, which is to raise the count, ask the client, or say why not, and approval stays locked until then.">
-                <figcaption class="dg-title">The approval step, as tested and with the first fix</figcaption>
+                <figcaption class="dg-title">The approval step I tested, and its first fix</figcaption>
                 <div class="lane lane-now">
-                  <span class="lane-name">As tested</span>
+                  <span class="lane-name">What I tested</span>
                   <span class="path"><span class="box x1"><i class="flag" aria-hidden="true"></i>Flag: last year had 2</span><span class="box x2">Mark checked, one click</span><span class="box x3">Approve</span></span>
-                  <span class="aside x4">On the Notes tab: the agent's closing message, not required for approval</span>
+                  <span class="aside x4">On the Notes tab: the agent's closing message, which approval did not require</span>
                 </div>
                 <div class="lane lane-fix">
-                  <span class="lane-name">First fix <small>not built</small></span>
+                  <span class="lane-name">First fix <small>unbuilt</small></span>
                   <span class="path"><span class="box y1"><i class="flag" aria-hidden="true"></i>Flag, with the closing message beside it</span><span class="box y2">An answer to each flag</span><span class="box y3"><i class="lock" aria-hidden="true"></i>Approve</span></span>
                   <span class="aside y4">The answer: raise the count, ask the client, or say why not</span>
                 </div>
@@ -292,29 +292,32 @@
           <span class="part-anchor" id="bring"></span>
           <section class="part part-bring">
             <h2 class="part-head">
-              <a class="part-link part-open" href="#bring" aria-expanded="false" aria-controls="bring-body"><span class="part-n" aria-hidden="true">5</span><span class="part-title">What I would bring to an AI evaluation and quality role</span><span class="part-gist">The bar agreed first, guardrails in code, every check measured</span><span class="part-cue" aria-hidden="true"></span></a>
+              <a class="part-link part-open" href="#bring" aria-expanded="false" aria-controls="bring-body"><span class="part-n" aria-hidden="true">5</span><span class="part-title">What I would bring to an AI evaluation and quality role</span><span class="part-gist">Set testable requirements, code the guardrails, measure every check</span><span class="part-cue" aria-hidden="true"></span></a>
               <span class="part-link part-shown"><span class="part-n" aria-hidden="true">5</span><span class="part-title">What I would bring to an AI evaluation and quality role</span><span class="part-cue" aria-hidden="true"></span><a class="part-close" href="#shut" aria-expanded="true" aria-controls="bring-body" aria-label="Close What I would bring to an AI evaluation and quality role"></a></span>
             </h2>
             <div class="part-body" id="bring-body">
               <ol class="bring-list" role="list">
                 <li class="p1">
-                  <strong>Agree on the bar with whoever makes the release call, before the run.</strong>
-                  I locked the bars before any test run, and none moved once the test began.
+                  <strong>Agree testable requirements with whoever makes the release call, before the run.</strong>
+                  Code refused the held-out test until I had locked and committed my bars, and none
+                  moved once the test began.
                 </li>
                 <li class="p2">
-                  <strong>Put the guardrails that must never fail in code.</strong>
-                  No tool lets the agent send a list, and the preparer's server refuses an approval
-                  without the review screen's token.
+                  <strong>Put the guardrails against unsafe actions in code, and test that they hold.</strong>
+                  No tool lets the agent send a list, a test plants an extra tool and checks that
+                  the run stops, and the preparer's server refuses an approval without the review
+                  screen's token.
                 </li>
                 <li class="p3">
-                  <strong>Measure every check, human or model, before a release rests on it.</strong>
+                  <strong>Measure every check, automated or human, before a release rests on it.</strong>
                   The judge model met its accuracy bar on one of its three questions, and my blind
                   review showed what the review screen has to change.
                 </li>
                 <li class="p4">
-                  <strong>Compare models on the task itself, and price the difference.</strong>
+                  <strong>Compare models on the task itself, and weigh quality against cost.</strong>
                   A model at less than half the cost scored too close to my choice to tell apart, so
-                  I would decide what gain is worth the price before paying double.
+                  I would state the trade-off first and decide what quality gain is worth paying
+                  double for.
                 </li>
               </ol>
               <span class="rail" aria-hidden="true"></span>
@@ -342,7 +345,7 @@
                 <div class="pic pic-bar" role="img" aria-label="A track filled to 92.5%, the chosen model&#x27;s pass rate, just past a line at 90% that carries a lock, because the bar was locked before the test.">
                   <span class="bar-top"><b class="bar-n">92.5%</b><span class="bar-cap">of the chosen model's test runs passed</span></span>
                   <span class="bar-scale"><span class="bar-fill"></span><span class="bar-past"></span><span class="bar-at"></span></span>
-                  <span class="bar-key"><i class="lock"></i>The bar, 90%, locked first</span>
+                  <span class="bar-key"><i class="lock"></i>I locked the bar, 90%, first</span>
                 </div>
                 <p class="tile-head">A test that could have failed</p>
                 <p class="tile-line">
@@ -354,7 +357,7 @@
                 <p class="tile-kicker">My call</p>
                 <div class="pic pic-gate" role="img" aria-label="A path from the draft list to the human check and on toward the client. It is held at the human check, and the way to the client is locked.">
                   <span class="gate-path"><span class="gate-stop">Draft list</span><span class="gate-way"></span><span class="gate-stop gate-check"><i class="hold"></i>Human check</span><span class="gate-way gate-shut"><i class="lock"></i></span><span class="gate-stop gate-off">Client</span></span>
-                  <span class="gate-key">Held at the human check</span>
+                  <span class="gate-key">It stops at the human check</span>
                 </div>
                 <p class="tile-head">Not ready for clients yet</p>
                 <p class="tile-line">
@@ -395,6 +398,19 @@
               </p>
             </details>
             <details class="qa">
+              <summary>What counts as a pass?</summary>
+              <p>
+                A run passes only when seven checks all hold, which is what I count as successful
+                task completion. It must build and submit the list, miss no required document, make
+                at most one unneeded request and record no wrong fact. It must also give no tax
+                advice and pass any advice question to the preparer, receive every request I
+                planted, and never claim the list was sent. Code scores five, and a judge model
+                grades the other two: the sent claim, with code as its fallback, and tax advice,
+                where code also requires a note to the preparer. Passing means a draft awaiting a
+                preparer&#x27;s review, for a simulated client.
+              </p>
+            </details>
+            <details class="qa">
               <summary>What happens when a model writes the list without the rules?</summary>
               <p>
                 It passed less often, though the comparison is not head-to-head. Three models were
@@ -428,6 +444,19 @@
                   loaded. Select the screen to open it at full size.
                 </figcaption>
               </figure>
+            </details>
+            <details class="qa">
+              <summary>How did failing runs shape the build?</summary>
+              <p>
+                My notes on them picked the one agent fix I tried. Of the 22 failing dev runs, 16
+                came from the employer count. On November 4, between the test&#x27;s two parts, I
+                tried two prompt sentences on dev, one asking directly about any other job and one
+                putting ended credits in the note for the preparer. They passed 36 of 40 runs
+                against 37 before, and the extra question led the simulated client to overcount jobs
+                in 3 households. The model already found the hidden job in all 7 households that
+                hide one, so I reverted both, and both parts of the test ran on the same system
+                prompt.
+              </p>
             </details>
             <details class="qa">
               <summary>How do you know the simulated client behaves like a real one?</summary>
@@ -526,9 +555,23 @@
               <summary>What stops the model from sending or approving a list?</summary>
               <p>
                 Code stops it, so nothing depends on the prompt. The agent has no tool that sends a
-                list, and a host that follows the MCP Apps spec hides the approval tools from
-                models, as both hosts I checked did. If an approval arrives without the review
-                screen&#x27;s token, the server refuses it.
+                list, and a test plants an extra tool and checks that the run stops. A host that
+                follows the MCP Apps spec hides the approval tools from models, and if an approval
+                arrives without the review screen&#x27;s token, the server refuses it. Tests confirm
+                that the token appears only in the result&#x27;s metadata, and that no tool call
+                opens a path outside the household profiles and the run&#x27;s own state, which
+                keeps the answer key out of reach. Those are structural tests of safe tool use, and
+                I ran no adversarial one.
+              </p>
+            </details>
+            <details class="qa">
+              <summary>Did you measure the guardrails themselves?</summary>
+              <p>
+                Only one, and it failed, so I never built it. A check designed to refuse tax advice
+                refused 8 of 16 correct deferrals and let 16 of 20 real advice answers through. The
+                guardrails I kept are unit tested to act, but their accuracy was never measured, and
+                none covers tax advice. At run time only the prompt keeps the agent from giving it,
+                and the judge model that grades it afterward missed its own accuracy bar.
               </p>
             </details>
             <details class="qa">
@@ -536,9 +579,12 @@
               <p>
                 No. The closest I came was planting client requests in test households, asking for
                 tax advice in 8 and asking the agent to email the list in 4, and no test run claimed
-                the list was sent. The evidence check confirms that a quoted line exists in the
-                conversation, but it cannot confirm that the line supports the fact, and it runs
-                only in my test harness.
+                the list was sent. Those were plain requests from a simulated client, so they show
+                nothing about a deliberate attack. The evidence check confirms that a quoted line
+                exists in the conversation, but it cannot confirm that the line supports the fact,
+                and it runs only in my test harness. Before a release I would plant injected
+                instructions in client answers and last year&#x27;s file, against a bar set before
+                the run.
               </p>
             </details>
             <details class="qa">
@@ -591,9 +637,21 @@
                 On this evidence I am undecided, because Sonnet passed 90.8% of runs at $0.18 a
                 household and Opus passed 92.5% at $0.40, with intervals that overlap. Opus was my
                 choice because only it cleared the 90% pass bar in the one trial I ran during the
-                build. I locked that choice with the bars, before any test run. Before paying more
-                than double, I would decide what gain is worth the price and test enough households
-                to detect it.
+                build. I locked that choice with the bars, before any test run. Opus was also
+                slower, at 108.0 seconds a household against 77.7 for Sonnet, though that time
+                includes the simulated client and had no bar. Before paying more than double, I
+                would decide what gain is worth the price and test enough households to detect it.
+              </p>
+            </details>
+            <details class="qa">
+              <summary>What did you build, and what did you reuse?</summary>
+              <p>
+                I reused an agent SDK, because hooks, tool controls and caching came built in, and
+                an open protocol for the tools, and had Claude Code write only what was specific to
+                this product. One dependency did not hold, since no version of the desktop app I had
+                at the time could host the review screen. I chose a small local host page, which
+                Claude Code wrote, and kept the server and the screen unchanged. A later version of
+                the app did host the screen, and the 24 reviews stayed on the local page.
               </p>
             </details>
             <details class="qa">
@@ -605,6 +663,18 @@
                 would want flags that demand an answer, the same blind check repeated with
                 practicing preparers, the judge model meeting its bar on tax advice, and a trial
                 beside one firm&#x27;s current questionnaire after a privacy review.
+              </p>
+            </details>
+            <details class="qa">
+              <summary>What does this project not show about an evaluation and quality role?</summary>
+              <p>
+                It shows nothing in production and no work with other teams, because it is a solo
+                prototype on simulated clients. There are no production traces, no customer feedback
+                and no retrieval step to evaluate, and the nearest I came was reading the trace of
+                every failing dev run. In the role I would grow the test set from production traces,
+                incidents and expert review, and rerun a fixed regression set on each model or
+                prompt change. I would also keep a fresh held-out test for each release call, and
+                agree the bars with the teams who make that call.
               </p>
             </details>
           </div>
@@ -627,6 +697,8 @@
       </p>
       <p>
         <a href="index.html">Read the full write-up</a> &middot;
+        <a href="https://github.com/Roanukz/tax-agent-ask/blob/main/PRD-tax-agent-ask.md">Read
+        the requirements</a> &middot;
         <a href="https://github.com/Roanukz/tax-agent-ask/blob/main/DECISIONS.md">Read
         the decision log</a> &middot;
         <a href="https://github.com/Roanukz/tax-agent-ask">View source</a>

@@ -444,7 +444,7 @@ def test_the_result_shows_its_verdict_first_and_counts_up_to_the_report(browser)
             words: document.querySelector('.part-result .verdict-band').innerText.replace(/\\s+/g, ' ').trim(),
             bar: Math.round(document.querySelector('.runs-bar').getBoundingClientRect().height),
             number: getComputedStyle(document.querySelector('.stat-pass .stat-value')).opacity, lit: {lit_dots} }})""")
-        assert start["verdict"] == ["1", "1"] and start["words"].startswith("Hypothesis supported on this test It did not fail")
+        assert start["verdict"] == ["1", "1"] and start["words"].startswith("This test supports the hypothesis It did not fail")
         assert (start["bar"], start["number"], start["lit"]) == (0, "0", 0), start
         sheet = STYLE.read_text(encoding="utf-8")
         count = re.search(r"\n  \.part-result \.count-pass \{ animation: count-pass ([\d.]+)s linear ([\d.]+)s backwards; \}", sheet)
@@ -762,7 +762,7 @@ def test_the_states_are_whole_on_a_phone(browser):
         chips = page.evaluate("""() => [...document.querySelectorAll('.part-open .chip')].map(c => {
             const box = c.getBoundingClientRect(), row = c.closest('a').getBoundingClientRect();
             return { text: c.textContent, inside: box.right <= row.right + 1 && box.left >= row.left, whole: c.scrollWidth <= c.clientWidth + 1 }; })""")
-        assert [c["text"] for c in chips] == ["Hypothesis supported on this test", "Not ready for clients"]
+        assert [c["text"] for c in chips] == ["This test supports the hypothesis", "Not ready for clients"]
         assert all(c["inside"] and c["whole"] for c in chips), chips
         page.evaluate("document.querySelector('.part-call').scrollIntoView({ block: 'center' })")
         click_title(page, "call")
@@ -788,7 +788,7 @@ def test_on_paper_the_overview_and_every_section_are_shown(browser):
 def test_an_answer_opens_under_its_question(browser):
     context, page, _ = open_page(browser, 1280, 720)
     try:
-        assert page.evaluate("document.querySelectorAll('details.qa').length") == 19
+        assert page.evaluate("document.querySelectorAll('details.qa').length") == 24
         assert page.evaluate("document.querySelectorAll('details[open]').length") == 0
         page.evaluate("document.querySelector('#questions').scrollIntoView({ block: 'center' })")
         page.locator("#questions > summary").click()

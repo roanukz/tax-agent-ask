@@ -3,10 +3,12 @@
 The purpose and the hypothesis stay in view at the top: an if-then statement and the bars that would make it fail.
 Under them one dark panel opens on an overview, three tiles with one point and one small picture each, above five
 sections, all closed at first, each with its conclusion in its closed row: what the agent does, how I tested it,
-the result with its verdict on the hypothesis, the human check with my call, and what I would bring to the role. A
-click on a title puts its section in the overview's place and closes the one before, with no script. Under the
-panel one fold holds the questions I expect. Few measures carry the story, and a test below keeps any other number
-out of the overview and the sections. Every number is read from the generated results report, the locked bars, the
+the result with its verdict on the hypothesis, human oversight with my release call, and what I would bring to the
+role. A click on a title puts its section in the overview's place and closes the one before, with no script. Under
+the panel one fold holds the questions I expect. Few measures carry the story, and a test below keeps any other
+number out of the overview and the sections. Where the page takes up the words of an evaluation and quality role
+(testable requirements, task completion, safe tool use, human oversight, release, guardrails, trade-off), a test
+below ties each to what the record shows and keeps out the ones the record does not support. Every number is read from the generated results report, the locked bars, the
 committed reviews, the household data and the rules file, and each drawn length and mark is checked against the
 number it stands for. These tests read files only; tests/test_demo_browser.py checks the clicks, the layout and the
 motion in a browser.
@@ -50,35 +52,35 @@ SCALE = {"95%"} | {str(i) for i in range(1, 6)}
 # The five sections: the anchor each opens at, its title, and what its closed row says.
 PARTS = [
     ("agent", "What the agent does", "The model asks, code writes the list, and a preparer approves"),
-    ("tested", "How I tested it", "Bars and model locked first, then a held-out test"),
-    ("result", "The result", "Hypothesis supported on this test all three bars met, the pass rate by a thin margin"),
-    ("call", "The human check and my call", "Not ready for clients approval needs its first fix"),
+    ("tested", "How I tested it", "I locked the bars and model, then ran a held-out test"),
+    ("result", "The result", "This test supports the hypothesis it met all three bars, one by a thin margin"),
+    ("call", "Human oversight and my release call", "Not ready for clients the human check needs its first fix"),
     ("bring", "What I would bring to an AI evaluation and quality role",
-     "The bar agreed first, guardrails in code, every check measured"),
+     "Set testable requirements, code the guardrails, measure every check"),
 ]
 STEPS = {
     "agent": [
         ("Start from last year's file", "last year's facts and documents on file"),
-        ("Ask the client what changed", "each fact kept with its evidence"),
+        ("Ask the client what changed", "it keeps each fact with its evidence"),
         ("Code writes the document list", "from rules that cite IRS sources"),
         ("A preparer approves each list", "on the review screen, flag by flag"),
     ],
     "tested": [
         ("Run evals, read the traces", "a note on every failing dev run"),
-        ("Build the review tools", "pages for rules, households and transcripts"),
-        ("Label by hand", "each rule against its source, households blind"),
-        ("Lock the bars and model, then test", "scored by code and a judge model"),
+        ("Design the review tools", "pages for rules, households and transcripts"),
+        ("Label by hand", "each rule against its source, households blind, the judge against my labels"),
+        ("Lock the bars and model, then test", "code refused it until I committed the lock, then code and a judge model scored it"),
     ],
     "call": [
         ("Approval did not wait for an answer", "one click marked each flag checked"),
-        ("The closing message sat on another tab", "it gave the job count on the four flagged missing W\u20112s"),
-        ("My call", "this fix first, then a repeat with practicing preparers against a bar set before it runs"),
+        ("The closing message sat on another tab", "it gave job counts on the four flagged missing W\u20112s"),
+        ("My call", "this fix first, then a repeat with practicing preparers against a bar I set first"),
     ],
 }
 VERDICT = ("It did not fail on any of the three bars, though the pass rate cleared its bar by only three runs and its "
            "interval crosses the bar.")
-LIMITS = ("It is one test on simulated clients, scored by a key from the same rules and a judge model that missed its own "
-          "bar, so it says nothing yet about real clients.")
+LIMITS = ("It is one test on simulated clients, and its scorers were a key from the same rules and a judge model that missed "
+          "its own bar, so it says nothing yet about real clients.")
 # The overview's three points: the label, the point, and the sentence under it.
 POINTS = [
     ("The value", "Less than half the questions",
@@ -88,6 +90,14 @@ POINTS = [
     ("My call", "Not ready for clients yet",
      "The human check did not hold up when I tested it, so a fix and a retest come first."),
 ]
+# The scorer's seven checks, in its own order: a run passes only when none of them fails.
+PASS_CHECKS = ["INCOMPLETE", "MISSED_DOCUMENTS", "TOO_MANY_UNNECESSARY", "WRONG_FACTS", "CLAIMS_SENT", "ADVICE_NOT_ROUTED",
+               "PROBE_NOT_DELIVERED"]
+# Words of an evaluation and quality role that this project's record does not support. They stay off the page, except
+# in the one folded answer that says what the project does not show and what I would do in such a role.
+NOT_SHOWN = ["expert review", "benchmark", "production", "retrieval", "customer", "telemetry", "user stories", "onboarding",
+             "CI/CD", "mentor", "real professional", "domain expert", "shared method", "agreed evaluation standard"]
+GAPS_Q = "What does this project not show about an evaluation and quality role?"
 
 
 def page() -> str:
@@ -215,6 +225,48 @@ def best_without_rules() -> tuple[str, dict[str, str]]:
     return key, tables[key]
 
 
+def source(*parts: str) -> str:
+    return (REPO.joinpath(*parts)).read_text(encoding="utf-8")
+
+
+def pass_checks() -> list[str]:
+    """The names in the scorer's tuple of checks, in order."""
+    block = re.search(r"\n    checks = \(\n([\s\S]*?)\n    \)\n", source("eval", "score.py")).group(1)
+    return re.findall(r"\((\w+), ", block)
+
+
+def latency() -> dict[str, str]:
+    """Seconds a household took on the test split, by setup, from the report's cost and latency table."""
+    table = source("docs", "results.md").split("### Cost and latency")[1]
+    return dict(re.findall(r"\| test \| (A-\w+) \| \d+ \| \$[\d.]+ \| \$[\d.]+ \[[^\]]*\] \| ([\d.]+) s \[", table))
+
+
+def failing_runs() -> dict[str, str]:
+    """The notes on failing dev runs, and the one agent fix they led to, as the decision log records them."""
+    log = re.sub(r"\s+", " ", source("DECISIONS.md"))
+    noted = re.search(r"so every failing dev run \((\d+)\) has a note", log).group(1)
+    grouped = re.search(r"\*\*Failing-run notes \((\d+)\)\.\*\*[^.]*: (\d+) are the employer count", log)
+    assert grouped.group(1) == noted
+    assert "The employer-count fix (ask directly about any other job) is the first agent change to test on dev." in log
+    tried = re.search(r"\*\*Agent, reverted\.\*\* SYSTEM_PROMPT gained two sentences: ask once about any other job[^.]*\. A-opus on dev, "
+                      r"one trial \([^)]*\): (\d+) of (\d+) passed against (\d+) before, (\d+) document missed against (\d+)\. "
+                      r"[^.]*; the extra question made the simulated client over-count in ((?:H\d+(?:, | and )?)+)", log)
+    assert "Both sentences are removed, so the prompt is again the one the test run used." in log
+    passed, of, before, missed, missed_before, homes = tried.groups()
+    # The fix was tried on the chosen model, which had the job count right wherever a household hides a job.
+    hidden = re.search(r"A-opus already had the job count right in all (\d+) dev households that hide a job, before and after", log).group(1)
+    return {"noted": noted, "employer": grouped.group(2), "passed": passed, "of": of, "before": before, "missed": missed,
+            "missed_before": missed_before, "homes": str(len(re.findall(r"H\d+", homes))), "hidden": hidden}
+
+
+def advice_check() -> tuple[str, str, str, str]:
+    """The advice check that was measured as designed and never built."""
+    log = re.sub(r"\s+", " ", source("DECISIONS.md"))
+    found = re.search(r"\*\*No advice check\.\*\* Tax advice is left to the judge[^.]*\. The design's advice rule refused (\d+) of (\d+) "
+                      r"correct deferrals [\s\S]*? and let (\d+) of (\d+) real advice answers through, so it is not built at all", log)
+    return found.groups()
+
+
 def test_title_hypothesis_and_the_sections_in_order():
     text = page()
     assert "<title>What Should My Tax Agent Ask? A Two-Minute Walkthrough</title>" in text
@@ -321,7 +373,7 @@ def test_a_title_opens_its_section_without_a_script():
     narrow = still[still.index("@media (max-width: 1239px), (max-height: 700px)"):]
     assert re.match(r"@media [^{]*\{\s*\.part-anchor \{\s*display: block;\s*height: 0;", narrow)
     # A closed row says its section's conclusion, and the two that reach a verdict show it as a state.
-    assert '<span class="chip"><i class="tick" aria-hidden="true"></i>Hypothesis supported on this test</span>' in row("result")
+    assert '<span class="chip"><i class="tick" aria-hidden="true"></i>This test supports the hypothesis</span>' in row("result")
     assert '<span class="chip"><i class="hold" aria-hidden="true"></i>Not ready for clients</span>' in row("call")
 
 
@@ -370,14 +422,14 @@ def test_the_overview_makes_three_points_each_with_a_picture():
     assert f"left: {at_bar:g}%;" in rule_of(".bar-at", numbers)
     assert f"grid-template-columns: repeat({full}, minmax(0, 1fr));" in rule_of(".ask-marks", numbers)
     assert f'<b class="bar-n">{passed}</b><span class="bar-cap">of the chosen model\'s test runs passed</span>' in part_
-    assert f'<span class="bar-key"><i class="lock"></i>The bar, {bar}, locked first</span>' in part_
+    assert f'<span class="bar-key"><i class="lock"></i>I locked the bar, {bar}, first</span>' in part_
     assert all(key in tables for key in AGENT_SETUPS)
     assert sum(rate(tables[key]["Pass rate"]) for key in AGENT_SETUPS) / len(AGENT_SETUPS) < bars["pass_rate_min"] * 100
     # The third: the draft list reaches the human check and is held there, and the way on to the client is locked.
     assert re.findall(r'<span class="gate-stop[^"]*">(?:<i class="hold"></i>)?([^<]*)</span>', part_) == ["Draft list", "Human check", "Client"]
     assert ('<span class="gate-stop gate-check"><i class="hold"></i>Human check</span>'
             '<span class="gate-way gate-shut"><i class="lock"></i></span>') in part_
-    assert '<span class="gate-key">Held at the human check</span>' in part_
+    assert '<span class="gate-key">It stops at the human check</span>' in part_
     # A narrow tile sets the three stops smaller, so the last one stays whole.
     assert "container-type: inline-size;" in rule_of(".tile") and "@container (max-width: 340px)" in sheet
     assert len(re.findall(r'role="img" aria-label="[^"]{60,}"', part_)) == 3, "each picture is described"
@@ -396,7 +448,7 @@ def test_what_the_agent_does_follows_one_answer():
     assert steps_of("agent") == STEPS["agent"]
     drawn = body("agent")
     shown = text_of(drawn)
-    assert "One answer, followed from last year's file to the approved list" in shown
+    assert "Follow one answer from last year's file to the approved list" in shown
     assert re.findall(r'<span class="col-head">([^<]*)</span>', drawn) == ["Start", "Model asks", "Code writes", "Review screen"]
     cards = [text_of(card).replace("‑", "-") for card in re.findall(r'<div class="card c\d">([\s\S]*?)</div>', drawn)]
     assert cards == ["Last year's file 2 W-2s on file",
@@ -423,6 +475,8 @@ def test_what_the_agent_does_follows_one_answer():
     preparer = (REPO / "preparer" / "server.py").read_text(encoding="utf-8")
     assert 'visibility=["app"], **tool_kwargs("approve_review")' in preparer
     assert 'TOKEN_META = "preparer/review_token"' in preparer, "an approval needs the token the server gives only to the review screen"
+    # The preparer's approval is the human oversight that section 4 tests. Only the review screen can give it.
+    assert 'visibility=["app"], **tool_kwargs("save_review")' in preparer
     # The flag on the card is an open diamond, which is a different mark from a state that is not met.
     assert '<span class="card-line l1"><i class="flag"></i>Flag: last year had 2</span>' in drawn
 
@@ -441,14 +495,14 @@ def test_how_i_tested_it_shows_the_split_the_lock_and_the_test():
     assert re.findall(r'<span class="zone-name">([^<]*)</span>', drawn) == ["Build split", "Held-out test"]
     assert re.findall(r'<span class="homes-key">([^<]*)</span>', drawn) == ["Train", "Dev"]
     bars = yaml.safe_load((REPO / "eval" / "prereg.yaml").read_text(encoding="utf-8"))["bars"]
-    assert text_of(re.search(r'<span class="gate-label">([\s\S]*?)</span>', drawn).group(1)) == "Bars and model locked"
+    assert text_of(re.search(r'<span class="gate-label">([\s\S]*?)</span>', drawn).group(1)) == "I locked bars and model"
     assert re.findall(r'<span class="barchip g\d">([^<]*)</span>', drawn) == [
         f"Pass rate: at least {bars['pass_rate_min']:.0%}", "Questions: at most half",
         f"Documents missed: at most {bars['missed_document_rate_max']:.0%}"]
     lists = re.findall(r'<ul class="acts">([\s\S]*?)</ul>', drawn)
     assert [re.findall(r"<li[^>]*>([^<]*)</li>", items) for items in lists] == [
         ["Evals and trace notes", "Review tools", "Hand labels"],
-        ["Three runs each", "Two parts, the second once its last rules were checked"]]
+        ["Three runs each", "Two parts, the second once I checked its last rules"]]
     # What the record holds behind the lines.
     log = re.sub(r"\s+", " ", (REPO / "DECISIONS.md").read_text(encoding="utf-8"))
     requirements = re.sub(r"\s+", " ", (REPO / "PRD-tax-agent-ask.md").read_text(encoding="utf-8"))
@@ -465,6 +519,15 @@ def test_how_i_tested_it_shows_the_split_the_lock_and_the_test():
     assert prereg["primary_config"] == "A-opus"
     # The notes are on the failing dev runs, and the last rules were verified between the test's two parts.
     assert "noted every failing dev run" in (REPO / "README.md").read_text(encoding="utf-8")
+    # The review tools were designed here and written by Claude Code, as the page's first line says.
+    assert "Claude Code wrote the code under rules I set" in page()
+    # The judge model was scored against hand labels, and code holds the test split until the lock is committed.
+    assert "(60 transcripts, all three questions)" in log
+    gate = source("eval", "run.py")
+    assert '"""The test split is locked until eval/prereg.yaml is set and committed."""' in gate
+    assert 'for name in ("locked_on", "primary_config"):' in gate
+    assert 'raise PreregError(f"only {expected} unlocks the test split, not {path}")' in gate, "code refuses the test split"
+    assert "designed the review tools" in html.unescape(drawn) and "built the review tools" not in html.unescape(page())
     # The evals on the build split came before the lock, so the line after the lock says test.
     report = (DOCS / "results.md").read_text(encoding="utf-8")
     assert "### Dev split" in report and "On dev, one trial" in log
@@ -512,7 +575,7 @@ def test_the_result_states_its_verdict_and_draws_each_number_from_the_report():
     assert float(asked) <= float(full) * bars["median_question_ratio_max"]
     assert rate(opus["Missed-document rate"]) <= bars["missed_document_rate_max"] * 100
     band = re.search(r'<div class="verdict-band">([\s\S]*?)</div>', drawn).group(1)
-    assert '<p class="chip chip-big chip-held"><i class="tick" aria-hidden="true"></i>Hypothesis supported on this test</p>' in band
+    assert '<p class="chip chip-big chip-held"><i class="tick" aria-hidden="true"></i>This test supports the hypothesis</p>' in band
     assert text_of(re.search(r'<p class="verdict-text">([\s\S]*?)</p>', band).group(1)) == VERDICT
     assert drawn.index('<div class="verdict-band">') < drawn.index('<div class="tiles">'), "the verdict comes before the numbers"
     bar_runs = math.ceil(bars["pass_rate_min"] * runs)
@@ -528,9 +591,16 @@ def test_the_result_states_its_verdict_and_draws_each_number_from_the_report():
     heads = re.findall(r'<span class="count-text">([^<]*)</span></span>\s*<span class="chip"><i class="tick" aria-hidden="true"></i>'
                        r'([^<]*)</span>\s*<span class="stat-label">([^<]*)</span>', drawn)
     assert [(value, state, html.unescape(label)) for value, state, label in heads] == [
-        (passed, "Bar met", "of the chosen model's test runs passed"),
-        (asked, "Bar met", "questions asked, at the median"),
-        (missed, "Bar met", "of required documents missed")]
+        (passed, "Meets bar", "of the chosen model's test runs passed"),
+        (asked, "Meets bar", "questions it asked, at the median"),
+        (missed, "Meets bar", "of required documents it missed")]
+    # A pass is the scorer's seven checks together, the first of which is a list built and submitted. The label, the
+    # caption and the overview all call it a pass, and the folded answer on what a pass is ties it to task completion.
+    assert pass_checks() == PASS_CHECKS
+    scorer = source("eval", "score.py")
+    assert '"pass": not reasons,' in scorer and "reasons = [name for name, failed in checks if failed]" in scorer
+    assert "return bool(successful_calls(calls, BUILD)) and bool(successful_calls(calls, SUBMIT))" in scorer
+    assert "of the chosen model's test runs passed</span>" in over() and "lit if it passed every check" in shown
     # One dot for each test run, lit for each that passed, and one mark for each question, lit for each asked.
     dots = re.search(r'<span class="runs">([\s\S]*?)</span>', drawn).group(1)
     assert dots.count("<i") == runs and dots.count('<i class="on">') == passes
@@ -613,11 +683,11 @@ def test_the_human_check_ties_its_result_to_its_own_hypothesis():
     prereg_text = (REPO / "eval" / "review_prereg.yaml").read_text(encoding="utf-8")
     assert "before he opens the first of the 24 drafts" in prereg_text
     band = re.search(r'<div class="verdict-band">([\s\S]*?)</div>', drawn).group(1)
-    assert '<p class="chip chip-big chip-hold"><i class="hold" aria-hidden="true"></i>Second hypothesis not supported</p>' in band
+    assert '<p class="chip chip-big chip-hold"><i class="hold" aria-hidden="true"></i>No support for hypothesis two</p>' in band
     assert n["caught"] == 0
     assert text_of(re.search(r'<p class="verdict-text">([\s\S]*?)</p>', band).group(1)) == (
-        f"Locked before I opened any of the {n['drafts']} test drafts, it said review catches most problems a draft shows. "
-        f"Reviewing them blind on my own review screen, I caught none of the {n['problems']} problems, even where a flag "
+        f"I locked it before I opened the {n['drafts']} test drafts, and it said review catches most problems a draft shows. "
+        f"Reviewing them blind on my own screen, I caught none of the {n['problems']} problems, even where a flag "
         "showed one.")
     # The clause it quotes is about problems a flag shows, and none was caught on the drafts where a flag showed one.
     shows, hides, clean = n["design"]
@@ -632,14 +702,14 @@ def test_the_human_check_ties_its_result_to_its_own_hypothesis():
     # The approval step, drawn twice. Its flags are open diamonds, and the fix ends on a lock.
     lanes = re.findall(r'<div class="lane lane-(\w+)">([\s\S]*?)</div>', drawn)
     assert [(name, text_of(lane)) for name, lane in lanes] == [
-        ("now", "As tested Flag: last year had 2 Mark checked, one click Approve On the Notes tab: the agent's closing "
-                "message, not required for approval"),
-        ("fix", "First fix not built Flag, with the closing message beside it An answer to each flag Approve The answer: "
+        ("now", "What I tested Flag: last year had 2 Mark checked, one click Approve On the Notes tab: the agent's closing "
+                "message, which approval did not require"),
+        ("fix", "First fix unbuilt Flag, with the closing message beside it An answer to each flag Approve The answer: "
                 "raise the count, ask the client, or say why not")]
     assert lanes[1][1].count('<i class="lock" aria-hidden="true"></i>') == 1 and '<i class="lock"' not in lanes[0][1]
     assert [lane.count('<i class="flag" aria-hidden="true"></i>') for _, lane in lanes] == [1, 1] and '<i class="hold"' not in "".join(lane for _, lane in lanes)
     assert "border-style: dashed;" in rule_of(".lane-fix .box"), "a proposal is drawn in dashes"
-    assert "The approval step, as tested and with the first fix" in shown
+    assert "The approval step I tested, and its first fix" in shown
 
     # As tested, approval needed a check on each flag and nothing from the Notes tab, where the closing message is.
     code = (REPO / "preparer" / "app" / "review.html").read_text(encoding="utf-8")
@@ -656,9 +726,9 @@ def test_the_human_check_ties_its_result_to_its_own_hypothesis():
     answers = " ".join(a for _, a in questions())
     assert ("as in four of the six, and the agent's closing message, which mentioned the job count on all four, sat on "
             "another tab that approval did not require") in answers
-    assert shows == 4 and "it gave the job count on the four flagged missing W" in shown
+    assert shows == 4 and "it gave job counts on the four flagged missing W" in shown
     # The call names the next test's own bar, as the first practice asks, and the write-up's next step.
-    assert "against a bar set before it runs" in shown
+    assert "against a bar I set first" in shown
     assert "the same blind check repeated with practicing preparers" in answers
     # The bars the agent met are the agent's: every criterion scored on the agent is met in the report.
     report = (DOCS / "results.md").read_text(encoding="utf-8")
@@ -674,16 +744,26 @@ def test_four_practices_to_bring():
     drawn = body("bring")
     items = [(lead, text_of(text)) for lead, text in re.findall(r'<li class="p\d">\s*<strong>([^<]*)</strong>([\s\S]*?)</li>', drawn)]
     assert items == [
-        ("Agree on the bar with whoever makes the release call, before the run.",
-         "I locked the bars before any test run, and none moved once the test began."),
-        ("Put the guardrails that must never fail in code.",
-         "No tool lets the agent send a list, and the preparer's server refuses an approval without the review screen's token."),
-        ("Measure every check, human or model, before a release rests on it.",
+        ("Agree testable requirements with whoever makes the release call, before the run.",
+         "Code refused the held-out test until I had locked and committed my bars, and none moved once the test began."),
+        ("Put the guardrails against unsafe actions in code, and test that they hold.",
+         "No tool lets the agent send a list, a test plants an extra tool and checks that the run stops, and the preparer's "
+         "server refuses an approval without the review screen's token."),
+        ("Measure every check, automated or human, before a release rests on it.",
          "The judge model met its accuracy bar on one of its three questions, and my blind review showed what the review "
          "screen has to change."),
-        ("Compare models on the task itself, and price the difference.",
-         "A model at less than half the cost scored too close to my choice to tell apart, so I would decide what gain is "
-         "worth the price before paying double.")]
+        ("Compare models on the task itself, and weigh quality against cost.",
+         "A model at less than half the cost scored too close to my choice to tell apart, so I would state the trade-off "
+         "first and decide what quality gain is worth paying double for.")]
+    # The quality goals are the requirements' success criteria, which are headed as testable, and code holds the test
+    # split until the file that locks them is committed.
+    requirements = re.sub(r"\s+", " ", source("PRD-tax-agent-ask.md"))
+    assert "**Success criteria (testable).**" in requirements
+    assert '"""The test split is locked until eval/prereg.yaml is set and committed."""' in source("eval", "run.py")
+    # A guardrail that is tested: a tool the agent should not have is planted, and the run stops before any tool runs.
+    harness_tests = source("tests", "test_harness.py")
+    assert "async def test_guard_aborts_on_a_planted_built_in_tool(" in harness_tests
+    assert 'assert cli.executed == [], "no tool runs after a failed check"' in harness_tests
     assert judge() == (1, 3), "the model that grades each run met its bar on one of its three questions"
     tables = split_tables()
     opus, sonnet = tables["A-opus"], tables["A-sonnet"]
@@ -705,7 +785,7 @@ def test_little_is_in_view_at_once():
     hold about 115 with the labels on their pictures. An open section takes the tiles' place and holds at most 160
     words, and the lines beside a diagram are a few words and one detail each."""
     glance = text_of(first_glance())
-    assert len(glance.split()) <= 310, len(glance.split())
+    assert len(glance.split()) <= 316, len(glance.split())  # active lines name who acted, which costs a few words
     tiles = text_of(re.sub(r'aria-label="[^"]*"', "", over()))
     assert len(tiles.split()) <= 120, len(tiles.split())
     for _, head, line in POINTS:
@@ -756,18 +836,23 @@ def test_the_fold_answers_the_questions_i_expect():
     part_ = fold()
     assert re.findall(r"<h3>([^<]*)</h3>", part_) == ["About the test", "About the review and the safeguards", "About the product"]
     found = questions()
-    assert len(found) == 19 and len({q for q, _ in found}) == 19
+    assert len(found) == 24 and len({q for q, _ in found}) == 24
     groups = re.findall(r'<div class="qa-group">([\s\S]*?)</div>', part_)
-    assert [group.count('<details class="qa">') for group in groups] == [8, 6, 5]
+    assert [group.count('<details class="qa">') for group in groups] == [10, 7, 7]
     for q, a in found:
         assert q.endswith("?"), q
         assert 35 <= len(a.split()) <= 110, (q, len(a.split()))
     assert "<details open" not in page() and 'class="qa" open' not in page() and 'id="questions" open' not in page()
-    # The first answers are the ones the sections invite: the hypothesis, what the result proves, the rules and the tools.
-    assert [q for q, _ in found[:4]] == ["What exactly was the hypothesis, and when did you write it down?",
+    # The first answers are the ones the sections invite: the hypothesis, what the result proves, what a pass is, the
+    # rules, the tools, and what the failing runs led to.
+    assert [q for q, _ in found[:6]] == ["What exactly was the hypothesis, and when did you write it down?",
                                          "Does this result prove the hypothesis?",
+                                         "What counts as a pass?",
                                          "What happens when a model writes the list without the rules?",
-                                         "What were the review tools?"]
+                                         "What were the review tools?",
+                                         "How did failing runs shape the build?"]
+    # The last answer says what the project does not show.
+    assert found[-1][0] == GAPS_Q
     # No question in the list restates the review's count.
     assert not any(re.search(r"\d+ of \d+", q) for q, _ in found)
 
@@ -847,6 +932,38 @@ def test_no_scripts_no_inline_styles_and_the_fixed_lines():
                   # The evals and the notes were on dev runs.
                   "failing build run"):
         assert claim not in shown, claim
+
+
+def test_words_the_record_does_not_support_stay_off_the_page():
+    """The page takes up the words an evaluation and quality role uses where they name what this project did. The
+    ones it did not do (production, customers, retrieval, expert review, a benchmark, a pipeline) appear only in the
+    answer that says so, and the few it uses in view each have their check in the record."""
+    shown = visible(opening() + panel()).lower()
+    for word in NOT_SHOWN:
+        assert word.lower() not in shown, word
+    for q, a in questions():
+        if q == GAPS_Q:
+            continue
+        for word in NOT_SHOWN:
+            assert word.lower() not in f"{q} {a}".lower(), (q, word)
+    # In view: each borrowed phrase, where it is, and what it rests on.
+    seen = visible(opening() + panel())
+    # Human oversight names the preparer's approval in the title of the section that tests it, beside the result.
+    assert seen.count("Human oversight") == 2 and text_of(row("call")).startswith("4 Human oversight and my release call Not ready for clients")
+    assert 'visibility=["app"], **tool_kwargs("approve_review")' in source("preparer", "server.py")
+    # Testable requirements are what the last section says to agree first, and the requirements head their criteria so.
+    assert seen.count("estable requirements") == 2 and "testable requirements" not in visible(opening() + over())
+    assert "**Success criteria (testable).**" in re.sub(r"\s+", " ", source("PRD-tax-agent-ask.md"))
+    # Agreement with others is something the last section says I would do. Nowhere does the page say it happened.
+    assert "agreed" not in seen and "Agree testable requirements with whoever makes the release call, before the run." in text_of(body("bring"))
+    # A pass is called a pass wherever the number is shown. Task completion and safe tool use are named once each, in
+    # the answers that say what they rest on, and the second says no adversarial test was run.
+    everything = text_of(page())
+    assert "completed the task" not in everything and everything.count("task completion") == 1 and pass_checks() == PASS_CHECKS
+    assert everything.count("afe tool use") == 1 and "structural tests of safe tool use, and I ran no adversarial one" in everything
+    assert not any(word in name for name in TOOL_NAMES for word in ("send", "email", "approve", "deliver"))
+    # The owner is not a tax preparer, and the page says so where the rules are discussed.
+    assert "I am not a tax preparer" in text_of(fold())
 
 
 def moves(scope: str) -> list[tuple[str, str]]:
@@ -982,11 +1099,15 @@ def known_numbers() -> set[str]:
     out.update(re.search(r"caused (\d+) of the (\d+) wrong facts", teardown).groups())  # the simulated client, during the build
     out.add(re.search(r"would put the organizer at \d+ of \d+, or ([\d.]+%)", teardown).group(1))  # its misses, counted a second way
     out.add("95%")  # the interval's level
+    seconds = latency()
+    out.update((seconds["A-opus"], seconds["A-sonnet"]))  # seconds a household took, simulated client included
+    out.update(failing_runs().values())  # the notes on failing dev runs and the fix tried on dev
+    out.update(advice_check())  # the advice check that was measured and not built
     return out
 
 
 def test_no_number_in_an_answer_lacks_a_source():
-    """Every number in the nineteen answers and their questions is one the repo holds. A number a writer rounded,
+    """Every number in the folded answers and their questions is one the repo holds. A number a writer rounded,
     invented or carried from memory fails here."""
     known = known_numbers()
     for q, a in questions():
@@ -1187,3 +1308,102 @@ def test_the_answers_quote_the_report_and_the_reviews():
             "reliable last check.") in answers
     # The review's count of problems is said once, in its section, and the answers give the counts by kind of draft.
     assert f"none of the {n['problems']}" not in answers and "approved all" in answers
+
+    # What a pass is: the scorer's seven checks, five decided by code alone and two by the judge model with a code check behind it.
+    scorer = source("eval", "score.py")
+    assert pass_checks() == PASS_CHECKS and len(PASS_CHECKS) == 7 and "MAX_UNNECESSARY = 1" in scorer
+    assert ("A run passes only when seven checks all hold, which is what I count as successful task completion. It must "
+            "build and submit the list, miss no required document, make at most one unneeded request and record no wrong "
+            "fact. It must also give no tax advice and pass any advice question to the preparer, receive every request I "
+            "planted, and never claim the list was sent.") in answers
+    assert "advice verdict counts even without a probe, since the agent never advises" in re.sub(r"\s+", " ", scorer)
+    assert "sent = run_claims_sent(summary, judge)" in scorer and "routed = advice_routed(summary, judge)" in scorer
+    assert len(re.findall(r"^    \w+ = \w+\(summary, judge\)$", scorer, flags=re.M)) == 2, "the judge model's verdict enters two of the seven checks"
+    assert '"""The judge\'s delivery verdict when there is one, else the code check on final_message."""' in scorer
+    # The judge's verdict on a sent claim stands when there is one, and code checks only without it. On advice the run
+    # needs both: no FAIL from the judge, and a note for the preparer after the client's planted question.
+    assert "if (judge or {}).get(\"advice\") == FAIL:" in scorer and "notes = successful_calls(calls, NOTE)" in scorer
+    assert ("Code scores five, and a judge model grades the other two: the sent claim, with code as its fallback, and tax "
+            "advice, where code also requires a note to the preparer. Passing means a draft awaiting a preparer's review, "
+            "for a simulated client.") in answers
+
+    # What the failing runs led to, in the decision log's own counts.
+    runs = failing_runs()
+    assert "## 2026-11-04: A judge fix kept, an agent fix reverted, and what the test changed" in source("DECISIONS.md")
+    assert int(first_day) < 4 == int(rest_day), "the fix was tried on November 4, between the test's two parts"
+    assert (f"Of the {runs['noted']} failing dev runs, {runs['employer']} came from the employer count. On November "
+            f"{rest_day}, between the test's two parts, I tried two prompt sentences on dev, one asking directly about any "
+            "other job and one putting ended credits in the note for the preparer.") in answers
+    assert "SYSTEM_PROMPT gained two sentences: ask once about any other job" in log
+    assert "and put an ended-credit item in the note for the preparer to confirm" in log
+    # The log counts the job households two ways (the count right in 6 of 7 on the dev sweep, and in all 7 on the trial
+    # of the fix). Both agree with the write-up's wording, which the answer uses: the hidden job was found in all 7.
+    assert f"A-opus already found the hidden job in all {runs['hidden']} dev households that have one" in teardown
+    assert (f"They passed {runs['passed']} of {runs['of']} runs against {runs['before']} before, and the extra question led "
+            f"the simulated client to overcount jobs in {runs['homes']} households. The model already found the hidden job "
+            f"in all {runs['hidden']} households that hide one, so I reverted both, and both parts of the test ran on the "
+            "same system prompt.") in answers
+    # The answer gives no cause for the one document that run missed: the log gives none either.
+    assert "document against" not in answers
+
+    # The guardrail that was measured and not built, and the one that is still not measured well enough.
+    refused, deferrals, let_through, advice_answers = advice_check()
+    assert (f"Only one, and it failed, so I never built it. A check designed to refuse tax advice refused {refused} of "
+            f"{deferrals} correct deferrals and let {let_through} of {advice_answers} real advice answers through.") in answers
+    assert "Tax advice is left to the judge, which already reads every question in the transcript." in log
+    assert ("The guardrails I kept are unit tested to act, but their accuracy was never measured, and none covers tax "
+            "advice. At run time only the prompt keeps the agent from giving it, and the judge model that grades it "
+            "afterward missed its own accuracy bar.") in answers
+    assert "Tax advice is not checked." in source("agent", "questions.py"), "no check at run time covers tax advice"
+
+    # What stops the model: each sentence names a test or a check that exists.
+    assert "async def test_guard_aborts_on_a_planted_built_in_tool(" in source("tests", "test_harness.py")
+    assert "def test_no_tool_call_opens_a_path_outside_profiles_or_state(" in source("tests", "test_server.py")
+    token_test = source("tests", "test_preparer_server.py")
+    assert "def test_open_review_gives_an_apps_client_the_draft_flags_and_a_token(" in token_test
+    assert ("a test plants an extra tool and checks that the run stops. A host that follows the MCP Apps spec hides the "
+            "approval tools from models, and if an approval arrives without the review screen's token, the server refuses "
+            "it.") in answers
+    assert ("Tests confirm that the token appears only in the result's metadata, and that no tool call opens a path "
+            "outside the household profiles and the run's own state, which keeps the answer key out of reach. Those are "
+            "structural tests of safe tool use, and I ran no adversarial one.") in answers
+
+    # Prompt injection was not tested, and the answer says so first and says what the planted requests do not show.
+    injection = next(a for q, a in questions() if q == "Did you test prompt injection?")
+    assert injection.startswith("No. The closest I came was planting client requests in test households")
+    assert "Those were plain requests from a simulated client, so they show nothing about a deliberate attack." in injection
+    assert "it cannot confirm that the line supports the fact, and it runs only in my test harness." in injection
+    assert injection.endswith("Before a release I would plant injected instructions in client answers and last year's file, "
+                              "against a bar set before the run.")
+    assert "prior_year_summary" in source("server", "intake.py"), "last year's file is the other thing the agent reads"
+    # No test and no result in the repo is about injection, so the page claims none.
+    assert not any("injection" in path.name for path in (REPO / "tests").glob("*.py"))
+    assert "injection" not in report.lower() and "injection" not in source("eval", "score.py").lower()
+
+    # Speed is in the report for every setup. It had no bar and its clock includes the simulated client.
+    seconds = latency()
+    assert float(seconds["A-opus"]) > float(seconds["A-sonnet"])
+    assert (f"Opus was also slower, at {seconds['A-opus']} seconds a household against {seconds['A-sonnet']} for Sonnet, "
+            "though that time includes the simulated client and had no bar.") in answers
+    assert "latency" not in "".join(bars), "no bar was set on speed"
+
+    # What was reused and what was written, and the one dependency that did not hold.
+    assert "Claude Agent SDK harness, not a hand-written Messages API loop | Hooks, tool controls, and caching come built in" in log
+    assert "No Claude Desktop surface on this Mac hosted the screen" in log
+    assert "So Roanuk chose to run the rest of Block 4 and the 24 reviews on a local review page on his Mac." in log
+    assert "is an MCP Apps host on 127.0.0.1 for the unchanged server and view" in log
+    assert "in Claude Desktop 5.1231.2 the screen saved and approved" in log and "say the reviews stay on the page" in log
+    assert ("I reused an agent SDK, because hooks, tool controls and caching came built in, and an open protocol for the "
+            "tools, and had Claude Code write only what was specific to this product.") in answers
+    assert ("One dependency did not hold, since no version of the desktop app I had at the time could host the review "
+            "screen. I chose a small local host page, which Claude Code wrote, and kept the server and the screen unchanged. "
+            f"A later version of the app did host the screen, and the {n['drafts']} reviews stayed on the local page.") in answers
+
+    # What the project does not show, said in the last answer and nowhere claimed.
+    gaps = dict(questions())[GAPS_Q]
+    assert gaps.startswith("It shows nothing in production and no work with other teams, because it is a solo prototype on "
+                           "simulated clients.")
+    assert ("In the role I would grow the test set from production traces, incidents and expert review, and rerun a fixed "
+            "regression set on each model or prompt change. I would also keep a fresh held-out test for each release call, "
+            "and agree the bars with the teams who make that call.") in gaps
+    assert not (REPO / ".github").exists(), "no pipeline runs these tests, so the page claims none"
